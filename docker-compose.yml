@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mysql_almudena:
+    image: mysql:8.0
+    container_name: almudena_db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: almudena
+      MYSQL_DATABASE: almudena_clinic
+      MYSQL_USER: api_almudena
+      MYSQL_PASSWORD: almudena
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
