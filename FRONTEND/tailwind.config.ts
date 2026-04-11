@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -7,8 +7,82 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      boxShadow: {
+        editorial: '0 20px 40px rgba(75, 100, 95, 0.08)',
+      },
+      colors: {
+        error: '#a83836',
+        'surface-tint': '#4b645f',
+        'primary-fixed': '#cde8e2',
+        'surface-container-low': '#f4f4ef',
+        'on-secondary-fixed-variant': '#66594a',
+        'inverse-primary': '#dbf7f0',
+        'on-tertiary-fixed': '#224154',
+        'outline-variant': '#b0b3ad',
+        'surface-container-lowest': '#ffffff',
+        'inverse-on-surface': '#9d9d9a',
+        'on-secondary': '#fff8f3',
+        'primary-container': '#cde8e2',
+        'on-surface': '#30332f',
+        'tertiary-dim': '#39566a',
+        'secondary-fixed-dim': '#e3d2be',
+        'on-error-container': '#6e0a12',
+        'surface-container': '#eeeee9',
+        'on-surface-variant': '#5d605b',
+        'error-container': '#fa746f',
+        'on-secondary-container': '#5c5041',
+        tertiary: '#456377',
+        surface: '#faf9f5',
+        'surface-container-highest': '#e1e3dd',
+        'secondary-dim': '#5d5142',
+        outline: '#797b76',
+        'on-secondary-fixed': '#493d2f',
+        'on-background': '#30332f',
+        primary: '#4b645f',
+        'on-error': '#fff7f6',
+        'on-tertiary-fixed-variant': '#405d71',
+        'error-dim': '#67040d',
+        'surface-dim': '#d9dbd4',
+        'tertiary-fixed': '#c5e4fc',
+        'on-primary-fixed': '#2c443f',
+        'inverse-surface': '#0d0f0d',
+        'tertiary-container': '#c5e4fc',
+        secondary: '#6a5d4e',
+        'on-primary-container': '#3e5652',
+        'on-tertiary': '#f5f9ff',
+        'secondary-fixed': '#f2e0cc',
+        'on-tertiary-container': '#365367',
+        'surface-bright': '#faf9f5',
+        'surface-variant': '#e1e3dd',
+        'primary-dim': '#405853',
+        'secondary-container': '#f2e0cc',
+        'tertiary-fixed-dim': '#b7d6ed',
+        'primary-fixed-dim': '#bfdad4',
+        'on-primary-fixed-variant': '#48605b',
+        'surface-container-high': '#e8e9e3',
+        background: '#faf9f5',
+        'on-primary': '#e3fff8',
+      },
+      borderRadius: {
+        DEFAULT: '0.25rem',
+        lg: '0.5rem',
+        xl: '0.75rem',
+        full: '9999px',
+      },
+      fontFamily: {
+        headline: ['Noto Serif', 'serif'],
+        body: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        label: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      letterSpacing: {
+        couture: '0.02em',
+      },
+      lineHeight: {
+        editorial: '1.6',
+      },
+    },
   },
   plugins: [],
-}
-export default config
+};
+export default config;

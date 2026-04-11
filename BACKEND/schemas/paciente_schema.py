@@ -11,6 +11,8 @@ class PacienteBase(BaseModel):
     email: EmailStr
     fecha_nacimiento: Optional[date] = None
     motivo_consulta_inicial: Optional[str] = Field(None, max_length=2000)
+    experiencia_terapia: Optional[str] = Field(None, max_length=64)
+    motivo_consulta: Optional[str] = Field(None, max_length=2000)
     consentimiento_rgpd: bool = Field(default=False)
 
     @field_validator('dni_nie')

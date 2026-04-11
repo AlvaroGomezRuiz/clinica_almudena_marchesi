@@ -13,7 +13,9 @@ export default function SecurityPage() {
   useEffect(() => {
     const loadQR = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/v1/auth/mfa/setup?username=${username}`);
+        const res = await axios.get(
+          `http://localhost:8000/api/v1/auth/mfa/setup?username=${username}`
+        );
         setQrCode(res.data.qr_code);
       } catch (err) {
         setStatus({ type: 'error', msg: 'No se pudo conectar con el búnker.' });
@@ -25,30 +27,49 @@ export default function SecurityPage() {
   // 2. Enviar el primer código para confirmar activación
   const handleActivate = async () => {
     try {
-      const res = await axios.post('http://localhost:8000/api/v1/auth/mfa/enable', {
-        username: username,
-        code: code
+      const res = await axios.post(
+        'http://localhost:8000/api/v1/auth/mfa/enable',
+        {
+          username: username,
+          code: code,
+        }
+      );
+      setStatus({
+        type: 'success',
+        msg: '🛡️ ¡MFA ACTIVADO! Tu cuenta ahora es Grado Bancario.',
       });
-      setStatus({ type: 'success', msg: '🛡️ ¡MFA ACTIVADO! Tu cuenta ahora es Grado Bancario.' });
     } catch (err) {
-      setStatus({ type: 'error', msg: 'Código incorrecto. Inténtalo de nuevo.' });
+      setStatus({
+        type: 'error',
+        msg: 'Código incorrecto. Inténtalo de nuevo.',
+      });
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Seguridad Avanzada</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+        Seguridad Avanzada
+      </h1>
 
       <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <h2 className="text-xl font-semibold mb-4">Autenticación de Doble Factor (2FA)</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Autenticación de Doble Factor (2FA)
+        </h2>
 
         {qrCode ? (
           <div className="flex flex-col items-center">
             <p className="text-gray-600 mb-6 text-center">
-              Escanea este código con **Google Authenticator** o **Authy** para vincular tu cuenta.
+              Escanea este código con **Google Authenticator** o **Authy** para
+              vincular tu cuenta.
             </p>
 
-            <img src={qrCode} alt="Código QR de Seguridad" className="w-64 h-64 border-4 border-gray-50 mb-6" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={qrCode}
+              alt="Código QR de Seguridad"
+              className="w-64 h-64 border-4 border-gray-50 mb-6"
+            />
 
             <div className="w-full max-w-xs">
               <input
@@ -67,13 +88,19 @@ export default function SecurityPage() {
             </div>
           </div>
         ) : (
-          <p className="text-center py-10">Cargando protocolos de seguridad...</p>
+          <p className="text-center py-10">
+            Cargando protocolos de seguridad...
+          </p>
         )}
 
         {status.msg && (
-          <div className={`mt-6 p-4 rounded-lg text-center font-medium ${
-            status.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
+          <div
+            className={`mt-6 p-4 rounded-lg text-center font-medium ${
+              status.type === 'success'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
             {status.msg}
           </div>
         )}

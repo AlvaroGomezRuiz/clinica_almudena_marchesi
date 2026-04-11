@@ -1,18 +1,71 @@
 import base64
+import hashlib
+import hmac
 import os
+import re
 from datetime import date, datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 from core.audit import registrar_accion
-from core.security import encrypt_data, get_current_user
+from core.security import decrypt_data, encrypt_data, get_current_user
+from core.config import settings
 from db.session import get_db
 from models.base import Paciente, Usuario
 from schemas.paciente_schema import PacienteCreate, PacienteResponse
 
 router = APIRouter()
+
+
+def _decrypt_if_fernet(value: Optional[str]) -> Optional[str]:
+    if value is None or value == "":
+        return value
+
+    # Los tokens Fernet típicamente empiezan por "gAAAA".
+    if value.startswith("gAAAA"):
+        decrypted = decrypt_data(value)
+        if decrypted.startswith("[DATOS CORRUPTOS"):
+            return value
+        return decrypted
+
+    return value
+
+
+def _normalize_name_for_bidx(value: str) -> str:
+    return re.sub(r"\s+", " ", value.strip()).lower()
+
+
+def _blind_index(value: str, context: str) -> str:
+    msg = f"bidx:{context}:{value}".encode("utf-8")
+    return hmac.new(settings.SECRET_KEY.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+
+
+def _serialize_paciente(paciente: Paciente) -> dict:
+    dni_nie = getattr(paciente, "dni_nie", None)
+    nombre_completo = getattr(paciente, "nombre_completo", None)
+    telefono = getattr(paciente, "telefono", None)
+    email = getattr(paciente, "email", None)
+    motivo_consulta_inicial = getattr(paciente, "motivo_consulta_inicial", None)
+    experiencia_terapia = getattr(paciente, "experiencia_terapia", None)
+    motivo_consulta = getattr(paciente, "motivo_consulta", None)
+
+    return {
+        "id": paciente.id,
+        "dni_nie": _decrypt_if_fernet(dni_nie) or "",
+        "nombre_completo": _decrypt_if_fernet(nombre_completo) or "",
+        "telefono": _decrypt_if_fernet(telefono),
+        "email": _decrypt_if_fernet(email) or "",
+        "fecha_nacimiento": paciente.fecha_nacimiento,
+        "motivo_consulta_inicial": _decrypt_if_fernet(motivo_consulta_inicial),
+        "experiencia_terapia": _decrypt_if_fernet(experiencia_terapia),
+        "motivo_consulta": _decrypt_if_fernet(motivo_consulta),
+        "consentimiento_rgpd": paciente.consentimiento_rgpd,
+        "fecha_alta": paciente.fecha_alta,
+        "activo": paciente.activo,
+    }
 
 
 # --- 1. LISTAR PACIENTES (BÚSQUEDA + PAGINACIÓN + JWT) ---
@@ -28,15 +81,28 @@ def listar_pacientes(
     query = db.query(Paciente).filter(Paciente.activo == True)
 
     if search:
-        search_term = f"%{search.strip()}%"
-        search_clean = f"%{search.strip().replace('-', '').replace(' ', '')}%"
+        term = search.strip()
+        dni_candidate = term.upper().replace("-", "").replace(" ", "")
+        phone_candidate = re.sub(r"\D", "", term)
+        name_candidate = _normalize_name_for_bidx(term)
 
-        query = query.filter(
-            (Paciente.nombre_completo.ilike(search_term))
-            | (Paciente.dni_nie.ilike(search_clean))
-        )
+        dni_bidx = _blind_index(dni_candidate, "dni") if dni_candidate else None
+        phone_bidx = _blind_index(phone_candidate, "phone") if phone_candidate else None
+        name_bidx = _blind_index(name_candidate, "name") if name_candidate else None
 
-    return query.offset(skip).limit(limit).all()
+        filters = []
+        if dni_bidx:
+            filters.append(Paciente.dni_nie_bidx == dni_bidx)
+        if phone_bidx:
+            filters.append(Paciente.telefono_bidx == phone_bidx)
+        if name_bidx:
+            filters.append(Paciente.nombre_completo_bidx == name_bidx)
+
+        if filters:
+            query = query.filter(sa.or_(*filters))
+
+    pacientes = query.offset(skip).limit(limit).all()
+    return [_serialize_paciente(p) for p in pacientes]
 
 
 # --- 2. CREAR PACIENTE (NORMALIZACIÓN + AUDITORÍA) ---
@@ -49,11 +115,17 @@ def crear_paciente(
     # 1. Normalización de Datos
     dni_limpio = paciente.dni_nie.strip().upper().replace("-", "").replace(" ", "")
     nombre_limpio = paciente.nombre_completo.strip().title()
+    telefono_limpio = paciente.telefono.strip() if paciente.telefono else None
+    telefono_digits = re.sub(r"\D", "", telefono_limpio or "")
+
+    dni_bidx = _blind_index(dni_limpio, "dni")
+    nombre_bidx = _blind_index(_normalize_name_for_bidx(nombre_limpio), "name")
+    telefono_bidx = _blind_index(telefono_digits, "phone") if telefono_digits else None
 
     # 2. Defensa contra duplicados
     db_paciente = (
         db.query(Paciente)
-        .filter((Paciente.dni_nie == dni_limpio) | (Paciente.email == paciente.email))
+        .filter((Paciente.dni_nie_bidx == dni_bidx) | (Paciente.email == paciente.email))
         .first()
     )
 
@@ -69,14 +141,35 @@ def crear_paciente(
         else ""
     )
 
+    experiencia_encriptada = (
+        encrypt_data(paciente.experiencia_terapia)
+        if paciente.experiencia_terapia
+        else ""
+    )
+
+    motivo_consulta_encriptado = (
+        encrypt_data(paciente.motivo_consulta)
+        if paciente.motivo_consulta
+        else ""
+    )
+
+    dni_encriptado = encrypt_data(dni_limpio)
+    nombre_encriptado = encrypt_data(nombre_limpio)
+    telefono_encriptado = encrypt_data(telefono_limpio) if telefono_limpio else None
+
     nuevo_paciente = Paciente(
-        dni_nie=dni_limpio,
-        nombre_completo=nombre_limpio,
-        telefono=paciente.telefono,
+        dni_nie=dni_encriptado,
+        dni_nie_bidx=dni_bidx,
+        nombre_completo=nombre_encriptado,
+        nombre_completo_bidx=nombre_bidx,
+        telefono=telefono_encriptado,
+        telefono_bidx=telefono_bidx,
         email=paciente.email,
         fecha_nacimiento=paciente.fecha_nacimiento,
         fecha_alta=date.today(),
         motivo_consulta_inicial=motivo_encriptado,
+        experiencia_terapia=experiencia_encriptada,
+        motivo_consulta=motivo_consulta_encriptado,
         consentimiento_rgpd=paciente.consentimiento_rgpd,
         activo=True,
     )
@@ -96,7 +189,7 @@ def crear_paciente(
 
     db.commit()
     db.refresh(nuevo_paciente)
-    return nuevo_paciente
+    return _serialize_paciente(nuevo_paciente)
 
 
 # --- 3. OBTENER UN PACIENTE ---
@@ -114,7 +207,7 @@ def obtener_paciente(
 
     if not paciente:
         raise HTTPException(status_code=404, detail="Paciente no encontrado.")
-    return paciente
+    return _serialize_paciente(paciente)
 
 
 # --- 4. BORRADO LÓGICO (SOFT DELETE) ---
@@ -138,7 +231,7 @@ def eliminar_paciente_logico(
             accion="SOFT_DELETE",
             tabla="pacientes",
             registro_id=paciente_id,
-            detalles=f"Baja lógica de {paciente.nombre_completo}",
+            detalles=f"Baja lógica de {_decrypt_if_fernet(getattr(paciente, 'nombre_completo', None)) or ''}",
         )
 
     db.commit()
@@ -166,12 +259,12 @@ def restaurar_paciente(
                 accion="RESTAURACION",
                 tabla="pacientes",
                 registro_id=paciente_id,
-                detalles=f"Acceso restaurado para {paciente.nombre_completo}",
+                    detalles=f"Acceso restaurado para {_decrypt_if_fernet(getattr(paciente, 'nombre_completo', None)) or ''}",
             )
         db.commit()
         db.refresh(paciente)
 
-    return paciente
+    return _serialize_paciente(paciente)
 
 
 # --- 6. ELIMINACIÓN PERMANENTE (RGPD - EL BOTÓN ROJO) ---
@@ -194,7 +287,7 @@ def eliminar_paciente_definitivo(
             accion="BORRADO_FISICO_RGPD",
             tabla="pacientes",
             registro_id=paciente_id,
-            detalles=f"DESTRUCCIÓN TOTAL DE DATOS de {paciente.nombre_completo}",
+            detalles=f"DESTRUCCIÓN TOTAL DE DATOS de {_decrypt_if_fernet(getattr(paciente, 'nombre_completo', None)) or ''}",
         )
 
     db.delete(paciente)

@@ -26,19 +26,67 @@ class Usuario(Base):
     def __repr__(self):
         return f"<Usuario {self.username}>"
 
+
+# ==========================================
+# 1B. SESIONES (Confiar en este dispositivo)
+# ==========================================
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+
+    jti = Column(String(128), unique=True, index=True, nullable=False)
+    trusted = Column(Boolean, default=False, nullable=False)
+
+    device_fingerprint_hash = Column(String(64), nullable=True, index=True)
+    user_agent_hash = Column(String(64), nullable=False)
+
+    ip_first = Column(String(45), nullable=False)
+    ip_last = Column(String(45), nullable=False)
+    ip_network = Column(String(64), nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    revoked_at = Column(DateTime, nullable=True, index=True)
+
+    admin_ip_lock = Column(String(45), nullable=True)
+
+    usuario = relationship("Usuario")
+
+
+# ==========================================
+# 1C. DEFENSA ACTIVA (Bloqueo IP por fallos)
+# ==========================================
+class AuthIPThrottle(Base):
+    __tablename__ = "auth_ip_throttle"
+
+    ip = Column(String(45), primary_key=True)
+    failures = Column(Integer, nullable=False, default=0)
+    first_failure_at = Column(DateTime, nullable=True)
+    last_failure_at = Column(DateTime, nullable=True)
+    blocked_until = Column(DateTime, nullable=True, index=True)
+
 # ==========================================
 # 2. MODELOS CLÍNICOS
 # ==========================================
 class Paciente(Base):
     __tablename__ = "pacientes"
     id = Column(String(36), primary_key=True, default=generar_uuid)
-    dni_nie = Column(String(20), unique=True, index=True, nullable=False)
-    nombre_completo = Column(String(100), nullable=False, index=True)
+    # Campos sensibles: se almacenan cifrados (Fernet) y se indexan vía blind index.
+    dni_nie = Column(String(255), nullable=False)
+    dni_nie_bidx = Column(String(64), unique=True, index=True, nullable=True)
+    nombre_completo = Column(String(255), nullable=False)
+    nombre_completo_bidx = Column(String(64), index=True, nullable=True)
     email = Column(String(100), unique=True, index=True)
-    telefono = Column(String(20))
+    telefono = Column(String(255))
+    telefono_bidx = Column(String(64), index=True, nullable=True)
     fecha_nacimiento = Column(Date)
     fecha_alta = Column(Date)
     motivo_consulta_inicial = Column(Text)
+    experiencia_terapia = Column(String(255), nullable=True)
+    motivo_consulta = Column(Text, nullable=True)
     consentimiento_rgpd = Column(Boolean, default=False, nullable=False)
     firma_rgpd_path = Column(String(255), nullable=True)
     activo = Column(Boolean, default=True, nullable=False)
@@ -109,6 +157,7 @@ class Pago(Base):
     paciente_id = Column(String(36), ForeignKey("pacientes.id"), nullable=False)
     cita_id = Column(String(36), ForeignKey("citas.id"), nullable=True)
     bono_id = Column(String(36), ForeignKey("bonos_pacientes.id"), nullable=True)
+    stripe_event_id = Column(String(255), unique=True, index=True, nullable=True)
     referencia_redsys = Column(String(100), unique=True)
     importe_centimos = Column(Integer, nullable=False)
     estado_transaccion = Column(String(50), default="Pendiente")
@@ -130,3 +179,38 @@ class Auditoria(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     usuario = relationship("Usuario")
+
+
+# ==========================================
+# 3. OTP (Registro Verificado Anti-Bots)
+# ==========================================
+class OTP(Base):
+    __tablename__ = "otp_challenges"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    purpose = Column(String(32), nullable=False)
+    channel = Column(String(16), nullable=False)
+    destination = Column(String(320), nullable=False)
+    code_hash = Column(String(255), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempts = Column(Integer, nullable=False, default=0)
+    consumed_at = Column(DateTime, nullable=True)
+
+    usuario = relationship("Usuario")
+
+
+# ==========================================
+# 4. CHAT (Cifrado a Nivel de Aplicación)
+# ==========================================
+class Mensajes(Base):
+    __tablename__ = "mensajes"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    conversation_id = Column(String(36), nullable=False, index=True)
+    sender_user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    body_ciphertext = Column(Text, nullable=False)
+    encryption_version = Column(String(10), nullable=False, default="v1")
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    sender = relationship("Usuario")

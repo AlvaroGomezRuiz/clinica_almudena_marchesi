@@ -1,10 +1,46 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from db.session import get_db
-from models.base import Pago, Cita
+from core.security import get_current_user
+from models.base import Pago, Cita, Paciente, Usuario
 from schemas.pago_schema import PagoWebhook
 
 router = APIRouter()
+
+
+@router.get("/access-status")
+def access_status(
+    db: Session = Depends(get_db),
+    current_username: str = Depends(get_current_user),
+):
+    usuario = db.query(Usuario).filter(Usuario.username == current_username).first()
+    if not usuario or not bool(usuario.is_active):
+        raise HTTPException(status_code=401, detail="Sesión inválida")
+
+    is_admin = bool(usuario.is_admin)
+    if is_admin:
+        return {"has_paid": True, "is_admin": True}
+
+    paciente = (
+        db.query(Paciente)
+        .filter(Paciente.email == current_username, Paciente.activo == True)
+        .first()
+    )
+
+    if not paciente:
+        return {"has_paid": False, "is_admin": False}
+
+    pago_ok = (
+        db.query(Pago)
+        .filter(
+            Pago.paciente_id == paciente.id,
+            Pago.activo == True,
+            Pago.estado_transaccion == "Completado",
+        )
+        .first()
+    )
+
+    return {"has_paid": bool(pago_ok), "is_admin": False}
 
 
 @router.post("/webhook")

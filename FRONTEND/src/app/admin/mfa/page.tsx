@@ -3,21 +3,22 @@ import { useState, useEffect } from 'react';
 import axios from '@/lib/axios'; // Usa tu instancia de axios
 
 export default function MFAPage() {
-  const [qr, setQr] = useState("");
-  const [code, setCode] = useState("");
+  const [qr, setQr] = useState('');
+  const [code, setCode] = useState('');
 
   // 1. Cargamos el QR al entrar
   useEffect(() => {
-    axios.get(`/auth/mfa/setup?username=almudena`) // Ajusta el username dinámico
-      .then(res => setQr(res.data.qr_code));
+    axios
+      .get(`/auth/mfa/setup?username=almudena`) // Ajusta el username dinámico
+      .then((res) => setQr(res.data.qr_code));
   }, []);
 
   const activateMFA = async () => {
     try {
       await axios.post('/auth/mfa/enable', { username: 'almudena', code });
-      alert("¡Búnker Blindado! MFA activado.");
+      alert('¡Búnker Blindado! MFA activado.');
     } catch (err) {
-      alert("Error al activar. Verifica el código.");
+      alert('Error al activar. Verifica el código.');
     }
   };
 
@@ -26,7 +27,12 @@ export default function MFAPage() {
       <h1 className="text-2xl font-bold">Seguridad de Grado Bancario</h1>
       <p className="mb-4">Escanea este código con Google Authenticator:</p>
 
-      {qr && <img src={qr} alt="QR Code" className="border-4 p-2 mb-4" />}
+      {qr && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="QR Code" className="border-4 p-2 mb-4" />
+        </>
+      )}
 
       <input
         type="text"

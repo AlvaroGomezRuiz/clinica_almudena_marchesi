@@ -27,6 +27,7 @@ from api.servicios import router as servicios_router
 from api.citas import router as citas_router
 from api.pagos import router as pagos_router
 from api.auth import router as auth_router
+from api.stripe import router as stripe_router
 
 load_dotenv()
 MODO_ENTORNO = os.getenv("ENV", "development")
@@ -48,7 +49,7 @@ if SENTRY_DSN:
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -57,25 +58,48 @@ app = FastAPI(
     title="API Clínica Almudena",
     version="1.0.0",
     docs_url=None if MODO_ENTORNO == "production" else "/docs",
-    redoc_url=None if MODO_ENTORNO == "production" else "/redoc"
+    redoc_url=None if MODO_ENTORNO == "production" else "/redoc",
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler) #type: ignore
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
 
 # 3. MIDDLEWARES (Capas de Defensa)
+
 
 # --- NUEVO: Cabeceras de Seguridad Paranoicas ---
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["X-Frame-Options"] = "DENY" # Anti-Clickjacking
-    response.headers["X-Content-Type-Options"] = "nosniff" # Anti-MIME-Sniffing
+    response.headers["X-Frame-Options"] = "DENY"  # Anti-Clickjacking
+    response.headers["X-Content-Type-Options"] = "nosniff"  # Anti-MIME-Sniffing
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # CSP: Solo permitimos scripts de nuestro origen
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
+
+    path = request.url.path
+    is_docs_route = (
+        path.startswith("/docs") or path.startswith("/redoc") or path == "/openapi.json"
+    )
+
+    # CSP: En producción queremos ser estrictos, pero Swagger UI requiere scripts inline.
+    if is_docs_route:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' data: https://cdn.jsdelivr.net; "
+            "img-src 'self' data: https://cdn.jsdelivr.net https://fastapi.tiangolo.com;"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline';"
+        )
     return response
+
 
 class LimitUploadSize(BaseHTTPMiddleware):
     def __init__(self, app, max_size: int):
@@ -87,24 +111,28 @@ class LimitUploadSize(BaseHTTPMiddleware):
             content_length = request.headers.get("content-length")
             if content_length and int(content_length) > self.max_size:
                 return JSONResponse(
-                    status_code=413,
-                    content={"detail": "Archivo demasiado grande."}
+                    status_code=413, content={"detail": "Archivo demasiado grande."}
                 )
         return await call_next(request)
 
+
 app.add_middleware(LimitUploadSize, max_size=20971520)
+
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
-    logger.info(f"ACCESO | {request.method} {request.url.path} | STATUS: {response.status_code} | {process_time:.2f}ms")
+    logger.info(
+        f"ACCESO | {request.method} {request.url.path} | STATUS: {response.status_code} | {process_time:.2f}ms"
+    )
     return response
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -116,6 +144,8 @@ app.include_router(pacientes_router, prefix="/api/v1/pacientes", tags=["Paciente
 app.include_router(servicios_router, prefix="/api/v1/servicios", tags=["Servicios"])
 app.include_router(citas_router, prefix="/api/v1/citas", tags=["Citas"])
 app.include_router(pagos_router, prefix="/api/v1/pagos", tags=["Pagos"])
+app.include_router(stripe_router, prefix="/api/v1/stripe", tags=["Stripe"])
+
 
 @app.get("/health")
 def health_check():

@@ -29,6 +29,7 @@ backups/
 htmlcov/
 
 # --- FRONTEND: NODE / NEXT.JS ---
+prototipo/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
