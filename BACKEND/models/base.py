@@ -1,11 +1,23 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, Date, DateTime, ForeignKey, Text, Index
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Text,
+    Index,
+)
 from sqlalchemy.orm import relationship
 from db.session import Base
 
+
 def generar_uuid():
     return str(uuid.uuid4())
+
 
 # ==========================================
 # 1. BÚNKER MFA (Seguridad)
@@ -16,12 +28,21 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False, default="paciente")
     is_admin = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
 
     # Campos MFA
     mfa_secret = Column(String(32), nullable=True)
     mfa_enabled = Column(Boolean, default=False)
+
+    # Perfil profesional (admin)
+    perfil_nombre = Column(String(255), nullable=True)
+    perfil_numero_colegiada = Column(String(64), nullable=True)
+    perfil_email = Column(String(255), nullable=True)
+
+    # Alertas de seguridad
+    intrusion_alerts_enabled = Column(Boolean, default=True)
 
     def __repr__(self):
         return f"<Usuario {self.username}>"
@@ -48,6 +69,7 @@ class UserSession(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_seen_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    mfa_verified_at = Column(DateTime, nullable=True, index=True)
     expires_at = Column(DateTime, nullable=False, index=True)
     revoked_at = Column(DateTime, nullable=True, index=True)
 
@@ -67,6 +89,7 @@ class AuthIPThrottle(Base):
     first_failure_at = Column(DateTime, nullable=True)
     last_failure_at = Column(DateTime, nullable=True)
     blocked_until = Column(DateTime, nullable=True, index=True)
+
 
 # ==========================================
 # 2. MODELOS CLÍNICOS
@@ -96,6 +119,7 @@ class Paciente(Base):
     pagos = relationship("Pago", back_populates="paciente")
     historial = relationship("HistorialSesiones", back_populates="paciente")
 
+
 class Servicio(Base):
     __tablename__ = "servicios"
     id = Column(String(36), primary_key=True, default=generar_uuid)
@@ -106,6 +130,7 @@ class Servicio(Base):
 
     citas = relationship("Cita", back_populates="servicio")
     bonos = relationship("BonoPaciente", back_populates="servicio")
+
 
 class Cita(Base):
     __tablename__ = "citas"
@@ -122,6 +147,28 @@ class Cita(Base):
     pago = relationship("Pago", back_populates="cita", uselist=False)
     sesion = relationship("HistorialSesiones", back_populates="cita", uselist=False)
 
+
+class AgendaBloqueo(Base):
+    __tablename__ = "agenda_bloqueos"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    inicio_iso = Column(DateTime, nullable=False, index=True)
+    fin_iso = Column(DateTime, nullable=False, index=True)
+    motivo = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    activo = Column(Boolean, default=True, nullable=False, index=True)
+
+
+class AgendaNotaDia(Base):
+    __tablename__ = "agenda_notas_dia"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    dia = Column(Date, nullable=False, unique=True, index=True)
+    nota_ciphertext = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class HistorialSesiones(Base):
     __tablename__ = "historial_sesiones"
     id = Column(String(36), primary_key=True, default=generar_uuid)
@@ -137,6 +184,7 @@ class HistorialSesiones(Base):
     paciente = relationship("Paciente", back_populates="historial")
     cita = relationship("Cita", back_populates="sesion")
 
+
 class BonoPaciente(Base):
     __tablename__ = "bonos_pacientes"
     id = Column(String(36), primary_key=True, default=generar_uuid)
@@ -150,6 +198,7 @@ class BonoPaciente(Base):
     paciente = relationship("Paciente", back_populates="bonos")
     servicio = relationship("Servicio", back_populates="bonos")
     pagos = relationship("Pago", back_populates="bono")
+
 
 class Pago(Base):
     __tablename__ = "pagos"
@@ -168,10 +217,26 @@ class Pago(Base):
     cita = relationship("Cita", back_populates="pago")
     bono = relationship("BonoPaciente", back_populates="pagos")
 
+
+class FacturacionNota(Base):
+    __tablename__ = "facturacion_notas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nota = Column(Text, nullable=False, default="")
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    updated_by_user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+
+    updated_by = relationship("Usuario")
+
+
 class Auditoria(Base):
     __tablename__ = "auditoria"
     id = Column(String(36), primary_key=True, default=generar_uuid)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False) # Conectado a tabla segura
+    usuario_id = Column(
+        Integer, ForeignKey("usuarios.id"), nullable=False
+    )  # Conectado a tabla segura
     accion = Column(String(100), nullable=False)
     tabla_afectada = Column(String(50))
     registro_id = Column(String(36))
@@ -201,6 +266,77 @@ class OTP(Base):
 
 
 # ==========================================
+# 4A. RECURSOS (Repositorio + Asignación a Paciente)
+# ==========================================
+class Recurso(Base):
+    __tablename__ = "recursos"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    titulo = Column(String(255), nullable=False)
+    tipo = Column(String(50), nullable=False, default="archivo")
+    categoria = Column(String(50), nullable=False, default="recurso", index=True)
+
+    original_filename = Column(String(255), nullable=True)
+    storage_path = Column(String(255), nullable=False)
+    mime_type = Column(String(127), nullable=True)
+    size_bytes = Column(Integer, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    activo = Column(Boolean, default=True, nullable=False, index=True)
+
+    asignaciones = relationship("RecursoAsignacion", back_populates="recurso")
+
+
+class RecursoAsignacion(Base):
+    __tablename__ = "recurso_asignaciones"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    recurso_id = Column(
+        String(36), ForeignKey("recursos.id"), nullable=False, index=True
+    )
+    paciente_id = Column(
+        String(36), ForeignKey("pacientes.id"), nullable=False, index=True
+    )
+    assigned_by_user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    activo = Column(Boolean, default=True, nullable=False, index=True)
+
+    recurso = relationship("Recurso", back_populates="asignaciones")
+    paciente = relationship("Paciente")
+    assigned_by = relationship("Usuario")
+
+
+Index(
+    "ux_recurso_asignaciones_recurso_paciente",
+    RecursoAsignacion.recurso_id,
+    RecursoAsignacion.paciente_id,
+    unique=True,
+)
+
+
+# ==========================================
+# 4B. CONVERSACIONES (Chat)
+# ==========================================
+class Conversacion(Base):
+    __tablename__ = "conversaciones"
+
+    id = Column(String(36), primary_key=True, default=generar_uuid)
+    paciente_id = Column(
+        String(36), ForeignKey("pacientes.id"), nullable=False, index=True
+    )
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_message_at = Column(DateTime, nullable=True, index=True)
+
+    archived_at = Column(DateTime, nullable=True, index=True)
+    deleted_at = Column(DateTime, nullable=True, index=True)
+    activo = Column(Boolean, default=True, nullable=False, index=True)
+
+    paciente = relationship("Paciente")
+
+
+# ==========================================
 # 4. CHAT (Cifrado a Nivel de Aplicación)
 # ==========================================
 class Mensajes(Base):
@@ -208,7 +344,9 @@ class Mensajes(Base):
 
     id = Column(String(36), primary_key=True, default=generar_uuid)
     conversation_id = Column(String(36), nullable=False, index=True)
-    sender_user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    sender_user_id = Column(
+        Integer, ForeignKey("usuarios.id"), nullable=False, index=True
+    )
     body_ciphertext = Column(Text, nullable=False)
     encryption_version = Column(String(10), nullable=False, default="v1")
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

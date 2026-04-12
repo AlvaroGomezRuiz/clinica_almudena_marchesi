@@ -19,15 +19,20 @@ from dotenv import load_dotenv
 
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from core.security import limiter
+from utils.security import limiter
 
 # Importación de Rutas
-from api.pacientes import router as pacientes_router
-from api.servicios import router as servicios_router
-from api.citas import router as citas_router
-from api.pagos import router as pagos_router
-from api.auth import router as auth_router
-from api.stripe import router as stripe_router
+from services.pacientes import router as pacientes_router
+from services.servicios import router as servicios_router
+from services.citas import router as citas_router
+from services.pagos import router as pagos_router
+from services.auth import router as auth_router
+from services.stripe import router as stripe_router
+from services.admin import router as admin_router
+from services.facturas import router as facturas_router
+from services.recursos import router as recursos_router
+from services.mensajes import router as mensajes_router
+from services.configuracion import router as configuracion_router
 
 load_dotenv()
 MODO_ENTORNO = os.getenv("ENV", "development")
@@ -140,11 +145,16 @@ app.add_middleware(
 
 # 4. INYECCIÓN DE RUTAS
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Autenticación"])
+app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
+app.include_router(configuracion_router, prefix="/api/v1/admin", tags=["Configuración"])
 app.include_router(pacientes_router, prefix="/api/v1/pacientes", tags=["Pacientes"])
 app.include_router(servicios_router, prefix="/api/v1/servicios", tags=["Servicios"])
 app.include_router(citas_router, prefix="/api/v1/citas", tags=["Citas"])
 app.include_router(pagos_router, prefix="/api/v1/pagos", tags=["Pagos"])
+app.include_router(facturas_router, prefix="/api/v1/facturas", tags=["Facturas"])
 app.include_router(stripe_router, prefix="/api/v1/stripe", tags=["Stripe"])
+app.include_router(recursos_router, prefix="/api/v1/recursos", tags=["Recursos"])
+app.include_router(mensajes_router, prefix="/api/v1/mensajes", tags=["Mensajes"])
 
 
 @app.get("/health")

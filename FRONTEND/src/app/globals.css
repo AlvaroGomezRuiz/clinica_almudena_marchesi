@@ -37,11 +37,14 @@
   }
 
   .sticker-card {
-    @apply shadow-editorial transition-transform duration-300 ease-out;
+    border-width: 5px;
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(75, 100, 95, 0.05);
   }
 
-  .sticker-card:hover {
-    transform: translate(-4px, -4px);
+  .raw-card {
+    border-width: 5px;
+    border-color: rgba(121, 123, 118, 0.15);
   }
 
   .sticker-border {
@@ -75,5 +78,11 @@
 
   .header-link.active {
     @apply border-b-2 border-primary pb-1;
+  }
+}
+
+@layer utilities {
+  .bento-card {
+    border: 1px solid rgba(121, 123, 118, 0.1);
   }
 }

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
+
 
 class PacienteBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -15,14 +16,14 @@ class PacienteBase(BaseModel):
     motivo_consulta: Optional[str] = Field(None, max_length=2000)
     consentimiento_rgpd: bool = Field(default=False)
 
-    @field_validator('dni_nie')
+    @field_validator("dni_nie")
     @classmethod
     def validar_dni_nie_real(cls, v: str):
         v = v.upper().replace("-", "").replace(" ", "")
         letras = "TRWAGMYFPDXBNJZSQVHLCKE"
 
         # Lógica para NIE (X, Y, Z)
-        nie_prefix = {'X': '0', 'Y': '1', 'Z': '2'}
+        nie_prefix = {"X": "0", "Y": "1", "Z": "2"}
         temp_v = v
         if temp_v[0] in nie_prefix:
             temp_v = nie_prefix[temp_v[0]] + temp_v[1:]
@@ -40,8 +41,10 @@ class PacienteBase(BaseModel):
 
         return v
 
+
 class PacienteCreate(PacienteBase):
     pass
+
 
 class PacienteResponse(PacienteBase):
     id: str
@@ -49,3 +52,26 @@ class PacienteResponse(PacienteBase):
     activo: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PacienteSesionItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    cita_id: str
+    inicio_iso: datetime
+    fin_iso: datetime
+    servicio_nombre: str
+    estado_cita: str
+    notas_clinicas: str = ""
+    tareas_asignadas: str = ""
+    estado_emocional: str = ""
+    fecha_registro: datetime
+    session_number: int = Field(..., ge=1)
+
+
+class PacienteHistorialResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int
+    items: list[PacienteSesionItem]

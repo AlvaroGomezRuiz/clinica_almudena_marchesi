@@ -12,6 +12,7 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def init_database():
     print("[1/2] Forjando nueva estructura de tablas...")
     Base.metadata.create_all(bind=engine)
@@ -26,9 +27,10 @@ def init_database():
         new_usuario = Usuario(
             username="almudena",
             hashed_password=hashed_pw,
+            role="admin",
             is_admin=True,
             is_active=True,
-            mfa_enabled=False
+            mfa_enabled=False,
         )
         db.add(new_usuario)
         db.commit()
@@ -38,6 +40,7 @@ def init_database():
 
     db.close()
     print("IGNICIÓN COMPLETADA.")
+
 
 if __name__ == "__main__":
     init_database()

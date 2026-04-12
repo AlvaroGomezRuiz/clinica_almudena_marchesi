@@ -2,13 +2,14 @@ import sys
 import os
 
 # 1. FORZAR RUTA DE PROYECTO (Añadir la raíz al buscador de Python)
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from core.security import encrypt_data, decrypt_data
+from utils.security import encrypt_data, decrypt_data
 from dotenv import load_dotenv
 
 # 2. CARGAR ENTORNO
 load_dotenv()
+
 
 def test_bunker():
     dato_sensible = "Paciente con ansiedad severa y fobia a los espacios cerrados"
@@ -32,6 +33,7 @@ def test_bunker():
 
     except Exception as e:
         print(f"\n❌ FALLO DE SISTEMA: {str(e)}")
+
 
 if __name__ == "__main__":
     test_bunker()

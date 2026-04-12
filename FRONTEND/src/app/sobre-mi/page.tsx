@@ -1,5 +1,7 @@
 import Image from 'next/image';
 
+import { CLINIC_ADDRESS } from '@/lib/clinic';
+
 export default function SobreMiPage() {
   return (
     <div className="bg-background text-on-surface selection:bg-primary-container selection:text-on-primary-container">
@@ -240,7 +242,7 @@ export default function SobreMiPage() {
               Cookies
             </a>
             <span className="text-stone-500 text-sm mt-4 italic">
-              Calle de la Princesa, Moncloa
+              {CLINIC_ADDRESS}
             </span>
           </div>
           <div className="flex flex-col space-y-4">

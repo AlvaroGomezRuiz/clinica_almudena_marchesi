@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 import zxcvbn from 'zxcvbn';
-import { verifyOtpAction } from '@/lib/auth/registerActions';
+import { verifyOtpAction } from '@/services/auth/registerActions';
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();

@@ -5,6 +5,7 @@
 # --- ENTORNO VIRTUAL Y SECRETOS (CRÍTICO) ---
 # Nunca subir las llaves del búnker ni las librerías locales.
 backend/venv/
+BACKEND/venv/
 .env
 .env.local
 .env.*.local
@@ -13,6 +14,7 @@ backend/venv/
 # --- DATOS SENSIBLES Y PRIVACIDAD MÉDICA ---
 # Esta información reside exclusivamente en el búnker local o producción.
 backend/uploads/
+BACKEND/uploads/
 backups/
 *.sql
 *.gz
@@ -31,9 +33,13 @@ htmlcov/
 # --- FRONTEND: NODE / NEXT.JS ---
 prototipo/
 frontend/node_modules/
+FRONTEND/node_modules/
 frontend/.next/
+FRONTEND/.next/
 frontend/out/
+FRONTEND/out/
 frontend/build/
+FRONTEND/build/
 .eslintcache
 npm-debug.log*
 yarn-debug.log*
@@ -68,3 +74,4 @@ desktop.ini
 
 # --- MIGRACIONES DE BASE DE DATOS ---
 backend/alembic/versions/*.pyc
+BACKEND/alembic/versions/*.pyc

@@ -1,7 +1,8 @@
 import Link from 'next/link';
 
 import CheckoutButton from '@/components/payments/CheckoutButton';
-import { createCheckoutAction } from '@/lib/payments/actions';
+import { CLINIC_SESSION_PRICE_LABEL } from '@/lib/clinic';
+import { createCheckoutAction } from '@/services/payments/actions';
 
 async function checkoutFormAction(formData: FormData): Promise<void> {
   'use server';
@@ -23,7 +24,7 @@ const PLANS: Plan[] = [
     title: 'Terapia Individual',
     description:
       'Sesión individual de 50 minutos. Ideal para iniciar tu proceso.',
-    priceLabel: '60€',
+    priceLabel: CLINIC_SESSION_PRICE_LABEL,
     icon: 'person',
   },
   {

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
 
-import { loginAction } from '@/lib/auth/actions';
+import { loginAction } from '@/services/auth/actions';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -54,26 +54,36 @@ export default function LoginPage() {
 
           <div className="space-y-6 relative z-10 pt-8 border-t border-outline-variant/20">
             <div className="flex items-center gap-4 text-primary">
-              <span className="material-symbols-outlined text-2xl" data-icon="verified_user">
+              <span
+                className="material-symbols-outlined text-2xl"
+                data-icon="verified_user"
+              >
                 verified_user
               </span>
               <div className="flex flex-col">
                 <span className="font-label text-[10px] uppercase tracking-[0.2em] font-bold">
                   RGPD
                 </span>
-                <span className="text-xs text-on-surface-variant">Protección de datos (UE)</span>
+                <span className="text-xs text-on-surface-variant">
+                  Protección de datos (UE)
+                </span>
               </div>
             </div>
 
             <div className="flex items-center gap-4 text-primary">
-              <span className="material-symbols-outlined text-2xl" data-icon="lock">
+              <span
+                className="material-symbols-outlined text-2xl"
+                data-icon="lock"
+              >
                 lock
               </span>
               <div className="flex flex-col">
                 <span className="font-label text-[10px] uppercase tracking-[0.2em] font-bold">
                   AES-256
                 </span>
-                <span className="text-xs text-on-surface-variant">Cifrado en bóveda clínica</span>
+                <span className="text-xs text-on-surface-variant">
+                  Cifrado en bóveda clínica
+                </span>
               </div>
             </div>
           </div>
@@ -126,7 +136,10 @@ export default function LoginPage() {
                 type="checkbox"
                 className="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary-container"
               />
-              <label htmlFor="trust_device" className="text-sm text-on-surface-variant">
+              <label
+                htmlFor="trust_device"
+                className="text-sm text-on-surface-variant"
+              >
                 Confiar en este dispositivo
               </label>
             </div>

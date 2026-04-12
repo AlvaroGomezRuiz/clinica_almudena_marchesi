@@ -6,6 +6,12 @@ type AccessStatus = {
   is_admin: boolean;
 };
 
+type JwtClaims = {
+  role?: unknown;
+  exp?: unknown;
+  iat?: unknown;
+};
+
 async function getAccessStatus(token: string): Promise<AccessStatus | null> {
   const backendApiUrl =
     process.env.BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
@@ -41,6 +47,62 @@ function nextWithPathHeader(request: NextRequest): NextResponse {
   });
 }
 
+function base64UrlToBase64(input: string): string {
+  const pad = '='.repeat((4 - (input.length % 4)) % 4);
+  return (input + pad).replace(/-/g, '+').replace(/_/g, '/');
+}
+
+function parseJwtClaims(token: string): JwtClaims | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = parts[1];
+    const json = atob(base64UrlToBase64(payload));
+    return JSON.parse(json) as JwtClaims;
+  } catch {
+    return null;
+  }
+}
+
+function isHalfConsumed(claims: JwtClaims | null): boolean {
+  const exp = typeof claims?.exp === 'number' ? claims.exp : null;
+  const iat = typeof claims?.iat === 'number' ? claims.iat : null;
+  if (!exp || !iat || exp <= iat) return false;
+  const ttl = exp - iat;
+  const halfTs = iat + ttl / 2;
+  const now = Date.now() / 1000;
+  return now >= halfTs && now < exp;
+}
+
+async function refreshSlidingSession(
+  backendApiUrl: string,
+  token: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${backendApiUrl}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    const data: unknown = await res.json().catch(() => null);
+    const refreshed = Boolean((data as any)?.refreshed);
+    const newToken =
+      typeof (data as any)?.access_token === 'string'
+        ? (data as any).access_token
+        : null;
+
+    return refreshed && newToken ? newToken : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
 
@@ -67,9 +129,12 @@ export async function middleware(request: NextRequest) {
   // Busca la credencial de acceso. Si tu cookie se llama 'access_token', cámbialo aquí.
   const token = request.cookies.get('auth_token')?.value;
 
+  const jwtClaims = token ? parseJwtClaims(token) : null;
+
   const isLoginPage = request.nextUrl.pathname.startsWith('/login');
   const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard');
   const isPortalPage = request.nextUrl.pathname.startsWith('/portal');
+  const isPagosPage = request.nextUrl.pathname.startsWith('/pagos');
   const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
   const isProtectedPage = isDashboardPage || isPortalPage || isAdminPage;
 
@@ -98,11 +163,36 @@ export async function middleware(request: NextRequest) {
   // Regla 2: Si ya tiene credencial e intenta ir al login -> Redirigir al búnker
   if (token && isLoginPage) {
     const status = await getAccessStatus(token);
-    const target =
-      status && !status.is_admin && !status.has_paid ? '/pagos' : '/dashboard';
+    const target = status?.is_admin
+      ? '/admin'
+      : status && !status.is_admin && !status.has_paid
+        ? '/pagos'
+        : '/portal';
     return withSecurityHeaders(
       NextResponse.redirect(new URL(target, request.url))
     );
+  }
+
+  // Regla 3: Sliding sessions (pacientes) -> refresh cuando token esté a medio consumir
+  if (
+    token &&
+    (isPortalPage || isDashboardPage || isPagosPage) &&
+    isHalfConsumed(jwtClaims)
+  ) {
+    const backendApiUrl =
+      process.env.BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+    const newToken = await refreshSlidingSession(backendApiUrl, token);
+    if (newToken) {
+      const res = nextWithPathHeader(request);
+      res.cookies.set('auth_token', newToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      return withSecurityHeaders(res);
+    }
   }
 
   // Si todo está en orden, permitir el paso

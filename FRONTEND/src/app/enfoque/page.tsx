@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
+import { CLINIC_ADDRESS } from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Enfoque | Almudena Marchesi',
 };
@@ -203,7 +205,7 @@ export default function EnfoquePage() {
                 className="text-stone-500 hover:text-[#4b645f] transition-transform hover:translate-x-1 duration-300 text-sm"
                 href="#"
               >
-                Calle de la Princesa, Moncloa
+                {CLINIC_ADDRESS}
               </a>
               <a
                 className="text-stone-500 hover:text-[#4b645f] transition-transform hover:translate-x-1 duration-300 text-sm"

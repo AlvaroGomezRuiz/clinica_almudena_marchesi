@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api from '@/lib/axios';
+import api from '@/services/axios';
 
 export default function DashboardPage() {
   const [userData, setUserData] = useState<any>(null);
@@ -14,7 +14,9 @@ export default function DashboardPage() {
         const response = await api.get('/api/v1/pacientes/');
         setUserData(response.data);
       } catch (err) {
-        setError('El backend ha repelido el ataque (Token inválido o ruta incorrecta).');
+        setError(
+          'El backend ha repelido el ataque (Token inválido o ruta incorrecta).'
+        );
       }
     };
     extraerDatos();
@@ -34,7 +36,9 @@ export default function DashboardPage() {
             </pre>
           </div>
         ) : (
-          <p className="text-gray-500 animate-pulse">Estableciendo conexión encriptada...</p>
+          <p className="text-gray-500 animate-pulse">
+            Estableciendo conexión encriptada...
+          </p>
         )}
       </div>
     </main>

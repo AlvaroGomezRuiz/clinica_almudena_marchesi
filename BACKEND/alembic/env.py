@@ -8,7 +8,15 @@ from sqlalchemy import pool
 from alembic import context
 
 from db.session import Base
-from models.base import Paciente, Servicio, Cita, HistorialSesiones, BonoPaciente, Pago
+from models.base import (
+    Paciente,
+    Servicio,
+    Cita,
+    HistorialSesiones,
+    BonoPaciente,
+    Pago,
+    OTP,
+)
 
 config = context.config
 

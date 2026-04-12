@@ -1,95 +1,160 @@
 # Manual Maestro de Operaciones: Clínica Almudena
 
+> **Ámbito:** Guía de operaciones para entorno local (Windows) y mantenimiento.
+> **Carpetas reales del proyecto:** `BACKEND/` y `FRONTEND/` (en Windows no importa mayúsculas/minúsculas, pero aquí se documenta el nombre real).
 
-##  Nivel 1: Infraestructura y Control Total (Docker)
+## Arranque rápido (recomendado)
+
+**1 comando** para levantar **MySQL (Docker) + Backend + Frontend** (logs centralizados):
+
+```powershell
+.\start_all.bat
+```
+
+- Requisitos: `BACKEND\venv\` creado + dependencias instaladas; Node.js con `npm` en `PATH`; Docker Desktop encendido.
+- Para detener Backend/Frontend: `CTRL+C` en esa consola.
+- Para apagar MySQL (Docker): usa el comando del **Nivel 1**.
+
+---
+
+## Nivel 1: Infraestructura y Control Total (Docker)
+
 **Uso:** Gestión del ciclo de vida del servidor y mantenimiento del motor de base de datos.
 
-| Acción                |         Comando           |            Uso Específico                              |
-| :---                  |          :---             |                :---                                    |
-| **Encender Búnker**   | `docker-compose up -d`    | Inicia la base de datos en segundo plano.              |
-| **Apagar Búnker**     | `docker-compose down`     | Cierra todos los servicios de forma segura.            |
-| **Estado de Celdas**  | `docker ps`               | Verifica qué contenedores están activos y sus puertos. |
-| **Ver Logs DB**       | `docker logs almudena_db` | Diagnóstico si la base de datos no arranca.            |
+> Nota: el proyecto usa `docker compose` (Docker Compose v2). Si tu equipo solo tiene `docker-compose`, puedes sustituirlo.
+
+| Acción                      | Comando                                 | Uso específico                              |
+| :-------------------------- | :-------------------------------------- | :------------------------------------------ |
+| **Encender Búnker (MySQL)** | `docker compose up -d mysql_almudena`   | Inicia la base de datos en segundo plano.   |
+| **Apagar Búnker**           | `docker compose down`                   | Cierra los servicios de forma segura.       |
+| **Estado de Celdas**        | `docker ps`                             | Verifica contenedores activos y puertos.    |
+| **Ver logs DB**             | `docker logs -f --tail 200 almudena_db` | Diagnóstico si la base de datos no arranca. |
 
 ---
-
 
 ## 🗄️ Nivel 2: Gestión de Datos (MySQL)
+
 **Contenedor:** `almudena_db` | **Base de Datos:** `almudena_clinic`
 
-🔑 Inventario de Credenciales:
-* **Root (Dios del Sistema)**
-    * Usuario: `root`
-    * Contraseña: `almudena`
-    * Uso: Control absoluto del motor MySQL. Solo se usa para mantenimiento crítico o cambios de estructura.
+🔑 Inventario de credenciales (DEV):
 
-* **API (Usuario Aplicación)**
-    * Usuario: `api_almudena`
-    * Contraseña: `almudena`
-    * Uso: Credenciales que usa el código Python (`.env`) para escribir y leer de la base de datos de forma automática.
+- **Root (mantenimiento)**
+  - Usuario: `root`
+  - Contraseña: definida en `MYSQL_ROOT_PASSWORD` (ver `docker-compose.yml` / `BACKEND/.env`).
+- **API (aplicación)**
+  - Usuario: `api_almudena`
+  - Contraseña: definida en `MYSQL_PASSWORD` / `DB_PASSWORD` (ver `docker-compose.yml` / `BACKEND/.env`).
 
+> Recomendación: no pegues llaves/contraseñas en este manual. Mantén los secretos en `BACKEND/.env` (y asegúrate de que **no** se versiona en Git) o en un gestor de secretos.
 
-* **COMANDOS DE ACCESO A TERMINAL**
-    * **Entrar como Root:**
-        ```powershell docker exec -it almudena_db mysql -u root -p```
-    * **Entrar como Usuario API:**
-        ```powershell docker exec -it almudena_db mysql -u api_almudena -p ```
+### Acceso a terminal (MySQL dentro del contenedor)
 
-* **COMANDOS DE BLINDAJE (PRIVILEGIOS MÍNIMOS)**
-    * **Una vez dentro de MySQL:**
-        ```sql REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'api_almudena'@'%'; GRANT SELECT, INSERT, UPDATE, DELETE ON almudena_clinic.* TO 'api_almudena'@'%'; FLUSH PRIVILEGES;```
+**Entrar como root:**
 
----
+```powershell
+docker exec -it almudena_db mysql -u root -p
+```
 
+**Entrar como usuario API:**
 
-### ⚙️ Nivel 3: El Cerebro (Backend FastAPI)
-**Puerto Local:** `8000` | **Documentación:** `http://localhost:8000/docs`
+```powershell
+docker exec -it almudena_db mysql -u api_almudena -p
+```
 
-* **COMANDOS BACKEND**
-1- cd backend
-2- .\venv\Scripts\activate
-3- uvicorn main:app --reload --port 8000
+### Blindaje (privilegios mínimos)
 
- 🔐 Seguridad Crítica (.env)
- **SECRET_KEY:** `193b53d679185f62a02ae0191327c478fa9f101d0f0650b8871a6fc090e43a74`
-    **Uso:** Firma los tokens JWT. Es la llave que permite a Almudena entrar al Dashboard
+Ejecutar **dentro de MySQL** (como `root`):
+
+```sql
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'api_almudena'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON almudena_clinic.* TO 'api_almudena'@'%';
+FLUSH PRIVILEGES;
+```
 
 ---
 
+## ⚙️ Nivel 3: El Cerebro (Backend FastAPI)
 
-### 💻 Nivel 4: Interfaz de Usuario (Frontend Next.js)
-Puerto Local: 3000 | Acceso: http://localhost:3000/login
+**Puerto local:** `8000` | **Docs (DEV):** `http://localhost:8000/docs` | **Health:** `http://localhost:8000/health`
 
-    👤 Acceso Humano (Login App)
-        Usuario: almudena
+### Variables de entorno críticas
 
-        Contraseña: Almudena2026!
+El backend carga `BACKEND/.env` y **no debe arrancar** si faltan llaves.
 
-Uso: Acceso diario al sistema de gestión para registrar pacientes y citas.
+- `DATABASE_URL` (ejemplo: `mysql+pymysql://...`)
+- `SECRET_KEY` (firma JWT)
+- `ENCRYPTION_KEY` (cifrado de campos sensibles)
+- Opcional: `ENV=development|production` (en `production` se desactivan `/docs` y `/redoc`)
 
-* **COMANDOS FRONTEND**
-1- PowerShell
-2- cd frontend
-3- npm run dev
+### Arranque manual (sin `start_all`)
+
+1. Crear el venv (si no existe) + instalar dependencias (una vez):
+
+```powershell
+cd .\BACKEND
+# Solo si no existe .\venv\
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+2. Levantar API:
+
+```powershell
+python -m uvicorn main:app --reload --port 8000
+```
 
 ---
 
+## 💻 Nivel 4: Interfaz de Usuario (Frontend Next.js)
 
-### 🛠️ Nivel 5: Scripts de Mantenimiento y Auditoría
-Uso: Verificación de seguridad y copias de seguridad.
+**Puerto local:** `3000` | **Acceso:** `http://localhost:3000/login`
 
-* **Test de Criptografía:**
-1- PowerShell
-2- & .\backend\venv\Scripts\python.exe .\backend\scripts\test_crypto.py
-Uso: Verifica que las llaves de cifrado del .env funcionan y los datos se guardan seguros.
+### Arranque
 
+```powershell
+cd .\FRONTEND
+npm install
+npm run dev
+```
 
-* **Backup Real (Exportar Datos):**
-1- PowerShell
-2- docker exec almudena_db /usr/bin/mysqldump -u root -palmudena almudena_clinic > backup_pacientes.sql
-Uso: Genera un archivo con toda la información de la clínica para respaldo externo.
+### Acceso humano (login)
 
-* **Backup Entorno:**
-1- .\rebuild_bunker.ps1
+- Las credenciales **no se documentan aquí en claro**.
+- Si necesitas crear usuarios de desarrollo, revisa los scripts de bootstrap del backend (p. ej. `BACKEND/init_db.py` o `BACKEND/rebuild_db.py`) y cambia las contraseñas antes de usar fuera de local.
 
-###
+---
+
+## 🛠️ Nivel 5: Scripts de Mantenimiento y Auditoría
+
+**Uso:** verificación de seguridad, reconstrucción controlada y copias de seguridad.
+
+### Test de criptografía (valida `ENCRYPTION_KEY`)
+
+```powershell
+& .\BACKEND\venv\Scripts\python.exe .\BACKEND\scripts\test_crypto.py
+```
+
+### Backup real (exportar datos)
+
+**Opción recomendada (PowerShell, UTF-8):**
+
+```powershell
+docker exec almudena_db mysqldump -u root -p almudena_clinic | Out-File -Encoding utf8 .\backup_almudena_clinic.sql
+```
+
+### Reconstruir entorno Python + auditoría (pip-audit)
+
+Este script **borra y recrea** el `venv` del backend e intenta ejecutar `pip-audit`:
+
+```powershell
+.\BACKEND\rebuild_bunker.ps1
+```
+
+### Reconstrucción total de BD (PELIGRO)
+
+Esto **borra todas las tablas** y reconstruye migraciones + usuarios de identidad (solo para entorno local):
+
+```powershell
+& .\BACKEND\venv\Scripts\python.exe .\BACKEND\rebuild_db.py
+```

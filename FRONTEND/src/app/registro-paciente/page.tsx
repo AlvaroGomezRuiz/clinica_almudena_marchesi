@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
+import { type ChangeEvent, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { startRegistrationAction } from '@/lib/auth/registerActions';
+import { startRegistrationAction } from '@/services/auth/registerActions';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -14,10 +15,7 @@ function SubmitButton() {
       type="submit"
       disabled={pending}
     >
-      <span
-        className="material-symbols-outlined text-xl"
-        data-icon="encrypted"
-      >
+      <span className="material-symbols-outlined text-xl" data-icon="encrypted">
         encrypted
       </span>
       {pending ? 'Procesando...' : 'Guardar con Cifrado AES-256'}
@@ -29,6 +27,40 @@ export default function RegistroPacientePage() {
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan') ?? '';
   const error = searchParams.get('error');
+
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
+
+  const formatFechaNacimiento = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    const dd = digits.slice(0, 2);
+    const mm = digits.slice(2, 4);
+    const yyyy = digits.slice(4, 8);
+
+    if (digits.length <= 2) return dd;
+    if (digits.length <= 4) return `${dd}/${mm}`;
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const handleFechaNacimientoTextChange = (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    setFechaNacimiento(formatFechaNacimiento(e.target.value).slice(0, 10));
+  };
+
+  const handleFechaNacimientoDateChange = (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    const iso = e.target.value; // YYYY-MM-DD
+    if (!iso) {
+      setFechaNacimiento('');
+      return;
+    }
+
+    const [yyyy, mm, dd] = iso.split('-');
+    if (!yyyy || !mm || !dd) return;
+    setFechaNacimiento(`${dd}/${mm}/${yyyy}`.slice(0, 10));
+  };
 
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
@@ -53,8 +85,8 @@ export default function RegistroPacientePage() {
                 Registro de Paciente
               </h1>
               <p className="text-on-surface-variant font-body leading-relaxed mb-8">
-                Tu bienestar comienza en un entorno de confianza. Este espacio ha
-                sido diseñado para que te sientas seguro compartiendo tu
+                Tu bienestar comienza en un entorno de confianza. Este espacio
+                ha sido diseñado para que te sientas seguro compartiendo tu
                 historia. Toda la información tratada aquí está bajo los más
                 estrictos estándares de confidencialidad clínica.
               </p>
@@ -78,7 +110,10 @@ export default function RegistroPacientePage() {
                 </div>
               </div>
               <div className="flex items-center gap-4 text-primary">
-                <span className="material-symbols-outlined text-2xl" data-icon="lock">
+                <span
+                  className="material-symbols-outlined text-2xl"
+                  data-icon="lock"
+                >
                   lock
                 </span>
                 <div className="flex flex-col">
@@ -166,6 +201,9 @@ export default function RegistroPacientePage() {
                       placeholder="DD / MM / AAAA"
                       type="text"
                       name="fecha_nacimiento"
+                      value={fechaNacimiento}
+                      onChange={handleFechaNacimientoTextChange}
+                      maxLength={10}
                     />
                     <span
                       className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-primary/50"
@@ -173,6 +211,13 @@ export default function RegistroPacientePage() {
                     >
                       calendar_today
                     </span>
+                    <input
+                      ref={dateInputRef}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 z-10"
+                      type="date"
+                      aria-label="Seleccionar fecha de nacimiento"
+                      onChange={handleFechaNacimientoDateChange}
+                    />
                   </div>
                 </div>
               </div>
@@ -245,7 +290,10 @@ export default function RegistroPacientePage() {
               {/* Actions */}
               <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-surface-container">
                 <div className="flex items-center gap-2 text-outline">
-                  <span className="material-symbols-outlined text-lg" data-icon="shield">
+                  <span
+                    className="material-symbols-outlined text-lg"
+                    data-icon="shield"
+                  >
                     shield
                   </span>
                   <span className="text-[10px] uppercase tracking-widest font-bold">

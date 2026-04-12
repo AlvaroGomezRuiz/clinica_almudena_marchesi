@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormStatus } from 'react-dom';
-import { loginAction } from '@/lib/auth/actions';
+import { loginAction } from '@/services/auth/actions';
 
 function SubmitButton() {
   const { pending } = useFormStatus();

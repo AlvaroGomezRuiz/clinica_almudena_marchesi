@@ -1,6 +1,13 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
+import {
+  CLINIC_ADDRESS_LINE1,
+  CLINIC_ADDRESS_LINE2,
+  CLINIC_SESSION_DURATION_MIN,
+  CLINIC_SESSION_PRICE_LABEL,
+} from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Servicios | Almudena Marchesi',
 };
@@ -44,9 +51,9 @@ export default function ServiciosPage() {
                 SESIÓN CLÍNICA
               </p>
               <p className="text-4xl font-headline text-on-surface">
-                60€
+                {CLINIC_SESSION_PRICE_LABEL}
                 <span className="text-lg font-body font-normal text-on-surface-variant">
-                  /h
+                  /{CLINIC_SESSION_DURATION_MIN}min
                 </span>
               </p>
               <a
@@ -130,9 +137,11 @@ export default function ServiciosPage() {
               </ul>
             </div>
             <div className="sticker-card bg-surface-container p-5 rounded-lg">
-              <p className="text-2xl font-headline text-on-surface">60€</p>
+              <p className="text-2xl font-headline text-on-surface">
+                {CLINIC_SESSION_PRICE_LABEL}
+              </p>
               <p className="text-xs text-on-surface-variant italic">
-                Sesión de 50 min
+                Sesión de {CLINIC_SESSION_DURATION_MIN} min
               </p>
             </div>
           </div>
@@ -155,7 +164,9 @@ export default function ServiciosPage() {
             </div>
             <div className="flex justify-between items-center mt-2">
               <div className="sticker-card bg-surface-container-lowest p-5 rounded-lg">
-                <p className="text-2xl font-headline text-on-surface">60€</p>
+                <p className="text-2xl font-headline text-on-surface">
+                  {CLINIC_SESSION_PRICE_LABEL}
+                </p>
                 <p className="text-xs text-on-surface-variant uppercase font-bold tracking-tighter">
                   Plataforma Segura
                 </p>
@@ -324,7 +335,7 @@ export default function ServiciosPage() {
                 className="text-stone-500 hover:text-[#4b645f] hover:translate-x-1 transition-transform duration-300"
                 href="#"
               >
-                Calle de la Princesa, Moncloa
+                {CLINIC_ADDRESS_LINE1}
               </a>
             </nav>
           </div>
@@ -333,7 +344,9 @@ export default function ServiciosPage() {
               Contacto Directo
             </h4>
             <p className="text-stone-500">
-              C/ Princesa, 25. Madrid
+              {CLINIC_ADDRESS_LINE1}
+              <br />
+              {CLINIC_ADDRESS_LINE2}
               <br />
               +34 91 000 00 00
               <br />

@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
+import {
+  CLINIC_ADDRESS_LINE1,
+  CLINIC_ADDRESS_LINE2,
+  getClinicGoogleMapsHref,
+} from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Almudena Marchesi | Psicología Clínica Madrid',
 };
@@ -16,12 +22,13 @@ export default function HomePage() {
               Psicología Clínica
             </span>
             <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl text-on-background leading-[1.1] mb-8 tracking-tighter italic">
-              Un espacio donde{' '}
-              <span className="font-bold not-italic">ser</span>, sin ser juzgado.
+              Un espacio donde <span className="font-bold not-italic">ser</span>
+              , sin ser juzgado.
             </h1>
             <p className="text-lg md:text-xl text-on-surface-variant max-w-lg mb-10 leading-relaxed">
-              Acompañamiento profesional en el corazón de Moncloa. Una invitación
-              a la pausa, al entendimiento y a la reconstrucción propia.
+              Acompañamiento profesional en el corazón de Moncloa. Una
+              invitación a la pausa, al entendimiento y a la reconstrucción
+              propia.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
@@ -65,7 +72,9 @@ export default function HomePage() {
         <div className="max-w-screen-2xl mx-auto">
           <div className="mb-20">
             <h2 className="font-headline text-3xl md:text-5xl text-on-background mb-4">
-              El rigor de la clínica,<br />la calidez de lo humano.
+              El rigor de la clínica,
+              <br />
+              la calidez de lo humano.
             </h2>
             <div className="w-24 h-1 bg-primary/30"></div>
           </div>
@@ -77,7 +86,9 @@ export default function HomePage() {
                   psychology
                 </span>
               </div>
-              <h3 className="font-headline text-2xl font-bold">Escucha Activa</h3>
+              <h3 className="font-headline text-2xl font-bold">
+                Escucha Activa
+              </h3>
               <p className="text-on-surface-variant leading-relaxed">
                 Más allá de las palabras. Un silencio fértil donde cada matiz de
                 tu historia encuentra su lugar y significado.
@@ -118,7 +129,7 @@ export default function HomePage() {
         <div className="max-w-screen-2xl mx-auto grid md:grid-cols-12 gap-12 items-center">
           <a
             className="md:col-span-7 rounded-[2rem] overflow-hidden h-[400px] md:h-[600px] group relative"
-            href="https://maps.google.com/?q=Calle+Princesa+25,+Madrid"
+            href={getClinicGoogleMapsHref()}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -135,9 +146,7 @@ export default function HomePage() {
               <p className="font-label text-sm uppercase tracking-widest opacity-80">
                 Ubicación Premium
               </p>
-              <p className="font-headline text-2xl">
-                Calle de la Princesa, Moncloa
-              </p>
+              <p className="font-headline text-2xl">{CLINIC_ADDRESS_LINE1}</p>
             </div>
           </a>
           <div className="md:col-span-5 md:pl-8">
@@ -162,18 +171,22 @@ export default function HomePage() {
                 <span className="material-symbols-outlined text-primary">
                   check_circle
                 </span>
-                <span className="text-on-surface">Entorno discreto y profesional</span>
+                <span className="text-on-surface">
+                  Entorno discreto y profesional
+                </span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-primary">
                   check_circle
                 </span>
-                <span className="text-on-surface">Flexibilidad horaria presencial</span>
+                <span className="text-on-surface">
+                  Flexibilidad horaria presencial
+                </span>
               </li>
             </ul>
             <a
               className="inline-flex items-center gap-2 font-label font-bold text-primary group"
-              href="https://maps.google.com/?q=Calle+Princesa+25,+Madrid"
+              href={getClinicGoogleMapsHref()}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -187,7 +200,10 @@ export default function HomePage() {
       </section>
 
       {/* Portal del Paciente (The Bunker) */}
-      <section className="py-24 md:py-32 px-6 md:px-12 bg-secondary/5 relative" id="portal">
+      <section
+        className="py-24 md:py-32 px-6 md:px-12 bg-secondary/5 relative"
+        id="portal"
+      >
         <div className="max-w-4xl mx-auto text-center">
           <span
             className="material-symbols-outlined text-6xl text-primary mb-8"
@@ -199,21 +215,25 @@ export default function HomePage() {
             Tu búnker digital seguro.
           </h2>
           <p className="text-xl text-on-surface-variant mb-8 leading-relaxed">
-            Para garantizar la máxima confidencialidad y una gestión eficiente de tu
-            proceso, utilizamos un **Portal del Paciente** cifrado. El registro es
-            el primer paso obligatorio para acceder a mi agenda y gestionar tus
-            sesiones.
+            Para garantizar la máxima confidencialidad y una gestión eficiente
+            de tu proceso, utilizamos un **Portal del Paciente** cifrado. El
+            registro es el primer paso obligatorio para acceder a mi agenda y
+            gestionar tus sesiones.
           </p>
           {/* Image 150 content: Military Grade Encryption and Exclusive Access markers */}
           <div className="flex flex-col items-center gap-4 mb-12">
             <div className="flex items-center gap-4 text-on-surface-variant">
-              <span className="material-symbols-outlined text-primary">verified</span>
+              <span className="material-symbols-outlined text-primary">
+                verified
+              </span>
               <p className="text-left font-body">
                 Encriptación de grado militar simplificada para tu paz mental.
               </p>
             </div>
             <div className="flex items-center gap-4 text-on-surface-variant">
-              <span className="material-symbols-outlined text-primary">lock</span>
+              <span className="material-symbols-outlined text-primary">
+                lock
+              </span>
               <p className="text-left font-body">
                 Acceso exclusivo y privado a tu historial personal.
               </p>
@@ -248,10 +268,13 @@ export default function HomePage() {
               info
             </span>
             <div>
-              <p className="font-bold text-on-surface mb-1">Registro Obligatorio</p>
+              <p className="font-bold text-on-surface mb-1">
+                Registro Obligatorio
+              </p>
               <p className="text-sm text-on-surface-variant leading-relaxed">
-                Para garantizar la confidencialidad y gestionar tus citas, es necesario
-                crear una cuenta de acceso privada antes de cualquier reserva.
+                Para garantizar la confidencialidad y gestionar tus citas, es
+                necesario crear una cuenta de acceso privada antes de cualquier
+                reserva.
               </p>
             </div>
           </div>
@@ -281,8 +304,11 @@ export default function HomePage() {
                 fontFamily: 'Manrope, sans-serif',
               }}
             >
-              Dar el primer paso es el acto de valentía más grande que puedes hacer por ti mismo, n
-            </span>o tienes que hacerlo solo. Estoy aquí para acompañarte en cada paso hacia tu equilibrio.
+              Dar el primer paso es el acto de valentía más grande que puedes
+              hacer por ti mismo, n
+            </span>
+            o tienes que hacerlo solo. Estoy aquí para acompañarte en cada paso
+            hacia tu equilibrio.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <a
@@ -310,8 +336,9 @@ export default function HomePage() {
               Ubicación
             </p>
             <p className="font-headline text-xl text-on-surface italic">
-              Calle de la Princesa, 25<br />
-              28008, Madrid (Moncloa)
+              {CLINIC_ADDRESS_LINE1}
+              <br />
+              {CLINIC_ADDRESS_LINE2}
             </p>
           </div>
           <div className="flex flex-col gap-4">
@@ -319,7 +346,8 @@ export default function HomePage() {
               Contacto Directo
             </p>
             <p className="font-headline text-xl text-on-surface italic">
-              info@almudenamarchesi.es<br />
+              info@almudenamarchesi.es
+              <br />
               +34 912 345 678
             </p>
           </div>
@@ -330,7 +358,8 @@ export default function HomePage() {
               Almudena Marchesi
             </div>
             <p className="max-w-xs text-[#6a5d4e]/80 dark:text-stone-500">
-              © 2024 Almudena Marchesi Fernández. Licenciada en Psicología. Psicología Clínica. Madrid.
+              © 2024 Almudena Marchesi Fernández. Licenciada en Psicología.
+              Psicología Clínica. Madrid.
             </p>
           </div>
           <div className="flex gap-8 flex-wrap justify-center">

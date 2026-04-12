@@ -1,5 +1,11 @@
 import Image from 'next/image';
 
+import {
+  CLINIC_ADDRESS,
+  CLINIC_ADDRESS_LINE1,
+  CLINIC_ADDRESS_LINE2,
+} from '@/lib/clinic';
+
 export default function ContactoPage() {
   return (
     <div className="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
@@ -76,7 +82,7 @@ export default function ContactoPage() {
                       Dirección
                     </p>
                     <p className="text-lg font-medium text-on-surface">
-                      Calle de la Princesa, Moncloa, Madrid
+                      {CLINIC_ADDRESS}
                     </p>
                   </div>
                 </div>
@@ -222,9 +228,7 @@ export default function ContactoPage() {
                   <h4 className="font-headline text-lg text-primary mb-1">
                     Psicología Moncloa
                   </h4>
-                  <p className="text-sm text-secondary">
-                    Calle de la Princesa, 28008 Madrid
-                  </p>
+                  <p className="text-sm text-secondary">{CLINIC_ADDRESS}</p>
                 </div>
               </div>
             </div>
@@ -272,9 +276,9 @@ export default function ContactoPage() {
               Ubicación
             </h5>
             <p className="text-stone-500 text-sm">
-              Calle de la Princesa, Moncloa
+              {CLINIC_ADDRESS_LINE1}
               <br />
-              28008 Madrid, España
+              {CLINIC_ADDRESS_LINE2}, España
             </p>
             <div className="flex space-x-4 pt-2">
               <span

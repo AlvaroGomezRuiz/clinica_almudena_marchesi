@@ -1,11 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       boxShadow: {
@@ -74,12 +70,17 @@ const config: Config = {
         headline: ['Noto Serif', 'serif'],
         body: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         label: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['Noto Serif', 'serif'],
+        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         couture: '0.02em',
       },
       lineHeight: {
         editorial: '1.6',
+      },
+      transitionDuration: {
+        400: '400ms',
       },
     },
   },
