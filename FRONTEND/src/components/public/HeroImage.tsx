@@ -50,7 +50,7 @@ export default function HeroImage({ className }: HeroImageProps) {
           - sizes → evita descargar imagen más grande de lo necesario
         */}
         <Image
-          src="/images/almudena.avif"
+          src="/images/almudena-profile.avif"
           alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
           width={520}
           height={680}

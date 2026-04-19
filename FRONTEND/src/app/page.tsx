@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     siteName: 'Clínica Almudena Marchesi',
     images: [
       {
-        url: 'https://almudenamarchesi.es/images/almudena.avif',
+        url: 'https://almudenamarchesi.es/images/almudena-profile.avif',
         width: 1200,
         height: 630,
         alt: 'Almudena Marchesi, psicóloga clínica en Moncloa, Madrid',
@@ -92,7 +92,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Almudena Marchesi | Psicología Clínica Madrid',
     description: 'Acompañamiento profesional en el corazón de Moncloa.',
-    images: ['https://almudenamarchesi.es/images/almudena.avif'],
+    images: ['https://almudenamarchesi.es/images/almudena-profile.avif'],
   },
   robots: {
     index: true,
@@ -119,7 +119,7 @@ const jsonLd = {
     'Psicología clínica en Moncloa, Madrid. Acompañamiento profesional basado en evidencia.',
   url: 'https://almudenamarchesi.es',
   telephone: '+34646445991',
-  image: 'https://almudenamarchesi.es/images/almudena.avif',
+  image: 'https://almudenamarchesi.es/images/almudena-profile.avif',
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Moncloa',
