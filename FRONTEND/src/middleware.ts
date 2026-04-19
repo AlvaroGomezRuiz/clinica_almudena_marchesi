@@ -65,9 +65,12 @@ async function getAccessStatus(token: string): Promise<AccessStatus | null> {
   }
 }
 
-function nextWithPathHeader(request: NextRequest): NextResponse {
+function nextWithPathHeader(request: NextRequest, nonce?: string, csp?: string): NextResponse {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', request.nextUrl.pathname);
+  if (nonce) requestHeaders.set('x-nonce', nonce);
+  if (csp) requestHeaders.set('Content-Security-Policy', csp);
+  
   return NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -130,13 +133,13 @@ async function refreshSlidingSession(
 
 export async function middleware(request: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
-  // ─── CSP ENDURECIDA ───
-  // En producción: sin unsafe-inline para scripts (Next.js inyecta nonces).
-  // En desarrollo: unsafe-inline + unsafe-eval para hot-reload/hidratación.
+  // CSP GRADO MILITAR: Utiliza Nonce dinámico y Strict-Dynamic en Producción.
+  // Esto obliga al navegador a solo ejecutar scripts generados/certificados por Next.js en cada request.
   const scriptSrc = isProd
-    ? "script-src 'self'"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://vercel.live`
+    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live`;
 
   const csp = [
     "default-src 'self'",
@@ -147,10 +150,10 @@ export async function middleware(request: NextRequest) {
     scriptSrc,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: https://lh3.googleusercontent.com",
-    "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 ws://localhost:3000 ws://127.0.0.1:3000",
+    "img-src 'self' data: https://lh3.googleusercontent.com https://images.unsplash.com",
+    "connect-src 'self' https://* http://localhost:8000",
     "upgrade-insecure-requests",
-  ].join('; ');
+  ].join('; ').replace(/\s{2,}/g, ' ').trim();
 
   const withSecurityHeaders = (response: NextResponse) => {
     response.headers.set('X-Frame-Options', 'DENY');
@@ -259,7 +262,7 @@ export async function middleware(request: NextRequest) {
       process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
     const newToken = await refreshSlidingSession(backendApiUrl, token);
     if (newToken) {
-      const res = nextWithPathHeader(request);
+      const res = nextWithPathHeader(request, nonce, csp);
       res.cookies.set('auth_token', newToken, {
         httpOnly: true,
         secure: isProd,
@@ -272,7 +275,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Si todo está en orden, permitir el paso
-  return withSecurityHeaders(nextWithPathHeader(request));
+  return withSecurityHeaders(nextWithPathHeader(request, nonce, csp));
 }
 
 // Configuración del radar: ¿Qué rutas debe vigilar este middleware?
