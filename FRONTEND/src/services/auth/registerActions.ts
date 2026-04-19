@@ -3,6 +3,36 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+type ErrorPayload = {
+  detail?: string;
+  message?: string;
+};
+
+type LoginPayload = {
+  access_token: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function parseErrorPayload(data: unknown): ErrorPayload | null {
+  if (!isRecord(data)) return null;
+  const detail = data["detail"];
+  const message = data["message"];
+  return {
+    ...(typeof detail === "string" ? { detail } : {}),
+    ...(typeof message === "string" ? { message } : {}),
+  };
+}
+
+function parseLoginPayload(data: unknown): LoginPayload | null {
+  if (!isRecord(data)) return null;
+  const token = data["access_token"] ?? data["jwt"] ?? data["token"];
+  if (typeof token !== "string" || !token.trim()) return null;
+  return { access_token: token.trim() };
+}
+
 function redirectRegistroError(message: string, plan: string): never {
   const params = new URLSearchParams();
   if (plan) params.set("plan", plan);
@@ -47,7 +77,7 @@ export async function startRegistrationAction(
   }
 
   const backendUrl =
-    process.env.BACKEND_URL ?? "http://localhost:8000/api/v1/auth";
+    `${process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1"}/auth`;
 
   const res = await fetch(`${backendUrl}/register/start`, {
     method: "POST",
@@ -61,13 +91,10 @@ export async function startRegistrationAction(
   const data: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail =
-      typeof (data as any)?.detail === "string" ? (data as any).detail : null;
-    const message =
-      typeof (data as any)?.message === "string" ? (data as any).message : null;
+    const err = parseErrorPayload(data);
 
     redirectRegistroError(
-      detail ?? message ?? `Registro fallido (${res.status})`,
+      err?.detail ?? err?.message ?? `Registro fallido (${res.status})`,
       plan
     );
   }
@@ -192,7 +219,7 @@ export async function verifyOtpAction(
   }
 
   const backendUrl =
-    process.env.BACKEND_URL ?? "http://localhost:8000/api/v1/auth";
+    `${process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1"}/auth`;
 
   const res = await fetch(`${backendUrl}/register/verify-otp`, {
     method: "POST",
@@ -211,12 +238,12 @@ export async function verifyOtpAction(
   const data: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail =
-      typeof (data as any)?.detail === "string" ? (data as any).detail : null;
-    const message =
-      typeof (data as any)?.message === "string" ? (data as any).message : null;
+    const err = parseErrorPayload(data);
 
-    redirectOtpError(detail ?? message ?? `OTP inválido (${res.status})`, draftPlan);
+    redirectOtpError(
+      err?.detail ?? err?.message ?? `OTP inválido (${res.status})`,
+      draftPlan
+    );
   }
 
   const h = headers();
@@ -244,33 +271,23 @@ export async function verifyOtpAction(
   const loginData: unknown = await loginRes.json().catch(() => null);
 
   if (!loginRes.ok) {
-    const detail =
-      typeof (loginData as any)?.detail === "string" ? (loginData as any).detail : null;
-    const message =
-      typeof (loginData as any)?.message === "string" ? (loginData as any).message : null;
+    const err = parseErrorPayload(loginData);
 
     redirectOtpError(
-      detail ?? message ?? `Login fallido tras OTP (${loginRes.status})`,
+      err?.detail ?? err?.message ?? `Login fallido tras OTP (${loginRes.status})`,
       draftPlan
     );
   }
 
-  const jwt =
-    typeof (loginData as any)?.access_token === "string"
-      ? (loginData as any).access_token
-      : typeof (loginData as any)?.jwt === "string"
-        ? (loginData as any).jwt
-        : typeof (loginData as any)?.token === "string"
-          ? (loginData as any).token
-          : null;
-
-  if (!jwt) {
+  const parsedLogin = parseLoginPayload(loginData);
+  if (!parsedLogin) {
     redirectOtpError("JWT ausente tras OTP.", draftPlan);
   }
+  const jwt = parsedLogin.access_token;
 
   // Crea el perfil Paciente (cifrado en backend) para habilitar el checkout.
   const backendApiUrl =
-    process.env.BACKEND_API_URL ?? "http://localhost:8000/api/v1";
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1";
 
   const parseFechaNacimiento = (raw: string): string | null => {
     const v = raw.trim();
@@ -319,10 +336,8 @@ export async function verifyOtpAction(
 
   if (!pacienteRes.ok) {
     const pacienteData: unknown = await pacienteRes.json().catch(() => null);
-    const detail =
-      typeof (pacienteData as any)?.detail === "string"
-        ? (pacienteData as any).detail
-        : null;
+    const err = parseErrorPayload(pacienteData);
+    const detail = err?.detail ?? null;
 
     const isConflict =
       pacienteRes.status === 400 && typeof detail === "string" && detail.includes("Conflicto");

@@ -13,6 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from db.session import Base
+from db.types.encrypted import EncryptedString, EncryptedText
 
 
 def generar_uuid():
@@ -98,18 +99,18 @@ class Paciente(Base):
     __tablename__ = "pacientes"
     id = Column(String(36), primary_key=True, default=generar_uuid)
     # Campos sensibles: se almacenan cifrados (Fernet) y se indexan vía blind index.
-    dni_nie = Column(String(255), nullable=False)
+    dni_nie = Column(EncryptedString(255, nullable=False), nullable=False)
     dni_nie_bidx = Column(String(64), unique=True, index=True, nullable=True)
-    nombre_completo = Column(String(255), nullable=False)
+    nombre_completo = Column(EncryptedString(255, nullable=False), nullable=False)
     nombre_completo_bidx = Column(String(64), index=True, nullable=True)
     email = Column(String(100), unique=True, index=True)
-    telefono = Column(String(255))
+    telefono = Column(EncryptedString(255, nullable=True), nullable=True)
     telefono_bidx = Column(String(64), index=True, nullable=True)
     fecha_nacimiento = Column(Date)
     fecha_alta = Column(Date)
-    motivo_consulta_inicial = Column(Text)
+    motivo_consulta_inicial = Column(EncryptedText(nullable=True), nullable=True)
     experiencia_terapia = Column(String(255), nullable=True)
-    motivo_consulta = Column(Text, nullable=True)
+    motivo_consulta = Column(EncryptedText(nullable=True), nullable=True)
     consentimiento_rgpd = Column(Boolean, default=False, nullable=False)
     firma_rgpd_path = Column(String(255), nullable=True)
     activo = Column(Boolean, default=True, nullable=False)

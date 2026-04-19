@@ -1,9 +1,10 @@
 import './globals.css';
 
 import { headers } from 'next/headers';
-import PublicHeader from '@/components/public/PublicHeader';
+import PublicHeader from '@/components/PublicHeader';
+import PublicFooter from '@/components/public/PublicFooter';
 
-function shouldRenderPublicHeader(pathname: string): boolean {
+function shouldRenderPublicShell(pathname: string): boolean {
   if (!pathname) return true;
   if (pathname.startsWith('/dashboard')) return false;
   if (pathname.startsWith('/portal')) return false;
@@ -17,13 +18,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = headers().get('x-pathname') ?? '';
-  const renderPublicHeader = shouldRenderPublicHeader(pathname);
+  const isPublic = shouldRenderPublicShell(pathname);
 
   return (
     <html lang="es">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body>
-        {renderPublicHeader ? <PublicHeader /> : null}
-        {children}
+        {isPublic ? <PublicHeader /> : null}
+        <main id="main">{children}</main>
+        {isPublic ? <PublicFooter /> : null}
       </body>
     </html>
   );

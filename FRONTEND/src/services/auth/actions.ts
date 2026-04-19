@@ -4,6 +4,48 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { randomUUID } from 'crypto';
 
+type ErrorPayload = {
+  detail?: string;
+  message?: string;
+};
+
+type LoginPayload = {
+  access_token: string;
+  role: 'paciente' | 'admin';
+  provisioning_uri?: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseErrorPayload(data: unknown): ErrorPayload | null {
+  if (!isRecord(data)) return null;
+  const detail = data['detail'];
+  const message = data['message'];
+  return {
+    ...(typeof detail === 'string' ? { detail } : {}),
+    ...(typeof message === 'string' ? { message } : {}),
+  };
+}
+
+function parseLoginPayload(data: unknown): LoginPayload | null {
+  if (!isRecord(data)) return null;
+  const accessToken = data['access_token'];
+  const role = data['role'];
+  if (typeof accessToken !== 'string') return null;
+  if (role !== 'paciente' && role !== 'admin') return null;
+
+  const provisioningUri = data['provisioning_uri'];
+  return {
+    access_token: accessToken,
+    role,
+    ...(typeof provisioningUri === 'string' && provisioningUri.trim()
+      ? { provisioning_uri: provisioningUri.trim() }
+      : {}),
+  };
+}
+
 function redirectLoginError(message: string, redirectToRaw: string): never {
   const safeNext =
     redirectToRaw &&
@@ -28,8 +70,9 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirectLoginError('Email y contraseña obligatorios.', redirectToRaw);
   }
 
-  const backendUrl =
-    process.env.BACKEND_URL ?? 'http://localhost:8000/api/v1/auth';
+  const backendApiUrl =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+  const backendUrl = `${backendApiUrl}/auth`;
 
   const h = headers();
   const userAgent = h.get('user-agent') ?? '';
@@ -61,42 +104,22 @@ export async function loginAction(formData: FormData): Promise<void> {
   const data: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail =
-      typeof (data as any)?.detail === 'string' ? (data as any).detail : null;
-    const message =
-      typeof (data as any)?.message === 'string' ? (data as any).message : null;
+    const err = parseErrorPayload(data);
 
     redirectLoginError(
-      detail ?? message ?? `Login fallido (${res.status})`,
+      err?.detail ?? err?.message ?? `Login fallido (${res.status})`,
       redirectToRaw
     );
   }
 
-  const jwt =
-    typeof (data as any)?.access_token === 'string'
-      ? (data as any).access_token
-      : typeof (data as any)?.jwt === 'string'
-        ? (data as any).jwt
-        : typeof (data as any)?.token === 'string'
-          ? (data as any).token
-          : null;
-
-  if (!jwt) {
+  const parsed = parseLoginPayload(data);
+  if (!parsed) {
     redirectLoginError('JWT ausente en respuesta.', redirectToRaw);
   }
 
-  const roleRaw =
-    typeof (data as any)?.role === 'string' ? (data as any).role : '';
-  const role = roleRaw.trim().toLowerCase();
-  if (role !== 'paciente' && role !== 'admin') {
-    redirectLoginError('Rol inválido en respuesta.', redirectToRaw);
-  }
-
-  const provisioningUriRaw = (data as any)?.provisioning_uri;
-  const provisioningUri =
-    typeof provisioningUriRaw === 'string' && provisioningUriRaw.trim()
-      ? provisioningUriRaw.trim()
-      : null;
+  const jwt = parsed.access_token;
+  const role = parsed.role;
+  const provisioningUri = parsed.provisioning_uri ?? null;
 
   const THIRTY_DAYS = 60 * 60 * 24 * 30;
 
@@ -157,8 +180,9 @@ export async function verifyAdminMfaAction(formData: FormData): Promise<void> {
     redirect('/login');
   }
 
-  const backendUrl =
-    process.env.BACKEND_URL ?? 'http://localhost:8000/api/v1/auth';
+  const backendApiUrl =
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+  const backendUrl = `${backendApiUrl}/auth`;
 
   const res = await fetch(`${backendUrl}/admin/verify-totp`, {
     method: 'POST',
@@ -172,9 +196,8 @@ export async function verifyAdminMfaAction(formData: FormData): Promise<void> {
 
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const detail =
-      typeof (data as any)?.detail === 'string' ? (data as any).detail : null;
-    redirectAdminMfaError(detail ?? `Verificación fallida (${res.status})`);
+    const err = parseErrorPayload(data);
+    redirectAdminMfaError(err?.detail ?? `Verificación fallida (${res.status})`);
   }
 
   cookieStore.delete({ name: 'admin_provisioning_uri', path: '/admin' });

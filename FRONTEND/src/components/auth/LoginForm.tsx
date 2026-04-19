@@ -12,7 +12,7 @@ function SubmitButton() {
       type="submit"
       disabled={pending}
     >
-      {pending ? 'Cargando...' : 'Acceder al Búnker'}
+      {pending ? 'Cargando...' : 'Acceder al Portal'}
     </button>
   );
 }

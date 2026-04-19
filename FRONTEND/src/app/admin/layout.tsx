@@ -10,11 +10,21 @@ type AdminStatus = {
   mfa_verified: boolean;
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseAdminStatus(data: unknown): AdminStatus | null {
+  if (!isRecord(data)) return null;
+  const isAdmin = data['is_admin'];
+  const mfaVerified = data['mfa_verified'];
+  if (typeof isAdmin !== 'boolean' || typeof mfaVerified !== 'boolean') return null;
+  return { is_admin: isAdmin, mfa_verified: mfaVerified };
+}
+
 async function getAdminStatus(token: string): Promise<AdminStatus | null> {
   const backendApiUrl =
-    process.env.BACKEND_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    'http://localhost:8000/api/v1';
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
 
   try {
     const res = await fetch(`${backendApiUrl}/auth/admin/status`, {
@@ -28,10 +38,7 @@ async function getAdminStatus(token: string): Promise<AdminStatus | null> {
     if (!res.ok) return null;
 
     const data: unknown = await res.json().catch(() => null);
-    return {
-      is_admin: Boolean((data as any)?.is_admin),
-      mfa_verified: Boolean((data as any)?.mfa_verified),
-    };
+    return parseAdminStatus(data);
   } catch {
     return null;
   }

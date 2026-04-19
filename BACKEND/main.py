@@ -33,6 +33,7 @@ from services.facturas import router as facturas_router
 from services.recursos import router as recursos_router
 from services.mensajes import router as mensajes_router
 from services.configuracion import router as configuracion_router
+from api.v1.citas import router as citas_v1_router
 
 load_dotenv()
 MODO_ENTORNO = os.getenv("ENV", "development")
@@ -45,7 +46,7 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[FastApiIntegration()],
-        send_default_pii=True,
+        send_default_pii=False,
         traces_sample_rate=1.0,
         profiles_sample_rate=1.0,
     )
@@ -155,6 +156,7 @@ app.include_router(facturas_router, prefix="/api/v1/facturas", tags=["Facturas"]
 app.include_router(stripe_router, prefix="/api/v1/stripe", tags=["Stripe"])
 app.include_router(recursos_router, prefix="/api/v1/recursos", tags=["Recursos"])
 app.include_router(mensajes_router, prefix="/api/v1/mensajes", tags=["Mensajes"])
+app.include_router(citas_v1_router, prefix="/api/v1/citas", tags=["Citas"])
 
 
 @app.get("/health")

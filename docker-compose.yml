@@ -7,11 +7,13 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:3306:3306"
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: almudena
-      MYSQL_DATABASE: almudena_clinic
-      MYSQL_USER: api_almudena
-      MYSQL_PASSWORD: almudena
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
 

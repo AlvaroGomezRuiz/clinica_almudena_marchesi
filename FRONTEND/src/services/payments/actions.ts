@@ -3,6 +3,36 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+type ErrorPayload = {
+  detail?: string;
+  message?: string;
+};
+
+type CheckoutPayload = {
+  checkout_url: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseErrorPayload(data: unknown): ErrorPayload | null {
+  if (!isRecord(data)) return null;
+  const detail = data['detail'];
+  const message = data['message'];
+  return {
+    ...(typeof detail === 'string' ? { detail } : {}),
+    ...(typeof message === 'string' ? { message } : {}),
+  };
+}
+
+function parseCheckoutPayload(data: unknown): CheckoutPayload | null {
+  if (!isRecord(data)) return null;
+  const checkoutUrl = data['checkout_url'] ?? data['url'];
+  if (typeof checkoutUrl !== 'string' || !checkoutUrl.trim()) return null;
+  return { checkout_url: checkoutUrl.trim() };
+}
+
 export async function createCheckoutAction(formData: FormData): Promise<void> {
   const token = cookies().get('auth_token')?.value;
   const cita_id = String(formData.get('cita_id') ?? '').trim() || null;
@@ -21,7 +51,7 @@ export async function createCheckoutAction(formData: FormData): Promise<void> {
   }
 
   const backendUrl =
-    process.env.BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
 
   const res = await fetch(`${backendUrl}/stripe/create-checkout-session`, {
     method: 'POST',
@@ -36,29 +66,20 @@ export async function createCheckoutAction(formData: FormData): Promise<void> {
   const data: unknown = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const detail =
-      typeof (data as any)?.detail === 'string' ? (data as any).detail : null;
-    const message =
-      typeof (data as any)?.message === 'string' ? (data as any).message : null;
+    const err = parseErrorPayload(data);
 
-    const err = detail ?? message ?? `Checkout fallido (${res.status})`;
+    const message = err?.detail ?? err?.message ?? `Checkout fallido (${res.status})`;
     const sep = returnTo.includes('?') ? '&' : '?';
-    redirect(`${returnTo}${sep}error=${encodeURIComponent(err)}`);
+    redirect(`${returnTo}${sep}error=${encodeURIComponent(message)}`);
   }
 
-  const url =
-    typeof (data as any)?.checkout_url === 'string'
-      ? (data as any).checkout_url
-      : typeof (data as any)?.url === 'string'
-        ? (data as any).url
-        : null;
-
-  if (!url) {
+  const parsed = parseCheckoutPayload(data);
+  if (!parsed) {
     const sep = returnTo.includes('?') ? '&' : '?';
     redirect(
       `${returnTo}${sep}error=${encodeURIComponent('checkout_url ausente.')}`
     );
   }
 
-  redirect(url);
+  redirect(parsed.checkout_url);
 }

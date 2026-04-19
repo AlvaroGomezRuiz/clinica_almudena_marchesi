@@ -12,9 +12,39 @@ type JwtClaims = {
   iat?: unknown;
 };
 
+type AccessStatusResponse = {
+  has_paid: boolean;
+  is_admin: boolean;
+};
+
+type RefreshResponse = {
+  refreshed: boolean;
+  access_token: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function parseAccessStatusResponse(data: unknown): AccessStatusResponse | null {
+  if (!isRecord(data)) return null;
+  const hasPaid = data['has_paid'];
+  const isAdmin = data['is_admin'];
+  if (typeof hasPaid !== 'boolean' || typeof isAdmin !== 'boolean') return null;
+  return { has_paid: hasPaid, is_admin: isAdmin };
+}
+
+function parseRefreshResponse(data: unknown): RefreshResponse | null {
+  if (!isRecord(data)) return null;
+  const refreshed = data['refreshed'];
+  const accessToken = data['access_token'];
+  if (typeof refreshed !== 'boolean' || typeof accessToken !== 'string') return null;
+  return { refreshed, access_token: accessToken };
+}
+
 async function getAccessStatus(token: string): Promise<AccessStatus | null> {
   const backendApiUrl =
-    process.env.BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
 
   try {
     const res = await fetch(`${backendApiUrl}/pagos/access-status`, {
@@ -28,10 +58,8 @@ async function getAccessStatus(token: string): Promise<AccessStatus | null> {
     if (!res.ok) return null;
 
     const data: unknown = await res.json().catch(() => null);
-    return {
-      has_paid: Boolean((data as any)?.has_paid),
-      is_admin: Boolean((data as any)?.is_admin),
-    };
+    const parsed = parseAccessStatusResponse(data);
+    return parsed ? { has_paid: parsed.has_paid, is_admin: parsed.is_admin } : null;
   } catch {
     return null;
   }
@@ -91,13 +119,10 @@ async function refreshSlidingSession(
     if (!res.ok) return null;
 
     const data: unknown = await res.json().catch(() => null);
-    const refreshed = Boolean((data as any)?.refreshed);
-    const newToken =
-      typeof (data as any)?.access_token === 'string'
-        ? (data as any).access_token
-        : null;
-
-    return refreshed && newToken ? newToken : null;
+    const parsed = parseRefreshResponse(data);
+    return parsed && parsed.refreshed && parsed.access_token
+      ? parsed.access_token
+      : null;
   } catch {
     return null;
   }
@@ -180,7 +205,7 @@ export async function middleware(request: NextRequest) {
     isHalfConsumed(jwtClaims)
   ) {
     const backendApiUrl =
-      process.env.BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
+      process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
     const newToken = await refreshSlidingSession(backendApiUrl, token);
     if (newToken) {
       const res = nextWithPathHeader(request);

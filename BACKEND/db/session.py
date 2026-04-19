@@ -7,7 +7,10 @@ load_dotenv()
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL) # type: ignore
+if not SQLALCHEMY_DATABASE_URL:
+    raise ValueError("ERROR CRÍTICO: DATABASE_URL no está configurado.")
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -19,3 +22,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Registro de eventos (blind indexes, etc.)
+from db.events import paciente_bidx  # noqa: E402,F401

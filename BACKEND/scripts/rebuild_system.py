@@ -21,10 +21,8 @@ VERSIONS_DIR = BACKEND_ROOT / "alembic" / "versions"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-ADMIN_EMAIL = "almudena@admin.com"
-ADMIN_PASSWORD = "Almudena2026!"
-PACIENTE_EMAIL = "usuario@visualizacion.com"
-PACIENTE_PASSWORD = "Usuario2026!"
+ADMIN_EMAIL = (os.getenv("SEED_ADMIN_EMAIL") or "almudena@admin.com").strip()
+PACIENTE_EMAIL = (os.getenv("SEED_PACIENTE_EMAIL") or "usuario@visualizacion.com").strip()
 
 
 def _die(message: str) -> NoReturn:
@@ -104,17 +102,25 @@ def _seed_identity_users() -> None:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     admin_secret = pyotp.random_base32()
+    admin_password = (os.getenv("SEED_ADMIN_PASSWORD") or "").strip()
+    paciente_password = (os.getenv("SEED_PACIENTE_PASSWORD") or "").strip()
+
+    if not admin_password or not paciente_password:
+        _die(
+            "Faltan variables de entorno para seeding: SEED_ADMIN_PASSWORD y/o SEED_PACIENTE_PASSWORD. "
+            "Define credenciales en BACKEND/.env (solo desarrollo) o en el entorno."
+        )
 
     db = SessionLocal()
     try:
         admin = db.query(Usuario).filter(Usuario.username == ADMIN_EMAIL).first()
         if not admin:
             admin = Usuario(
-                username=ADMIN_EMAIL, hashed_password=pwd_context.hash(ADMIN_PASSWORD)
+                username=ADMIN_EMAIL, hashed_password=pwd_context.hash(admin_password)
             )
             db.add(admin)
 
-        admin.hashed_password = pwd_context.hash(ADMIN_PASSWORD)  # type: ignore[assignment]
+        admin.hashed_password = pwd_context.hash(admin_password)  # type: ignore[assignment]
         admin.role = "admin"  # type: ignore[assignment]
         admin.is_admin = True  # type: ignore[assignment]
         admin.is_active = True  # type: ignore[assignment]
@@ -125,11 +131,11 @@ def _seed_identity_users() -> None:
         if not paciente:
             paciente = Usuario(
                 username=PACIENTE_EMAIL,
-                hashed_password=pwd_context.hash(PACIENTE_PASSWORD),
+                hashed_password=pwd_context.hash(paciente_password),
             )
             db.add(paciente)
 
-        paciente.hashed_password = pwd_context.hash(PACIENTE_PASSWORD)  # type: ignore[assignment]
+        paciente.hashed_password = pwd_context.hash(paciente_password)  # type: ignore[assignment]
         paciente.role = "paciente"  # type: ignore[assignment]
         paciente.is_admin = False  # type: ignore[assignment]
         paciente.is_active = True  # type: ignore[assignment]
@@ -139,9 +145,8 @@ def _seed_identity_users() -> None:
         db.commit()
 
         print("[rebuild_system] Seed OK")
-        print(f"[rebuild_system] Admin: {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
-        print(f"[rebuild_system] Admin MFA secret: {admin_secret}")
-        print(f"[rebuild_system] Paciente: {PACIENTE_EMAIL} / {PACIENTE_PASSWORD}")
+        print(f"[rebuild_system] Admin: {ADMIN_EMAIL}")
+        print(f"[rebuild_system] Paciente: {PACIENTE_EMAIL}")
     except Exception as exc:
         db.rollback()
         _die(f"Fallo seeding usuarios: {exc}")

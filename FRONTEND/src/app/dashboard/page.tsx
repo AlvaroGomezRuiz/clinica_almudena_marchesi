@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import api from '@/services/axios';
 
 export default function DashboardPage() {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const extraerDatos = async () => {
       try {
         // Disparo al backend protegido
-        const response = await api.get('/api/v1/pacientes/');
+        const response = await api.get('/pacientes/');
         setUserData(response.data);
       } catch (err) {
         setError(

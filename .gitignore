@@ -2,6 +2,14 @@
 # .GITIGNORE MAESTRO - CLÍNICA ALMUDENA (BLINDAJE TOTAL)
 # =============================================================================
 
+# --- IA ---
+.cursorrules
+.cursorignore
+/cursor
+/DOCS
+/PROTOTIPO
+/.agents
+
 # --- ENTORNO VIRTUAL Y SECRETOS (CRÍTICO) ---
 # Nunca subir las llaves del búnker ni las librerías locales.
 backend/venv/
@@ -9,7 +17,7 @@ BACKEND/venv/
 .env
 .env.local
 .env.*.local
-.MANUAL_OPERACIONES.md
+
 
 # --- DATOS SENSIBLES Y PRIVACIDAD MÉDICA ---
 # Esta información reside exclusivamente en el búnker local o producción.

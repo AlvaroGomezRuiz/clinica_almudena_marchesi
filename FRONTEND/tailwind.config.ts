@@ -4,10 +4,39 @@ const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
-      boxShadow: {
-        editorial: '0 20px 40px rgba(75, 100, 95, 0.08)',
-      },
       colors: {
+        /* ── Urban Sanctuary Palette ── */
+        canvas: {
+          DEFAULT: '#F8F6F1',
+          alt: '#EEEAE0',
+          sage: '#E8EFEA',
+        },
+        ink: {
+          DEFAULT: '#1C1C19',
+          soft: '#6B6960',
+          muted: '#A5A49C',
+        },
+        sage: {
+          DEFAULT: '#4A6355',
+          mid: '#7A9B8A',
+          light: '#C8D9CF',
+          wash: '#EBF1ED',
+        },
+        warm: {
+          DEFAULT: '#8B7355',
+          light: '#E8DDD0',
+        },
+        line: 'rgba(28,28,25,0.1)',
+
+        /* ── Glass / Apple tokens ── */
+        glass: {
+          DEFAULT: 'rgba(248,246,241,0.72)',
+          dark: 'rgba(28,28,25,0.65)',
+          border: 'rgba(255,255,255,0.18)',
+          'border-dark': 'rgba(255,255,255,0.08)',
+        },
+
+        /* ── Legacy compatibility (used by existing portal/dashboard pages) ── */
         error: '#a83836',
         'surface-tint': '#4b645f',
         'primary-fixed': '#cde8e2',
@@ -60,27 +89,88 @@ const config: Config = {
         background: '#faf9f5',
         'on-primary': '#e3fff8',
       },
-      borderRadius: {
-        DEFAULT: '0.25rem',
-        lg: '0.5rem',
-        xl: '0.75rem',
-        full: '9999px',
-      },
+
       fontFamily: {
-        headline: ['Noto Serif', 'serif'],
-        body: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        label: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        serif: ['Noto Serif', 'serif'],
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        body: ['Outfit', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+        /* Legacy compat */
+        headline: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        label: ['Outfit', 'system-ui', 'sans-serif'],
+        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
       },
-      letterSpacing: {
-        couture: '0.02em',
+
+      fontSize: {
+        'display-1': ['clamp(3rem, 7vw, 6.5rem)', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '300' }],
+        'display-2': ['clamp(2.2rem, 4.5vw, 4rem)', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '300' }],
+        'display-3': ['clamp(1.6rem, 3vw, 2.5rem)', { lineHeight: '1.15', letterSpacing: '-0.01em', fontWeight: '400' }],
+        'body-lg': ['clamp(1.05rem, 1.2vw, 1.25rem)', { lineHeight: '1.7', fontWeight: '300' }],
+        'label-sm': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.08em', fontWeight: '500' }],
       },
+
+      borderRadius: {
+        sm: '6px',
+        DEFAULT: '0.25rem',
+        md: '14px',
+        lg: '28px',
+        xl: '0.75rem',
+        pill: '999px',
+        full: '9999px',
+        apple: '22px',
+      },
+
+      boxShadow: {
+        editorial: '0 20px 40px rgba(75, 100, 95, 0.08)',
+        glass: '0 8px 32px rgba(28, 28, 25, 0.06)',
+        'glass-lg': '0 20px 60px rgba(28, 28, 25, 0.08)',
+        'card-hover': '0 24px 48px rgba(74, 99, 85, 0.1)',
+        'apple-sm': '0 2px 10px rgba(28, 28, 25, 0.04)',
+        'apple-md': '0 8px 30px rgba(28, 28, 25, 0.06)',
+        'apple-lg': '0 20px 60px rgba(28, 28, 25, 0.1)',
+        'inner-glass': 'inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+      },
+
+      backdropBlur: {
+        glass: '20px',
+        'glass-heavy': '40px',
+      },
+
+      transitionTimingFunction: {
+        'apple': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'apple-in': 'cubic-bezier(0.4, 0, 1, 1)',
+        'apple-out': 'cubic-bezier(0, 0, 0.2, 1)',
+      },
+
+      transitionDuration: {
+        400: '400ms',
+        600: '600ms',
+        800: '800ms',
+        1000: '1000ms',
+      },
+
       lineHeight: {
         editorial: '1.6',
       },
-      transitionDuration: {
-        400: '400ms',
+
+      letterSpacing: {
+        couture: '0.02em',
+      },
+
+      keyframes: {
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '0.6' },
+          '50%': { opacity: '1' },
+        },
+      },
+
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
       },
     },
   },
