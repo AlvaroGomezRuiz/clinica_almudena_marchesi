@@ -65,7 +65,7 @@ export default function SobreMiPage() {
           <div className="lg:col-span-7 flex justify-center">
             <ScrollReveal delay={0.1} scale={0.96}>
               <Photo3D
-                src="/images/almudena.jpg"
+                src="/images/almudena.avif"
                 alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
                 width={580}
                 height={750}

@@ -33,20 +33,17 @@ export default function HeroSection() {
       <div className="max-w-screen-xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center relative">
         {/* Text Column — FIRST on mobile, first on desktop */}
         <div className="z-10 order-1">
-          <ScrollReveal delay={0} offset={30}>
-            <span className="inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-sage px-4 py-1.5 rounded-pill border border-sage/15 bg-sage-wash/60 mb-8">
-              Psicología Clínica · Moncloa
-            </span>
-          </ScrollReveal>
+          {/* Elementos críticos para LCP (Estáticos) */}
+          <span className="inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-sage px-4 py-1.5 rounded-pill border border-sage/15 bg-sage-wash/60 mb-8">
+            Psicología Clínica · Moncloa
+          </span>
 
-          <ScrollReveal delay={0.08} offset={40}>
-            <h1 className="font-display text-display-1 text-ink text-balance mb-8 italic">
-              Un espacio donde{' '}
-              <span className="not-italic font-medium">ser</span>,
-              <br className="hidden md:block" />
-              sin ser juzgado.
-            </h1>
-          </ScrollReveal>
+          <h1 className="font-display text-display-1 text-ink text-balance mb-8 italic">
+            Un espacio donde{' '}
+            <span className="not-italic font-medium">ser</span>,
+            <br className="hidden md:block" />
+            sin ser juzgado.
+          </h1>
 
           <ScrollReveal delay={0.16} offset={35}>
             <p className="text-body-lg text-ink-soft max-w-lg mb-10 leading-relaxed text-pretty">

@@ -127,7 +127,7 @@ export default function PublicHeader() {
                 <ThemeToggle />
                 <button
                   type="button"
-                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-ink/[0.04] transition-colors"
+                  className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-ink/[0.04] transition-colors"
                   onClick={() => setMobileOpen(true)}
                   aria-label="Abrir menú"
                 >
