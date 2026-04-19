@@ -1,20 +1,22 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class', // next-themes inyecta .dark en <html>
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+
   theme: {
     extend: {
       colors: {
         /* ── Urban Sanctuary Palette ── */
         canvas: {
-          DEFAULT: '#F8F6F1',
-          alt: '#EEEAE0',
+          DEFAULT: 'var(--color-canvas, #F8F6F1)',
+          alt: 'var(--color-canvas-alt, #EEEAE0)',
           sage: '#E8EFEA',
         },
         ink: {
-          DEFAULT: '#1C1C19',
-          soft: '#6B6960',
-          muted: '#A5A49C',
+          DEFAULT: 'var(--color-ink, #1C1C19)',
+          soft: 'var(--color-ink-soft, #6B6960)',
+          muted: 'var(--color-ink-muted, #A5A49C)',
         },
         sage: {
           DEFAULT: '#4A6355',
@@ -26,7 +28,7 @@ const config: Config = {
           DEFAULT: '#8B7355',
           light: '#E8DDD0',
         },
-        line: 'rgba(28,28,25,0.1)',
+        line: 'var(--color-line, rgba(28,28,25,0.1))',
 
         /* ── Glass / Apple tokens ── */
         glass: {
@@ -91,14 +93,14 @@ const config: Config = {
       },
 
       fontFamily: {
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        body: ['Outfit', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        display: ['var(--font-display)', '"Cormorant Garamond"', 'Georgia', 'serif'],
+        body: ['var(--font-body)', 'Outfit', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
         /* Legacy compat */
-        headline: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        label: ['Outfit', 'system-ui', 'sans-serif'],
-        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans: ['Outfit', 'system-ui', 'sans-serif'],
+        headline: ['var(--font-display)', '"Cormorant Garamond"', 'Georgia', 'serif'],
+        label: ['var(--font-body)', 'Outfit', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-display)', '"Cormorant Garamond"', 'Georgia', 'serif'],
+        sans: ['var(--font-body)', 'Outfit', 'system-ui', 'sans-serif'],
       },
 
       fontSize: {

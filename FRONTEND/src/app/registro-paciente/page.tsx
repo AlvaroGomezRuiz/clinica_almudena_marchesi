@@ -65,10 +65,10 @@ export default function RegistroPacientePage() {
   };
 
   const inputClasses =
-    'w-full bg-transparent border border-line rounded-apple px-4 py-3.5 transition-all duration-300 font-body text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage/30';
+    'w-full bg-transparent border border-line rounded-apple px-4 py-3.5 transition-all duration-300 font-display text-lg text-ink placeholder:text-ink-muted/50 focus:outline-none focus:border-sage focus:ring-1 focus:ring-sage/30';
 
   const labelClasses =
-    'font-mono text-label-sm uppercase tracking-[0.12em] text-sage-mid mb-2.5 block font-medium';
+    'font-display text-[11px] uppercase tracking-[0.12em] text-sage-mid mb-2.5 block font-medium';
 
   return (
     <div className="bg-canvas overflow-x-hidden">
@@ -83,7 +83,7 @@ export default function RegistroPacientePage() {
               <h1 className="font-display text-display-1 text-ink italic mb-4 text-balance">
                 Registro de Paciente
               </h1>
-              <p className="text-body-lg text-ink-soft leading-relaxed text-pretty">
+              <p className="font-display text-[1.2rem] text-ink-soft leading-relaxed text-pretty">
                 Tu bienestar comienza en un entorno de confianza. Toda la
                 información está protegida bajo los más estrictos estándares de
                 confidencialidad clínica.
@@ -93,9 +93,9 @@ export default function RegistroPacientePage() {
 
           {/* Main card */}
           <ScrollReveal delay={0.1}>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 glass-card overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 glass-card dark:glass-card-dark overflow-hidden transition-colors duration-500">
               {/* Left Column: Emotional Anchor */}
-              <div className="lg:col-span-4 bg-canvas-alt p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden">
+              <div className="lg:col-span-4 bg-white/20 dark:bg-black/20 p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden border-r border-white/20 dark:border-white/5">
                 <div className="relative z-10">
                   <div className="mb-8 overflow-hidden rounded-apple aspect-[3/4] w-full max-h-[320px]">
                     <Image
@@ -131,10 +131,10 @@ export default function RegistroPacientePage() {
                       <span className="material-symbols-outlined text-lg text-sage">verified_user</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-mono text-label-sm uppercase tracking-[0.1em] font-medium text-ink">
+                      <span className="font-display text-xs uppercase tracking-[0.1em] font-medium text-ink">
                         Privacidad Protegida
                       </span>
-                      <span className="text-[0.8rem] text-ink-muted">
+                      <span className="font-display italic text-[0.95rem] text-ink-muted">
                         Conforme a la RGPD europea
                       </span>
                     </div>
@@ -144,10 +144,10 @@ export default function RegistroPacientePage() {
                       <span className="material-symbols-outlined text-lg text-sage">lock</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-mono text-label-sm uppercase tracking-[0.1em] font-medium text-ink">
+                      <span className="font-display text-xs uppercase tracking-[0.1em] font-medium text-ink">
                         Cifrado de extremo a extremo
                       </span>
-                      <span className="text-[0.8rem] text-ink-muted">
+                      <span className="font-display italic text-[0.95rem] text-ink-muted">
                         Tus datos solo son visibles para Almudena
                       </span>
                     </div>
@@ -159,9 +159,9 @@ export default function RegistroPacientePage() {
               </div>
 
               {/* Right Column: Patient Form */}
-              <div className="lg:col-span-8 p-10 lg:p-12 bg-canvas">
+              <div className="lg:col-span-8 p-10 lg:p-12 bg-transparent">
                 {error ? (
-                  <div className="mb-8 glass-card bg-red-50 border-l-[3px] border-red-400 p-4 text-sm text-red-800">
+                  <div className="mb-8 glass-card dark:glass-card-dark bg-red-50 dark:bg-red-950/40 border-l-[3px] border-red-400 dark:border-red-800 p-4 text-sm text-red-800 dark:text-red-200">
                     {error}
                   </div>
                 ) : null}
@@ -272,7 +272,7 @@ export default function RegistroPacientePage() {
                             type="radio"
                             value={opt.value}
                           />
-                          <div className="px-5 py-3 rounded-pill border border-line bg-canvas-alt text-ink-soft font-body text-sm peer-checked:bg-sage-wash peer-checked:border-sage peer-checked:text-sage transition-all duration-300 group-hover:border-sage/40">
+                          <div className="glass-card dark:glass-card-dark px-5 py-3 rounded-pill text-ink-soft font-display text-lg peer-checked:ring-2 peer-checked:ring-sage peer-checked:text-sage transition-all duration-300">
                             {opt.label}
                           </div>
                         </label>
@@ -307,7 +307,7 @@ export default function RegistroPacientePage() {
                         required
                         className="mt-1 w-5 h-5 rounded border-line text-sage focus:ring-sage/30 shrink-0"
                       />
-                      <span className="text-sm text-ink-soft leading-relaxed">
+                      <span className="font-display text-[1.1rem] text-ink-soft leading-relaxed">
                         He leído y acepto la{' '}
                         <a
                           href="/privacidad"

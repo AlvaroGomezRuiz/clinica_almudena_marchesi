@@ -9,7 +9,7 @@ function SubmitButton() {
 
   return (
     <button
-      className="w-full bg-primary text-on-primary font-label uppercase py-4 rounded-xl tracking-widest hover:bg-primary-dim transition-all shadow-lg shadow-primary/10"
+      className="w-full bg-primary text-on-primary font-display text-xs uppercase py-3.5 rounded-xl tracking-[0.15em] font-medium hover:bg-primary-dim transition-all shadow-lg shadow-primary/10"
       type="submit"
       disabled={pending}
     >
@@ -32,11 +32,11 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
       ) : null}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
         <div className="relative">
-          <label className="font-label text-[10px] uppercase tracking-widest text-secondary mb-2 block font-semibold">
+          <label className="font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 block font-medium">
             Correo Electrónico
           </label>
           <input
-            className="w-full bg-white border border-outline-variant/30 rounded-lg px-4 py-3 transition-all font-body text-on-surface placeholder:text-outline/40"
+            className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 transition-all font-display text-[0.95rem] text-ink placeholder:text-outline/40 focus:ring-2 focus:ring-sage focus:outline-none"
             type="email"
             name="email"
             placeholder="hola@ejemplo.com"
@@ -47,12 +47,12 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
 
         {/* ── Password con toggle de visibilidad ── */}
         <div className="relative">
-          <label className="font-label text-[10px] uppercase tracking-widest text-secondary mb-2 block font-semibold">
+          <label className="font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 block font-medium">
             Contraseña
           </label>
           <div className="relative">
             <input
-              className="w-full bg-white border border-outline-variant/30 rounded-lg px-4 py-3 pr-12 transition-all font-body text-on-surface placeholder:text-outline/40"
+              className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 pr-12 transition-all font-display text-[0.95rem] text-ink placeholder:text-outline/40 focus:ring-2 focus:ring-sage focus:outline-none"
               type={showPassword ? 'text' : 'password'}
               name="password"
               placeholder="••••••••••••"
@@ -82,7 +82,7 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
         />
         <label
           htmlFor="trust_device"
-          className="font-body text-sm text-on-surface-variant"
+          className="font-body text-[0.95rem] text-ink font-medium"
         >
           Confiar en este dispositivo (30 días)
         </label>

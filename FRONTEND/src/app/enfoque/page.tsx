@@ -83,7 +83,7 @@ export default function EnfoquePage() {
                 delay={i * 0.08}
                 className={i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-12'}
               >
-                <article className={`glass-card p-8 md:p-10 h-full flex flex-col gap-5 group hover:shadow-card-hover transition-shadow duration-600 ease-apple ${
+                <article className={`glass-card dark:glass-card-dark p-8 md:p-10 h-full flex flex-col gap-5 group hover:shadow-card-hover transition-all duration-600 ease-apple ${
                   i === 2 ? 'md:flex-row md:items-center md:gap-12' : ''
                 }`}>
                   <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">

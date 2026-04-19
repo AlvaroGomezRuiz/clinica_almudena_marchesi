@@ -1,6 +1,64 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
+/* ══════════════════════════════════════════════════
+   SISTEMA DE TOKENS — Light Mode (default)
+   ══════════════════════════════════════════════════ */
+:root {
+  /* Fondos */
+  --color-canvas:      #F8F6F1;
+  --color-canvas-alt:  #EEEAE0;
+
+  /* Texto */
+  --color-ink:         #1C1C19;
+  --color-ink-soft:    #6B6960;
+  --color-ink-muted:   #A5A49C;
+
+  /* Bordes */
+  --color-line:        rgba(28, 28, 25, 0.10);
+
+  /* Glass */
+  --color-glass-bg:    rgba(248, 246, 241, 0.72);
+  --color-glass-border:rgba(255, 255, 255, 0.25);
+
+  /* Nav Pill */
+  --color-nav-bg:      rgba(248, 246, 241, 0.75);
+  --color-nav-scrolled:rgba(248, 246, 241, 0.92);
+
+  /* Mobile menu overlay */
+  --color-menu-overlay:rgba(250, 249, 245, 0.88);
+}
+
+/* ══════════════════════════════════════════════════
+   SISTEMA DE TOKENS — Dark Mode
+   Antracita cálido / Pizarra premium
+   Contraste WCAG AA verificado en todos los pares
+   ══════════════════════════════════════════════════ */
+.dark {
+  /* Fondos: oscuro profundo clásico para máximo contraste */
+  --color-canvas:      #111111;
+  --color-canvas-alt:  #1A1A1A;
+
+  /* Texto: blanco y grises claros muy legibles (Accesibilidad AAA) */
+  --color-ink:         #FFFFFF;
+  --color-ink-soft:    #E5E7EB;
+  --color-ink-muted:   #9CA3AF;
+
+  /* Bordes más visibles */
+  --color-line:        rgba(255, 255, 255, 0.15);
+
+  /* Glass oscuro de alto contraste */
+  --color-glass-bg:    rgba(17, 17, 17, 0.85);
+  --color-glass-border:rgba(255, 255, 255, 0.15);
+
+  /* Nav Pill oscuro */
+  --color-nav-bg:      rgba(20, 20, 20, 0.85);
+  --color-nav-scrolled:rgba(20, 20, 20, 0.95);
+
+  /* Mobile menu overlay oscuro */
+  --color-menu-overlay:rgba(17, 17, 17, 0.95);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,10 +71,14 @@
   }
 
   body {
-    @apply font-body bg-canvas text-ink;
+    @apply font-body text-ink antialiased bg-canvas overflow-x-hidden select-none;
     font-weight: 300;
     line-height: 1.65;
-    overflow-x: hidden;
+  }
+
+  /* Reactivar selección para campos de formulario para no romper el UX */
+  input, textarea {
+    @apply select-text;
   }
 
   h1, h2, h3, h4 {
@@ -37,25 +99,55 @@
     vertical-align: middle;
   }
 
-  /* ── Apple Glass Card ── */
+  /* ── Apple Glass Card (Liquid Glass Optimizado) ── */
   .glass-card {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 8px 32px rgba(28, 28, 25, 0.06),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 100%);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 22px;
+    box-shadow: 
+      inset 2px 2px 5px rgba(255, 255, 255, 0.6),  /* Luz principal */
+      inset -1px -1px 12px rgba(0, 0, 255, 0.04),  /* Refracción fría derecha */
+      inset 1px 1px 12px rgba(255, 0, 0, 0.03),    /* Refracción cálida izquierda */
+      0 10px 30px rgba(28, 28, 25, 0.05);          /* Sombra base suave */
+    position: relative;
+    overflow: hidden;
+    transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      inset 2px 2px 8px rgba(255, 255, 255, 0.7),
+      inset -2px -2px 18px rgba(0, 0, 255, 0.05),
+      inset 2px 2px 18px rgba(255, 0, 0, 0.04),
+      0 16px 45px rgba(28, 28, 25, 0.09);
   }
 
   .glass-card-dark {
-    background: rgba(28, 28, 25, 0.55);
+    background: linear-gradient(135deg, rgba(30,30,30,0.6) 0%, rgba(10,10,10,0.3) 100%);
     backdrop-filter: blur(24px) saturate(1.6);
     -webkit-backdrop-filter: blur(24px) saturate(1.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.06);
     border-radius: 22px;
+    box-shadow: 
+      inset 1px 1px 3px rgba(255, 255, 255, 0.15),
+      inset -1px -1px 12px rgba(0, 150, 255, 0.06), 
+      inset 1px 1px 12px rgba(255, 50, 50, 0.04),
+      0 10px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    transition: all 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card-dark:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      inset 1px 1px 6px rgba(255, 255, 255, 0.25),
+      inset -2px -2px 18px rgba(0, 150, 255, 0.09),
+      inset 2px 2px 18px rgba(255, 50, 50, 0.06),
+      0 16px 50px rgba(0, 0, 0, 0.4);
   }
 
   /* ── Apple-style Nav Pill ── */
@@ -145,6 +237,39 @@
   [role='menuitem']:focus-visible {
     outline: 2px solid #4A6355;
     outline-offset: 3px;
+    /* WCAG 2.4.11 — el foco nunca queda oculto bajo el header fijo (~72px) */
+    scroll-margin-top: 80px;
+    scroll-margin-bottom: 20px;
+  }
+
+  /* ── Skip Link — WCAG 2.4.1 (bypass block) ── */
+  .skip-link {
+    position: fixed;
+    top: -100%;          /* oculto por defecto fuera de pantalla */
+    left: 1rem;
+    z-index: 9999;
+    padding: 0.6rem 1.2rem;
+    background: #4A6355;
+    color: #fff;
+    font-family: var(--font-body), sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0 0 8px 8px;
+    text-decoration: none;
+    transition: top 150ms ease;
+    outline: none;
+  }
+
+  .skip-link:focus-visible {
+    top: 0;              /* aparece al recibir foco por teclado */
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+    scroll-margin-top: 0;  /* anula el global para este elemento */
+  }
+
+  /* Skip link y anchors también */
+  :target {
+    scroll-margin-top: 80px;
   }
 
   /* ── Legacy sticker classes (portal compat) ── */

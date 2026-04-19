@@ -81,18 +81,18 @@ export default function ContactoPage() {
                   href={item.href}
                   target={item.external ? '_blank' : undefined}
                   rel={item.external ? 'noopener noreferrer' : undefined}
-                  className="glass-card p-6 flex items-center gap-5 group hover:shadow-card-hover transition-all duration-400 ease-apple block"
+                  className="glass-card dark:glass-card-dark p-6 flex items-center gap-5 group hover:shadow-card-hover transition-all duration-400 ease-apple"
                 >
                   <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
                     <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400">
                       {item.icon}
                     </span>
                   </div>
-                  <div>
-                    <p className="font-mono text-label-sm uppercase text-ink-muted mb-1">
+                  <div className="select-text">
+                    <p className="font-mono text-label-sm uppercase text-ink-muted mb-1 select-text">
                       {item.label}
                     </p>
-                    <p className="font-body text-ink font-medium text-[0.95rem]">
+                    <p className="font-body text-ink font-medium text-[0.95rem] select-text">
                       {item.value}
                     </p>
                   </div>
@@ -102,9 +102,9 @@ export default function ContactoPage() {
 
             {/* Portal Advisory */}
             <ScrollReveal delay={0.2}>
-              <div className="glass-card p-6 md:p-8 bg-sage-wash/50">
+              <div className="glass-card dark:glass-card-dark p-6 md:p-8 bg-sage-wash/50 dark:bg-sage-wash/10">
                 <div className="flex items-start gap-4">
-                  <span className="material-symbols-outlined text-sage text-2xl mt-0.5">calendar_month</span>
+                  <span className="material-symbols-outlined text-sage dark:text-sage-light text-2xl mt-0.5">calendar_month</span>
                   <div>
                     <h3 className="font-display text-xl text-ink mb-2">
                       Reserva de Citas
@@ -139,7 +139,7 @@ export default function ContactoPage() {
             </ScrollReveal>
 
             <ScrollReveal delay={0.12}>
-              <div className="glass-card p-6 md:p-8">
+              <div className="glass-card dark:glass-card-dark p-6 md:p-8">
                 <div className="space-y-4">
                   {SCHEDULE.map((slot) => (
                     <div key={slot.day} className="flex justify-between items-center py-2 border-b border-line last:border-0">
@@ -157,7 +157,7 @@ export default function ContactoPage() {
                 href={getClinicGoogleMapsHref()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="glass-card p-6 md:p-8 block group hover:shadow-card-hover transition-all duration-400 ease-apple"
+                className="glass-card dark:glass-card-dark p-6 md:p-8 block group hover:shadow-card-hover transition-all duration-400 ease-apple"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">

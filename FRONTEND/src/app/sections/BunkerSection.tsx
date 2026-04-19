@@ -23,13 +23,17 @@ const STEPS = [
 
 export default function BunkerSection() {
   return (
-    <section className="py-24 md:py-36 px-6 md:px-12 bg-canvas-alt/50 relative overflow-hidden">
+    <section
+      className="py-24 md:py-36 px-6 md:px-12 bg-canvas-alt/50 relative overflow-hidden"
+      aria-label="Portal del Paciente — acceso seguro y confidencial"
+    >
       <div className="max-w-4xl mx-auto text-center">
-        {/* Icon */}
+        {/* Icon — decorativo */}
         <ScrollReveal>
           <span
             className="material-symbols-outlined text-6xl text-sage mb-8 block"
             style={{ fontVariationSettings: "'FILL' 1" }}
+            aria-hidden="true"
           >
             verified_user
           </span>
@@ -76,7 +80,7 @@ export default function BunkerSection() {
             {STEPS.map((step) => (
               <div
                 key={step.num}
-                className="glass-card p-7 flex flex-col gap-2 group hover:shadow-card-hover transition-shadow duration-600 ease-apple"
+                className="glass-card dark:glass-card-dark p-7 flex flex-col gap-2 group hover:shadow-card-hover transition-all duration-600 ease-apple"
               >
                 <span className="font-display text-3xl text-sage font-light">
                   {step.num}
@@ -94,7 +98,7 @@ export default function BunkerSection() {
 
         {/* Info callout */}
         <ScrollReveal delay={0.22}>
-          <div className="max-w-2xl mx-auto mb-14 glass-card p-6 flex gap-4 text-left border-l-[3px] border-sage">
+          <div className="max-w-2xl mx-auto mb-14 glass-card dark:glass-card-dark p-6 flex gap-4 text-left border-l-[3px] border-sage transition-colors duration-500">
             <span className="material-symbols-outlined text-sage text-2xl shrink-0 mt-0.5">info</span>
             <div>
               <p className="font-body font-semibold text-ink text-sm mb-1">

@@ -2,11 +2,14 @@
 
 import Link from 'next/link';
 import ScrollReveal from '@/components/public/ScrollReveal';
-import Photo3D from '@/components/public/Photo3D';
+import HeroImage from '@/components/public/HeroImage';
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-[100dvh] flex items-center pt-28 pb-20 px-6 md:px-12 overflow-hidden">
+    <section
+      className="relative min-h-[100dvh] flex items-center pt-28 pb-20 px-6 md:px-12 overflow-hidden"
+      aria-label="Presentación de Almudena Marchesi, psicóloga clínica"
+    >
       {/* Ambient Background */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
         <div
@@ -65,18 +68,9 @@ export default function HeroSection() {
           </ScrollReveal>
         </div>
 
-        {/* 3D Photo Column — SECOND on mobile, second on desktop */}
+        {/* Imagen — Server Component estático, máxima prioridad LCP */}
         <div className="order-2 flex justify-center">
-          <ScrollReveal offset={50} duration={1} scale={0.95}>
-            <Photo3D
-              src="/images/almudena.jpg"
-              alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
-              width={520}
-              height={680}
-              priority
-              className="max-w-[340px] md:max-w-[440px] lg:max-w-[480px]"
-            />
-          </ScrollReveal>
+          <HeroImage className="max-w-[340px] md:max-w-[440px] lg:max-w-[480px] w-full" />
         </div>
       </div>
     </section>

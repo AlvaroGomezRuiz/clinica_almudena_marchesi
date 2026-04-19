@@ -112,9 +112,11 @@ export default function ServiciosPage() {
               delay={i * 0.06}
               className={i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-6'}
             >
-              <article className={`glass-card p-8 md:p-10 h-full flex flex-col justify-between group hover:shadow-card-hover transition-shadow duration-600 ease-apple ${
-                service.featured ? 'ring-1 ring-sage/15' : ''
-              }`}>
+              <article
+                className={`glass-card dark:glass-card-dark h-full flex flex-col justify-between group p-8 md:p-10 ${
+                  service.featured ? 'ring-1 ring-sage/15 dark:ring-sage/30' : ''
+                }`}
+              >
                 <div>
                   <span className="inline-block font-mono text-label-sm uppercase tracking-[0.1em] text-sage bg-sage-wash px-3 py-1 rounded-pill mb-5">
                     {service.tag}
@@ -148,7 +150,7 @@ export default function ServiciosPage() {
       </section>
 
       {/* Bonos */}
-      <section className="py-24 md:py-36 px-6 md:px-12 bg-canvas-sage relative overflow-hidden">
+      <section className="py-24 md:py-36 px-6 md:px-12 bg-canvas-sage dark:bg-canvas-alt relative overflow-hidden transition-colors duration-500">
         <div className="max-w-screen-xl mx-auto relative z-10">
           <ScrollReveal className="text-center mb-14">
             <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block">
@@ -166,7 +168,9 @@ export default function ServiciosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {BONOS.map((bono, i) => (
               <ScrollReveal key={bono.name} delay={i * 0.1}>
-                <div className="glass-card p-8 md:p-10 text-center flex flex-col items-center">
+                <div
+                  className="glass-card dark:glass-card-dark h-full flex flex-col items-center text-center p-8 md:p-10 transition-all duration-500"
+                >
                   <span className="font-mono text-label-sm uppercase tracking-widest text-sage-mid mb-3">
                     {bono.label}
                   </span>

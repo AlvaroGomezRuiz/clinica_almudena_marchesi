@@ -23,7 +23,10 @@ const PILLARS = [
 
 export default function PhilosophySection() {
   return (
-    <section className="py-28 md:py-40 px-6 md:px-12 bg-canvas-alt relative overflow-hidden">
+    <section
+      className="py-28 md:py-40 px-6 md:px-12 bg-canvas-alt relative overflow-hidden"
+      aria-label="Mi enfoque terapéutico — pilares de trabajo"
+    >
       {/* Section line */}
       <div className="section-line max-w-screen-xl mx-auto mb-20" />
 
@@ -62,9 +65,9 @@ export default function PhilosophySection() {
               offset={35}
               scale={0.97}
             >
-              <article className="glass-card p-8 md:p-10 flex flex-col gap-6 h-full group hover:shadow-card-hover transition-shadow duration-600 ease-apple">
+              <article className="glass-card dark:glass-card-dark p-8 md:p-10 flex flex-col gap-6 h-full group hover:shadow-card-hover transition-all duration-600 ease-apple">
                 <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors duration-400 ease-apple">
-                  <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
+                <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400" aria-hidden="true">
                     {pillar.icon}
                   </span>
                 </div>

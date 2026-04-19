@@ -36,36 +36,34 @@ export default function LoginPage({
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full max-w-md mx-auto glass-card dark:glass-card-dark p-8 md:p-12 rounded-[24px]">
           <div className="mb-12">
-            <h1 className="font-display text-display-2 text-ink mb-4">
+            <h1 className="font-display text-[2.5rem] text-ink italic mb-2 text-balance leading-tight">
               Tu Espacio Seguro
             </h1>
-            <p className="text-body-lg text-ink-soft leading-relaxed">
+            <p className="font-display text-[1.1rem] text-ink-soft leading-relaxed">
               Accede a tu portal privado para gestionar tus citas y documentación clínica.
             </p>
           </div>
 
           <LoginForm redirectTo={searchParams.redirect_to} />
 
-          <div className="mt-12 pt-8 border-t border-line text-center">
-            <p className="text-sm text-ink-muted">
-              ¿No tienes cuenta?
+          <div className="mt-12 pt-8 border-t border-outline-variant/30 text-center space-y-5">
+            <p className="font-body text-[0.95rem] text-ink-soft">
+              ¿Todavía no eres paciente de la clínica?
             </p>
-            <div className="mt-6">
+            <div className="flex flex-row justify-center items-center gap-3">
               <a
                 href="/registro-paciente"
-                className="text-sage font-medium hover:underline transition-all"
+                className="px-4 py-1.5 rounded-full border border-ink/10 text-ink text-xs font-medium hover:bg-ink/5 dark:hover:bg-white/5 transition-all"
               >
-                CREAR CUENTA
+                Crear Cuenta
               </a>
-            </div>
-            <div className="mt-6">
               <a
                 href="/contacto"
-                className="text-sage font-medium hover:underline transition-all"
+                className="px-4 py-1.5 rounded-full border border-ink/10 text-ink text-xs font-medium hover:bg-ink/5 dark:hover:bg-white/5 transition-all"
               >
-                Ir a contacto
+                Contactar
               </a>
             </div>
           </div>

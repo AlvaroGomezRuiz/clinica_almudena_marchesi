@@ -136,7 +136,7 @@ export default function SobreMiPage() {
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
               <blockquote className="border-l-2 border-sage-light pl-6 py-2">
-                <p className="font-display text-xl text-sage italic">
+                <p className="font-display text-xl text-sage dark:text-sage-light italic transition-colors">
                   &ldquo;El encuentro de dos personas es como el contacto de dos
                   sustancias químicas: si hay alguna reacción, ambas se
                   transforman.&rdquo;
@@ -160,7 +160,7 @@ export default function SobreMiPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {CREDENTIALS.map((cred, i) => (
               <ScrollReveal key={cred.title} delay={i * 0.08}>
-                <article className="glass-card p-8 md:p-10 h-full flex flex-col group hover:shadow-card-hover hover:-translate-y-1 transition-all duration-600 ease-apple">
+                <article className="glass-card dark:glass-card-dark p-8 md:p-10 h-full flex flex-col group hover:shadow-card-hover hover:-translate-y-1 transition-all duration-600 ease-apple">
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-8 transition-colors duration-400 ease-apple ${
                     cred.accentColor === 'sage'
                       ? 'bg-sage-wash group-hover:bg-sage'

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import LiquidGlass from '@/components/public/LiquidGlass';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const NAV_ITEMS = [
   { href: '/enfoque', label: 'Enfoque' },
@@ -109,24 +110,30 @@ export default function PublicHeader() {
                 ))}
               </div>
 
-              {/* Desktop CTA — Portal del Paciente */}
-              <Link
-                href="/login"
-                className="hidden md:inline-flex items-center gap-1.5 ml-2 bg-sage text-white text-[0.82rem] font-medium px-5 py-2 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97]"
-                style={{ boxShadow: '0 2px 10px rgba(74,99,85,0.18)' }}
-              >
-                Portal del Paciente
-              </Link>
+              {/* Desktop: ThemeToggle + CTA Portal del Paciente */}
+              <div className="hidden md:flex items-center gap-1 ml-2">
+                <ThemeToggle />
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 bg-sage text-white text-[0.82rem] font-medium px-5 py-2 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97]"
+                  style={{ boxShadow: '0 2px 10px rgba(74,99,85,0.18)' }}
+                >
+                  Portal del Paciente
+                </Link>
+              </div>
 
-              {/* Mobile Hamburger */}
-              <button
-                type="button"
-                className="md:hidden flex items-center justify-center w-10 h-10 rounded-full hover:bg-ink/[0.04] transition-colors ml-1"
-                onClick={() => setMobileOpen(true)}
-                aria-label="Abrir menú"
-              >
-                <span className="material-symbols-outlined text-2xl text-ink">menu</span>
-              </button>
+              {/* Mobile: ThemeToggle + Hamburger */}
+              <div className="md:hidden flex items-center ml-auto gap-1">
+                <ThemeToggle />
+                <button
+                  type="button"
+                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-ink/[0.04] transition-colors"
+                  onClick={() => setMobileOpen(true)}
+                  aria-label="Abrir menú"
+                >
+                  <span className="material-symbols-outlined text-2xl text-ink">menu</span>
+                </button>
+              </div>
             </nav>
           </LiquidGlass>
         </div>
@@ -144,9 +151,8 @@ export default function PublicHeader() {
           >
             {/* Native backdrop-blur overlay — performs well on all mobile devices */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 bg-canvas/90 dark:bg-[#111111]/90 transition-colors duration-500"
               style={{
-                background: 'rgba(250, 249, 245, 0.88)',
                 backdropFilter: 'blur(40px) saturate(180%)',
                 WebkitBackdropFilter: 'blur(40px) saturate(180%)',
               }}
@@ -172,9 +178,8 @@ export default function PublicHeader() {
 
                 <button
                   type="button"
-                  className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300"
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 transition-all duration-300"
                   style={{
-                    background: 'rgba(0, 0, 0, 0.06)',
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
                   }}
@@ -222,8 +227,7 @@ export default function PublicHeader() {
                 ))}
               </nav>
 
-              {/* Footer */}
-              <div className="text-center pb-4">
+              <div className="flex items-center justify-between pb-4">
                 <p className="font-mono text-label-sm uppercase text-ink-muted">
                   Psicología Clínica — Moncloa, Madrid
                 </p>

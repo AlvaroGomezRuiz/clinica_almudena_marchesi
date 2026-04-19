@@ -5,7 +5,10 @@ import ScrollReveal from '@/components/public/ScrollReveal';
 
 export default function CTASection() {
   return (
-    <section className="py-28 md:py-40 px-6 md:px-12">
+    <section
+      className="py-28 md:py-40 px-6 md:px-12"
+      aria-label="Reservar primera cita — inicio de tu proceso terap\u00e9utico"
+    >
       <div className="max-w-screen-xl mx-auto">
         <ScrollReveal>
           <div className="glass-card-dark px-8 py-16 md:px-16 md:py-20 text-center relative overflow-hidden">
@@ -30,14 +33,14 @@ export default function CTASection() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/registro-paciente"
-                  className="bg-white text-ink font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97] text-center"
+                  className="bg-white text-[#111111] font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97] text-center"
                   style={{ boxShadow: '0 4px 20px rgba(255,255,255,0.1)' }}
                 >
                   Reservar cita
                 </Link>
                 <Link
                   href="/contacto"
-                  className="border border-white/15 text-white/80 font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:bg-white/5 hover:-translate-y-px text-center"
+                  className="border border-white/20 text-white font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:bg-white/10 hover:-translate-y-px text-center"
                 >
                   Contactar
                 </Link>

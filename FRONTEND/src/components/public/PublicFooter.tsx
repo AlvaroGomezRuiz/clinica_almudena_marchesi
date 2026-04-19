@@ -23,7 +23,7 @@ export default function PublicFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-ink text-white/80 w-full">
+    <footer className="bg-[#141413] dark:bg-[#0A0A0A] text-white/80 w-full transition-colors duration-500">
       {/* Main Grid */}
       <div className="max-w-screen-xl mx-auto px-6 md:px-12 pt-20 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8">

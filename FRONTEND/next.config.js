@@ -1,7 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  /* Habilita compresión Gzip/Brotli en el servidor Next.js */
+  compress: true,
+
+  /* Deshabilita source maps en producción (seguridad) */
+  productionBrowserSourceMaps: false,
+
   images: {
+    /* AVIF primero (≈40% más pequeño que WebP), WebP como fallback */
+    formats: ['image/avif', 'image/webp'],
+    /* Cache de 1 año para imágenes optimizadas — evita re-procesar en cada CDN hit */
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
@@ -20,8 +31,15 @@ const nextConfig = {
       },
     ],
   },
-  // Bloquea que la gente vea tu código fuente real en consola (Production maps)
-  productionBrowserSourceMaps: false,
+
+  experimental: {
+    /*
+     * optimizeCss usa Critters para extraer e inlinear el CSS crítico
+     * en el <head>, eliminando la solicitud bloqueante de la hoja de estilos.
+     * Requiere: npm install critters (se instala automáticamente con Next.js 14)
+     */
+    optimizeCss: true,
+  },
 
   // ─── CABECERAS DE SEGURIDAD DE NIVEL BANCARIO ───
   async headers() {
