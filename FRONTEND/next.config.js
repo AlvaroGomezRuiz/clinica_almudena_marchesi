@@ -33,8 +33,9 @@ const nextConfig = {
   },
 
   experimental: {
-    // optimizeCss extrae e inlinea el CSS crítico en el <head>
-    optimizeCss: true,
+    // optimizeCss está deshabilitado permanentemente. La versión actual de 'critters'
+    // rompe el purgado de estilos en Tailwind y provoca pantallas blancas en Vercel.
+    // optimizeCss: false,
   },
 
   // ─── CABECERAS DE SEGURIDAD DE NIVEL BANCARIO ───
@@ -79,15 +80,11 @@ const nextConfig = {
             key: 'X-Powered-By',
             value: '',
           },
-          // Cross-Origin isolation
+          // Cross-Origin isolation (Relajado para Vercel Edge Network)
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin',
-          },
+          }
         ],
       },
     ];
