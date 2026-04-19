@@ -82,7 +82,7 @@ export default function PublicHeader() {
               className="flex items-center gap-2 px-3 py-2 md:px-5 md:py-2.5"
             >
               {/* Brand */}
-              <Link href="/" className="flex items-center gap-2.5 min-w-0 px-2">
+              <Link href="/" className="flex items-center gap-2.5 min-w-0 px-2 py-1 -ml-2 active:opacity-50 hover:opacity-70 transition-opacity">
                 <div className="flex flex-col leading-none min-w-0">
                   <span className="font-display text-[1rem] md:text-[1.05rem] text-ink font-medium truncate">
                     Almudena Marchesi
@@ -165,8 +165,9 @@ export default function PublicHeader() {
               <div className="flex items-center justify-between">
                 <Link
                   href="/"
-                  className="flex flex-col leading-none"
+                  className="flex flex-col leading-none flex-1 py-4 pr-12 -my-4 -ml-2 active:opacity-50 transition-opacity"
                   onClick={() => setMobileOpen(false)}
+                  aria-label="Ir a Inicio"
                 >
                   <span className="font-display text-[1.05rem] text-ink font-medium">
                     Almudena Marchesi

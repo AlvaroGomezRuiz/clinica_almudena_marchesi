@@ -30,14 +30,14 @@ export default function PublicFooter() {
 
           {/* Brand Column */}
           <div className="md:col-span-5 space-y-5">
-            <div>
-              <h3 className="font-display text-2xl text-white font-light tracking-tight">
+            <Link href="/" className="block group active:opacity-50 hover:opacity-70 transition-opacity">
+              <h3 className="font-display text-2xl text-white font-light tracking-tight group-hover:text-sage-light transition-colors">
                 Almudena Marchesi
               </h3>
               <p className="font-mono text-label-sm uppercase text-white/40 mt-1">
                 Psicología Clínica
               </p>
-            </div>
+            </Link>
             <p className="font-body text-[0.9rem] text-white/50 leading-relaxed max-w-xs">
               Acompañamiento profesional basado en la evidencia y el trato humano,
               en el corazón de Moncloa, Madrid.
