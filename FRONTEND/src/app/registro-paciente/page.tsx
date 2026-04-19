@@ -100,7 +100,7 @@ export default function RegistroPacientePage() {
                       className="w-full h-full object-cover"
                       height={800}
                       sizes="(min-width: 1024px) 30vw, 100vw"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEhhmYFWoOy8Fd0GBsFwm9_63u27nkDMwDUWfJm7tNuEbZFFs6titbrfGnyLpX3cDlm2Cy1HCsJTzc-__ErjSgH5ArRnQObKciorMRZIzm0lae37gm2wMON4g7Kzc_32nAeztrs8r8JAEJ_1nfLH6hDW9o2PHU6F0_ymZlbBKCAvJw6A8feLhYOCzqteJRU0qXJt8BY9gjiQVMdftpg71WfOvzbajsjOOx4cjpMzunayyU0wu85QFViA19SgJ-TOncxFZGJhM_L4k"
+                      src="/images/registro.avif"
                       width={600}
                     />
                   </div>

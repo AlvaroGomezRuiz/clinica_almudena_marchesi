@@ -23,7 +23,7 @@ export default function LoginPage({
               className="w-full h-full object-cover"
               height={1000}
               priority
-              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80&auto=format"
+              src="/images/acceso-portal-login.avif"
               width={800}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent" />
