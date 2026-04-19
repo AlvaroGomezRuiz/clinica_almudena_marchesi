@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { motion, useReducedMotion } from "framer-motion";
@@ -212,7 +213,7 @@ export default function LandingDiscovery(): JSX.Element {
                 variants={sectionReveal}
               >
                 <div className="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl relative z-10 transform md:rotate-2">
-                  <img alt={COPY.hero.imageAlt} className="h-full w-full object-cover" loading="eager" src={COPY.hero.imageSrc} />
+                  <Image alt={COPY.hero.imageAlt} className="h-full w-full object-cover" loading="eager" src={COPY.hero.imageSrc} width={1920} height={2400} priority />
                 </div>
                 <div aria-hidden="true" className="absolute -bottom-10 -left-10 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl -z-0" />
                 <div aria-hidden="true" className="absolute -top-10 -right-10 w-48 h-48 bg-secondary-container/20 rounded-full blur-2xl -z-0" />

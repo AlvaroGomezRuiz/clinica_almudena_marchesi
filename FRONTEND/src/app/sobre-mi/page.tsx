@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import ScrollReveal from '@/components/public/ScrollReveal';
 import Photo3D from '@/components/public/Photo3D';
@@ -84,20 +85,24 @@ export default function SobreMiPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="pt-10">
                 <div className="rounded-apple overflow-hidden shadow-apple-md">
-                  <img
+                  <Image
                     alt="dos personas abrazandose desde una perspectiva cenital"
                     className="w-full aspect-[3/4] object-cover"
                     src="/images/abrazo.avif"
+                    width={600}
+                    height={800}
                     loading="lazy"
                   />
                 </div>
               </div>
               <div>
                 <div className="rounded-apple overflow-hidden shadow-apple-md">
-                  <img
+                  <Image
                     alt="Cuaderno de notas clínicas sobre una mesa de madera con luz natural"
                     className="w-full aspect-[3/4] object-cover"
                     src="/images/notas.avif"
+                    width={600}
+                    height={800}
                     loading="lazy"
                   />
                 </div>

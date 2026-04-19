@@ -3,6 +3,7 @@ import './globals.css';
 import { headers } from 'next/headers';
 import PublicHeader from '@/components/PublicHeader';
 import PublicFooter from '@/components/public/PublicFooter';
+import { PrivacyProvider } from '@/context/PrivacyContext';
 
 function shouldRenderPublicShell(pathname: string): boolean {
   if (!pathname) return true;
@@ -28,7 +29,11 @@ export default function RootLayout({
       </head>
       <body>
         {isPublic ? <PublicHeader /> : null}
-        <main id="main">{children}</main>
+        <main id="main">
+          {isPublic ? children : (
+            <PrivacyProvider>{children}</PrivacyProvider>
+          )}
+        </main>
         {isPublic ? <PublicFooter /> : null}
       </body>
     </html>

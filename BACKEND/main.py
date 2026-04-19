@@ -9,8 +9,12 @@ if str(root_path) not in sys.path:
 
 import logging
 import time
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    _HAS_SENTRY = True
+except ImportError:
+    _HAS_SENTRY = False
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,13 +40,19 @@ from services.configuracion import router as configuracion_router
 from api.v1.citas import router as citas_v1_router
 
 load_dotenv()
+
+# Register SQLAlchemy model events (blind indexes, etc.)
+# Must happen after all model-importing modules above are loaded.
+from db.session import register_events
+register_events()
+
 MODO_ENTORNO = os.getenv("ENV", "development")
 
 # ==========================================
 # 0. CONFIGURACIÓN SENTRY
 # ==========================================
 SENTRY_DSN = os.getenv("SENTRY_DSN")
-if SENTRY_DSN:
+if _HAS_SENTRY and SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[FastApiIntegration()],
@@ -73,15 +83,29 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty
 # 3. MIDDLEWARES (Capas de Defensa)
 
 
-# --- NUEVO: Cabeceras de Seguridad Paranoicas ---
+# --- Cabeceras de Seguridad de Nivel Bancario ---
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["X-Frame-Options"] = "DENY"  # Anti-Clickjacking
-    response.headers["X-Content-Type-Options"] = "nosniff"  # Anti-MIME-Sniffing
+
+    # ── Cabeceras universales ──
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+
+    # HSTS: 2 años, incluye subdominios, preload-ready
     response.headers["Strict-Transport-Security"] = (
-        "max-age=31536000; includeSubDomains"
+        "max-age=63072000; includeSubDomains; preload"
+    )
+
+    # Permissions-Policy: bloquear APIs sensibles del navegador
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=(), payment=(), "
+        "usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
     )
 
     path = request.url.path
@@ -89,7 +113,7 @@ async def add_security_headers(request: Request, call_next):
         path.startswith("/docs") or path.startswith("/redoc") or path == "/openapi.json"
     )
 
-    # CSP: En producción queremos ser estrictos, pero Swagger UI requiere scripts inline.
+    # CSP: Swagger UI necesita inline scripts; API endpoints son estrictos.
     if is_docs_route:
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
@@ -102,7 +126,12 @@ async def add_security_headers(request: Request, call_next):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline';"
+            "style-src 'self' 'unsafe-inline'; "
+            "frame-ancestors 'none'; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "upgrade-insecure-requests"
         )
     return response
 

@@ -200,3 +200,51 @@
     border: 1px solid rgba(121, 123, 118, 0.1);
   }
 }
+
+/* ══════════════════════════════════════════════════
+   SISTEMA ANTI-VIGÍA — "Modo Pánico"
+   ══════════════════════════════════════════════════ */
+
+/* Cuando body.privacy-blur está activo, desenfoca TODOS los
+   elementos marcados con data-sensitive="true" */
+body.privacy-blur [data-sensitive="true"] {
+  filter: blur(12px);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: filter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Transición de salida (desblur) */
+[data-sensitive="true"] {
+  transition: filter 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Protección de selección en datos clínicos (siempre activa) */
+[data-no-copy="true"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+/* ── BLOQUEO TOTAL DE IMPRESIÓN ──
+   Impide que se impriman datos clínicos sensibles.
+   Las zonas públicas (marketing) no se ven afectadas. */
+@media print {
+  /* Ocultar completamente las zonas protegidas */
+  [data-print-block="true"],
+  body.privacy-blur [data-sensitive="true"] {
+    display: none !important;
+  }
+
+  /* Mensaje de advertencia para intentos de impresión */
+  body::after {
+    content: "Contenido protegido — Ley 41/2002 de Autonomía del Paciente. No se permite la impresión de datos clínicos.";
+    display: block;
+    text-align: center;
+    padding: 4rem 2rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    color: #71717a;
+  }
+}

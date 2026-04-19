@@ -131,51 +131,102 @@ async function refreshSlidingSession(
 export async function middleware(request: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
 
+  // ─── CSP ENDURECIDA ───
+  // En producción: sin unsafe-inline para scripts (Next.js inyecta nonces).
+  // En desarrollo: unsafe-inline + unsafe-eval para hot-reload/hidratación.
+  const scriptSrc = isProd
+    ? "script-src 'self'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+
   const csp = [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    "script-src 'self' 'unsafe-inline'" + (isProd ? '' : " 'unsafe-eval'"),
+    scriptSrc,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: https://lh3.googleusercontent.com",
     "connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 ws://localhost:3000 ws://127.0.0.1:3000",
+    "upgrade-insecure-requests",
   ].join('; ');
 
   const withSecurityHeaders = (response: NextResponse) => {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('Content-Security-Policy', csp);
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     return response;
   };
 
-  // Busca la credencial de acceso. Si tu cookie se llama 'access_token', cámbialo aquí.
-  const token = request.cookies.get('auth_token')?.value;
-
-  const jwtClaims = token ? parseJwtClaims(token) : null;
-
-  const isLoginPage = request.nextUrl.pathname.startsWith('/login');
-  const isDashboardPage = request.nextUrl.pathname.startsWith('/dashboard');
-  const isPortalPage = request.nextUrl.pathname.startsWith('/portal');
-  const isPagosPage = request.nextUrl.pathname.startsWith('/pagos');
-  const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
-  const isProtectedPage = isDashboardPage || isPortalPage || isAdminPage;
-
-  const isPaymentGateRoute = isDashboardPage || isPortalPage;
-
-  // Regla 1: Si intenta entrar al búnker sin credencial -> Expulsión al login
-  if (!token && isProtectedPage) {
+  /**
+   * Helper: Expulsar al login borrando la cookie auth_token.
+   * Utilizado cuando el JWT ha expirado, es inválido, o el rol no coincide.
+   */
+  const expelToLogin = (reason: string) => {
     const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('reason', reason);
     loginUrl.searchParams.set(
       'next',
       `${request.nextUrl.pathname}${request.nextUrl.search}`
     );
-    return withSecurityHeaders(NextResponse.redirect(loginUrl));
+    const res = NextResponse.redirect(loginUrl);
+    // Purgar la cookie corrompida/expirada
+    res.cookies.set('auth_token', '', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    });
+    return withSecurityHeaders(res);
+  };
+
+  const token = request.cookies.get('auth_token')?.value;
+  const jwtClaims = token ? parseJwtClaims(token) : null;
+
+  const { pathname } = request.nextUrl;
+  const isLoginPage = pathname.startsWith('/login');
+  const isDashboardPage = pathname.startsWith('/dashboard');
+  const isPortalPage = pathname.startsWith('/portal');
+  const isPagosPage = pathname.startsWith('/pagos');
+  const isAdminPage = pathname.startsWith('/admin');
+  const isProtectedPage = isDashboardPage || isPortalPage || isAdminPage;
+  const isPaymentGateRoute = isDashboardPage || isPortalPage;
+
+  // ─── REGLA 0: Sin credencial en zona protegida → Expulsión ───
+  if (!token && isProtectedPage) {
+    return expelToLogin('no_token');
   }
 
-  // Regla 1B: Si está autenticado pero no ha pagado -> redirigir a /pagos
+  // ─── REGLA 0B: Token presente pero expirado → Purgar y expulsar ───
+  if (token && isProtectedPage) {
+    if (!jwtClaims) {
+      return expelToLogin('token_malformed');
+    }
+    const exp = typeof jwtClaims.exp === 'number' ? jwtClaims.exp : 0;
+    if (exp > 0 && Date.now() / 1000 >= exp) {
+      return expelToLogin('token_expired');
+    }
+  }
+
+  // ─── REGLA 0C: Validación de rol ───
+  // Admin tokens rechazados en /portal, patient tokens rechazados en /admin
+  if (token && jwtClaims && isProtectedPage) {
+    const role = typeof jwtClaims.role === 'string' ? jwtClaims.role : '';
+    if (isAdminPage && role === 'paciente') {
+      return expelToLogin('role_mismatch');
+    }
+    if (isPortalPage && role === 'admin') {
+      // Los admins que intenten acceder al portal de pacientes → redirigir a /admin
+      return withSecurityHeaders(
+        NextResponse.redirect(new URL('/admin', request.url))
+      );
+    }
+  }
+
+  // ─── REGLA 1: Payment gate ───
   if (token && isPaymentGateRoute) {
     const status = await getAccessStatus(token);
     if (status && !status.is_admin && !status.has_paid) {
@@ -185,7 +236,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Regla 2: Si ya tiene credencial e intenta ir al login -> Redirigir al búnker
+  // ─── REGLA 2: Ya autenticado → no mostrar login ───
   if (token && isLoginPage) {
     const status = await getAccessStatus(token);
     const target = status?.is_admin
@@ -198,7 +249,7 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Regla 3: Sliding sessions (pacientes) -> refresh cuando token esté a medio consumir
+  // ─── REGLA 3: Sliding sessions → refresh a medio consumir ───
   if (
     token &&
     (isPortalPage || isDashboardPage || isPagosPage) &&
@@ -211,7 +262,7 @@ export async function middleware(request: NextRequest) {
       const res = nextWithPathHeader(request);
       res.cookies.set('auth_token', newToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProd,
         sameSite: 'strict',
         path: '/',
         maxAge: 60 * 60 * 24 * 30,

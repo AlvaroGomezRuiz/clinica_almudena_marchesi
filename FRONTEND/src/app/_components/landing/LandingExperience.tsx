@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { ReactLenis } from "@studio-freight/react-lenis";
 import { motion, useReducedMotion } from "framer-motion";
@@ -327,11 +328,13 @@ export default function LandingExperience(): JSX.Element {
                 variants={sectionReveal}
               >
                 <div className="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl relative z-10 transform md:rotate-2">
-                  <img
+                  <Image
                     alt={COPY.hero.imageAlt}
                     className="h-full w-full object-cover"
-                    loading="eager"
                     src={COPY.hero.imageSrc}
+                    width={1920}
+                    height={2400}
+                    priority
                   />
                 </div>
                 <div aria-hidden="true" className="absolute -bottom-10 -left-10 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl -z-0" />
@@ -402,11 +405,13 @@ export default function LandingExperience(): JSX.Element {
                 viewport={{ once: false, amount: 0.35 }}
                 variants={sectionReveal}
               >
-                <img
+                <Image
                   alt={COPY.moncloa.imageAlt}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                   src={COPY.moncloa.imageSrc}
+                  width={1920}
+                  height={1080}
                 />
                 <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-on-background/40 to-transparent" />
                 <div className="absolute bottom-8 left-8 text-white">

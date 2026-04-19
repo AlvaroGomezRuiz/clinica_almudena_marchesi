@@ -13,9 +13,9 @@ const FOOTER_LINKS = [
 ] as const;
 
 const LEGAL_LINKS = [
-  { href: '#', label: 'Aviso Legal' },
-  { href: '#', label: 'Privacidad' },
-  { href: '#', label: 'Cookies' },
+  { href: '/aviso-legal', label: 'Aviso Legal' },
+  { href: '/privacidad', label: 'Privacidad' },
+  { href: '/cookies', label: 'Cookies' },
 ] as const;
 
 export default function PublicFooter() {

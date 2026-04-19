@@ -7,6 +7,9 @@ import { useFormStatus } from 'react-dom';
 import { startRegistrationAction } from '@/services/auth/registerActions';
 import ScrollReveal from '@/components/public/ScrollReveal';
 
+/** Versión del documento de privacidad vigente. Cambiar al actualizar /privacidad. */
+const POLICY_VERSION = '2026-04-19-v1';
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -110,6 +113,15 @@ export default function RegistroPacientePage() {
                       &ldquo;Este espacio ha sido diseñado para que te sientas
                       seguro compartiendo tu historia.&rdquo;
                     </p>
+                    <div className="mt-6">
+                      <h1>¿Ya tienes una cuenta?</h1>
+                      <a
+                        href="/login"
+                        className="text-sage font-medium hover:underline transition-all"
+                      >
+                        INICIAR SESIÓN
+                      </a>
+                    </div>
                   </blockquote>
                 </div>
 
@@ -156,6 +168,12 @@ export default function RegistroPacientePage() {
 
                 <form action={startRegistrationAction} className="space-y-10">
                   <input type="hidden" name="plan" value={plan} />
+                  <input type="hidden" name="policy_version" value={POLICY_VERSION} />
+                  <input
+                    type="hidden"
+                    name="client_timestamp"
+                    value={new Date().toISOString()}
+                  />
 
                   {/* Identity Section */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
@@ -278,6 +296,35 @@ export default function RegistroPacientePage() {
                       Toda la información es confidencial y solo será leída por
                       la profesional.
                     </p>
+                  </div>
+
+                  {/* ─── Consentimiento RGPD + Ley 41/2002 ─── */}
+                  <div className="pt-6 border-t border-line">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        name="consentimiento_rgpd"
+                        required
+                        className="mt-1 w-5 h-5 rounded border-line text-sage focus:ring-sage/30 shrink-0"
+                      />
+                      <span className="text-sm text-ink-soft leading-relaxed">
+                        He leído y acepto la{' '}
+                        <a
+                          href="/privacidad"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sage underline underline-offset-2 hover:text-sage-mid transition-colors"
+                        >
+                          Política de Privacidad
+                        </a>{' '}
+                        y el tratamiento de mis datos de salud conforme al{' '}
+                        <strong>RGPD (UE) 2016/679</strong> y la{' '}
+                        <strong>Ley 41/2002</strong> de Autonomía del Paciente.
+                        Autorizo a Almudena Marchesi Fernández (Col. M-40804) al
+                        tratamiento de mis datos clínicos con la única finalidad
+                        de prestar el servicio terapéutico solicitado.
+                      </span>
+                    </label>
                   </div>
 
                   {/* Actions */}

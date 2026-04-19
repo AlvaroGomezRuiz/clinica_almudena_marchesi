@@ -243,6 +243,9 @@ class Auditoria(Base):
     registro_id = Column(String(36))
     detalles = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    # Cadena de integridad: SHA-256(prev_id + user_id + accion + timestamp)
+    # Si se borra un registro, la cadena se rompe y se detecta la alteración.
+    hash_integridad = Column(String(64), nullable=False, index=True)
 
     usuario = relationship("Usuario")
 

@@ -22,7 +22,17 @@ from slowapi.util import get_remote_address
 from utils.config import settings
 
 from db.session import get_db
-from models.base import UserSession, Usuario
+
+# NOTE: UserSession & Usuario are imported lazily inside functions
+# to break a circular import chain:
+#   models.base → db.types.encrypted → utils.security → models.base
+# Use _get_models() helper below.
+
+def _get_models():
+    """Lazy import to avoid circular dependency."""
+    from models.base import UserSession, Usuario
+    return UserSession, Usuario
+
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
@@ -133,6 +143,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)):
     except PyJWTError:
         raise credentials_exception
 
+    UserSession, Usuario = _get_models()
     usuario = db.query(Usuario).filter(Usuario.username == username).first()
     if not usuario or not bool(usuario.is_active):
         raise credentials_exception
@@ -238,4 +249,56 @@ def decrypt_data(encrypted_text: str) -> str:
     try:
         return fernet.decrypt(encrypted_text.encode()).decode()
     except Exception:
-        return "[DATOS CORRUPTOS O LLAVE INVÁLIDA]"
+        # Error genérico: nunca revelar detalles de Fernet/clave al frontend.
+        return "[ERROR_INTEGRIDAD_DATOS]"
+
+
+# ─── CONTROL DE ACCESO POR ROL ───
+
+def _get_user_role(usuario) -> str:
+    role = str(getattr(usuario, "role", None) or "").strip().lower()
+    if role:
+        return role
+    return "admin" if bool(getattr(usuario, "is_admin", False)) else "paciente"
+
+
+def get_current_admin(request: Request, db: Session = Depends(get_db)) -> str:
+    """Dependencia que garantiza que el usuario es admin.
+
+    Los tokens de paciente son rechazados en rutas administrativas.
+    """
+    username = get_current_user(request, db)
+    _, Usuario = _get_models()
+    usuario = db.query(Usuario).filter(Usuario.username == username).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesión inválida o expirada",
+        )
+    if _get_user_role(usuario) != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso restringido a administradores",
+        )
+    return username
+
+
+def get_current_paciente(request: Request, db: Session = Depends(get_db)) -> str:
+    """Dependencia que garantiza que el usuario es paciente.
+
+    Los tokens administrativos son rechazados en rutas de paciente.
+    """
+    username = get_current_user(request, db)
+    _, Usuario = _get_models()
+    usuario = db.query(Usuario).filter(Usuario.username == username).first()
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesión inválida o expirada",
+        )
+    if _get_user_role(usuario) != "paciente":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso restringido a pacientes",
+        )
+    return username

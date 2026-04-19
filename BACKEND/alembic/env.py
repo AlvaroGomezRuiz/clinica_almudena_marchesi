@@ -9,13 +9,24 @@ from alembic import context
 
 from db.session import Base
 from models.base import (
+    Usuario,
+    UserSession,
+    AuthIPThrottle,
     Paciente,
     Servicio,
     Cita,
+    AgendaBloqueo,
+    AgendaNotaDia,
     HistorialSesiones,
     BonoPaciente,
     Pago,
+    FacturacionNota,
+    Auditoria,
     OTP,
+    Recurso,
+    RecursoAsignacion,
+    Conversacion,
+    Mensajes,
 )
 
 config = context.config

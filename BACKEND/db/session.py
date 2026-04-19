@@ -25,4 +25,11 @@ def get_db():
 
 
 # Registro de eventos (blind indexes, etc.)
-from db.events import paciente_bidx  # noqa: E402,F401
+# Llamar a register_events() después de cargar todos los modelos.
+def register_events():
+    """Register all SQLAlchemy model event listeners.
+
+    Must be called AFTER all models are imported to avoid circular imports.
+    """
+    from db.events.paciente_bidx import register_paciente_events
+    register_paciente_events()

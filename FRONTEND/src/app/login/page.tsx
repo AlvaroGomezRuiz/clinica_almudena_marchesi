@@ -50,8 +50,16 @@ export default function LoginPage({
 
           <div className="mt-12 pt-8 border-t border-line text-center">
             <p className="text-sm text-ink-muted">
-              ¿No tienes cuenta? Contacta directamente conmigo para iniciar tu proceso.
+              ¿No tienes cuenta?
             </p>
+            <div className="mt-6">
+              <a
+                href="/registro-paciente"
+                className="text-sage font-medium hover:underline transition-all"
+              >
+                CREAR CUENTA
+              </a>
+            </div>
             <div className="mt-6">
               <a
                 href="/contacto"

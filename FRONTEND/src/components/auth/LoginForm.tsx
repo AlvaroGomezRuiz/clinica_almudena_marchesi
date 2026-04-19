@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { loginAction } from '@/services/auth/actions';
 
@@ -22,6 +23,8 @@ type LoginFormProps = {
 };
 
 export default function LoginForm({ redirectTo }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <form action={loginAction} className="space-y-12">
       {redirectTo ? (
@@ -37,21 +40,36 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
             type="email"
             name="email"
             placeholder="hola@ejemplo.com"
+            autoComplete="email"
             required
           />
         </div>
 
+        {/* ── Password con toggle de visibilidad ── */}
         <div className="relative">
           <label className="font-label text-[10px] uppercase tracking-widest text-secondary mb-2 block font-semibold">
             Contraseña
           </label>
-          <input
-            className="w-full bg-white border border-outline-variant/30 rounded-lg px-4 py-3 transition-all font-body text-on-surface placeholder:text-outline/40"
-            type="password"
-            name="password"
-            placeholder="••••••••••••"
-            required
-          />
+          <div className="relative">
+            <input
+              className="w-full bg-white border border-outline-variant/30 rounded-lg px-4 py-3 pr-12 transition-all font-body text-on-surface placeholder:text-outline/40"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              placeholder="••••••••••••"
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-outline/60 hover:text-on-surface transition-colors"
+              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              <span className="material-symbols-outlined text-xl">
+                {showPassword ? 'visibility_off' : 'visibility'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

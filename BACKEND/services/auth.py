@@ -282,11 +282,23 @@ def _issue_session(
     if not role:
         role = "admin" if bool(getattr(usuario, "is_admin", False)) else "paciente"
 
-    expires_delta = (
-        timedelta(days=30)
-        if role == "paciente"
-        else (timedelta(days=30) if trust_device else timedelta(hours=8))
-    )
+    # ── Protección contra Session Fixation ──
+    # Revocar TODAS las sesiones activas anteriores al crear una nueva.
+    db.query(UserSession).filter(
+        UserSession.user_id == usuario.id,
+        UserSession.revoked_at.is_(None),
+    ).update({"revoked_at": now}, synchronize_session="fetch")
+
+    # ── Lógica de expiración personalizada ──
+    # Admin: 8 horas (o 30 días si "recordar dispositivo")
+    # Paciente: 1 hora de inactividad (o 30 días si "recordar dispositivo")
+    if trust_device:
+        expires_delta = timedelta(days=30)
+    elif role == "admin":
+        expires_delta = timedelta(hours=8)
+    else:
+        expires_delta = timedelta(hours=1)
+
     expires_at = now + expires_delta
 
     ip = _get_client_ip(request)
@@ -783,3 +795,21 @@ def register_verify_otp(
     except Exception:
         db.rollback()
         raise
+
+
+@router.post("/revoke")
+def revoke_session(request: Request, db: Session = Depends(get_db)):
+    """Revoca la sesión actual del usuario (secure logout).
+
+    Usado por el frontend para invalidar el token antes de limpiar
+    localStorage/sessionStorage/IndexedDB.
+    """
+    try:
+        _payload, _usuario, sesion = _load_session_from_request(request, db)
+    except HTTPException:
+        # Si el token ya es inválido, no hay nada que revocar.
+        return {"status": "ok", "detail": "Sesión ya inválida"}
+
+    sesion.revoked_at = datetime.utcnow()  # type: ignore
+    db.commit()
+    return {"status": "ok", "detail": "Sesión revocada"}
