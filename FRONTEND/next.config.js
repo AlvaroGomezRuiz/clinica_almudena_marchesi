@@ -33,11 +33,7 @@ const nextConfig = {
   },
 
   experimental: {
-    /*
-     * optimizeCss usa Critters para extraer e inlinear el CSS crítico
-     * en el <head>, eliminando la solicitud bloqueante de la hoja de estilos.
-     * Requiere: npm install critters (se instala automáticamente con Next.js 14)
-     */
+    // optimizeCss extrae e inlinea el CSS crítico en el <head>
     optimizeCss: true,
   },
 
