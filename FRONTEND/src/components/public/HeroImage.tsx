@@ -57,6 +57,7 @@ export default function HeroImage({ className }: HeroImageProps) {
           priority
           fetchPriority="high"
           quality={85}
+          unoptimized={true}
           className="w-full h-auto object-cover rounded-apple block"
           sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 480px"
         />
