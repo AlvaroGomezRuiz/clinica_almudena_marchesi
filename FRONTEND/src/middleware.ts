@@ -65,12 +65,10 @@ async function getAccessStatus(token: string): Promise<AccessStatus | null> {
   }
 }
 
-function nextWithPathHeader(request: NextRequest, nonce?: string, csp?: string): NextResponse {
+function nextWithPathHeader(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', request.nextUrl.pathname);
-  if (nonce) requestHeaders.set('x-nonce', nonce);
-  if (csp) requestHeaders.set('Content-Security-Policy', csp);
-  
+
   return NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -133,13 +131,11 @@ async function refreshSlidingSession(
 
 export async function middleware(request: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-
-  // CSP GRADO MILITAR: Utiliza Nonce dinámico y Strict-Dynamic en Producción.
-  // Esto obliga al navegador a solo ejecutar scripts generados/certificados por Next.js en cada request.
-  const scriptSrc = isProd
-    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://vercel.live`
-    : `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live`;
+  // CSP compatible con Next.js:
+  // - Evita `strict-dynamic` + nonce (Next no inyecta nonce en sus scripts por defecto)
+  // - Mantiene compatibilidad con Analytics/SpeedInsights y devtools en desarrollo
+  const scriptSrc =
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live";
 
   const csp = [
     "default-src 'self'",
@@ -262,7 +258,7 @@ export async function middleware(request: NextRequest) {
       process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
     const newToken = await refreshSlidingSession(backendApiUrl, token);
     if (newToken) {
-      const res = nextWithPathHeader(request, nonce, csp);
+      const res = nextWithPathHeader(request);
       res.cookies.set('auth_token', newToken, {
         httpOnly: true,
         secure: isProd,
@@ -275,7 +271,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Si todo está en orden, permitir el paso
-  return withSecurityHeaders(nextWithPathHeader(request, nonce, csp));
+  return withSecurityHeaders(nextWithPathHeader(request));
 }
 
 // Configuración del radar: ¿Qué rutas debe vigilar este middleware?
