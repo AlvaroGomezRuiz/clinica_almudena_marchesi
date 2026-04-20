@@ -1,0 +1,187 @@
+# Prototipo Web — Clínica Almudena Marchesi (Redesign)
+
+## Contexto y análisis del repositorio
+
+### Estado actual del proyecto
+El repositorio `almudena/` es una aplicación full-stack para una clínica de psicología en Moncloa, Madrid:
+
+| Carpeta | Tecnología | Estado |
+|---------|------------|--------|
+| `FRONTEND/` | Next.js 14 + Tailwind v3 + Framer Motion | Desplegado en Vercel |
+| `BACKEND/` | FastAPI (Python) + PostgreSQL + Alembic | Backend API |
+| `prototipo/PAGINA WEB/` | HTML estáticos de prototipado | Prototipos previos |
+| `DOCS/` | Documentación de diseño y auditorías | Guías de diseño |
+
+### Auditoría de la web actual (clinica-almudena.vercel.app)
+
+**Lo que funciona:**
+- Contenido bien escrito y profesional (copy de calidad)
+- Estructura de páginas clara: Landing, Enfoque, Servicios, Sobre Mí, Contacto
+- Navegación flotante glassmórfica
+- Paleta de colores coherente (sage green + earth tones)
+- Framer Motion + Lenis smooth scroll ya implementados
+
+**Lo que necesita mejorar (diagnóstico):**
+
+| Problema | Detalle |
+|----------|---------|
+| Estética genérica | Parece una plantilla Tailwind con colores customizados. No transmite la personalidad de una clínica premium |
+| Hero predecible | Layout clásico texto-izquierda + imagen-derecha con rotación. Visto mil veces |
+| Tipografía sin carácter | Noto Serif + Manrope son funcionales pero no evocan calma ni sofisticación editorial |
+| Cards genéricas | 3 columnas iguales con icono + título + texto. El layout más repetido en webs AI |
+| Falta de respiración | Los espacios verticales son insuficientes. Las secciones se sienten comprimidas |
+| Animaciones básicas | Fade-in simple. Sin scroll storytelling ni parallax sutil |
+| Footer denso | Demasiada información sin jerarquía visual |
+| Mobile sin optimizar | Responsive funcional pero sin diseño mobile-first pensado |
+
+---
+
+## Propuesta de diseño: "El Santuario Sereno"
+
+### Filosofía
+Crear la sensación digital de entrar en un espacio terapéutico real: luz cálida, silencio, materiales naturales, amplitud. Cada scroll es una respiración. Cada sección es un capítulo de una narrativa calmada.
+
+> [!IMPORTANT]
+> Este es un **prototipo HTML standalone** (no la versión final de Next.js). Se creará como un archivo HTML único con CSS y JS inline en `prototipo/PAGINA WEB/` para iterar rápido sobre la dirección estética.
+
+### Paleta de colores — "Bosque Quieto"
+
+| Token | Hex | Uso |
+|-------|-----|-----|
+| `--canvas` | `#F8F6F1` | Fondo principal (pergamino cálido) |
+| `--canvas-alt` | `#EFECe4` | Fondo alternativo de secciones |
+| `--ink` | `#1A1A18` | Texto principal (off-black cálido) |
+| `--ink-soft` | `#6B6B65` | Texto secundario |
+| `--ink-muted` | `#A5A49C` | Texto terciario / placeholders |
+| `--sage` | `#4A6355` | Acento primario (sage profundo) |
+| `--sage-light` | `#C8D9CF` | Fondos de badges, hover states |
+| `--sage-wash` | `#E8F0EB` | Fondos de secciones destacadas |
+| `--warm` | `#8B7355` | Acento secundario (tierra cálida) |
+
+### Tipografía — Editorial Serena
+
+| Rol | Fuente | Razón |
+|-----|--------|-------|
+| **Display/Headlines** | `Cormorant Garamond` (Light/Regular) | Serif elegante, editorial, transmite sofisticación y calma. Tracking negativo para presencia |
+| **Body** | `Outfit` (300-500) | Geométrica suave, moderna sin ser fría. Excelente legibilidad |
+| **Mono/Labels** | `JetBrains Mono` (300) | Para detalles de metadata y badges técnicos |
+
+### Sistema de animación
+
+| Tipo | Spec | Cuándo |
+|------|------|--------|
+| **Scroll reveal** | `opacity: 0→1, y: 40→0` over 800ms, `cubic-bezier(0.16, 1, 0.3, 1)` | Cada sección al entrar en viewport |
+| **Stagger** | 100ms delay entre elementos hermanos | Listas, grids, párrafos |
+| **Parallax sutil** | translateY a 0.15x velocidad de scroll | Imágenes y elementos decorativos |
+| **Smooth scroll** | Lenis con `lerp: 0.07` | Global |
+| **Hover** | `scale(0.98)` en active, `translateY(-2px)` en hover | Botones y links |
+| **Text reveal** | Palabras con opacity scrubbing | Frase principal del Hero |
+
+> [!NOTE]
+> Todo el motion respeta `prefers-reduced-motion: reduce`. En ese caso, se muestran transiciones instantáneas sin animación.
+
+---
+
+## Arquitectura del prototipo (secciones)
+
+### 1. Navegación flotante
+- Pill transparente centrada con backdrop-blur
+- Logo "Almudena Marchesi" en serif a la izquierda
+- Links de navegación centrados (Enfoque · Servicios · Sobre Mí · Contacto)
+- CTA "Reservar cita" a la derecha
+- En mobile: hamburger que abre overlay full-screen con links staggered
+
+### 2. Hero — "La pausa"
+- Layout **asimétrico izquierda-dominante** (70/30)
+- H1 en `Cormorant Garamond` Light, 2-3 líneas max: *"Un espacio donde ser, sin ser juzgado."*
+- Subtítulo en `Outfit` Light con max-width 55ch
+- Un solo CTA primario ("Reserva tu primera cita")
+- Sin imagen en el hero — en su lugar, un gradiente orgánico mesh muy sutil en tonos sage/cream que respira lentamente
+- Decoración: una línea fina horizontal que se dibuja suavemente al cargar
+
+### 3. Filosofía — "El rigor y la calidez"
+- Texto editorial grande (pull-quote style) centrado
+- 3 pilares (Escucha Activa, Sin Juicio, Ayuda Real) como bloques de texto con separadores finos, NO como cards
+- Layout vertical con máximo espacio entre elementos
+- Cada pilar aparece con scroll reveal staggered
+
+### 4. Presencialidad — "Moncloa"
+- Split layout: imagen a la izquierda (70%), texto a la derecha (30%)
+- La imagen escala suavemente de 0.95 a 1.0 al scrollear
+- Dirección, transporte, características en texto limpio (sin iconos excesivos)
+- Link a Google Maps discreto
+
+### 5. Servicios — "Modalidades"
+- Grid asimétrico 2 columnas (no 3 iguales)
+- Terapia Individual (card grande) + Terapia de Pareja + Infanto-Juvenil + Online
+- Cada servicio con título, descripción breve, precio, CTA
+- Bonos como nota al final con diseño inline
+
+### 6. Sobre Mí — "La persona detrás"
+- Foto de Almudena con tratamiento editorial (grayscale sutil + blend)
+- Texto autobiográfico en formato editorial (columna estrecha centrada)
+- Credenciales y formación como lista simple con tipografía
+
+### 7. Portal del Paciente — "Tu espacio seguro"
+- Explicación del portal cifrado
+- 3 pasos (Registro → Reserva → Control) en layout horizontal
+- CTA al portal
+
+### 8. CTA Final — "Inicia tu camino"
+- Fondo sage con texto claro
+- Una frase, un botón. Máxima simplicidad
+- El botón tiene un glow sutil en hover
+
+### 9. Footer
+- Mínimo: logo, dirección, email, teléfono, links legales
+- En dos columnas limpias
+- Copyright y colegiación
+
+---
+
+## Cambios propuestos
+
+### [NEW] Prototipo completo
+
+#### [NEW] [prototipo_serenidad.html](file:///c:/dev/almudena/prototipo/PAGINA%20WEB/prototipo_serenidad.html)
+Archivo HTML standalone con:
+- CSS completo inline (variables, sistema tipográfico, responsive breakpoints, animaciones)
+- GSAP + ScrollTrigger via CDN para animaciones scroll
+- Lenis via CDN para smooth scroll
+- Google Fonts: Cormorant Garamond + Outfit
+- Todas las secciones descritas arriba
+- Diseño mobile-first totalmente responsive
+- Soporte `prefers-reduced-motion`
+- Accesibilidad: skip link, focus rings, alt texts, semantic HTML, ARIA labels
+- SEO: meta tags, Open Graph, structured data
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Contenido real vs placeholder:** Los textos de la web actual (copy) son buenos. ¿Los mantengo exactamente o puedo ajustar ligeramente el tono para que encaje mejor con la nueva estética más editorial? (Ejemplo: hacer los títulos más cortos y contundentes)
+
+> [!IMPORTANT]
+> **Foto de Almudena:** La web actual usa una imagen de Google (parece generada o stock). ¿Tienes una foto real de Almudena para la sección "Sobre Mí" y el Hero? Si no, uso placeholders de alta calidad.
+
+> [!IMPORTANT]
+> **Precios de servicios:** En la web actual algunos precios aparecen como "— €" (sin definir). ¿Quieres que ponga precios reales en el prototipo o los dejo como placeholder?
+
+> [!IMPORTANT]
+> **Dirección:** La web muestra "Calle de Meléndez Valdés número 22, piso 1D" pero el prototipo anterior decía "Calle de la Princesa, 25". ¿Cuál es la correcta?
+
+---
+
+## Plan de verificación
+
+### Verificación visual
+- Abrir el HTML en el navegador y capturar screenshots de desktop y mobile
+- Verificar que todas las animaciones son fluidas a 60fps
+- Comprobar que `prefers-reduced-motion` desactiva las animaciones correctamente
+- Verificar contraste de texto (ratio 4.5:1 mínimo)
+
+### Responsive
+- Probar en viewports: 375px (iPhone), 768px (tablet), 1440px (desktop), 1920px (wide)
+- Verificar que no hay scroll horizontal en ningún viewport
+- Comprobar touch targets de 44px mínimo en mobile

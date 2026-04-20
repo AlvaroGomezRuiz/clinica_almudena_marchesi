@@ -2,13 +2,18 @@
 # .GITIGNORE MAESTRO - CLÍNICA ALMUDENA (BLINDAJE TOTAL)
 # =============================================================================
 
+# Nota: se mantienen duplicados intencionales por casing (backend/BACKEND, frontend/FRONTEND)
+# y por rutas equivalentes. No se eliminan reglas existentes, solo se añade cobertura.
+
 # --- IA ---
 .cursorrules
 .cursorignore
+.agents/
 /cursor
 /DOCS
 /PROTOTIPO
 /.agents
+/GEO
 
 # --- ENTORNO VIRTUAL Y SECRETOS (CRÍTICO) ---
 # Nunca subir las llaves del búnker ni las librerías locales.
@@ -39,7 +44,7 @@ backups/
 htmlcov/
 
 # --- FRONTEND: NODE / NEXT.JS ---
-prototipo/
+.prototipo/
 frontend/node_modules/
 FRONTEND/node_modules/
 frontend/.next/
@@ -93,3 +98,22 @@ desktop.ini
 # --- MIGRACIONES DE BASE DE DATOS ---
 backend/alembic/versions/*.pyc
 BACKEND/alembic/versions/*.pyc
+
+# --- CACHE / BUILD EXTRA (Stack actual) ---
+# Python tooling
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+pip-wheel-metadata/
+**/.python-version
+__pypackages__/
+
+# Node / Next tooling
+**/*.tsbuildinfo
+.turbo/
+.vercel/
+.next/cache/
+**/.swc/
+pnpm-debug.log*
+lerna-debug.log*
+

@@ -13,7 +13,7 @@ export default function CTASection() {
       <div className="max-w-screen-xl mx-auto">
         <ScrollReveal>
           <PremiumCard tilt={false}>
-            <div className="px-8 py-16 md:px-16 md:py-20 text-center relative overflow-hidden bg-ink dark:bg-transparent rounded-3xl h-full">
+            <div className="px-8 py-16 md:px-16 md:py-20 text-center relative overflow-hidden bg-canvas-alt dark:bg-transparent rounded-3xl h-full">
               {/* Ambient glow */}
               <div
                 className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full blur-[120px] opacity-20 pointer-events-none"
@@ -22,27 +22,27 @@ export default function CTASection() {
               />
 
               <div className="relative z-10">
-                <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-light/60 mb-6 block">
+                <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-ink-muted dark:text-sage-light/60 mb-6 block">
                   Tu bienestar empieza aquí
                 </span>
-                <h2 className="font-display text-display-2 text-white mb-6 text-balance italic">
+                <h2 className="font-display text-display-2 text-ink dark:text-white mb-6 text-balance italic">
                   Inicia tu camino
                 </h2>
-                <p className="font-body text-white/55 text-lg max-w-md mx-auto mb-10 leading-relaxed">
+                <p className="font-body text-ink-soft dark:text-white/55 text-lg max-w-md mx-auto mb-10 leading-relaxed">
                   Reserva una primera sesión para explorar cómo este enfoque
                   puede ayudarte en tu momento actual.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
                     href="/registro-paciente"
-                    className="bg-white text-[#111111] font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97] text-center"
-                    style={{ boxShadow: '0 4px 20px rgba(255,255,255,0.1)' }}
+                    className="bg-sage text-white dark:bg-white dark:text-[#111111] font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97] text-center"
+                    style={{ boxShadow: '0 10px 30px rgba(74, 99, 85, 0.18)' }}
                   >
                     Reservar cita
                   </Link>
                   <Link
                     href="/contacto"
-                    className="border border-white/20 text-white font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:bg-white/10 hover:-translate-y-px text-center"
+                    className="border border-line text-ink dark:border-white/20 dark:text-white font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:bg-sage/10 dark:hover:bg-white/10 hover:-translate-y-px text-center"
                   >
                     Contactar
                   </Link>
