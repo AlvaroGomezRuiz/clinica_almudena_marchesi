@@ -92,19 +92,19 @@ const COPY: LandingCopy = {
     titleLine2: "la calidez de lo humano.",
     cards: [
       {
-        icon: "psychology",
+        icon: "hearing",
         title: "Escucha Activa",
-        body: "Más allá de las palabras. Un silencio fértil donde cada matiz de tu historia encuentra su lugar y significado.",
+        body: "No es solo oír, es comprender el silencio entre las palabras. Mi enfoque se centra en una presencia plena donde cada síntoma y cada vivencia son validados como parte fundamental de tu historia única.",
       },
       {
-        icon: "volunteer_activism",
-        title: "Sin Juicio",
-        body: "Un búnker de seguridad emocional. Tu vulnerabilidad es respetada como la herramienta más potente de cambio.",
+        icon: "health_and_safety",
+        title: "Ausencia de Juicio",
+        body: "La terapia es el único lugar donde no necesitas ser «adecuado». Aquí, la neutralidad clínica se traduce en una aceptación incondicional que permite explorar lo más profundo sin miedo a la crítica.",
       },
       {
-        icon: "auto_awesome",
-        title: "Ayuda Real",
-        body: "Estrategias clínicas basadas en evidencia. No solo entender el porqué, sino construir el cómo hacia tu bienestar.",
+        icon: "psychology",
+        title: "Rigor Clínico",
+        body: "Especialización en Psicología Clínica para garantizar intervenciones basadas en la evidencia. El rigor es el respeto al paciente.",
       },
     ],
   },
@@ -344,7 +344,7 @@ export default function LandingExperience(): JSX.Element {
           </section>
 
           {/* Enfoque + Servicios (storytelling por bloques + cards con tilt) */}
-          <section className="py-24 md:py-32 px-6 md:px-12 bg-surface-container-low relative overflow-hidden" id="enfoque">
+          <section className="py-24 md:py-32 px-6 md:px-12 bg-surface-container-low relative" id="enfoque">
             <div className="max-w-screen-2xl mx-auto">
               <motion.div
                 className="mb-20"
@@ -368,27 +368,36 @@ export default function LandingExperience(): JSX.Element {
                 <WordReveal className="text-xl md:text-2xl text-on-surface-variant leading-relaxed" text={COPY.enfoque.cards[2]?.body ?? ""} />
               </div>
 
-              <div id="servicios" className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 scroll-mt-28">
-                {COPY.enfoque.cards.map((c) => (
-                  <TiltCard key={c.title} className="rounded-3xl border border-outline-variant/20 bg-surface-container-lowest/70 backdrop-blur-2xl shadow-editorial transition-transform will-change-transform">
-                    <motion.div
-                      className="p-10 flex flex-col gap-6"
-                      initial="hidden"
-                      whileInView="show"
-                      viewport={{ once: false, amount: 0.45 }}
-                      variants={staggerChildren}
-                    >
-                      <motion.div variants={sectionReveal} className="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-on-primary-container text-3xl">{c.icon}</span>
+              <div id="servicios" className="mt-16 flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-6 scroll-mt-28 relative">
+                {COPY.enfoque.cards.map((c, i) => (
+                  <div
+                    key={c.title}
+                    className={`sticky md:static ${i === 2 ? "md:col-span-2" : ""}`}
+                    style={{
+                      top: `calc(7rem + ${i * 1.5}rem)`,
+                      zIndex: i + 10,
+                    }}
+                  >
+                    <TiltCard className="rounded-3xl border border-outline-variant/20 bg-surface-container-lowest/90 backdrop-blur-3xl shadow-editorial transition-transform will-change-transform h-full">
+                      <motion.div
+                        className="p-10 flex flex-col gap-6"
+                        initial="hidden"
+                        whileInView="show"
+                        viewport={{ once: false, amount: 0.45 }}
+                        variants={staggerChildren}
+                      >
+                        <motion.div variants={sectionReveal} className="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center">
+                          <span className="material-symbols-outlined text-on-primary-container text-3xl">{c.icon}</span>
+                        </motion.div>
+                        <motion.h3 variants={sectionReveal} className="font-headline text-2xl font-bold">
+                          {c.title}
+                        </motion.h3>
+                        <motion.p variants={sectionReveal} className="text-on-surface-variant leading-relaxed">
+                          {c.body}
+                        </motion.p>
                       </motion.div>
-                      <motion.h3 variants={sectionReveal} className="font-headline text-2xl font-bold">
-                        {c.title}
-                      </motion.h3>
-                      <motion.p variants={sectionReveal} className="text-on-surface-variant leading-relaxed">
-                        {c.body}
-                      </motion.p>
-                    </motion.div>
-                  </TiltCard>
+                    </TiltCard>
+                  </div>
                 ))}
               </div>
             </div>
