@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import {
   CLINIC_ADDRESS_LINE1,
   CLINIC_ADDRESS_LINE2,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
+import Link from 'next/link';
 
 const FOOTER_LINKS = [
   { href: '/enfoque', label: 'Enfoque' },
@@ -72,6 +72,7 @@ export default function PublicFooter() {
                 href={mapsHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={`${CLINIC_ADDRESS_LINE1} ${CLINIC_ADDRESS_LINE2}. Ver dirección de la consulta en Google Maps.`}
                 className="block hover:text-white transition-colors duration-300"
               >
                 {CLINIC_ADDRESS_LINE1}
@@ -90,17 +91,23 @@ export default function PublicFooter() {
 
         {/* Bottom Bar */}
         <div className="mt-16 pt-6 border-t border-white/8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider">
-            &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
-          </p>
+          <div className="relative">
+            <p aria-hidden="true" className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider">
+              &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
+            </p>
+            <span className="sr-only">
+              &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
+            </span>
+          </div>
           <div className="flex gap-6">
             {LEGAL_LINKS.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider hover:text-white/60 transition-colors duration-300"
+                className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider hover:text-white/60 transition-colors duration-300 relative"
               >
-                {link.label}
+                <span aria-hidden="true">{link.label}</span>
+                <span className="sr-only">{link.label}</span>
               </a>
             ))}
           </div>

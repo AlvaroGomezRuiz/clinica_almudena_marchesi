@@ -70,6 +70,10 @@ const nextConfig = {
             value:
               'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()',
           },
+          {
+            key: 'Content-Security-Policy',
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://vercel.live;",
+          },
           // Prevenir XSS (legacy browsers)
           {
             key: 'X-XSS-Protection',

@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect, useId, useRef } from "react";
 import TiltCard from "@/components/landing/TiltCard";
-import { BorderBeam } from "border-beam";
+import dynamic from 'next/dynamic';
+
+const BorderBeam = dynamic(() => import('border-beam').then((mod) => mod.BorderBeam), {
+  ssr: false,
+});
 import { useTheme } from "next-themes";
 
 interface PremiumCardProps {
@@ -84,27 +88,27 @@ export default function PremiumCard({ children, className = "", tilt = true, act
       {/* Layer 1: Liquid Glass Background */}
       <div className="absolute inset-0 rounded-3xl border border-white/10 dark:border-white/5 bg-white/20 dark:bg-black/30 backdrop-blur-2xl pointer-events-none z-0" />
 
-      {/* Layer 2: BorderBeam and Content */}
-      {mounted && (
-        <BorderBeam 
-          colorVariant={isVisuallyActive ? "sunset" : "mono"} 
-          size="md" 
-          duration={4}
-          strength={isVisuallyActive ? 1 : 0.8}
-          brightness={resolvedTheme === 'light' ? 1.8 : 1.3}
-          theme={currentTheme}
-          className="h-full rounded-3xl transition-all duration-500 relative z-10"
-        >
-          <div className="h-full rounded-3xl bg-transparent relative z-10">
-            {children}
+      {/* Layer 2: Content (Synchronous, Always SSR) and BorderBeam Overlay (Client only) */}
+      <div className="h-full rounded-3xl bg-transparent relative z-10">
+        {mounted && (
+          <div className="absolute inset-0 pointer-events-none rounded-3xl z-0 overflow-hidden">
+            <BorderBeam 
+              colorVariant={isVisuallyActive ? "sunset" : "mono"} 
+              size="md" 
+              duration={4}
+              strength={isVisuallyActive ? 1 : 0.8}
+              brightness={resolvedTheme === 'light' ? 1.8 : 1.3}
+              theme={currentTheme}
+              className="h-full w-full rounded-3xl transition-all duration-500"
+            >
+              <div />
+            </BorderBeam>
           </div>
-        </BorderBeam>
-      )}
-      {!mounted && (
-        <div className="h-full rounded-3xl bg-transparent relative z-10">
+        )}
+        <div className="relative z-10 h-full w-full">
           {children}
         </div>
-      )}
+      </div>
     </>
   );
 
