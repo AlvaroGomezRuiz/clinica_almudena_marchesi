@@ -48,9 +48,19 @@ frontend/out/
 FRONTEND/out/
 frontend/build/
 FRONTEND/build/
+.next/
+out/
+build/
 .eslintcache
 npm-debug.log*
 yarn-debug.log*
+
+# --- REPORTS (Lighthouse, auditorías) ---
+FRONTEND/lh-*.json
+FRONTEND/lh-report*.json
+lh-*.json
+lh-report*.json
+FRONTEND/lh/
 
 # --- DOCKER Y PERSISTENCIA ---
 docker/db_data/

@@ -10,13 +10,20 @@ function getBaseUrl(): string {
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = getBaseUrl();
+
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: ['/admin', '/portal', '/dashboard', '/api'],
-    },
+    rules: [
+      // Bots de indexación/citación (permitir contenido público)
+      { userAgent: '*', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'GPTBot', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'ChatGPT-User', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'ClaudeBot', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'PerplexityBot', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'Google-Extended', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+      { userAgent: 'CCBot', allow: '/', disallow: ['/admin', '/portal', '/dashboard', '/api'] },
+    ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }
 

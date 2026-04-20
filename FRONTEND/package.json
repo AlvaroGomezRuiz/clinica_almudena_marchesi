@@ -15,6 +15,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@studio-freight/react-lenis": "^0.0.47",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.6.7",
     "border-beam": "^1.0.1",
     "class-variance-authority": "^0.7.1",

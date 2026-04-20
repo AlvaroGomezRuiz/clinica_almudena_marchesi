@@ -3,7 +3,7 @@ import type {
   CitaReserveResponse,
   FreeSlotsQuery,
   FreeSlotsResponse,
-} from '@/contracts/citas';
+} from '@/types/citas';
 
 const DEFAULT_BACKEND_API_URL = 'http://localhost:8000/api/v1';
 

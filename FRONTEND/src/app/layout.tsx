@@ -1,9 +1,10 @@
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';
-import { headers } from 'next/headers';
 import { ThemeProvider } from 'next-themes';
 import { Cormorant_Garamond, Outfit, JetBrains_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const fontDisplay = Cormorant_Garamond({
   subsets: ['latin'],
@@ -27,19 +28,6 @@ const fontMono = JetBrains_Mono({
   display: 'swap',
 });
 
-import PublicHeader from '@/components/layout/PublicHeader';
-import PublicFooter from '@/components/layout/PublicFooter';
-import { PrivacyProvider } from '@/context/PrivacyContext';
-
-
-function shouldRenderPublicShell(pathname: string): boolean {
-  if (!pathname) return true;
-  if (pathname.startsWith('/dashboard')) return false;
-  if (pathname.startsWith('/portal')) return false;
-  if (pathname.startsWith('/admin')) return false;
-  return true;
-}
-
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#fcfbf9' },
@@ -60,6 +48,10 @@ export const metadata: Metadata = {
   keywords: ['Psicóloga Madrid', 'Psicología Clínica', 'Terapia Moncloa', 'Psicólogo Moncloa', 'Ansiedad', 'Depresión', 'Almudena Marchesi'],
   authors: [{ name: 'Almudena Marchesi' }],
   creator: 'Almudena Marchesi',
+  icons: {
+    icon: '/favicon.ico',
+  },
+  manifest: '/manifest.webmanifest',
   openGraph: {
     title: 'Almudena Marchesi — Psicología Clínica',
     description: 'Acompañamiento profesional en el corazón de Moncloa, Madrid. Rigor clínico y calidez humana.',
@@ -67,6 +59,13 @@ export const metadata: Metadata = {
     siteName: 'Clínica Almudena Marchesi',
     locale: 'es_ES',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Almudena Marchesi | Psicología Clínica Madrid',
+    description:
+      'Acompañamiento profesional en el corazón de Moncloa, Madrid. Psicología clínica basada en evidencia.',
+    images: ['/images/almudena-profile.avif'],
   },
   robots: {
     index: true,
@@ -84,16 +83,11 @@ export const metadata: Metadata = {
   },
 };
 
-import { Analytics } from "@vercel/analytics/next"
-
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = headers().get('x-pathname') ?? '';
-  const isPublic = shouldRenderPublicShell(pathname);
-
   return (
     <html
       lang="es"
@@ -115,26 +109,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {isPublic ? (
-            <>
-              {/* WCAG 2.4.1 — Skip link: bypass navegación para usuarios de teclado */}
-              <a
-                href="#main"
-                className="skip-link"
-              >
-                Saltar al contenido principal
-              </a>
-              <PublicHeader />
-            </>
-          ) : null}
-          <main id="main">
-            {isPublic ? children : (
-              <PrivacyProvider>{children}</PrivacyProvider>
-            )}
-          </main>
-          {isPublic ? <PublicFooter /> : null}
+          {children}
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
