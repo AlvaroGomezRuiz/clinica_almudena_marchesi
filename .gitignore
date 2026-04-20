@@ -9,11 +9,15 @@
 .cursorrules
 .cursorignore
 .agents/
+/.agents/skills/
 /cursor
 /DOCS
 /PROTOTIPO
 /.agents
+/.cursor/
 /GEO
+/.DOCS/
+/.GEO/
 
 # --- ENTORNO VIRTUAL Y SECRETOS (CRÍTICO) ---
 # Nunca subir las llaves del búnker ni las librerías locales.
