@@ -1,8 +1,8 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import MobileNavDrawer from '@/components/MobileNavDrawer';
-import ProfileDropdown from '@/components/ProfileDropdown';
+import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
+import ProfileDropdown from '@/components/layout/ProfileDropdown';
 import { logoutAction } from '@/services/auth/actions';
 
 type AdminStatus = {

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 
-import AdminNotaAdministrativaSticker from '@/components/AdminNotaAdministrativaSticker';
+import AdminNotaAdministrativaSticker from '@/components/admin/AdminNotaAdministrativaSticker';
 
 type FacturaItem = {
   id: string;

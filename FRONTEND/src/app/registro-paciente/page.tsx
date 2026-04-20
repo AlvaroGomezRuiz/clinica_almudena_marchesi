@@ -4,8 +4,14 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { type ChangeEvent, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { startRegistrationAction } from '@/services/auth/registerActions';
-import ScrollReveal from '@/components/public/ScrollReveal';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import PasswordInput from '@/components/ui/PasswordInput';
+import PremiumCard from '@/components/ui/PremiumCard';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 /** Versión del documento de privacidad vigente. Cambiar al actualizar /privacidad. */
 const POLICY_VERSION = '2026-04-19-v1';
@@ -31,6 +37,8 @@ export default function RegistroPacientePage() {
   const error = searchParams.get('error');
 
   const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [date, setDate] = useState<Date>();
+  const [experiencia, setExperiencia] = useState('');
   const dateInputRef = useRef<HTMLInputElement | null>(null);
 
   const formatFechaNacimiento = (value: string) => {
@@ -47,21 +55,24 @@ export default function RegistroPacientePage() {
   const handleFechaNacimientoTextChange = (
     e: ChangeEvent<HTMLInputElement>
   ) => {
-    setFechaNacimiento(formatFechaNacimiento(e.target.value).slice(0, 10));
+    const val = formatFechaNacimiento(e.target.value).slice(0, 10);
+    setFechaNacimiento(val);
+    if (val.length === 10) {
+      const [dd, mm, yyyy] = val.split('/');
+      const parsed = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd));
+      if (!isNaN(parsed.getTime())) {
+        setDate(parsed);
+      }
+    } else {
+      setDate(undefined);
+    }
   };
 
-  const handleFechaNacimientoDateChange = (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
-    const iso = e.target.value; // YYYY-MM-DD
-    if (!iso) {
-      setFechaNacimiento('');
-      return;
+  const handleSelectDate = (newDate: Date | undefined) => {
+    setDate(newDate);
+    if (newDate) {
+      setFechaNacimiento(format(newDate, "dd/MM/yyyy"));
     }
-
-    const [yyyy, mm, dd] = iso.split('-');
-    if (!yyyy || !mm || !dd) return;
-    setFechaNacimiento(`${dd}/${mm}/${yyyy}`.slice(0, 10));
   };
 
   const inputClasses =
@@ -93,10 +104,11 @@ export default function RegistroPacientePage() {
 
           {/* Main card */}
           <ScrollReveal delay={0.1}>
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 glass-card dark:glass-card-dark overflow-hidden transition-colors duration-500">
-              {/* Left Column: Emotional Anchor */}
-              <div className="lg:col-span-4 bg-white/20 dark:bg-black/20 p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden border-r border-white/20 dark:border-white/5">
-                <div className="relative z-10">
+            <PremiumCard tilt={false} className="w-full">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden transition-colors duration-500">
+                {/* Left Column: Emotional Anchor */}
+                <div className="lg:col-span-4 bg-white/20 dark:bg-black/20 p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden border-r border-white/20 dark:border-white/5">
+                  <div className="relative z-10">
                   <div className="mb-8 overflow-hidden rounded-apple aspect-[3/4] w-full max-h-[320px]">
                     <Image
                       alt="Almudena Marchesi en su consulta de psicología en Moncloa, Madrid"
@@ -161,7 +173,7 @@ export default function RegistroPacientePage() {
               {/* Right Column: Patient Form */}
               <div className="lg:col-span-8 p-10 lg:p-12 bg-transparent">
                 {error ? (
-                  <div className="mb-8 glass-card dark:glass-card-dark bg-red-50 dark:bg-red-950/40 border-l-[3px] border-red-400 dark:border-red-800 p-4 text-sm text-red-800 dark:text-red-200">
+                  <div className="mb-8 rounded-xl backdrop-blur-md shadow-sm bg-red-50 dark:bg-red-950/40 border-l-[3px] border-red-400 dark:border-red-800 p-4 text-sm text-red-800 dark:text-red-200">
                     {error}
                   </div>
                 ) : null}
@@ -228,6 +240,12 @@ export default function RegistroPacientePage() {
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelClasses}>
+                        Contraseña Segura
+                      </label>
+                      <PasswordInput />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className={labelClasses}>
                         Fecha de Nacimiento
                       </label>
                       <div className="relative">
@@ -240,16 +258,32 @@ export default function RegistroPacientePage() {
                           onChange={handleFechaNacimientoTextChange}
                           maxLength={10}
                         />
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-sage/50">
-                          calendar_today
-                        </span>
-                        <input
-                          ref={dateInputRef}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 z-10"
-                          type="date"
-                          aria-label="Seleccionar fecha de nacimiento"
-                          onChange={handleFechaNacimientoDateChange}
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 flex items-center justify-center text-sage/50 hover:text-sage transition-colors rounded-full hover:bg-sage/10 focus:outline-none focus:ring-2 focus:ring-sage"
+                              aria-label="Seleccionar fecha de nacimiento"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                calendar_today
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={date}
+                              onSelect={handleSelectDate}
+                              defaultMonth={date || new Date(2000, 0, 1)}
+                              initialFocus
+                              locale={es}
+                              captionLayout="dropdown"
+                              fromYear={1920}
+                              toYear={new Date().getFullYear()}
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
                   </div>
@@ -271,10 +305,14 @@ export default function RegistroPacientePage() {
                             name="experiencia_terapia"
                             type="radio"
                             value={opt.value}
+                            checked={experiencia === opt.value}
+                            onChange={() => setExperiencia(opt.value)}
                           />
-                          <div className="glass-card dark:glass-card-dark px-5 py-3 rounded-pill text-ink-soft font-display text-lg peer-checked:ring-2 peer-checked:ring-sage peer-checked:text-sage transition-all duration-300">
-                            {opt.label}
-                          </div>
+                          <PremiumCard tilt={false} active={experiencia === opt.value}>
+                            <div className="px-5 py-3 rounded-pill text-ink-soft font-display text-lg peer-checked:ring-2 peer-checked:ring-sage peer-checked:text-sage transition-all duration-300">
+                              {opt.label}
+                            </div>
+                          </PremiumCard>
                         </label>
                       ))}
                     </div>
@@ -341,6 +379,7 @@ export default function RegistroPacientePage() {
                 </form>
               </div>
             </div>
+            </PremiumCard>
           </ScrollReveal>
         </div>
       </main>

@@ -88,8 +88,30 @@ const config: Config = {
         'primary-fixed-dim': '#bfdad4',
         'on-primary-fixed-variant': '#48605b',
         'surface-container-high': '#e8e9e3',
-        background: '#faf9f5',
+        background: 'var(--color-canvas)',
         'on-primary': '#e3fff8',
+        
+        /* shadcn variables mapped to urban sanctuary aesthetic */
+        foreground: 'var(--color-ink)',
+        popover: {
+          DEFAULT: 'var(--color-canvas)',
+          foreground: 'var(--color-ink)',
+        },
+        card: {
+          DEFAULT: 'var(--color-canvas)',
+          foreground: 'var(--color-ink)',
+        },
+        muted: {
+          DEFAULT: 'var(--color-canvas-alt)',
+          foreground: 'var(--color-ink-muted)',
+        },
+        accent: {
+          DEFAULT: 'var(--color-glass-border)',
+          foreground: 'var(--color-ink)',
+        },
+        border: 'var(--color-line)',
+        input: 'var(--color-line)',
+        ring: 'var(--color-spotlight)',
       },
 
       fontFamily: {

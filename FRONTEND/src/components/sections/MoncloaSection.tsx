@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import PremiumCard from '@/components/ui/PremiumCard';
 import {
   CLINIC_ADDRESS,
   getClinicGoogleMapsHref,
@@ -42,13 +43,15 @@ export default function MoncloaSection() {
               Un espacio diseñado para la introspección y la calma, en una de
               las zonas más accesibles y tranquilas de Madrid.
             </p>
-            <div className="glass-card dark:glass-card-dark p-6 flex items-start gap-4 transition-shadow duration-700 ease-apple group-hover:shadow-card-hover">
-              <span className="material-symbols-outlined text-sage dark:text-sage-light text-2xl mt-0.5" aria-hidden="true">location_on</span>
-              <div className="select-text">
-                <p className="font-body font-medium text-ink text-sm select-text">{CLINIC_ADDRESS}</p>
-                <p className="font-mono text-label-sm text-ink-muted mt-1 select-text">Metro Argüelles · Moncloa</p>
+            <PremiumCard>
+              <div className="p-6 flex items-start gap-4">
+                <span className="material-symbols-outlined text-sage dark:text-sage-light text-2xl mt-0.5" aria-hidden="true">location_on</span>
+                <div className="select-text">
+                  <p className="font-body font-medium text-ink text-sm select-text">{CLINIC_ADDRESS}</p>
+                  <p className="font-mono text-label-sm text-ink-muted mt-1 select-text">Metro Argüelles · Moncloa</p>
+                </div>
               </div>
-            </div>
+            </PremiumCard>
             <Link
               href={mapsHref}
               target="_blank"

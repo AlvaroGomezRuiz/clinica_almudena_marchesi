@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import LiquidGlass from '@/components/public/LiquidGlass';
-import ThemeToggle from '@/components/ThemeToggle';
+import LiquidGlass from '@/components/landing/LiquidGlass';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 const NAV_ITEMS = [
   { href: '/enfoque', label: 'Enfoque' },

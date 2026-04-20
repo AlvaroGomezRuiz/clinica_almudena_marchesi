@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
-import CTASection from '@/app/sections/CTASection';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import CTASection from '@/components/sections/CTASection';
+import PremiumCard from '@/components/ui/PremiumCard';
 import {
   CLINIC_SESSION_DURATION_MIN,
   CLINIC_SESSION_PRICE_LABEL,
@@ -112,38 +113,40 @@ export default function ServiciosPage() {
               delay={i * 0.06}
               className={i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-6'}
             >
-              <article
-                className={`glass-card dark:glass-card-dark h-full flex flex-col justify-between group p-8 md:p-10 ${
-                  service.featured ? 'ring-1 ring-sage/15 dark:ring-sage/30' : ''
-                }`}
-              >
-                <div>
-                  <span className="inline-block font-mono text-label-sm uppercase tracking-[0.1em] text-sage bg-sage-wash px-3 py-1 rounded-pill mb-5">
-                    {service.tag}
-                  </span>
-                  <h2 className="font-display text-display-3 text-ink mb-3">
-                    {service.title}
-                  </h2>
-                  <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
-                    {service.body}
-                  </p>
-                </div>
-                <div className="flex items-end justify-between gap-4 pt-4 border-t border-line">
+              <PremiumCard tilt={false} className="h-full">
+                <div
+                  className={`flex flex-col justify-between h-full group p-8 md:p-10 ${
+                    service.featured ? 'ring-1 ring-sage/15 dark:ring-sage/30 rounded-3xl' : ''
+                  }`}
+                >
                   <div>
-                    <span className="font-display text-3xl text-ink font-light">{service.price}</span>
-                    <span className="text-ink-muted text-sm ml-1 font-body">/{service.duration}</span>
-                  </div>
-                  <Link
-                    href={service.href}
-                    className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
-                  >
-                    {service.cta}
-                    <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
-                      arrow_forward
+                    <span className="inline-block font-mono text-label-sm uppercase tracking-[0.1em] text-sage bg-sage-wash px-3 py-1 rounded-pill mb-5">
+                      {service.tag}
                     </span>
-                  </Link>
+                    <h2 className="font-display text-display-3 text-ink mb-3">
+                      {service.title}
+                    </h2>
+                    <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
+                      {service.body}
+                    </p>
+                  </div>
+                  <div className="flex items-end justify-between gap-4 pt-4 border-t border-line">
+                    <div>
+                      <span className="font-display text-3xl text-ink font-light">{service.price}</span>
+                      <span className="text-ink-muted text-sm ml-1 font-body">/{service.duration}</span>
+                    </div>
+                    <Link
+                      href={service.href}
+                      className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
+                    >
+                      {service.cta}
+                      <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
+                        arrow_forward
+                      </span>
+                    </Link>
+                  </div>
                 </div>
-              </article>
+              </PremiumCard>
             </ScrollReveal>
           ))}
         </div>
@@ -168,24 +171,24 @@ export default function ServiciosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {BONOS.map((bono, i) => (
               <ScrollReveal key={bono.name} delay={i * 0.1}>
-                <div
-                  className="glass-card dark:glass-card-dark h-full flex flex-col items-center text-center p-8 md:p-10 transition-all duration-500"
-                >
-                  <span className="font-mono text-label-sm uppercase tracking-widest text-sage-mid mb-3">
-                    {bono.label}
-                  </span>
-                  <h3 className="font-display text-display-3 text-ink mb-4">{bono.name}</h3>
-                  <div className="mb-4">
-                    <span className="font-display text-5xl text-ink font-light">{bono.price}</span>
-                    <p className="text-sage font-body font-medium text-sm mt-1">{bono.savings}</p>
+                <PremiumCard tilt={false} className="h-full">
+                  <div className="flex flex-col items-center text-center p-8 md:p-10 h-full">
+                    <span className="font-mono text-label-sm uppercase tracking-widest text-sage-mid mb-3">
+                      {bono.label}
+                    </span>
+                    <h3 className="font-display text-display-3 text-ink mb-4">{bono.name}</h3>
+                    <div className="mb-4">
+                      <span className="font-display text-5xl text-ink font-light">{bono.price}</span>
+                      <p className="text-sage font-body font-medium text-sm mt-1">{bono.savings}</p>
+                    </div>
+                    <p className="text-ink-muted text-sm mb-6 font-body">
+                      {bono.validity}. Aplicable a Terapia Individual y Online.
+                    </p>
+                    <Link href={bono.href} className="btn-primary w-full text-center mt-auto">
+                      Adquirir {bono.name.split(' ').pop()}
+                    </Link>
                   </div>
-                  <p className="text-ink-muted text-sm mb-6 font-body">
-                    {bono.validity}. Aplicable a Terapia Individual y Online.
-                  </p>
-                  <Link href={bono.href} className="btn-primary w-full text-center">
-                    Adquirir {bono.name.split(' ').pop()}
-                  </Link>
-                </div>
+                </PremiumCard>
               </ScrollReveal>
             ))}
           </div>

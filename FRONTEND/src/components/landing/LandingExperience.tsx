@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ReactLenis } from "@studio-freight/react-lenis";
@@ -9,6 +11,7 @@ import Script from "next/script";
 import TiltCard from "./TiltCard";
 import WordReveal from "./WordReveal";
 import { sectionReveal, staggerChildren } from "./motion";
+import PremiumCard from "@/components/ui/PremiumCard";
 
 type LandingCopy = {
   nav: {
@@ -378,25 +381,25 @@ export default function LandingExperience(): JSX.Element {
                       zIndex: i + 10,
                     }}
                   >
-                    <TiltCard className="rounded-3xl border border-outline-variant/20 bg-surface-container-lowest/90 backdrop-blur-3xl shadow-editorial transition-transform will-change-transform h-full">
+                    <PremiumCard>
                       <motion.div
-                        className="p-10 flex flex-col gap-6"
+                        className="p-10 flex flex-col gap-6 relative z-10"
                         initial="hidden"
                         whileInView="show"
                         viewport={{ once: false, amount: 0.45 }}
                         variants={staggerChildren}
                       >
-                        <motion.div variants={sectionReveal} className="w-14 h-14 bg-primary-container rounded-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-on-primary-container text-3xl">{c.icon}</span>
+                        <motion.div variants={sectionReveal} className="w-14 h-14 bg-sage-wash/80 rounded-full flex items-center justify-center backdrop-blur-md">
+                          <span className="material-symbols-outlined text-sage text-3xl">{c.icon}</span>
                         </motion.div>
-                        <motion.h3 variants={sectionReveal} className="font-headline text-2xl font-bold">
+                        <motion.h3 variants={sectionReveal} className="font-headline text-2xl font-bold text-ink">
                           {c.title}
                         </motion.h3>
-                        <motion.p variants={sectionReveal} className="text-on-surface-variant leading-relaxed">
+                        <motion.p variants={sectionReveal} className="text-ink-soft leading-relaxed">
                           {c.body}
                         </motion.p>
                       </motion.div>
-                    </TiltCard>
+                    </PremiumCard>
                   </div>
                 ))}
               </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import ScrollReveal from '@/components/public/ScrollReveal';
-import AnimatedCounter from '@/components/public/AnimatedCounter';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import AnimatedCounter from '@/components/landing/AnimatedCounter';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const PILLARS = [
   {
@@ -64,20 +65,23 @@ export default function PhilosophySection() {
               delay={i * 0.1}
               offset={35}
               scale={0.97}
+              className="h-full"
             >
-              <article className="glass-card dark:glass-card-dark p-8 md:p-10 flex flex-col gap-6 h-full group hover:shadow-card-hover transition-all duration-600 ease-apple">
-                <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors duration-400 ease-apple">
-                <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400" aria-hidden="true">
-                    {pillar.icon}
-                  </span>
+              <PremiumCard>
+                <div className="p-8 md:p-10 flex flex-col gap-6 h-full w-full group">
+                  <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors duration-400 ease-apple">
+                    <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400" aria-hidden="true">
+                      {pillar.icon}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-display-3 text-ink">
+                    {pillar.title}
+                  </h3>
+                  <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
+                    {pillar.body}
+                  </p>
                 </div>
-                <h3 className="font-display text-display-3 text-ink">
-                  {pillar.title}
-                </h3>
-                <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
-                  {pillar.body}
-                </p>
-              </article>
+              </PremiumCard>
             </ScrollReveal>
           ))}
         </div>

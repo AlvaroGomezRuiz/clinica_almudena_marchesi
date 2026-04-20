@@ -1,6 +1,6 @@
 'use client';
 
-import AnimatedCounter from '@/components/public/AnimatedCounter';
+import AnimatedCounter from '@/components/landing/AnimatedCounter';
 
 /**
  * Stats row with animated +50 patients counter.

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 const STEPS = [
   {
@@ -78,39 +79,40 @@ export default function BunkerSection() {
         <ScrollReveal delay={0.18}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-14 text-left">
             {STEPS.map((step) => (
-              <div
-                key={step.num}
-                className="glass-card dark:glass-card-dark p-7 flex flex-col gap-2 group hover:shadow-card-hover transition-all duration-600 ease-apple"
-              >
-                <span className="font-display text-3xl text-sage font-light">
-                  {step.num}
-                </span>
-                <p className="font-body font-semibold text-ink text-[0.95rem]">
-                  {step.title}
-                </p>
-                <p className="text-ink-soft text-sm leading-relaxed">
-                  {step.body}
-                </p>
-              </div>
+              <PremiumCard tilt={false} key={step.num}>
+                <div className="p-7 flex flex-col gap-2 group hover:-translate-y-1 transition-all duration-600 ease-apple">
+                  <span className="font-display text-3xl text-sage font-light">
+                    {step.num}
+                  </span>
+                  <p className="font-body font-semibold text-ink text-[0.95rem]">
+                    {step.title}
+                  </p>
+                  <p className="text-ink-soft text-sm leading-relaxed">
+                    {step.body}
+                  </p>
+                </div>
+              </PremiumCard>
             ))}
           </div>
         </ScrollReveal>
 
         {/* Info callout */}
         <ScrollReveal delay={0.22}>
-          <div className="max-w-2xl mx-auto mb-14 glass-card dark:glass-card-dark p-6 flex gap-4 text-left border-l-[3px] border-sage transition-colors duration-500">
-            <span className="material-symbols-outlined text-sage text-2xl shrink-0 mt-0.5">info</span>
-            <div>
-              <p className="font-body font-semibold text-ink text-sm mb-1">
-                Registro Obligatorio
-              </p>
-              <p className="text-ink-soft text-sm leading-relaxed">
-                Para garantizar la confidencialidad y gestionar tus citas, es
-                necesario crear una cuenta de acceso privada antes de cualquier
-                reserva.
-              </p>
+          <PremiumCard tilt={false} className="max-w-2xl mx-auto mb-14 text-left">
+            <div className="p-6 flex gap-4 border-l-[3px] border-sage transition-colors duration-500 rounded-3xl overflow-hidden">
+              <span className="material-symbols-outlined text-sage text-2xl shrink-0 mt-0.5">info</span>
+              <div>
+                <p className="font-body font-semibold text-ink text-sm mb-1">
+                  Registro Obligatorio
+                </p>
+                <p className="text-ink-soft text-sm leading-relaxed">
+                  Para garantizar la confidencialidad y gestionar tus citas, es
+                  necesario crear una cuenta de acceso privada antes de cualquier
+                  reserva.
+                </p>
+              </div>
             </div>
-          </div>
+          </PremiumCard>
         </ScrollReveal>
 
         {/* CTA */}

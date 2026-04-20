@@ -1,7 +1,7 @@
 import { verifyAdminMfaAction } from '@/services/auth/actions';
 import { cookies } from 'next/headers';
 
-import AdminMfaQr from '@/components/AdminMfaQr';
+import AdminMfaQr from '@/components/admin/AdminMfaQr';
 
 type AdminMfaPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;

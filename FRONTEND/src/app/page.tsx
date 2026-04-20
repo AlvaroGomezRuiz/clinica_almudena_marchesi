@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
-import HeroSection from './sections/HeroSection';
+import HeroSection from '@/components/sections/HeroSection';
 
 /* ── Dynamic imports para secciones below-the-fold ──────────────────
    ssr: true  → Google los indexa en el HTML inicial (SEO intacto)
@@ -10,7 +10,7 @@ import HeroSection from './sections/HeroSection';
                 JS de la sección se descarga en su chunk separado.
    ─────────────────────────────────────────────────────────────────── */
 const PhilosophySection = dynamic(
-  () => import('./sections/PhilosophySection'),
+  () => import('@/components/sections/PhilosophySection'),
   {
     ssr: true,
     loading: () => (
@@ -24,7 +24,7 @@ const PhilosophySection = dynamic(
 );
 
 const BunkerSection = dynamic(
-  () => import('./sections/BunkerSection'),
+  () => import('@/components/sections/BunkerSection'),
   {
     ssr: true,
     loading: () => (
@@ -38,7 +38,7 @@ const BunkerSection = dynamic(
 );
 
 const MoncloaSection = dynamic(
-  () => import('./sections/MoncloaSection'),
+  () => import('@/components/sections/MoncloaSection'),
   {
     ssr: true,
     loading: () => (
@@ -52,7 +52,7 @@ const MoncloaSection = dynamic(
 );
 
 const CTASection = dynamic(
-  () => import('./sections/CTASection'),
+  () => import('@/components/sections/CTASection'),
   {
     ssr: true,
     loading: () => (

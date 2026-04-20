@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
-import MoncloaSection from '@/app/sections/MoncloaSection';
-import CTASection from '@/app/sections/CTASection';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import MoncloaSection from '@/components/sections/MoncloaSection';
+import CTASection from '@/components/sections/CTASection';
+import PremiumCard from '@/components/ui/PremiumCard';
 import {
   CLINIC_ADDRESS,
   CLINIC_ADDRESS_LINE1,
@@ -77,55 +78,59 @@ export default function ContactoPage() {
 
             {CONTACT_ITEMS.map((item, i) => (
               <ScrollReveal key={item.label} delay={0.06 + i * 0.06}>
-                <a
-                  href={item.href}
-                  target={item.external ? '_blank' : undefined}
-                  rel={item.external ? 'noopener noreferrer' : undefined}
-                  className="glass-card dark:glass-card-dark p-6 flex items-center gap-5 group hover:shadow-card-hover transition-all duration-400 ease-apple"
-                >
-                  <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
-                    <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400">
-                      {item.icon}
-                    </span>
-                  </div>
-                  <div className="select-text">
-                    <p className="font-mono text-label-sm uppercase text-ink-muted mb-1 select-text">
-                      {item.label}
-                    </p>
-                    <p className="font-body text-ink font-medium text-[0.95rem] select-text">
-                      {item.value}
-                    </p>
-                  </div>
-                </a>
+                <PremiumCard tilt={false}>
+                  <a
+                    href={item.href}
+                    target={item.external ? '_blank' : undefined}
+                    rel={item.external ? 'noopener noreferrer' : undefined}
+                    className="p-6 flex items-center gap-5 group hover:-translate-y-1 transition-all duration-400 ease-apple h-full"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
+                      <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400">
+                        {item.icon}
+                      </span>
+                    </div>
+                    <div className="select-text">
+                      <p className="font-mono text-label-sm uppercase text-ink-muted mb-1 select-text">
+                        {item.label}
+                      </p>
+                      <p className="font-body text-ink font-medium text-[0.95rem] select-text">
+                        {item.value}
+                      </p>
+                    </div>
+                  </a>
+                </PremiumCard>
               </ScrollReveal>
             ))}
 
             {/* Portal Advisory */}
             <ScrollReveal delay={0.2}>
-              <div className="glass-card dark:glass-card-dark p-6 md:p-8 bg-sage-wash/50 dark:bg-sage-wash/10">
-                <div className="flex items-start gap-4">
-                  <span className="material-symbols-outlined text-sage dark:text-sage-light text-2xl mt-0.5">calendar_month</span>
-                  <div>
-                    <h3 className="font-display text-xl text-ink mb-2">
-                      Reserva de Citas
-                    </h3>
-                    <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-4">
-                      Para garantizar la confidencialidad y la gestión eficiente
-                      de tu historial clínico, todas las reservas se realizan a
-                      través de nuestro portal seguro.
-                    </p>
-                    <Link
-                      href="/login"
-                      className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
-                    >
-                      Ir al Portal del Paciente
-                      <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
-                        arrow_forward
-                      </span>
-                    </Link>
+              <PremiumCard tilt={false}>
+                <div className="p-6 md:p-8 bg-sage-wash/50 dark:bg-sage-wash/10 rounded-3xl overflow-hidden h-full">
+                  <div className="flex items-start gap-4">
+                    <span className="material-symbols-outlined text-sage dark:text-sage-light text-2xl mt-0.5">calendar_month</span>
+                    <div>
+                      <h3 className="font-display text-xl text-ink mb-2">
+                        Reserva de Citas
+                      </h3>
+                      <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-4">
+                        Para garantizar la confidencialidad y la gestión eficiente
+                        de tu historial clínico, todas las reservas se realizan a
+                        través de nuestro portal seguro.
+                      </p>
+                      <Link
+                        href="/login"
+                        className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
+                      >
+                        Ir al Portal del Paciente
+                        <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
+                          arrow_forward
+                        </span>
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </PremiumCard>
             </ScrollReveal>
           </div>
 
@@ -139,49 +144,53 @@ export default function ContactoPage() {
             </ScrollReveal>
 
             <ScrollReveal delay={0.12}>
-              <div className="glass-card dark:glass-card-dark p-6 md:p-8">
-                <div className="space-y-4">
-                  {SCHEDULE.map((slot) => (
-                    <div key={slot.day} className="flex justify-between items-center py-2 border-b border-line last:border-0">
-                      <span className="font-body text-[0.92rem] text-ink">{slot.day}</span>
-                      <span className="font-mono text-[0.82rem] text-ink-soft tracking-wide">{slot.hours}</span>
-                    </div>
-                  ))}
+              <PremiumCard tilt={false}>
+                <div className="p-6 md:p-8">
+                  <div className="space-y-4">
+                    {SCHEDULE.map((slot) => (
+                      <div key={slot.day} className="flex justify-between items-center py-2 border-b border-line last:border-0">
+                        <span className="font-body text-[0.92rem] text-ink">{slot.day}</span>
+                        <span className="font-mono text-[0.82rem] text-ink-soft tracking-wide">{slot.hours}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </PremiumCard>
             </ScrollReveal>
 
             {/* Location Card */}
             <ScrollReveal delay={0.18}>
-              <a
-                href={getClinicGoogleMapsHref()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="glass-card dark:glass-card-dark p-6 md:p-8 block group hover:shadow-card-hover transition-all duration-400 ease-apple"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
-                    <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      location_on
-                    </span>
+              <PremiumCard tilt={false}>
+                <a
+                  href={getClinicGoogleMapsHref()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-6 md:p-8 block group hover:-translate-y-1 transition-all duration-400 ease-apple h-full"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
+                      <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        location_on
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-display text-xl text-ink mb-1">
+                        Consulta en Moncloa
+                      </h3>
+                      <p className="text-ink-soft text-[0.9rem]">
+                        {CLINIC_ADDRESS_LINE1}
+                      </p>
+                      <p className="text-ink-muted text-[0.85rem]">
+                        {CLINIC_ADDRESS_LINE2} · Metro Argüelles
+                      </p>
+                      <span className="inline-flex items-center gap-1 mt-3 font-body text-sm font-medium text-sage group-hover:gap-2 transition-all duration-300">
+                        Abrir en Google Maps
+                        <span className="material-symbols-outlined text-base">open_in_new</span>
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-display text-xl text-ink mb-1">
-                      Consulta en Moncloa
-                    </h3>
-                    <p className="text-ink-soft text-[0.9rem]">
-                      {CLINIC_ADDRESS_LINE1}
-                    </p>
-                    <p className="text-ink-muted text-[0.85rem]">
-                      {CLINIC_ADDRESS_LINE2} · Metro Argüelles
-                    </p>
-                    <span className="inline-flex items-center gap-1 mt-3 font-body text-sm font-medium text-sage group-hover:gap-2 transition-all duration-300">
-                      Abrir en Google Maps
-                      <span className="material-symbols-outlined text-base">open_in_new</span>
-                    </span>
-                  </div>
-                </div>
-              </a>
+                </a>
+              </PremiumCard>
             </ScrollReveal>
           </div>
         </div>

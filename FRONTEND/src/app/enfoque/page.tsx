@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import ScrollReveal from '@/components/public/ScrollReveal';
-import CTASection from '@/app/sections/CTASection';
-import StatsRow from '@/components/public/StatsRow';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import CTASection from '@/components/sections/CTASection';
+import StatsRow from '@/components/landing/StatsRow';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 export const metadata: Metadata = {
   title: 'Enfoque | Almudena Marchesi — Psicología Clínica',
@@ -83,23 +84,25 @@ export default function EnfoquePage() {
                 delay={i * 0.08}
                 className={i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-12'}
               >
-                <article className={`glass-card dark:glass-card-dark p-8 md:p-10 h-full flex flex-col gap-5 group hover:shadow-card-hover transition-all duration-600 ease-apple ${
-                  i === 2 ? 'md:flex-row md:items-center md:gap-12' : ''
-                }`}>
-                  <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
-                    <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
-                      {card.icon}
-                    </span>
+                <PremiumCard tilt={false} className="h-full">
+                  <div className={`p-8 md:p-10 h-full flex flex-col gap-5 group hover:-translate-y-1 transition-all duration-600 ease-apple ${
+                    i === 2 ? 'md:flex-row md:items-center md:gap-12' : ''
+                  }`}>
+                    <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
+                      <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
+                        {card.icon}
+                      </span>
+                    </div>
+                    <div>
+                      <h2 className="font-display text-display-3 text-ink mb-3">
+                        {card.title}
+                      </h2>
+                      <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
+                        {card.body}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-display text-display-3 text-ink mb-3">
-                      {card.title}
-                    </h2>
-                    <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
-                      {card.body}
-                    </p>
-                  </div>
-                </article>
+                </PremiumCard>
               </ScrollReveal>
             ))}
           </div>

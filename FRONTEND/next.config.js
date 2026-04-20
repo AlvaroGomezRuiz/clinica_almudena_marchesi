@@ -89,6 +89,17 @@ const nextConfig = {
       },
     ];
   },
+
+  // ─── REDIRECCIONES ───
+  async redirects() {
+    return [
+      {
+        source: '/register',
+        destination: '/registro-paciente',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
-import HeroImage from '@/components/public/HeroImage';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import HeroImage from '@/components/landing/HeroImage';
 
 export default function HeroSection() {
   return (

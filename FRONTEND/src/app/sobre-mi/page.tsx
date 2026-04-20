@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import ScrollReveal from '@/components/public/ScrollReveal';
-import Photo3D from '@/components/public/Photo3D';
-import CTASection from '@/app/sections/CTASection';
+import ScrollReveal from '@/components/landing/ScrollReveal';
+import Photo3D from '@/components/landing/Photo3D';
+import CTASection from '@/components/sections/CTASection';
+import PremiumCard from '@/components/ui/PremiumCard';
 
 export const metadata: Metadata = {
   title: 'Sobre Mí | Almudena Marchesi — Psicología Clínica',
@@ -160,33 +161,35 @@ export default function SobreMiPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {CREDENTIALS.map((cred, i) => (
               <ScrollReveal key={cred.title} delay={i * 0.08}>
-                <article className="glass-card dark:glass-card-dark p-8 md:p-10 h-full flex flex-col group hover:shadow-card-hover hover:-translate-y-1 transition-all duration-600 ease-apple">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-8 transition-colors duration-400 ease-apple ${
-                    cred.accentColor === 'sage'
-                      ? 'bg-sage-wash group-hover:bg-sage'
-                      : cred.accentColor === 'warm'
-                      ? 'bg-warm-light group-hover:bg-warm'
-                      : 'bg-sage-wash group-hover:bg-sage-mid'
-                  }`}>
-                    <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
-                      {cred.icon}
-                    </span>
+                <PremiumCard tilt={false} className="h-full">
+                  <div className="p-8 md:p-10 h-full flex flex-col group hover:-translate-y-1 transition-all duration-600 ease-apple">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-8 transition-colors duration-400 ease-apple ${
+                      cred.accentColor === 'sage'
+                        ? 'bg-sage-wash group-hover:bg-sage'
+                        : cred.accentColor === 'warm'
+                        ? 'bg-warm-light group-hover:bg-warm'
+                        : 'bg-sage-wash group-hover:bg-sage-mid'
+                    }`}>
+                      <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
+                        {cred.icon}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-display-3 text-ink mb-4">{cred.title}</h3>
+                    <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
+                      {cred.body}
+                    </p>
+                    <ul className="space-y-3 mt-auto">
+                      {cred.items.map((item) => (
+                        <li key={item} className="flex items-center gap-3 text-sm text-ink-soft font-body">
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            cred.accentColor === 'warm' ? 'bg-warm' : 'bg-sage'
+                          }`} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h3 className="font-display text-display-3 text-ink mb-4">{cred.title}</h3>
-                  <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
-                    {cred.body}
-                  </p>
-                  <ul className="space-y-3 mt-auto">
-                    {cred.items.map((item) => (
-                      <li key={item} className="flex items-center gap-3 text-sm text-ink-soft font-body">
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          cred.accentColor === 'warm' ? 'bg-warm' : 'bg-sage'
-                        }`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
+                </PremiumCard>
               </ScrollReveal>
             ))}
           </div>

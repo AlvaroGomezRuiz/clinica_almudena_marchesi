@@ -27,8 +27,8 @@ const fontMono = JetBrains_Mono({
   display: 'swap',
 });
 
-import PublicHeader from '@/components/PublicHeader';
-import PublicFooter from '@/components/public/PublicFooter';
+import PublicHeader from '@/components/layout/PublicHeader';
+import PublicFooter from '@/components/layout/PublicFooter';
 import { PrivacyProvider } from '@/context/PrivacyContext';
 
 
