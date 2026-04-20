@@ -121,3 +121,8 @@ __pypackages__/
 pnpm-debug.log*
 lerna-debug.log*
 
+# --- Locks / demos locales ---
+skills-lock.json
+/start_all.bat
+/start_all.py
+
