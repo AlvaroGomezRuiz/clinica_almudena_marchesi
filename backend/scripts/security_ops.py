@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-# Permitir ejecución directa como script desde BACKEND/scripts
+# Permitir ejecución directa como script desde backend/scripts
 _root_path = Path(__file__).resolve().parents[1]
 if str(_root_path) not in sys.path:
     sys.path.insert(0, str(_root_path))

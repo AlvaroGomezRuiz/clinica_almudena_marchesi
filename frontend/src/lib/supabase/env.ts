@@ -12,7 +12,7 @@ function assertDefined(name: string, value: string | undefined): string {
   if (!value || value.trim().length === 0) {
     throw new Error(
       `[supabase/env] Variable requerida "${name}" no está definida. ` +
-        `Revisa FRONTEND/.env.local (ver .env.example).`
+        `Revisa frontend/.env.local (ver .env.example).`
     );
   }
   return value;

@@ -18,7 +18,7 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
                         (vía Edge Fn)  │
 ```
 
-- **Frontend:** Next.js 14 + React 18 + Tailwind (`FRONTEND/`).
+- **Frontend:** Next.js 14 + React 18 + Tailwind (`frontend/`).
 - **Auth & DB:** Supabase Auth (cookies httpOnly vía `@supabase/ssr`), Postgres con RLS por fila.
 - **Realtime:** Supabase Realtime WebSocket en `citas`, `mensajes`, `conversaciones`, `pagos`, `recurso_asignaciones`.
 - **Pagos:** Stripe Checkout + webhook que escribe en `pagos` con `service_role`.
@@ -26,19 +26,28 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 
 ---
 
-## 2. Carpetas
+## 2. Estructura del monorepo
 
 ```
-├─ FRONTEND/               # Next.js app (deploy Vercel)
+almudena/
+├─ frontend/                    # Next.js 14 app (Vercel)
 │  └─ src/
-│     ├─ app/             # Routes: (public), /admin, /portal
-│     ├─ components/      # UI (portal-shell, chat, booking, auth)
-│     ├─ lib/supabase/    # Clients: server, browser, middleware, env, types
-│     └─ services/        # Server Actions (auth, citas, mensajes, payments)
+│     ├─ app/                   # Rutas: (public), /admin, /portal, /api
+│     ├─ components/            # UI: chat, booking, auth, pagos, portal-shell
+│     ├─ lib/supabase/          # Clientes: server, browser, middleware, env, types
+│     └─ services/              # Server Actions por dominio
+├─ backend/                     # FastAPI stand-by (no desplegado)
+│  ├─ app/                      # Rutas, modelos SQLAlchemy, servicios
+│  ├─ migrations/               # Alembic (historico)
+│  └─ requirements.txt
 ├─ supabase/
-│  ├─ migrations/         # 0001..0008 ordenadas, idempotentes
-│  └─ BOOTSTRAP.md        # Setup inicial paso a paso
-└─ README.md              # este archivo
+│  ├─ migrations/               # 0001..0024 ordenadas e idempotentes
+│  ├─ functions/                # Edge Functions (Deno)
+│  ├─ scripts/                  # bundle_for_deploy.mjs + smoke_test.mjs
+│  └─ BOOTSTRAP.md              # Setup paso a paso
+├─ docs/                        # Documentacion completa (ver seccion 12)
+├─ .gitignore
+└─ README.md                    # este archivo
 ```
 
 ---
@@ -47,7 +56,7 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 
 ```bash
 # 1. Instalar dependencias
-cd FRONTEND
+cd frontend
 npm install
 
 # 2. Configurar variables (ver .env.local.example)
@@ -197,7 +206,7 @@ npm run dev
 
 ```bash
 # Link del proyecto con Vercel (primera vez)
-cd FRONTEND
+cd frontend
 vercel link --project clinica-almudena --yes
 
 # Deploy preview
@@ -282,7 +291,7 @@ supabase/functions/
     index.ts          # Router por tipo · JWT · opt-in · dedupe · log
   cron-recordatorios-24h/
     index.ts          # Validador CRON_SECRET · procesa batch horario
-FRONTEND/src/lib/email/send.ts   # Helper server-only fire-and-forget
+frontend/src/lib/email/send.ts   # Helper server-only fire-and-forget
 ```
 
 ### Setup productivo (una sola vez)
@@ -321,6 +330,12 @@ select cron.unschedule(jobid) from cron.job where jobname = 'recordatorios_24h_h
 ```
 
 **4) Despliegue de Edge Functions**
+
+Tras modificar `supabase/functions/_shared/` o antes de subir una EF que importe `_shared/`, genera los bundles (salida en `supabase/functions/.bundled/`, ignorada por git):
+
+```bash
+node supabase/scripts/bundle_for_deploy.mjs
+```
 
 ```bash
 supabase functions deploy send-email              --project-ref <ref>
@@ -382,7 +397,7 @@ supabase/functions/
     stripe.ts                    # REST client + HMAC-SHA256 signature verify
   stripe-checkout/index.ts       # Crea Checkout Session (JWT · RPC ownership)
   stripe-webhook/index.ts        # Verifica firma · procesar_pago_stripe · email
-FRONTEND/src/
+frontend/src/
   services/pagos/actions.ts      # crearCheckoutCita / crearCheckoutBono
   components/pagos/BonoCompraCard.tsx
   app/portal/pagos/
@@ -432,6 +447,9 @@ STRIPE_WEBHOOK_SECRET  = whsec_xxx
 ```bash
 # Migración
 supabase db push   # aplica 0010_stripe.sql
+
+# Bundles (si tocaste _shared/ o es la primera vez)
+node supabase/scripts/bundle_for_deploy.mjs
 
 # Funciones
 supabase functions deploy stripe-checkout --project-ref <ref>
@@ -486,7 +504,44 @@ Si `processing_error` no es null → la firma era válida pero algo falló dentr
 
 ---
 
-## 12. Roadmap corto (post-MVP)
+## 12. Documentacion tecnica
+
+Todo el material de contexto, auditorias, planes e informes vive en `docs/` con esta estructura:
+
+```
+docs/
+├─ 00_project_control/          # Control del proyecto
+│  ├─ CONTEXTO_HISTORICO.md
+│  └─ PENDIENTES_Y_CHECKLIST.md
+├─ 01_audits/                   # Auditorias tecnicas
+│  ├─ AUDITORIA_ARQUITECTURA.md
+│  ├─ AUDITORIA_BACKEND.md
+│  ├─ AUDITORIA_FRONTEND.md
+│  ├─ AUDITORIA_BASE_DATOS.md
+│  └─ AUDITORIA_SEGURIDAD_RGPD.md
+├─ 02_reports/                  # Informes ejecutivos
+│  ├─ INFORME_EJECUTIVO_CLIENTE.md
+│  └─ REPORTE_EJECUCION.md
+├─ 03_engineering/              # Arquitectura y planificacion
+│  ├─ ARQUITECTURA_TECNICA.md
+│  └─ ROADMAP.md
+├─ 04_design/                   # Sistema visual
+│  └─ SISTEMA_DISENO.md
+└─ 05_operations/               # Operacion y runbooks
+   ├─ SENTRY.md
+   └─ TESTING_CHECKLIST.md
+```
+
+**Lectura recomendada para onboarding rapido**:
+1. Este README.
+2. `docs/02_reports/INFORME_EJECUTIVO_CLIENTE.md` — vision de producto.
+3. `docs/01_audits/AUDITORIA_ARQUITECTURA.md` — diseno del sistema.
+4. `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` — estado live.
+5. `docs/01_audits/AUDITORIA_SEGURIDAD_RGPD.md` — compliance.
+
+---
+
+## 13. Roadmap corto (post-MVP)
 
 1. **Cancelación de cita** (admin+paciente) con `booking_cancelled` + reembolso parcial Stripe si procede.
 2. **Asignar recurso** desde admin → `nueva_asignacion` email.
@@ -499,6 +554,6 @@ Si `processing_error` no es null → la firma era válida pero algo falló dentr
 
 ---
 
-## 13. Licencia
+## 14. Licencia
 
 Código propietario. © Clínica Almudena Marchesi Fernández. Todos los derechos reservados.

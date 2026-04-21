@@ -9,7 +9,7 @@ load_dotenv(dotenv_path=ROOT / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    print("DATABASE_URL no está configurado (revisa BACKEND/.env).")
+    print("DATABASE_URL no está configurado (revisa backend/.env).")
     raise SystemExit(1)
 
 if str(ROOT) not in sys.path:

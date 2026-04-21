@@ -50,7 +50,7 @@ def _purge_alembic_versions() -> None:
 def _get_engine() -> Engine:
     database_url = (os.getenv("DATABASE_URL") or "").strip()
     if not database_url:
-        _die("DATABASE_URL no está configurado en el entorno (revisa BACKEND/.env).")
+        _die("DATABASE_URL no está configurado en el entorno (revisa backend/.env).")
 
     return create_engine(database_url)
 
@@ -108,7 +108,7 @@ def _seed_identity_users() -> None:
     if not admin_password or not paciente_password:
         _die(
             "Faltan variables de entorno para seeding: SEED_ADMIN_PASSWORD y/o SEED_PACIENTE_PASSWORD. "
-            "Define credenciales en BACKEND/.env (solo desarrollo) o en el entorno."
+            "Define credenciales en backend/.env (solo desarrollo) o en el entorno."
         )
 
     db = SessionLocal()

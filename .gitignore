@@ -1,137 +1,120 @@
 # =============================================================================
-# .GITIGNORE MAESTRO - CLÍNICA ALMUDENA (BLINDAJE TOTAL)
+# .gitignore — Clinica Almudena Marchesi
+# Arquitectura: Next.js (frontend) + FastAPI stand-by (backend) + Supabase
+# Convencion: todas las rutas en minusculas. Patrones globales con **.
 # =============================================================================
 
-# Nota: se mantienen duplicados intencionales por casing (backend/BACKEND, frontend/FRONTEND)
-# y por rutas equivalentes. No se eliminan reglas existentes, solo se añade cobertura.
+# -----------------------------------------------------------------------------
+# SECRETOS Y CONFIGURACION LOCAL (CRITICO — NUNCA COMMITEAR)
+# -----------------------------------------------------------------------------
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+!**/.env.*.example
 
-# --- IA ---
-.cursorrules
-.cursorignore
-.agents/
-/.agents/skills/
-/cursor
-/DOCS
-/PROTOTIPO
-/.agents
-/.cursor/
-/GEO
-/.DOCS/
-/.GEO/
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/functions/.bundled/
 
-# --- ENTORNO VIRTUAL Y SECRETOS (CRÍTICO) ---
-# Nunca subir las llaves del búnker ni las librerías locales.
+# Llaves y certificados
+*.pem
+*.crt
+*.key
+*.pfx
+*.p12
+
+# -----------------------------------------------------------------------------
+# BACKEND (Python / FastAPI stand-by)
+# -----------------------------------------------------------------------------
 backend/venv/
-BACKEND/venv/
-.env
-.env.local
-.env.*.local
-
-
-# --- DATOS SENSIBLES Y PRIVACIDAD MÉDICA ---
-# Esta información reside exclusivamente en el búnker local o producción.
+backend/.venv/
 backend/uploads/
-BACKEND/uploads/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+pip-wheel-metadata/
+**/.python-version
+
+# -----------------------------------------------------------------------------
+# FRONTEND (Next.js / Node)
+# -----------------------------------------------------------------------------
+**/node_modules/
+**/.next/
+**/.turbo/
+**/.vercel/
+**/out/
+**/build/
+**/*.tsbuildinfo
+**/.swc/
+**/.eslintcache
+frontend/next-env.d.ts
+
+# Reportes Lighthouse locales
+lh-*.json
+lh-report*.json
+**/lh/
+
+# -----------------------------------------------------------------------------
+# DATOS SENSIBLES
+# -----------------------------------------------------------------------------
 backups/
 *.sql
 !supabase/migrations/*.sql
 !supabase/functions/**/*.sql
 *.gz
 *.db
+*.sqlite
 *.sqlite3
 
-# --- SUPABASE LOCAL STATE (no commit) ---
-supabase/.branches/
-supabase/.temp/
-supabase/.env
-
-# --- PYTHON: BASURA TÉCNICA ---
-**/__pycache__/
-*.pyc
-*.py[cod]
-*$py.class
-.pytest_cache/
-.coverage
-htmlcov/
-
-# --- FRONTEND: NODE / NEXT.JS ---
-.prototipo/
-frontend/node_modules/
-FRONTEND/node_modules/
-frontend/.next/
-FRONTEND/.next/
-frontend/out/
-FRONTEND/out/
-frontend/build/
-FRONTEND/build/
-.next/
-out/
-build/
-.eslintcache
-npm-debug.log*
-yarn-debug.log*
-
-# --- REPORTS (Lighthouse, auditorías) ---
-FRONTEND/lh-*.json
-FRONTEND/lh-report*.json
-lh-*.json
-lh-report*.json
-FRONTEND/lh/
-
-# --- DOCKER Y PERSISTENCIA ---
+# -----------------------------------------------------------------------------
+# DOCKER / INFRA
+# -----------------------------------------------------------------------------
 docker/db_data/
 .docker_volumes/
 
-# --- CONFIGURACIÓN DE EDITORES (IDE) ---
-# Evita fugas de rutas locales del desarrollador.
+# -----------------------------------------------------------------------------
+# LOGS
+# -----------------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.sentry-debug.log
+
+# -----------------------------------------------------------------------------
+# IDE / SISTEMA OPERATIVO
+# -----------------------------------------------------------------------------
 .vscode/
 .idea/
 *.swp
 *.sublime-project
 *.sublime-workspace
-
-# --- MONITOREO Y DIAGNÓSTICO ---
-*.log
-.sentry-debug.log
-
-# --- CERTIFICADOS Y LLAVES DE SEGURIDAD ---
-# Blindaje contra subida accidental de certificados SSL o llaves RSA.
-*.pem
-*.crt
-*.key
-*.pfx
-
-# --- SISTEMA OPERATIVO ---
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# --- MIGRACIONES DE BASE DE DATOS ---
-backend/alembic/versions/*.pyc
-BACKEND/alembic/versions/*.pyc
-
-# --- CACHE / BUILD EXTRA (Stack actual) ---
-# Python tooling
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
-pip-wheel-metadata/
-**/.python-version
-__pypackages__/
-
-# Node / Next tooling
-**/*.tsbuildinfo
-.turbo/
-.vercel/
-.next/cache/
-**/.swc/
-pnpm-debug.log*
-lerna-debug.log*
-
-# --- Locks / demos locales ---
+# -----------------------------------------------------------------------------
+# HERRAMIENTAS INTERNAS / PROTOTIPOS / ARTEFACTOS PRIVADOS
+# -----------------------------------------------------------------------------
+.agents/
+.cursor/
+.cursorignore
+.cursorrules
+.prototipo/
+.geo/
 skills-lock.json
+
+# -----------------------------------------------------------------------------
+# SCRIPTS LOCALES DE ARRANQUE (desarrollo individual)
+# -----------------------------------------------------------------------------
 /start_all.bat
 /start_all.py
-
-.vercel
-.env*.local
