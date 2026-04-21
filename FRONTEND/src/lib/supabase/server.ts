@@ -19,7 +19,7 @@ export function createServerClient() {
   const { url, anonKey } = getSupabaseEnv();
   const cookieStore = cookies();
 
-  return createServerClientBase<Database>(url, anonKey, {
+  return createServerClientBase<Database, 'public'>(url, anonKey, {
     cookies: {
       get(name: string): string | undefined {
         return cookieStore.get(name)?.value;

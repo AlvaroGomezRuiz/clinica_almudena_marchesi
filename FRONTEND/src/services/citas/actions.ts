@@ -11,6 +11,7 @@
  */
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getSupabaseEnv } from '@/lib/supabase/env';
 import { fireEmail } from '@/lib/email/send';
 
 export interface Slot {
@@ -43,12 +44,12 @@ export async function getDisponibilidadAction(
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return [];
 
   const supabase = createServerClient();
-  const { data, error } = await supabase.rpc('obtener_disponibilidad', {
-    p_fecha: fechaISO,
-    p_servicio_id: servicioId,
-  });
-  if (error || !data) return [];
-  return data as Slot[];
+  const data = await rpcPost<Slot[]>(
+    supabase,
+    'obtener_disponibilidad',
+    { p_fecha: fechaISO, p_servicio_id: servicioId }
+  );
+  return data ?? [];
 }
 
 // ---------------------------------------------------------------------------
@@ -66,31 +67,16 @@ export async function reservarCitaAction(
   }
 
   const supabase = createServerClient();
-  const { data, error } = await supabase.rpc('reservar_cita', {
-    p_servicio_id: servicioId,
-    p_slot_inicio: slotInicio,
-  });
-
-  if (error) {
-    const code: ReservaErrorCode =
-      error.code === '23P01' || error.message?.includes('slot_ocupado')
-        ? 'slot_ocupado'
-        : error.code === '42501'
-          ? 'no_paciente'
-          : error.code === '23514'
-            ? 'slot_invalido'
-            : 'unknown';
-
-    const friendly =
-      code === 'slot_ocupado'
-        ? 'Ese hueco se acaba de ocupar. Elige otro.'
-        : code === 'no_paciente'
-          ? 'Tu perfil aún no está vinculado a una ficha clínica.'
-          : code === 'slot_invalido'
-            ? 'El horario ya no es válido.'
-            : error.message;
-
-    return { ok: false, code, message: friendly };
+  let data: unknown;
+  try {
+    data = await rpcPost(
+      supabase,
+      'reservar_cita',
+      { p_servicio_id: servicioId, p_slot_inicio: slotInicio }
+    );
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { ok: false, code: 'unknown', message: msg };
   }
 
   const row = Array.isArray(data) ? data[0] : data;
@@ -113,6 +99,39 @@ export async function reservarCitaAction(
     confirmada,
     consumioBono: Boolean(row.consumio_bono),
   };
+}
+
+async function rpcPost<T>(
+  supabase: ReturnType<typeof createServerClient>,
+  fn: string,
+  args: Record<string, unknown>
+): Promise<T> {
+  const { url, anonKey } = getSupabaseEnv();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error('No hay sesión válida para ejecutar la RPC.');
+  }
+
+  const res = await fetch(`${url}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`RPC ${fn} falló (${res.status}): ${detail}`);
+  }
+
+  return (await res.json()) as T;
 }
 
 // ---------------------------------------------------------------------------

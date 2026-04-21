@@ -162,6 +162,28 @@ export interface RecursoAsignacion {
   activo: boolean;
 }
 
+export interface NotificacionesPrefs {
+  user_id: string;
+  welcome: boolean;
+  booking_confirmed: boolean;
+  booking_cancelled: boolean;
+  reminder_24h: boolean;
+  nueva_asignacion: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BonoConfig {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  sesiones: number;
+  importe_centimos: number;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Conversacion {
   id: string;
   paciente_id: string;
@@ -219,8 +241,10 @@ export interface Database {
       agenda_bloqueos:      TableDef<AgendaBloqueo>;
       pagos:                TableDef<Pago>;
       bonos_pacientes:      TableDef<BonoPaciente>;
+      bonos_config:         TableDef<BonoConfig>;
       recursos:             TableDef<Recurso>;
       recurso_asignaciones: TableDef<RecursoAsignacion>;
+      notificaciones_prefs: TableDef<NotificacionesPrefs>;
       conversaciones:       TableDef<Conversacion>;
       mensajes:             TableDef<Mensaje>;
       historial_sesiones:   TableDef<HistorialSesion>;
@@ -235,10 +259,41 @@ export interface Database {
         };
         Relationships: [];
       };
+      v_conversaciones_admin: {
+        Row: {
+          conversacion_id: string;
+          paciente_id: string;
+          paciente_display_name: string | null;
+          paciente_email: string | null;
+          last_message_at: string | null;
+          estado: ConversacionEstado;
+          unread_admin: number;
+          unread_paciente: number;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       current_paciente_id: { Args: Record<string, never>; Returns: string | null };
+      obtener_disponibilidad: {
+        Args: { p_fecha: string; p_servicio_id: string };
+        Returns: Array<{ slot_inicio: string; slot_fin: string }>;
+      };
+      reservar_cita: {
+        Args: { p_servicio_id: string; p_slot_inicio: string };
+        Returns: Array<{
+          cita_id: string;
+          estado: CitaEstado;
+          consumio_bono: boolean;
+        }>;
+      };
+      chat_mi_conversacion: { Args: Record<string, never>; Returns: string };
+      chat_enviar_mensaje: {
+        Args: { p_conversacion_id: string; p_body: string };
+        Returns: Array<{ mensaje_id: string }>;
+      };
+      chat_marcar_leidos: { Args: { p_conversacion_id: string }; Returns: boolean };
     };
     Enums: {
       user_role: UserRole;

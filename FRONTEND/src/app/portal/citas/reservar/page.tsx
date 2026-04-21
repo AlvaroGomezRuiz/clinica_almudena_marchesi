@@ -11,6 +11,13 @@ interface PageProps {
   readonly searchParams?: { readonly servicio?: string };
 }
 
+interface BonoPacienteLite {
+  id: string;
+  sesiones_totales: number;
+  sesiones_consumidas: number;
+  estado: string;
+}
+
 export default async function ReservarPage({ searchParams }: PageProps) {
   const supabase = createServerClient();
   const {
@@ -29,7 +36,8 @@ export default async function ReservarPage({ searchParams }: PageProps) {
       .from('bonos_pacientes')
       .select('id, sesiones_totales, sesiones_consumidas, estado')
       .eq('estado', 'activo')
-      .limit(10),
+      .limit(10)
+      .returns<BonoPacienteLite[]>(),
   ]);
 
   const serviciosList = servicios ?? [];

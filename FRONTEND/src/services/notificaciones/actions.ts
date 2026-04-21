@@ -8,6 +8,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getSupabaseEnv } from '@/lib/supabase/env';
 
 export type EmailPrefKey =
   | 'welcome'
@@ -50,15 +51,48 @@ export async function updateEmailPrefsAction(
     patch[key] = formData.get(key) === 'on';
   }
 
-  const { error } = await supabase
-    .from('notificaciones_prefs')
-    .upsert(
-      { user_id: user.id, ...patch, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id' }
-    );
-
-  if (error) return { ok: false, error: error.message };
+  try {
+    await upsertPrefs(supabase, {
+      user_id: user.id,
+      ...patch,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { ok: false, error: msg };
+  }
 
   revalidatePath('/portal/ajustes');
   return { ok: true };
+}
+
+async function upsertPrefs(
+  supabase: ReturnType<typeof createServerClient>,
+  payload: { user_id: string } & Partial<Record<EmailPrefKey, boolean>> & { updated_at: string }
+): Promise<void> {
+  const { url, anonKey } = getSupabaseEnv();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error('No hay sesión válida para actualizar preferencias.');
+  }
+
+  const res = await fetch(`${url}/rest/v1/notificaciones_prefs?on_conflict=user_id`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Upsert notificaciones_prefs falló (${res.status}): ${detail}`);
+  }
 }
