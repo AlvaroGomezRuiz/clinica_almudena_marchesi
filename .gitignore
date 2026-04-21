@@ -34,9 +34,16 @@ backend/uploads/
 BACKEND/uploads/
 backups/
 *.sql
+!supabase/migrations/*.sql
+!supabase/functions/**/*.sql
 *.gz
 *.db
 *.sqlite3
+
+# --- SUPABASE LOCAL STATE (no commit) ---
+supabase/.branches/
+supabase/.temp/
+supabase/.env
 
 # --- PYTHON: BASURA TÉCNICA ---
 **/__pycache__/
@@ -126,3 +133,5 @@ skills-lock.json
 /start_all.bat
 /start_all.py
 
+.vercel
+.env*.local

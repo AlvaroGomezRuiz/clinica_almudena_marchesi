@@ -1,280 +1,139 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+/**
+ * Middleware Next.js — Autenticación Supabase + RBAC por zona.
+ *
+ * Responsabilidades (en orden de ejecución):
+ *   1. Refrescar la sesión Supabase (cookies httpOnly rotating refresh token).
+ *   2. Cabeceras de seguridad (CSP, HSTS, X-Frame-Options, etc.).
+ *   3. Expulsar a /login cualquier request a zona protegida sin sesión válida.
+ *   4. RBAC:
+ *        - /admin/*  → solo profiles.role = 'admin'
+ *        - /portal/* → solo profiles.role = 'paciente'
+ *        - paciente sin pago → /pagos (payment-gate)
+ *   5. Usuario ya autenticado en /login → redirige a su home según rol.
+ *
+ * Principios de defensa:
+ *   - NUNCA confiamos en cookie parseada client-side: siempre getUser() (valida JWT).
+ *   - fail-closed: ante duda, expulsar.
+ *   - RLS activo en Postgres = si middleware falla, la DB protege igual.
+ */
+import { NextResponse, type NextRequest } from 'next/server';
 
-type AccessStatus = {
-  has_paid: boolean;
-  is_admin: boolean;
-};
+import { updateSupabaseSession } from '@/lib/supabase/middleware';
 
-type JwtClaims = {
-  role?: unknown;
-  exp?: unknown;
-  iat?: unknown;
-};
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/enfoque',
+  '/servicios',
+  '/sobre-mi',
+  '/contacto',
+  '/aviso-legal',
+  '/privacidad',
+  '/cookies',
+  '/registro-paciente',
+  '/auth',
+];
 
-type AccessStatusResponse = {
-  has_paid: boolean;
-  is_admin: boolean;
-};
-
-type RefreshResponse = {
-  refreshed: boolean;
-  access_token: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  return PUBLIC_PATHS.some((p) => p !== '/' && pathname.startsWith(`${p}/`));
 }
 
-function parseAccessStatusResponse(data: unknown): AccessStatusResponse | null {
-  if (!isRecord(data)) return null;
-  const hasPaid = data['has_paid'];
-  const isAdmin = data['is_admin'];
-  if (typeof hasPaid !== 'boolean' || typeof isAdmin !== 'boolean') return null;
-  return { has_paid: hasPaid, is_admin: isAdmin };
-}
+function buildCsp(isProd: boolean): string {
+  const supabaseDomain = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const backendApi = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000';
 
-function parseRefreshResponse(data: unknown): RefreshResponse | null {
-  if (!isRecord(data)) return null;
-  const refreshed = data['refreshed'];
-  const accessToken = data['access_token'];
-  if (typeof refreshed !== 'boolean' || typeof accessToken !== 'string') return null;
-  return { refreshed, access_token: accessToken };
-}
-
-async function getAccessStatus(token: string): Promise<AccessStatus | null> {
-  const backendApiUrl =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
-
-  try {
-    const res = await fetch(`${backendApiUrl}/pagos/access-status`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) return null;
-
-    const data: unknown = await res.json().catch(() => null);
-    const parsed = parseAccessStatusResponse(data);
-    return parsed ? { has_paid: parsed.has_paid, is_admin: parsed.is_admin } : null;
-  } catch {
-    return null;
-  }
-}
-
-function nextWithPathHeader(request: NextRequest): NextResponse {
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', request.nextUrl.pathname);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-}
-
-function base64UrlToBase64(input: string): string {
-  const pad = '='.repeat((4 - (input.length % 4)) % 4);
-  return (input + pad).replace(/-/g, '+').replace(/_/g, '/');
-}
-
-function parseJwtClaims(token: string): JwtClaims | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-
-  try {
-    const payload = parts[1];
-    const json = atob(base64UrlToBase64(payload));
-    return JSON.parse(json) as JwtClaims;
-  } catch {
-    return null;
-  }
-}
-
-function isHalfConsumed(claims: JwtClaims | null): boolean {
-  const exp = typeof claims?.exp === 'number' ? claims.exp : null;
-  const iat = typeof claims?.iat === 'number' ? claims.iat : null;
-  if (!exp || !iat || exp <= iat) return false;
-  const ttl = exp - iat;
-  const halfTs = iat + ttl / 2;
-  const now = Date.now() / 1000;
-  return now >= halfTs && now < exp;
-}
-
-async function refreshSlidingSession(
-  backendApiUrl: string,
-  token: string
-): Promise<string | null> {
-  try {
-    const res = await fetch(`${backendApiUrl}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) return null;
-
-    const data: unknown = await res.json().catch(() => null);
-    const parsed = parseRefreshResponse(data);
-    return parsed && parsed.refreshed && parsed.access_token
-      ? parsed.access_token
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function middleware(request: NextRequest) {
-  const isProd = process.env.NODE_ENV === 'production';
-  // CSP compatible con Next.js:
-  // - Evita `strict-dynamic` + nonce (Next no inyecta nonce en sus scripts por defecto)
-  // - Mantiene compatibilidad con Analytics/SpeedInsights y devtools en desarrollo
-  const scriptSrc =
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live";
-
-  const csp = [
+  const directives = [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    scriptSrc,
+    `script-src 'self' ${isProd ? '' : "'unsafe-eval'"} 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: https://lh3.googleusercontent.com https://images.unsplash.com",
-    "connect-src 'self' https://* http://localhost:8000",
-    "upgrade-insecure-requests",
-  ].join('; ').replace(/\s{2,}/g, ' ').trim();
-
-  const withSecurityHeaders = (response: NextResponse) => {
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('Content-Security-Policy', csp);
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    return response;
-  };
-
-  /**
-   * Helper: Expulsar al login borrando la cookie auth_token.
-   * Utilizado cuando el JWT ha expirado, es inválido, o el rol no coincide.
-   */
-  const expelToLogin = (reason: string) => {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('reason', reason);
-    loginUrl.searchParams.set(
-      'next',
-      `${request.nextUrl.pathname}${request.nextUrl.search}`
-    );
-    const res = NextResponse.redirect(loginUrl);
-    // Purgar la cookie corrompida/expirada
-    res.cookies.set('auth_token', '', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 0,
-    });
-    return withSecurityHeaders(res);
-  };
-
-  const token = request.cookies.get('auth_token')?.value;
-  const jwtClaims = token ? parseJwtClaims(token) : null;
-
-  const { pathname } = request.nextUrl;
-  const isLoginPage = pathname.startsWith('/login');
-  const isDashboardPage = pathname.startsWith('/dashboard');
-  const isPortalPage = pathname.startsWith('/portal');
-  const isPagosPage = pathname.startsWith('/pagos');
-  const isAdminPage = pathname.startsWith('/admin');
-  const isProtectedPage = isDashboardPage || isPortalPage || isAdminPage;
-  const isPaymentGateRoute = isDashboardPage || isPortalPage;
-
-  // ─── REGLA 0: Sin credencial en zona protegida → Expulsión ───
-  if (!token && isProtectedPage) {
-    return expelToLogin('no_token');
-  }
-
-  // ─── REGLA 0B: Token presente pero expirado → Purgar y expulsar ───
-  if (token && isProtectedPage) {
-    if (!jwtClaims) {
-      return expelToLogin('token_malformed');
-    }
-    const exp = typeof jwtClaims.exp === 'number' ? jwtClaims.exp : 0;
-    if (exp > 0 && Date.now() / 1000 >= exp) {
-      return expelToLogin('token_expired');
-    }
-  }
-
-  // ─── REGLA 0C: Validación de rol ───
-  // Admin tokens rechazados en /portal, patient tokens rechazados en /admin
-  if (token && jwtClaims && isProtectedPage) {
-    const role = typeof jwtClaims.role === 'string' ? jwtClaims.role : '';
-    if (isAdminPage && role === 'paciente') {
-      return expelToLogin('role_mismatch');
-    }
-    if (isPortalPage && role === 'admin') {
-      // Los admins que intenten acceder al portal de pacientes → redirigir a /admin
-      return withSecurityHeaders(
-        NextResponse.redirect(new URL('/admin', request.url))
-      );
-    }
-  }
-
-  // ─── REGLA 1: Payment gate ───
-  if (token && isPaymentGateRoute) {
-    const status = await getAccessStatus(token);
-    if (status && !status.is_admin && !status.has_paid) {
-      return withSecurityHeaders(
-        NextResponse.redirect(new URL('/pagos', request.url))
-      );
-    }
-  }
-
-  // ─── REGLA 2: Ya autenticado → no mostrar login ───
-  if (token && isLoginPage) {
-    const status = await getAccessStatus(token);
-    const target = status?.is_admin
-      ? '/admin'
-      : status && !status.is_admin && !status.has_paid
-        ? '/pagos'
-        : '/portal';
-    return withSecurityHeaders(
-      NextResponse.redirect(new URL(target, request.url))
-    );
-  }
-
-  // ─── REGLA 3: Sliding sessions → refresh a medio consumir ───
-  if (
-    token &&
-    (isPortalPage || isDashboardPage || isPagosPage) &&
-    isHalfConsumed(jwtClaims)
-  ) {
-    const backendApiUrl =
-      process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
-    const newToken = await refreshSlidingSession(backendApiUrl, token);
-    if (newToken) {
-      const res = nextWithPathHeader(request);
-      res.cookies.set('auth_token', newToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: 'strict',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30,
-      });
-      return withSecurityHeaders(res);
-    }
-  }
-
-  // Si todo está en orden, permitir el paso
-  return withSecurityHeaders(nextWithPathHeader(request));
+    "img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com " + supabaseDomain,
+    `connect-src 'self' ${supabaseDomain} wss://${supabaseDomain.replace(/^https?:\/\//, '')} ${backendApi} https://api.stripe.com`,
+    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    'upgrade-insecure-requests',
+  ];
+  return directives.join('; ').replace(/\s{2,}/g, ' ').trim();
 }
 
-// Configuración del radar: ¿Qué rutas debe vigilar este middleware?
+function applySecurityHeaders(response: NextResponse, isProd: boolean): NextResponse {
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), usb=()'
+  );
+  response.headers.set('Content-Security-Policy', buildCsp(isProd));
+
+  if (isProd) {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=63072000; includeSubDomains; preload'
+    );
+  }
+  return response;
+}
+
+function redirectTo(request: NextRequest, path: string, reason?: string): NextResponse {
+  const url = new URL(path, request.url);
+  if (reason) url.searchParams.set('reason', reason);
+  if (path === '/login') {
+    url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  }
+  return NextResponse.redirect(url);
+}
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const isProd = process.env.NODE_ENV === 'production';
+  const { pathname } = request.nextUrl;
+
+  const isAdminZone   = pathname.startsWith('/admin');
+  const isPortalZone  = pathname.startsWith('/portal');
+  const isPagosZone   = pathname.startsWith('/pagos');
+  const isLoginPage   = pathname === '/login';
+  const isProtected   = isAdminZone || isPortalZone;
+
+  // Rutas completamente públicas: no tocar sesión (perf).
+  if (!isProtected && !isLoginPage && !isPagosZone && isPublicPath(pathname)) {
+    return applySecurityHeaders(NextResponse.next(), isProd);
+  }
+
+  const { response, user } = await updateSupabaseSession(request);
+
+  // ─── Zona protegida sin sesión → expulsar a /login ───
+  if (isProtected && !user) {
+    return applySecurityHeaders(redirectTo(request, '/login', 'no_session'), isProd);
+  }
+
+  // ─── RBAC: rol no coincide con zona ───
+  if (user && user.profile) {
+    const role = user.profile.role;
+
+    if (isAdminZone && role !== 'admin') {
+      return applySecurityHeaders(redirectTo(request, '/portal', 'role_mismatch'), isProd);
+    }
+    if (isPortalZone && role !== 'paciente') {
+      return applySecurityHeaders(redirectTo(request, '/admin', 'role_mismatch'), isProd);
+    }
+  }
+
+  // ─── Usuario autenticado intenta ver /login → home según rol ───
+  if (user && user.profile && isLoginPage) {
+    const target = user.profile.role === 'admin' ? '/admin' : '/portal';
+    return applySecurityHeaders(redirectTo(request, target), isProd);
+  }
+
+  return applySecurityHeaders(response, isProd);
+}
+
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    // Excluir solo assets estáticos; todo lo demás pasa por middleware.
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2)).*)',
+  ],
 };

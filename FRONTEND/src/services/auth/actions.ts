@@ -1,213 +1,305 @@
 'use server';
 
-import { cookies, headers } from 'next/headers';
+/**
+ * Server Actions de autenticación — Supabase Auth.
+ *
+ * Reemplaza el flujo custom FastAPI anterior:
+ *   * Login:       supabase.auth.signInWithPassword
+ *   * Logout:      supabase.auth.signOut
+ *   * MFA:         supabase.auth.mfa.challenge + .verify (TOTP RFC 6238)
+ *   * Signup:      supabase.auth.signUp con verificación email
+ *   * Recovery:    supabase.auth.resetPasswordForEmail
+ *
+ * Las cookies httpOnly las gestiona @supabase/ssr transparentemente.
+ * Rol y payment-gate se validan en middleware + RLS.
+ */
+
 import { redirect } from 'next/navigation';
-import { randomUUID } from 'crypto';
 
-type ErrorPayload = {
-  detail?: string;
-  message?: string;
-};
+import { createServerClient } from '@/lib/supabase/server';
 
-type LoginPayload = {
-  access_token: string;
-  role: 'paciente' | 'admin';
-  provisioning_uri?: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+interface LoginResult {
+  ok: true;
+  requiresMfa: boolean;
+  role: 'admin' | 'paciente';
 }
 
-function parseErrorPayload(data: unknown): ErrorPayload | null {
-  if (!isRecord(data)) return null;
-  const detail = data['detail'];
-  const message = data['message'];
-  return {
-    ...(typeof detail === 'string' ? { detail } : {}),
-    ...(typeof message === 'string' ? { message } : {}),
-  };
+interface AuthError {
+  ok: false;
+  message: string;
 }
 
-function parseLoginPayload(data: unknown): LoginPayload | null {
-  if (!isRecord(data)) return null;
-  const accessToken = data['access_token'];
-  const role = data['role'];
-  if (typeof accessToken !== 'string') return null;
-  if (role !== 'paciente' && role !== 'admin') return null;
+type ActionResult<T> = T | AuthError;
 
-  const provisioningUri = data['provisioning_uri'];
-  return {
-    access_token: accessToken,
-    role,
-    ...(typeof provisioningUri === 'string' && provisioningUri.trim()
-      ? { provisioning_uri: provisioningUri.trim() }
-      : {}),
-  };
+// ---------------------------------------------------------------------------
+// Sanitización de redirects (prevención open-redirect)
+// ---------------------------------------------------------------------------
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith('/') || raw.startsWith('//')) return null;
+  return raw;
 }
 
-function redirectLoginError(message: string, redirectToRaw: string): never {
-  const safeNext =
-    redirectToRaw &&
-    redirectToRaw.startsWith('/') &&
-    !redirectToRaw.startsWith('//')
-      ? redirectToRaw
-      : '';
-
+function redirectLoginError(message: string, nextPath: string | null): never {
   const params = new URLSearchParams();
-  if (safeNext) params.set('next', safeNext);
   params.set('error', message);
+  if (nextPath) params.set('next', nextPath);
   redirect(`/login?${params.toString()}`);
 }
 
-export async function loginAction(formData: FormData): Promise<void> {
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '').trim();
-  const trustDevice = Boolean(formData.get('trust_device'));
-  const redirectToRaw = String(formData.get('redirect_to') ?? '').trim();
+// ---------------------------------------------------------------------------
+// LOGIN — email + password (+ opcional MFA en flujo posterior)
+// ---------------------------------------------------------------------------
+export async function loginAction(formData: FormData): Promise<never> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const password = String(formData.get('password') ?? '');
+  const nextPath = safeNextPath(String(formData.get('redirect_to') ?? '').trim() || null);
 
   if (!email || !password) {
-    redirectLoginError('Email y contraseña obligatorios.', redirectToRaw);
+    redirectLoginError('Email y contraseña obligatorios.', nextPath);
   }
 
-  const backendApiUrl =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
-  const backendUrl = `${backendApiUrl}/auth`;
+  const supabase = createServerClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  const h = headers();
-  const userAgent = h.get('user-agent') ?? '';
-  const forwardedFor =
-    h.get('x-forwarded-for') ?? h.get('X-Forwarded-For') ?? '';
-  const realIp = h.get('x-real-ip') ?? h.get('X-Real-IP') ?? '';
+  if (error || !data.user) {
+    const msg =
+      error?.message === 'Invalid login credentials'
+        ? 'Credenciales inválidas.'
+        : (error?.message ?? 'No se pudo iniciar sesión.');
+    redirectLoginError(msg, nextPath);
+  }
 
-  const cookieStore = cookies();
-  const existingDeviceId = cookieStore.get('device_id')?.value;
-  const deviceId = trustDevice ? (existingDeviceId ?? randomUUID()) : null;
+  // Verificar si hay factor MFA pendiente (Supabase maneja la elevación AAL2).
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const requiresMfa = aalData?.nextLevel === 'aal2' && aalData.currentLevel === 'aal1';
 
-  const res = await fetch(`${backendUrl}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(userAgent ? { 'User-Agent': userAgent } : {}),
-      ...(forwardedFor ? { 'X-Forwarded-For': forwardedFor } : {}),
-      ...(realIp ? { 'X-Real-IP': realIp } : {}),
+  // Cargar rol desde profiles para redirect correcto.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .maybeSingle<{ role: 'admin' | 'paciente' }>();
+
+  const role = profile?.role ?? 'paciente';
+
+  if (requiresMfa) {
+    redirect('/login/mfa' + (nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''));
+  }
+
+  redirect(nextPath ?? (role === 'admin' ? '/admin' : '/portal'));
+}
+
+// ---------------------------------------------------------------------------
+// SIGNUP — auto-registro paciente con verificación email obligatoria
+// ---------------------------------------------------------------------------
+
+export type SignupResult =
+  | { readonly ok: true; readonly pendingVerification: true; readonly email: string }
+  | { readonly ok: false; readonly message: string };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const NAME_RE = /^[\p{L}\p{M}'´\-\s.]{2,80}$/u;
+
+export async function signupAction(formData: FormData): Promise<SignupResult> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const password = String(formData.get('password') ?? '');
+  const passwordConfirm = String(formData.get('password_confirm') ?? '');
+  const displayName = String(formData.get('display_name') ?? '').trim();
+  const rgpd = formData.get('rgpd') === 'on';
+  const honeypot = String(formData.get('company') ?? '').trim();
+
+  if (honeypot) return { ok: false, message: 'Solicitud no válida.' };
+
+  if (!EMAIL_RE.test(email)) return { ok: false, message: 'Introduce un email válido.' };
+  if (!NAME_RE.test(displayName)) {
+    return { ok: false, message: 'Nombre entre 2 y 80 caracteres, sin símbolos extraños.' };
+  }
+  if (password.length < 12) {
+    return { ok: false, message: 'La contraseña debe tener al menos 12 caracteres.' };
+  }
+  if (password !== passwordConfirm) {
+    return { ok: false, message: 'Las contraseñas no coinciden.' };
+  }
+  if (!rgpd) {
+    return { ok: false, message: 'Debes aceptar la política de privacidad.' };
+  }
+
+  const supabase = createServerClient();
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${appUrl}/auth/callback?type=signup`,
+      data: {
+        display_name: displayName,
+        role: 'paciente',
+        rgpd_accepted_at: new Date().toISOString(),
+        needs_clinical_intake: true,
+      },
     },
-    body: JSON.stringify({
-      username: email,
-      password,
-      trust_device: trustDevice,
-      device_fingerprint: deviceId,
-    }),
-    cache: 'no-store',
   });
 
-  const data: unknown = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const err = parseErrorPayload(data);
-
-    redirectLoginError(
-      err?.detail ?? err?.message ?? `Login fallido (${res.status})`,
-      redirectToRaw
-    );
+  if (error) {
+    // Evitamos leak de "email ya existe" (enumeration): mensaje genérico.
+    const sensitive =
+      /already registered|user already exists|email.*already/i.test(error.message);
+    if (sensitive) {
+      return {
+        ok: true,
+        pendingVerification: true,
+        email,
+      };
+    }
+    return { ok: false, message: error.message };
   }
 
-  const parsed = parseLoginPayload(data);
-  if (!parsed) {
-    redirectLoginError('JWT ausente en respuesta.', redirectToRaw);
-  }
-
-  const jwt = parsed.access_token;
-  const role = parsed.role;
-  const provisioningUri = parsed.provisioning_uri ?? null;
-
-  const THIRTY_DAYS = 60 * 60 * 24 * 30;
-
-  const authTokenMaxAge =
-    role === 'paciente' ? THIRTY_DAYS : trustDevice ? THIRTY_DAYS : undefined;
-
-  cookieStore.set('auth_token', jwt, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    ...(authTokenMaxAge ? { maxAge: authTokenMaxAge } : {}),
-  });
-
-  if (trustDevice && deviceId) {
-    cookieStore.set('device_id', deviceId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/',
-      maxAge: THIRTY_DAYS,
-    });
-  }
-
-  if (role === 'admin' && provisioningUri) {
-    cookieStore.set('admin_provisioning_uri', provisioningUri, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/admin',
-      maxAge: 10 * 60,
-    });
-  } else {
-    cookieStore.delete({ name: 'admin_provisioning_uri', path: '/admin' });
-  }
-
-  redirect(role === 'paciente' ? '/portal' : '/admin/mfa');
+  return { ok: true, pendingVerification: true, email };
 }
 
-function redirectAdminMfaError(message: string): never {
-  const params = new URLSearchParams();
-  params.set('error', message);
-  redirect(`/admin/mfa?${params.toString()}`);
+// ---------------------------------------------------------------------------
+// LOGOUT
+// ---------------------------------------------------------------------------
+export async function logoutAction(): Promise<never> {
+  const supabase = createServerClient();
+  await supabase.auth.signOut();
+  redirect('/login');
 }
 
-export async function verifyAdminMfaAction(formData: FormData): Promise<void> {
-  const code = String(formData.get('code') ?? '')
-    .trim()
-    .replace(/\s+/g, '');
+// ---------------------------------------------------------------------------
+// MFA — reto y verificación TOTP
+// ---------------------------------------------------------------------------
+export async function verifyMfaAction(formData: FormData): Promise<ActionResult<LoginResult>> {
+  const code = String(formData.get('code') ?? '').trim().replace(/\s+/g, '');
 
   if (!/^\d{6}$/.test(code)) {
-    redirectAdminMfaError('Código inválido (6 dígitos).');
+    return { ok: false, message: 'Código inválido (6 dígitos).' };
   }
 
-  const cookieStore = cookies();
-  const token = cookieStore.get('auth_token')?.value;
-  if (!token) {
-    redirect('/login');
+  const supabase = createServerClient();
+
+  // Elegir el primer factor TOTP verificado del usuario.
+  const { data: factorsData, error: factorsErr } = await supabase.auth.mfa.listFactors();
+  if (factorsErr) return { ok: false, message: factorsErr.message };
+
+  const totp = factorsData.totp.find((f) => f.status === 'verified');
+  if (!totp) return { ok: false, message: 'No hay factor TOTP registrado.' };
+
+  const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({
+    factorId: totp.id,
+  });
+  if (chErr || !challenge) {
+    return { ok: false, message: chErr?.message ?? 'Fallo al crear reto MFA.' };
   }
 
-  const backendApiUrl =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000/api/v1';
-  const backendUrl = `${backendApiUrl}/auth`;
-
-  const res = await fetch(`${backendUrl}/admin/verify-totp`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ code }),
-    cache: 'no-store',
+  const { error: verifyErr } = await supabase.auth.mfa.verify({
+    factorId: totp.id,
+    challengeId: challenge.id,
+    code,
   });
 
-  const data: unknown = await res.json().catch(() => null);
-  if (!res.ok) {
-    const err = parseErrorPayload(data);
-    redirectAdminMfaError(err?.detail ?? `Verificación fallida (${res.status})`);
+  if (verifyErr) {
+    return { ok: false, message: 'Código incorrecto.' };
   }
 
-  cookieStore.delete({ name: 'admin_provisioning_uri', path: '/admin' });
+  const { data: profileData } = await supabase.auth.getUser();
+  const role: 'admin' | 'paciente' =
+    (profileData.user?.user_metadata?.role as 'admin' | 'paciente' | undefined) ?? 'paciente';
 
-  redirect('/admin');
+  return { ok: true, requiresMfa: false, role };
 }
 
-export async function logoutAction(): Promise<void> {
-  const cookieStore = cookies();
-  cookieStore.delete('auth_token');
-  cookieStore.delete({ name: 'admin_provisioning_uri', path: '/admin' });
-  redirect('/login');
+// ---------------------------------------------------------------------------
+// MFA ENROLL — iniciar enrolamiento TOTP (devuelve QR provisioning URI)
+// ---------------------------------------------------------------------------
+interface EnrollMfaResult {
+  ok: true;
+  factorId: string;
+  provisioningUri: string; // otpauth://... — sirve para QR
+  secret: string;
+}
+
+export async function enrollMfaAction(): Promise<ActionResult<EnrollMfaResult>> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: 'totp',
+    friendlyName: `Clinica-Almudena-${new Date().toISOString().slice(0, 10)}`,
+  });
+
+  if (error || !data) {
+    return { ok: false, message: error?.message ?? 'No se pudo iniciar enrolamiento MFA.' };
+  }
+
+  return {
+    ok: true,
+    factorId: data.id,
+    provisioningUri: data.totp.uri,
+    secret: data.totp.secret,
+  };
+}
+
+export async function confirmMfaEnrollmentAction(
+  formData: FormData
+): Promise<ActionResult<{ ok: true }>> {
+  const factorId = String(formData.get('factor_id') ?? '').trim();
+  const code = String(formData.get('code') ?? '').trim().replace(/\s+/g, '');
+
+  if (!factorId || !/^\d{6}$/.test(code)) {
+    return { ok: false, message: 'Código o factor inválido.' };
+  }
+
+  const supabase = createServerClient();
+  const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({ factorId });
+  if (chErr || !challenge) {
+    return { ok: false, message: chErr?.message ?? 'No se pudo crear reto.' };
+  }
+
+  const { error: verifyErr } = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.id,
+    code,
+  });
+  if (verifyErr) {
+    return { ok: false, message: 'Código incorrecto. Escanea de nuevo el QR e intenta otra vez.' };
+  }
+
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// RECOVERY — enviar email de reset password
+// ---------------------------------------------------------------------------
+export async function requestPasswordResetAction(
+  formData: FormData
+): Promise<ActionResult<{ ok: true }>> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  if (!email) return { ok: false, message: 'Email obligatorio.' };
+
+  const supabase = createServerClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/reset`,
+  });
+
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// UPDATE PASSWORD (tras click en email de reset)
+// ---------------------------------------------------------------------------
+export async function updatePasswordAction(
+  formData: FormData
+): Promise<ActionResult<{ ok: true }>> {
+  const password = String(formData.get('password') ?? '');
+  if (password.length < 12) {
+    return { ok: false, message: 'La contraseña debe tener al menos 12 caracteres.' };
+  }
+
+  const supabase = createServerClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
 }

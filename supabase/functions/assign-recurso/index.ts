@@ -1,0 +1,105 @@
+// Edge Function: assign-recurso
+// -----------------------------------------------------------------------------
+// Asigna un recurso a un paciente (solo admin) y dispara email nueva_asignacion.
+//   1. Valida JWT del admin.
+//   2. Llama RPC `asignar_recurso_admin` (SECURITY DEFINER, idempotente).
+//   3. Si la asignación es nueva y el paciente tiene user_id → dispara email.
+// -----------------------------------------------------------------------------
+
+// deno-lint-ignore-file no-explicit-any
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+
+interface AssignRequest {
+  recurso_id:  string;
+  paciente_id: string;
+}
+
+interface AssignRpcRow {
+  asignacion_id:    string;
+  ya_existia:       boolean;
+  paciente_user_id: string | null;
+  display_name:     string | null;
+  titulo_recurso:   string;
+  tipo_recurso:     string;
+}
+
+function json(body: unknown, status: number, cors: Record<string, string>): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  const cors = buildCorsHeaders(req.headers.get("origin"));
+  const pre = handleOptions(req);
+  if (pre) return pre;
+
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, cors);
+
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return json({ error: "unauthorized" }, 401, cors);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const anonKey     = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false },
+  });
+
+  let body: AssignRequest;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "invalid_json" }, 400, cors);
+  }
+  if (!body?.recurso_id || !body?.paciente_id) {
+    return json({ error: "missing_params" }, 400, cors);
+  }
+
+  const { data: rows, error } = await userClient.rpc("asignar_recurso_admin", {
+    p_recurso_id:  body.recurso_id,
+    p_paciente_id: body.paciente_id,
+  });
+
+  if (error) {
+    const code = (error as any).code ?? "";
+    const http = code === "42501" ? 403
+               : code === "28000" ? 401
+               : code === "P0002" ? 404
+               : 500;
+    return json({ error: "rpc_failed", code, detail: error.message }, http, cors);
+  }
+
+  const row = (Array.isArray(rows) ? rows[0] : rows) as AssignRpcRow | null;
+  if (!row) return json({ error: "rpc_empty" }, 500, cors);
+
+  // Dispara email SOLO si es nueva asignación y hay user_id
+  if (!row.ya_existia && row.paciente_user_id) {
+    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        type: "nueva_asignacion",
+        to_user_id: row.paciente_user_id,
+        data: {
+          titulo_recurso: row.titulo_recurso,
+          tipo_recurso:   row.tipo_recurso,
+        },
+      }),
+    }).catch(() => { /* best-effort */ });
+  }
+
+  return json({
+    ok: true,
+    asignacion_id: row.asignacion_id,
+    ya_existia: row.ya_existia,
+  }, 200, cors);
+});

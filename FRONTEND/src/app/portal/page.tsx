@@ -1,228 +1,321 @@
-/* eslint-disable @next/next/no-img-element */
+import Link from 'next/link';
+import { format, formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-export default function PortalPacienteInicioPage() {
+import {
+  Button,
+  Chip,
+  EmptyState,
+  PageHeader,
+  SectionTitle,
+  StatCard,
+  SurfaceCard,
+} from '@/components/portal-shell/ui';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { createServerClient } from '@/lib/supabase/server';
+
+export const metadata = { title: 'Inicio | Portal Paciente' };
+export const dynamic = 'force-dynamic';
+
+interface ProximaCita {
+  id: string;
+  inicio: string;
+  fin: string;
+  servicio_nombre: string;
+  estado: string;
+}
+
+interface BonoRow {
+  id: string;
+  sesiones_totales: number;
+  sesiones_consumidas: number;
+  estado: 'activo' | 'agotado' | 'expirado' | 'cancelado';
+  fecha_expiracion: string | null;
+}
+
+interface RecursoAsignado {
+  id: string;
+  assigned_at: string;
+  recurso: { id: string; titulo: string; tipo: string } | null;
+}
+
+export default async function PortalInicioPage() {
+  const supabase = createServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null; // layout ya redirige, pero por tipado
+
+  const now = new Date();
+
+  // RLS filtra por paciente automáticamente (user_id = auth.uid()).
+  // La RPC devuelve/crea la conversación del paciente actual.
+  const [
+    { data: proximaRaw },
+    { data: bonoActivoRaw },
+    { data: recursosRaw },
+    { data: conversacionIdData },
+  ] = await Promise.all([
+    supabase
+      .from('v_citas_expandidas')
+      .select('id, inicio, fin, servicio_nombre, estado')
+      .eq('paciente_user_id', user.id)
+      .eq('estado', 'confirmada')
+      .gte('inicio', now.toISOString())
+      .order('inicio')
+      .limit(1)
+      .maybeSingle<ProximaCita>(),
+    supabase
+      .from('bonos_pacientes')
+      .select(
+        'id, sesiones_totales, sesiones_consumidas, estado, fecha_expiracion'
+      )
+      .eq('estado', 'activo')
+      .order('fecha_compra', { ascending: false })
+      .limit(1)
+      .maybeSingle<BonoRow>(),
+    supabase
+      .from('recurso_asignaciones')
+      .select('id, assigned_at, recurso:recursos(id, titulo, tipo)')
+      .order('assigned_at', { ascending: false })
+      .limit(3),
+    supabase.rpc('chat_mi_conversacion'),
+  ]);
+
+  const conversacionId =
+    typeof conversacionIdData === 'string' ? conversacionIdData : null;
+
+  const unreadMensajes = conversacionId
+    ? (await supabase
+        .from('conversaciones')
+        .select('unread_paciente')
+        .eq('id', conversacionId)
+        .maybeSingle<{ unread_paciente: number }>()).data?.unread_paciente ?? 0
+    : 0;
+
+  const proxima = proximaRaw;
+  const bono = bonoActivoRaw;
+  const sesionesRestantes = bono
+    ? Math.max(0, bono.sesiones_totales - bono.sesiones_consumidas)
+    : 0;
+  const recursos = (recursosRaw as unknown as RecursoAsignado[] | null) ?? [];
+
+  const displayName =
+    user.user_metadata?.full_name?.split(' ')[0] ??
+    user.email?.split('@')[0] ??
+    '';
+
   return (
     <>
-      <div className="max-w-6xl mx-auto px-8 py-10">
-        {/* Welcome Header */}
-        <div className="mb-12 space-y-2">
-          <h2 className="font-serif text-4xl text-on-surface-variant font-light">
-            Hola, <span className="text-primary font-bold">Elena</span>.
-          </h2>
-          <p className="text-stone-500 font-medium">
-            Encuentra un momento de paz en tu jornada.
-          </p>
-        </div>
-
-        {/* Bento Grid Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Destacado: Tu Próxima Sesión */}
-          <div className="md:col-span-2 relative overflow-hidden bg-primary-container/30 rounded-3xl p-10 sticker-card group">
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              <div>
-                <span className="inline-block px-4 py-1 rounded-full bg-primary text-on-primary text-[10px] font-bold tracking-widest uppercase mb-6">
-                  Próxima Sesión
-                </span>
-                <h3 className="font-serif text-5xl text-primary font-bold mb-4">
-                  Lunes, 18 Oct
-                </h3>
-                <p className="text-2xl text-primary-dim opacity-80 font-serif">
-                  17:30 — 18:30
-                </p>
-              </div>
-              <div className="mt-12 flex items-center gap-8">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-tighter text-stone-500 font-bold">
-                    Cuenta Atrás
-                  </span>
-                  <span className="text-3xl font-bold text-primary">
-                    02d 04h
-                  </span>
-                </div>
-                <div className="flex-1 border-b border-primary/20 self-center"></div>
-                <button className="bg-primary text-on-primary px-8 py-4 rounded-2xl font-bold hover:scale-105 transition-transform flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">
-                    video_camera_front
-                  </span>
-                  Unirse a videollamada
-                </button>
-              </div>
-            </div>
-
-            {/* Decorative Element */}
-            <div className="absolute -right-12 -top-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
-          </div>
-
-          {/* Bono de Sesiones */}
-          <div className="bg-secondary-container/40 rounded-3xl p-8 sticker-card flex flex-col justify-center items-center text-center space-y-6">
-            <div className="w-32 h-32 rounded-full border-4 border-white flex items-center justify-center relative mb-4">
-              <div className="flex flex-col items-center">
-                <div className="mb-2">
-                  <span className="font-serif text-6xl font-light text-secondary">
-                    07
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-bold text-secondary-dim tracking-[0.2em] uppercase">
-                    Disponibles
-                  </span>
-                  <div className="w-32 h-1 bg-secondary/10 rounded-full mt-4 overflow-hidden">
-                    <div className="h-full bg-secondary w-[30%] rounded-full"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <h4 className="font-serif text-xl font-bold text-secondary-dim">
-                Bono Bienestar
-              </h4>
-              <p className="text-sm text-secondary-dim/70">
-                Has completado 3 de 10 sesiones.
-              </p>
-            </div>
-            <button className="w-full border-2 border-secondary/30 py-3 rounded-xl text-secondary font-bold text-sm hover:bg-secondary hover:text-white transition-all">
-              Renovar Bono
-            </button>
-          </div>
-
-          {/* Recursos para tu Bienestar Section */}
-          <div className="md:col-span-3 mt-8">
-            <div className="flex justify-between items-end mb-8">
-              <div>
-                <h3 className="font-serif text-2xl text-on-surface-variant font-bold">
-                  Recursos para tu Bienestar
-                </h3>
-                <p className="text-sm text-stone-500">
-                  Seleccionados por Almudena para tu proceso actual.
-                </p>
-              </div>
-              <a
-                className="text-primary text-sm font-bold flex items-center gap-1 hover:underline"
-                href="#"
-              >
-                Ver biblioteca completa
-                <span className="material-symbols-outlined text-sm">
-                  arrow_forward
-                </span>
-              </a>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Recurso 1: Lectura */}
-              <div className="group bg-surface-container-low rounded-[2rem] p-6 sticker-card hover:-translate-y-1 transition-transform">
-                <div className="h-48 rounded-2xl overflow-hidden mb-6 bg-stone-200">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt="Stacked vintage books on a wooden table with soft morning light filtering through a nearby window"
-                    data-alt="Stacked vintage books on a wooden table with soft morning light filtering through a nearby window"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH3oaPHzYD1Ketw02kfgaSFlVVqmTNsBClntWvGpoYO-zOlRRam-F3GYjYg5pyOk0umHtljOTgJ24M5PkbXK1j-7SUv4HcaC_-THSYu4Z8rxbohqf_Q1Onturri0iXM9YbvZ8wEV_QuysIwB2hc33LSaIbScCfAveKGorAKNkSCHJ46hZHVuSOHu3YkaIPMJRK5My0jyN7acd8qopN-vZ0zREz0lLfpxQk85b439cwoExGvVvX0nnDCyE2ea4ibrwg1HZApFCrsuo"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-primary bg-primary-container px-3 py-1 rounded-full uppercase tracking-tighter">
-                      Lectura
-                    </span>
-                    <span className="text-[10px] text-stone-400 font-medium">
-                      12 min
-                    </span>
-                  </div>
-                  <h5 className="font-serif text-lg font-bold text-primary-dim leading-snug">
-                    El arte de la presencia plena en Madrid
-                  </h5>
-                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
-                    Cómo encontrar momentos de quietud en medio del ruido
-                    constante de la capital.
-                  </p>
-                </div>
-              </div>
-
-              {/* Recurso 2: Ejercicio */}
-              <div className="group bg-surface-container-low rounded-[2rem] p-6 sticker-card hover:-translate-y-1 transition-transform">
-                <div className="h-48 rounded-2xl overflow-hidden mb-6 bg-stone-200">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt="Close-up of hands resting on knees in a meditation pose, serene white background with soft shadows"
-                    data-alt="Close-up of hands resting on knees in a meditation pose, serene white background with soft shadows"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCyDQraFhHQutHiJKmSERZ7DUUnSBTuuIVa6M4I1iun0eMaFE4Jif4BeRREEevAKPNJMMIJF1soi6wfFwFfzGONLaDcjCRxfO6U7i9mf3LJRs6bEk7giCyj0Tuitasc_lK6izzvuCdjW_qwWYGGOQ88FUXW8bqj0MXpxeSQB-lliXFr3RNo1QMdR1IQH3ihLAt3PVGp73rT11j6J4oKncfnBoZFnOxKvNA_Ia0nfnPtxKe8150vQOK_5shFXpgf7giFOc4igI-qqQk"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-tertiary bg-tertiary-container px-3 py-1 rounded-full uppercase tracking-tighter">
-                      Ejercicio
-                    </span>
-                    <span className="text-[10px] text-stone-400 font-medium">
-                      5 min
-                    </span>
-                  </div>
-                  <h5 className="font-serif text-lg font-bold text-primary-dim leading-snug">
-                    Respiración 4-7-8 para la ansiedad
-                  </h5>
-                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
-                    Una guía práctica paso a paso para regular tu sistema
-                    nervioso en momentos de estrés.
-                  </p>
-                </div>
-              </div>
-
-              {/* Recurso 3: Audio */}
-              <div className="group bg-surface-container-low rounded-[2rem] p-6 sticker-card hover:-translate-y-1 transition-transform">
-                <div className="h-48 rounded-2xl overflow-hidden mb-6 bg-stone-200">
-                  <img
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    alt="Minimalist headphones resting on a soft beige linen texture with a small green leaf beside them"
-                    data-alt="Minimalist headphones resting on a soft beige linen texture with a small green leaf beside them"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlHWMZLyskMIgVPyAyooTRcaar76sSrN-lRP6qWMvqNq4gHKvrckeBbhWA5GQKA8NZqGsudntuxQhOumu8-idBRWg_p7o3W6XySz30fpj10YilPY3K5T75QuwcMdMEZn-PEXMEo53BGXpFg0inRcTiQ5ldgU68rXW5LjlZySDlWSl6SSCfww4v__GQYkcvv-L3DPewQ-8R5ap-HQpr6MkgeaMlQJ1I181wk1VEySgRhHzX9e3b3CfDRSn5ICPB1ZmT76LXcJX1xp4"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-bold text-secondary bg-secondary-container px-3 py-1 rounded-full uppercase tracking-tighter">
-                      Audio
-                    </span>
-                    <span className="text-[10px] text-stone-400 font-medium">
-                      15 min
-                    </span>
-                  </div>
-                  <h5 className="font-serif text-lg font-bold text-primary-dim leading-snug">
-                    Meditación guiada: El refugio interior
-                  </h5>
-                  <p className="text-xs text-stone-500 line-clamp-2 leading-relaxed">
-                    Almudena te guía a través de una visualización para
-                    reconectar con tu seguridad interna.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <RealtimeRefresh
+        channelName={`portal-${user.id}`}
+        tables={['citas', 'bonos_pacientes', 'recurso_asignaciones', 'conversaciones']}
+      />
+      <div className="portal-rise">
+        <PageHeader
+          eyebrow={format(now, "EEEE d 'de' MMMM", { locale: es })}
+          title={`Hola, ${displayName}.`}
+          description="Tu espacio seguro. Sesiones, bonos y conversaciones, todo al alcance."
+        />
       </div>
 
-      {/* Floating Action Button (Contextual) */}
-      <button className="fixed bottom-8 right-8 bg-primary text-on-primary w-16 h-16 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform z-50 md:hidden">
-        <span className="material-symbols-outlined text-3xl">add</span>
-      </button>
+      {/* ─── Hero bento: próxima cita (hero bezel) + bono (anillo SVG) ─── */}
+      <section className="grid gap-5 lg:grid-cols-[1.6fr_1fr] portal-rise portal-rise-delay-1">
+        {proxima ? (
+          <SurfaceCard variant="hero" bezel glow="sage" className="relative overflow-hidden">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-primary/8 blur-3xl"
+            />
+            <Chip tone="positive">Próxima sesión</Chip>
+            <h2 className="mt-6 font-display text-[clamp(2.25rem,4.5vw,3.5rem)] italic text-primary leading-[0.98] tracking-[-0.03em] text-balance">
+              {format(new Date(proxima.inicio), "EEEE d 'de' MMMM", { locale: es })}
+            </h2>
+            <p className="mt-3 font-display text-[clamp(1.25rem,2vw,1.625rem)] italic text-primary-dim tabular-nums tracking-[-0.01em]">
+              {format(new Date(proxima.inicio), 'HH:mm')} — {format(new Date(proxima.fin), 'HH:mm')}
+            </p>
 
-      {/* Bottom Navigation Bar (Mobile only) */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md flex justify-around py-4 border-t border-stone-100 z-40">
-        <a className="flex flex-col items-center gap-1 text-primary" href="#">
-          <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] font-bold">Inicio</span>
-        </a>
-        <a className="flex flex-col items-center gap-1 text-stone-400" href="#">
-          <span className="material-symbols-outlined">calendar_today</span>
-          <span className="text-[10px] font-bold">Citas</span>
-        </a>
-        <a className="flex flex-col items-center gap-1 text-stone-400" href="#">
-          <span className="material-symbols-outlined">chat_bubble</span>
-          <span className="text-[10px] font-bold">Chat</span>
-        </a>
-        <a className="flex flex-col items-center gap-1 text-stone-400" href="#">
-          <span className="material-symbols-outlined">library_books</span>
-          <span className="text-[10px] font-bold">Recursos</span>
-        </a>
-      </nav>
+            <div className="mt-6 flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="h-1 w-8 rounded-full bg-primary/30"
+              />
+              <p className="font-body text-[0.92rem] text-ink-soft">
+                {proxima.servicio_nombre}
+              </p>
+            </div>
+
+            <footer className="mt-9 flex flex-wrap items-center gap-4">
+              <Link href="/portal/citas">
+                <Button variant="primary" icon="arrow_outward" size="lg">
+                  Ver detalles
+                </Button>
+              </Link>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/50 ring-1 ring-inset ring-white/50 px-3 py-1.5 backdrop-blur-md">
+                <span className="material-symbols-outlined text-[0.95rem] text-primary" aria-hidden="true">
+                  schedule
+                </span>
+                <p className="font-body text-[0.75rem] text-ink-soft">
+                  {formatDistanceToNow(new Date(proxima.inicio), { locale: es, addSuffix: true })}
+                </p>
+              </div>
+            </footer>
+          </SurfaceCard>
+        ) : (
+          <SurfaceCard variant="hero" bezel className="flex flex-col justify-between">
+            <div>
+              <Chip>Sin sesiones</Chip>
+              <h2 className="mt-6 font-display text-[clamp(1.875rem,3.5vw,2.75rem)] italic text-ink leading-[1.02] tracking-[-0.025em] text-balance">
+                Sin citas en tu horizonte.
+              </h2>
+              <p className="mt-4 max-w-[38ch] font-body text-[0.95rem] leading-[1.65] text-ink-soft">
+                Cuando estés list{displayName === '' ? 'o' : 'a'}, reserva tu próxima sesión con Almudena.
+              </p>
+            </div>
+            <Link href="/portal/citas/reservar" className="mt-8 self-start">
+              <Button variant="primary" icon="arrow_outward" size="lg">
+                Reservar sesión
+              </Button>
+            </Link>
+          </SurfaceCard>
+        )}
+
+        {/* ── Bono con anillo SVG editorial ── */}
+        <SurfaceCard className="flex flex-col justify-between">
+          <div>
+            <Chip tone="info">Bono activo</Chip>
+            {bono ? (
+              <div className="mt-6 flex items-center gap-5">
+                {/* Anillo SVG */}
+                <div className="relative h-24 w-24 flex-shrink-0">
+                  <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90" aria-hidden="true">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="42"
+                      fill="none"
+                      stroke="rgba(28,28,25,0.08)"
+                      strokeWidth="6"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="42"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(1 - bono.sesiones_consumidas / bono.sesiones_totales) * 264} 264`}
+                      className="text-primary"
+                      style={{ transition: 'stroke-dasharray 700ms cubic-bezier(0.16,1,0.3,1)' }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 grid place-items-center">
+                    <p className="font-display text-[1.75rem] italic leading-none text-primary tabular-nums tracking-[-0.02em]">
+                      {sesionesRestantes}
+                    </p>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-display text-[0.95rem] text-ink leading-tight">
+                    Sesiones restantes
+                  </p>
+                  <p className="mt-1 font-body text-[0.8rem] text-ink-soft tabular-nums">
+                    de {bono.sesiones_totales} totales
+                  </p>
+                  {bono.fecha_expiracion ? (
+                    <p className="mt-3 font-body text-[0.7rem] text-ink-muted tracking-tight">
+                      Vence {format(new Date(bono.fecha_expiracion), "d MMM yyyy", { locale: es })}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-6 font-body text-[0.92rem] leading-[1.6] text-ink-soft">
+                Aún no tienes un bono activo. Comprar uno te da descuento por sesión.
+              </p>
+            )}
+          </div>
+
+          <Link href="/portal/pagos" className="mt-7">
+            <Button variant="surface" icon={bono ? 'autorenew' : 'add_shopping_cart'}>
+              {bono ? 'Renovar bono' : 'Comprar bono'}
+            </Button>
+          </Link>
+        </SurfaceCard>
+      </section>
+
+      {/* ─── Stats secundarios ─── */}
+      <section className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3 portal-rise portal-rise-delay-2">
+        <StatCard
+          label="Mensajes sin leer"
+          value={unreadMensajes ?? 0}
+          icon="mark_chat_unread"
+        />
+        <StatCard
+          label="Recursos asignados"
+          value={recursos.length}
+          icon="auto_stories"
+        />
+        <StatCard
+          label="Cuenta atrás"
+          value={proxima ? Math.max(0, Math.ceil((new Date(proxima.inicio).getTime() - now.getTime()) / 86400000)) : '—'}
+          icon="hourglass_top"
+          footnote={proxima ? 'Días hasta tu sesión' : 'Sin próximas sesiones'}
+        />
+      </section>
+
+      {/* ─── Recursos recientes ─── */}
+      <section className="mt-16 portal-rise portal-rise-delay-3">
+        <SectionTitle
+          kicker="Para ti"
+          title="Recursos recientes"
+          action={
+            <Link
+              href="/portal/recursos"
+              className="group inline-flex items-center gap-1.5 font-body text-[0.82rem] text-ink-soft hover:text-primary transition-colors"
+            >
+              <span>Biblioteca completa</span>
+              <span className="material-symbols-outlined text-[1rem] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5" aria-hidden="true">
+                arrow_outward
+              </span>
+            </Link>
+          }
+        />
+
+        {recursos.length === 0 ? (
+          <EmptyState
+            icon="auto_stories"
+            title="Aún sin recursos asignados"
+            description="Almudena te compartirá guías, audios y ejercicios según avance tu proceso."
+          />
+        ) : (
+          <div className="grid gap-5 md:grid-cols-3">
+            {recursos.map((r) =>
+              r.recurso ? (
+                <SurfaceCard key={r.id} interactive glow="warm">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15">
+                      <span className="material-symbols-outlined text-[1.05rem] text-primary" aria-hidden="true">
+                        {r.recurso.tipo.startsWith('audio') ? 'graphic_eq' : r.recurso.tipo.startsWith('video') ? 'play_circle' : 'description'}
+                      </span>
+                    </span>
+                    <Chip tone="info">{r.recurso.tipo}</Chip>
+                  </div>
+                  <h3 className="font-display text-[1.1rem] italic text-ink leading-[1.2] tracking-[-0.01em] text-balance">
+                    {r.recurso.titulo}
+                  </h3>
+                  <p className="mt-4 font-body text-[0.7rem] text-ink-muted tracking-tight">
+                    Asignado {formatDistanceToNow(new Date(r.assigned_at), { locale: es, addSuffix: true })}
+                  </p>
+                </SurfaceCard>
+              ) : null
+            )}
+          </div>
+        )}
+      </section>
     </>
   );
 }

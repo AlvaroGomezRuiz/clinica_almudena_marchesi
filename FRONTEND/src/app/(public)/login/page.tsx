@@ -20,8 +20,10 @@ export const metadata: Metadata = {
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { redirect_to?: string };
+  searchParams: { redirect_to?: string; next?: string; error?: string; reason?: string };
 }) {
+  const errorMsg = searchParams.error ?? (searchParams.reason === 'no_session' ? 'Debes iniciar sesión.' : null);
+  const nextPath = searchParams.redirect_to ?? searchParams.next;
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 md:p-12">
       <div className="max-w-screen-xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center">
@@ -55,7 +57,16 @@ export default function LoginPage({
               </p>
             </div>
 
-            <LoginForm redirectTo={searchParams.redirect_to} />
+            {errorMsg ? (
+              <div
+                role="alert"
+                className="mb-8 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 font-body text-sm text-red-700 dark:text-red-300"
+              >
+                {errorMsg}
+              </div>
+            ) : null}
+
+            <LoginForm redirectTo={nextPath} />
 
             <div className="mt-12 pt-8 border-t border-outline-variant/30 text-center space-y-5">
               <p className="font-body text-[0.95rem] text-ink-soft">

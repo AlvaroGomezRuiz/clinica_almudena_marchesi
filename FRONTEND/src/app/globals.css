@@ -283,6 +283,43 @@
   .bento-card {
     border: 1px solid rgba(121, 123, 118, 0.1);
   }
+
+  /* ── Grain/noise overlay editorial (pointer-events-none, GPU-safe) ── */
+  .portal-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 320 320' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 240px 240px;
+    background-repeat: repeat;
+  }
+
+  /* ── Hairline gradient rule editorial ── */
+  .hairline {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(28, 28, 25, 0.12) 50%,
+      transparent 100%
+    );
+  }
+
+  /* ── Entry animation (scroll reveal, opacity+translate, GPU) ── */
+  @keyframes portal-rise {
+    0% { opacity: 0; transform: translate3d(0, 16px, 0); filter: blur(6px); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+  }
+  .portal-rise {
+    animation: portal-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .portal-rise-delay-1 { animation-delay: 80ms; }
+  .portal-rise-delay-2 { animation-delay: 160ms; }
+  .portal-rise-delay-3 { animation-delay: 240ms; }
+  .portal-rise-delay-4 { animation-delay: 320ms; }
+
+  /* ── Tabular nums (para métricas editoriales) ── */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'ss01' 1;
+  }
 }
 
 /* ══════════════════════════════════════════════════

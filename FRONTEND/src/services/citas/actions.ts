@@ -1,0 +1,271 @@
+'use server';
+
+/**
+ * Server Actions para reserva de citas vía RPC Supabase.
+ *
+ * Mapa de errores PostgreSQL a códigos UX:
+ *   * 23P01 (exclusion_violation) / custom 'slot_ocupado' → conflict
+ *   * 23514 (check_violation)      / custom 'slot_en_pasado' → invalid
+ *   * 42501 (insufficient_privilege) → forbidden
+ *   * 02000 (no_data_found)        → not_found
+ */
+
+import { createServerClient } from '@/lib/supabase/server';
+import { fireEmail } from '@/lib/email/send';
+
+export interface Slot {
+  readonly slot_inicio: string; // ISO timestamptz
+  readonly slot_fin: string;
+}
+
+export type ReservaResult =
+  | { readonly ok: true; readonly citaId: string; readonly confirmada: boolean; readonly consumioBono: boolean }
+  | { readonly ok: false; readonly code: ReservaErrorCode; readonly message: string };
+
+type ReservaErrorCode =
+  | 'no_paciente'
+  | 'servicio_invalido'
+  | 'slot_invalido'
+  | 'slot_ocupado'
+  | 'unknown';
+
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$/;
+
+// ---------------------------------------------------------------------------
+// Listar slots disponibles de un servicio en una fecha
+// ---------------------------------------------------------------------------
+export async function getDisponibilidadAction(
+  fechaISO: string,
+  servicioId: string
+): Promise<readonly Slot[]> {
+  if (!UUID_RE.test(servicioId)) return [];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return [];
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase.rpc('obtener_disponibilidad', {
+    p_fecha: fechaISO,
+    p_servicio_id: servicioId,
+  });
+  if (error || !data) return [];
+  return data as Slot[];
+}
+
+// ---------------------------------------------------------------------------
+// Reservar cita (bono → confirmada; sin bono → bloqueo_temporal 15 min)
+// ---------------------------------------------------------------------------
+export async function reservarCitaAction(
+  servicioId: string,
+  slotInicio: string
+): Promise<ReservaResult> {
+  if (!UUID_RE.test(servicioId)) {
+    return { ok: false, code: 'servicio_invalido', message: 'Servicio inválido.' };
+  }
+  if (!ISO_RE.test(slotInicio)) {
+    return { ok: false, code: 'slot_invalido', message: 'Horario inválido.' };
+  }
+
+  const supabase = createServerClient();
+  const { data, error } = await supabase.rpc('reservar_cita', {
+    p_servicio_id: servicioId,
+    p_slot_inicio: slotInicio,
+  });
+
+  if (error) {
+    const code: ReservaErrorCode =
+      error.code === '23P01' || error.message?.includes('slot_ocupado')
+        ? 'slot_ocupado'
+        : error.code === '42501'
+          ? 'no_paciente'
+          : error.code === '23514'
+            ? 'slot_invalido'
+            : 'unknown';
+
+    const friendly =
+      code === 'slot_ocupado'
+        ? 'Ese hueco se acaba de ocupar. Elige otro.'
+        : code === 'no_paciente'
+          ? 'Tu perfil aún no está vinculado a una ficha clínica.'
+          : code === 'slot_invalido'
+            ? 'El horario ya no es válido.'
+            : error.message;
+
+    return { ok: false, code, message: friendly };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return { ok: false, code: 'unknown', message: 'Respuesta vacía del servidor.' };
+  }
+
+  const citaId = String(row.cita_id);
+  const confirmada = row.estado === 'confirmada';
+
+  // Fire-and-forget email de confirmación solo si la cita queda CONFIRMADA
+  // (bono consumido). Para bloqueo_temporal esperamos al webhook de Stripe.
+  if (confirmada) {
+    void dispatchBookingConfirmedEmail(supabase, citaId);
+  }
+
+  return {
+    ok: true,
+    citaId,
+    confirmada,
+    consumioBono: Boolean(row.consumio_bono),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Lookup mínimo para enriquecer el email (servicio, inicio, duración, user).
+// Se ejecuta en paralelo al retorno de la Server Action; cualquier fallo es
+// silencioso (email es mejor-esfuerzo).
+// ---------------------------------------------------------------------------
+interface CitaEmailContext {
+  readonly inicio: string;
+  readonly duracion_minutos: number;
+  readonly servicio_nombre: string;
+  readonly user_id: string;
+}
+
+async function dispatchBookingConfirmedEmail(
+  supabase: ReturnType<typeof createServerClient>,
+  citaId: string
+): Promise<void> {
+  const { data } = await supabase
+    .from('citas')
+    .select(
+      `inicio,
+       servicio:servicios!inner (nombre, duracion_minutos),
+       paciente:pacientes!inner (user_id)`
+    )
+    .eq('id', citaId)
+    .maybeSingle();
+
+  if (!data) return;
+
+  // Supabase infers relaciones como objeto o array según cardinalidad; normalizamos.
+  const servicio = Array.isArray((data as { servicio: unknown }).servicio)
+    ? ((data as { servicio: Array<{ nombre: string; duracion_minutos: number }> }).servicio[0] ?? null)
+    : ((data as { servicio: { nombre: string; duracion_minutos: number } | null }).servicio);
+  const paciente = Array.isArray((data as { paciente: unknown }).paciente)
+    ? ((data as { paciente: Array<{ user_id: string | null }> }).paciente[0] ?? null)
+    : ((data as { paciente: { user_id: string | null } | null }).paciente);
+
+  if (!servicio || !paciente?.user_id) return;
+
+  const ctx: CitaEmailContext = {
+    inicio: (data as { inicio: string }).inicio,
+    duracion_minutos: servicio.duracion_minutos,
+    servicio_nombre: servicio.nombre,
+    user_id: paciente.user_id,
+  };
+
+  await fireEmail({
+    type: 'booking_confirmed',
+    toUserId: ctx.user_id,
+    citaId,
+    data: {
+      servicio: ctx.servicio_nombre,
+      inicio: ctx.inicio,
+      duracion_min: ctx.duracion_minutos,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cancelación de cita
+// Invoca la Edge Function `cancel-cita` que orquesta RPC + Stripe refund + email.
+// ---------------------------------------------------------------------------
+export type CancelarCitaResult =
+  | {
+      readonly ok: true;
+      readonly bonoRestaurado: boolean;
+      readonly refund: { readonly id: string; readonly status: string } | null;
+      readonly refundError: string | null;
+    }
+  | { readonly ok: false; readonly code: CancelarErrorCode; readonly message: string };
+
+type CancelarErrorCode =
+  | 'unauthorized'
+  | 'forbidden'
+  | 'not_found'
+  | 'already_cancelled'
+  | 'network'
+  | 'unknown';
+
+export async function cancelarCitaAction(
+  citaId: string,
+  motivo?: string,
+  force = false
+): Promise<CancelarCitaResult> {
+  if (!UUID_RE.test(citaId)) {
+    return { ok: false, code: 'not_found', message: 'Cita inválida.' };
+  }
+
+  const supabase = createServerClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return { ok: false, code: 'unauthorized', message: 'Sesión expirada. Vuelve a iniciar sesión.' };
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return { ok: false, code: 'unknown', message: 'Configuración del servidor incompleta.' };
+  }
+
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/cancel-cita`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        cita_id: citaId,
+        motivo: motivo?.trim().slice(0, 500) || null,
+        force,
+      }),
+    });
+
+    const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+    if (!res.ok) {
+      const code: CancelarErrorCode =
+        res.status === 403 ? 'forbidden'
+          : res.status === 401 ? 'unauthorized'
+          : res.status === 404 ? 'not_found'
+          : res.status === 409 ? 'already_cancelled'
+          : 'unknown';
+      const friendly =
+        code === 'forbidden'
+          ? 'No puedes cancelar esta cita.'
+          : code === 'already_cancelled'
+            ? 'Esta cita ya estaba cancelada.'
+            : code === 'not_found'
+              ? 'No encontramos esa cita.'
+              : typeof raw.detail === 'string'
+                ? raw.detail
+                : 'No se pudo cancelar. Intenta más tarde.';
+      return { ok: false, code, message: friendly };
+    }
+
+    return {
+      ok: true,
+      bonoRestaurado: Boolean(raw.bono_restaurado),
+      refund:
+        raw.refund && typeof raw.refund === 'object'
+          ? (raw.refund as { id: string; status: string })
+          : null,
+      refundError: typeof raw.refund_error === 'string' ? raw.refund_error : null,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      code: 'network',
+      message: err instanceof Error ? err.message : 'Error de red cancelando la cita.',
+    };
+  }
+}
