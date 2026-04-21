@@ -114,7 +114,12 @@ export default async function PortalAjustesPage() {
           Puedes desactivar los recordatorios sin perder el acceso a tu cuenta. Los correos de seguridad (recuperación de contraseña, cambios de datos) siempre se envían.
         </p>
 
-        <form action={updateEmailPrefsAction} className="space-y-3">
+        <form
+          action={async (formData) => {
+            await updateEmailPrefsAction(formData);
+          }}
+          className="space-y-3"
+        >
           {PREF_LABELS.map(({ key, label, hint }) => {
             const checked = prefs[key];
             return (
