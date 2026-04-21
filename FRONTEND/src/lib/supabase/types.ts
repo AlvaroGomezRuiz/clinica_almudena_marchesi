@@ -552,6 +552,92 @@ export interface Database {
         };
         Returns: string;
       };
+      // ─── F5 cifrado (0022 + 0023 + 0024) ─────────────────────────────
+      paciente_alta_cifrada: {
+        Args: {
+          p_nombre_completo: string;
+          p_dni_nie: string;
+          p_telefono: string | null;
+          p_email: string | null;
+          p_fecha_nacimiento: string | null;
+          p_fecha_alta: string;
+          p_direccion: string | null;
+          p_contacto_emergencia_nombre: string | null;
+          p_contacto_emergencia_telefono: string | null;
+          p_alergias: string | null;
+          p_medicacion_base: string | null;
+          p_objetivos: string | null;
+          p_motivo_consulta_inicial: string | null;
+          p_experiencia_terapia: string | null;
+          p_consentimiento_rgpd: boolean;
+          p_tags: readonly string[] | null;
+          p_color_etiqueta: string | null;
+        };
+        Returns: string;
+      };
+      paciente_actualizar_cifrado: {
+        Args: { p_id: string; p_cambios: Record<string, string | null> };
+        Returns: boolean;
+      };
+      paciente_revelar_campo: {
+        Args: {
+          p_id: string;
+          p_campo: string;
+          p_justificacion?: string | null;
+          p_ip?: string | null;
+          p_user_agent?: string | null;
+        };
+        Returns: string | null;
+      };
+      paciente_buscar_por_campo: {
+        Args: { p_campo: 'email' | 'dni_nie' | 'telefono'; p_valor: string };
+        Returns: string | null;
+      };
+      diagnostico_crear_cifrado: {
+        Args: {
+          p_paciente_id: string;
+          p_titulo: string;
+          p_cie_code: string | null;
+          p_descripcion: string | null;
+          p_notas: string | null;
+          p_severidad: 'leve' | 'moderado' | 'severo' | null;
+          p_estado: string;
+          p_fecha_inicio: string;
+        };
+        Returns: string;
+      };
+      medicacion_crear_cifrada: {
+        Args: {
+          p_paciente_id: string;
+          p_nombre: string;
+          p_dosis: string | null;
+          p_frecuencia: string | null;
+          p_via: string | null;
+          p_prescrita_por: string | null;
+          p_notas: string | null;
+          p_fecha_inicio: string;
+          p_fecha_fin: string | null;
+        };
+        Returns: string;
+      };
+      nota_cita_guardar_cifrada: {
+        Args: {
+          p_cita_id: string;
+          p_paciente_id: string;
+          p_contenido: string;
+        };
+        Returns: string;
+      };
+      registro_clinico_descifrar: {
+        Args: {
+          p_tabla: string;
+          p_id: string;
+          p_campo: string;
+          p_paciente_id: string | null;
+          p_justificacion: string | null;
+        };
+        Returns: string | null;
+      };
     };
     Enums: {
       user_role: UserRole;

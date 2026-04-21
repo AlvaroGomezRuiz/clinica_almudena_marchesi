@@ -3,16 +3,18 @@
 /**
  * Server Actions de la ficha clínica del paciente.
  *
- * Alcance:
- *   - revelarCampoSensibleAction: registra en `admin_lookups` y devuelve
- *     metadatos para que el frontend muestre el campo plaintext. La
- *     desencriptación real vive en una Edge Function / FastAPI (F5); mientras
- *     tanto devolvemos la marca de auditoría y un placeholder descriptivo.
- *   - actualizarTagsPacienteAction: mantiene el array `pacientes.tags`.
- *   - crearDiagnosticoAction / actualizarDiagnosticoAction / desactivarDiagnosticoAction.
- *   - crearMedicacionAction / desactivarMedicacionAction.
+ * F5 CIFRADO: consumen RPCs admin-only SECURITY DEFINER que cifran en
+ * escritura y desencriptan bajo demanda usando la master key del vault.
  *
- * Seguridad: todas las acciones verifican role=admin.
+ * Alcance:
+ *   - revelarCampoSensibleAction: llama a `paciente_revelar_campo` que
+ *     desencripta el campo + registra en `admin_lookups` (RGPD art. 30).
+ *   - actualizarTagsPacienteAction: mantiene el array `pacientes.tags`.
+ *   - crearDiagnosticoAction / desactivarDiagnosticoAction → RPC cifrada.
+ *   - crearMedicacionAction / desactivarMedicacionAction → RPC cifrada.
+ *
+ * Seguridad: todas las acciones verifican role=admin (defense-in-depth
+ * sobre el check ya presente en cada RPC SECURITY DEFINER).
  */
 
 import { revalidatePath } from 'next/cache';
@@ -54,10 +56,14 @@ export type CampoSensible =
   | 'telefono'
   | 'email'
   | 'direccion'
-  | 'contacto_emergencia'
+  | 'contacto_emergencia_nombre'
+  | 'contacto_emergencia_telefono'
   | 'alergias'
   | 'medicacion_base'
-  | 'objetivos';
+  | 'objetivos'
+  | 'motivo_consulta'
+  | 'motivo_consulta_inicial'
+  | 'preferencias_clinicas';
 
 const CAMPOS_VALIDOS: readonly CampoSensible[] = [
   'dni_nie',
@@ -65,25 +71,31 @@ const CAMPOS_VALIDOS: readonly CampoSensible[] = [
   'telefono',
   'email',
   'direccion',
-  'contacto_emergencia',
+  'contacto_emergencia_nombre',
+  'contacto_emergencia_telefono',
   'alergias',
   'medicacion_base',
   'objetivos',
+  'motivo_consulta',
+  'motivo_consulta_inicial',
+  'preferencias_clinicas',
 ];
 
 export interface RevelarCampoResult {
-  readonly lookupId: string;
   readonly campo: CampoSensible;
-  readonly placeholder: string;
+  readonly plaintext: string | null;
   readonly timestamp: string;
 }
 
 /**
- * Audita el acceso y devuelve metadatos para que el cliente muestre el
- * valor "revelado". La desencriptación real viaja por una Edge Function
- * (F5) con la clave maestra en Vault + KMS.
+ * Desencripta un campo sensible y registra el acceso en admin_lookups.
+ * Delegado completamente a la RPC `paciente_revelar_campo`, que:
+ *   1. Verifica rol admin (código 42501 si no).
+ *   2. Lee el ciphertext de la columna apropiada.
+ *   3. Llama a `registrar_consulta_sensible` (RGPD art. 30).
+ *   4. Devuelve plaintext desencriptado.
  *
- * @throws Error si campo no está en whitelist, o el paciente no existe.
+ * @throws Error si campo no está en whitelist o el paciente no existe.
  */
 export async function revelarCampoSensibleAction(
   pacienteId: string,
@@ -100,13 +112,12 @@ export async function revelarCampoSensibleAction(
 
     const { supabase } = await requireAdmin();
 
-    // Registrar consulta sensible (RPC definida en migración 0012)
-    const { data: lookupId, error } = await supabase.rpc(
-      'registrar_consulta_sensible',
+    const { data: plaintext, error } = await supabase.rpc(
+      'paciente_revelar_campo',
       {
-        p_paciente_id: pacienteId,
+        p_id: pacienteId,
         p_campo: campo,
-        p_motivo: motivo?.slice(0, 240) ?? null,
+        p_justificacion: motivo?.slice(0, 240) ?? null,
       }
     );
 
@@ -115,12 +126,8 @@ export async function revelarCampoSensibleAction(
     return {
       ok: true,
       data: {
-        lookupId: (lookupId as string | null) ?? '',
         campo,
-        // Placeholder: la desencriptación real vive en F5. Mientras tanto,
-        // dejamos un hint consistente que indica "campo disponible, pendiente
-        // pipeline de decrypt" para no bloquear el UX.
-        placeholder: '•••• (decrypt pendiente F5)',
+        plaintext: (plaintext as string | null) ?? null,
         timestamp: new Date().toISOString(),
       },
     };
@@ -180,18 +187,19 @@ export async function crearDiagnosticoAction(
       return { ok: false, message: 'titulo_requerido' };
     }
 
-    const { supabase, adminId } = await requireAdmin();
+    const { supabase } = await requireAdmin();
 
-    const { error } = await supabase.from('paciente_diagnosticos').insert({
-      paciente_id: input.pacienteId,
-      cie_code: input.cieCode?.slice(0, 20) ?? null,
-      titulo: input.titulo.slice(0, 200),
-      descripcion: input.descripcion?.slice(0, 1000) ?? null,
-      severidad: input.severidad,
-      estado: 'activo',
-      fecha_inicio: input.fechaInicio ?? new Date().toISOString().slice(0, 10),
-      created_by: adminId,
-      activo: true,
+    // RPC cifrada (0023_cifrado_rpcs_crud): inserta con ciphertext + plaintext mirror.
+    const { error } = await supabase.rpc('diagnostico_crear_cifrado', {
+      p_paciente_id: input.pacienteId,
+      p_titulo: input.titulo.slice(0, 200),
+      p_cie_code: input.cieCode?.slice(0, 20) ?? null,
+      p_descripcion: input.descripcion?.slice(0, 1000) ?? null,
+      p_notas: null,
+      p_severidad: input.severidad,
+      p_estado: 'activo',
+      p_fecha_inicio:
+        input.fechaInicio ?? new Date().toISOString().slice(0, 10),
     });
 
     if (error) return { ok: false, message: error.message };
@@ -246,19 +254,20 @@ export async function crearMedicacionAction(
       return { ok: false, message: 'nombre_requerido' };
     }
 
-    const { supabase, adminId } = await requireAdmin();
+    const { supabase } = await requireAdmin();
 
-    const { error } = await supabase.from('paciente_medicacion').insert({
-      paciente_id: input.pacienteId,
-      nombre: input.nombre.slice(0, 200),
-      dosis: input.dosis?.slice(0, 100) ?? null,
-      frecuencia: input.frecuencia?.slice(0, 100) ?? null,
-      via: input.via?.slice(0, 40) ?? null,
-      prescrita_por: input.prescritaPor?.slice(0, 120) ?? null,
-      fecha_inicio: input.fechaInicio ?? new Date().toISOString().slice(0, 10),
-      notas: input.notas?.slice(0, 1000) ?? null,
-      created_by: adminId,
-      activo: true,
+    // RPC cifrada (0023_cifrado_rpcs_crud): notas cifradas + nombre plaintext.
+    const { error } = await supabase.rpc('medicacion_crear_cifrada', {
+      p_paciente_id: input.pacienteId,
+      p_nombre: input.nombre.slice(0, 200),
+      p_dosis: input.dosis?.slice(0, 100) ?? null,
+      p_frecuencia: input.frecuencia?.slice(0, 100) ?? null,
+      p_via: input.via?.slice(0, 40) ?? null,
+      p_prescrita_por: input.prescritaPor?.slice(0, 120) ?? null,
+      p_notas: input.notas?.slice(0, 1000) ?? null,
+      p_fecha_inicio:
+        input.fechaInicio ?? new Date().toISOString().slice(0, 10),
+      p_fecha_fin: null,
     });
 
     if (error) return { ok: false, message: error.message };

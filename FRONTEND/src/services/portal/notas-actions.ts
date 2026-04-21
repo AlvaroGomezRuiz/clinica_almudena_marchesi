@@ -8,7 +8,10 @@
  *   - INSERT con autor_user_id = auth.uid() y paciente mío.
  *   - UPDATE / DELETE sólo si autor_user_id = auth.uid().
  *
- * Cifrado (F5) aún pendiente → guardamos en columna `contenido` (plaintext).
+ * F5 CIFRADO:
+ *   - La creación/actualización va por `nota_cita_guardar_cifrada` RPC que
+ *     cifra `contenido` (AES-256) + guarda el mirror plaintext para
+ *     compatibilidad MVP; este mirror desaparece en la migración 0024.
  */
 
 import { revalidatePath } from 'next/cache';
@@ -54,6 +57,12 @@ export async function crearNotaCitaAction(
     }
     const { supabase, userId, pacienteId } = await requirePaciente();
 
+    // PACIENTE: inserción directa en plaintext (contenido). La columna
+    // `contenido_ciphertext` existe pero `app_encrypt` está restringida
+    // a service_role → un trigger BEFORE INSERT/UPDATE (pendiente migración
+    // 0024) mirará plaintext y rellenará ciphertext automáticamente. Hasta
+    // entonces, sólo las notas de admin (RPC `nota_cita_guardar_cifrada`)
+    // quedan cifradas en reposo.
     const { data, error } = await supabase
       .from('citas_notas_paciente')
       .insert({

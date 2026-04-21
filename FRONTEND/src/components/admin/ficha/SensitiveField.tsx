@@ -6,13 +6,13 @@
  * Comportamiento:
  *   - Por defecto oculta el valor con asteriscos (o "Sin datos" si `hasValue=false`).
  *   - Al pulsar el ojo, llama a `revelarCampoSensibleAction(pacienteId, campo)`
- *     que registra el acceso en `admin_lookups` (RGPD art. 30) y devuelve
- *     el placeholder mientras F5 no esté en producción.
+ *     que desencripta vía RPC `paciente_revelar_campo` + registra el acceso
+ *     en `admin_lookups` (RGPD art. 30) en una única transacción atómica.
  *   - Revelado se auto-oculta tras 15s para minimizar exposición shoulder-surfing.
  *
  * Props:
  *   - `hasValue`: si false, el ojo queda deshabilitado (no hay nada que desvelar).
- *   - `plaintext`: si se pasa, se muestra directamente sin llamar a RPC
+ *   - `plaintextOverride`: si se pasa, se muestra directamente sin llamar a RPC
  *     (útil para valores que NO son ciphertext, p.ej. fecha de nacimiento).
  */
 
@@ -30,8 +30,8 @@ interface SensitiveFieldProps {
   readonly pacienteId: string;
   readonly campo: CampoSensible;
   readonly hasValue: boolean;
-  /** Valor ya descifrado (p. ej. por el backend). Si se pasa, el ojo lo muestra sin RPC. */
-  readonly plaintext?: string | null;
+  /** Valor ya descifrado (p.ej. por el backend). Si se pasa, el ojo lo muestra sin RPC. */
+  readonly plaintextOverride?: string | null;
   readonly mask?: string;
   readonly requireReason?: boolean;
 }
@@ -41,7 +41,7 @@ export default function SensitiveField({
   pacienteId,
   campo,
   hasValue,
-  plaintext,
+  plaintextOverride,
   mask = '• • • • • •',
   requireReason = false,
 }: SensitiveFieldProps): JSX.Element {
@@ -73,6 +73,15 @@ export default function SensitiveField({
     }
 
     startTransition(async () => {
+      // Si el consumidor ya tiene el plaintext cacheado (p.ej. server-side
+      // pre-fetch), evitamos el round-trip pero mantenemos la auditoría.
+      if (plaintextOverride !== undefined && plaintextOverride !== null) {
+        await revelarCampoSensibleAction(pacienteId, campo, justificacion);
+        setValue(plaintextOverride);
+        setRevealed(true);
+        return;
+      }
+
       const res = await revelarCampoSensibleAction(
         pacienteId,
         campo,
@@ -82,10 +91,10 @@ export default function SensitiveField({
         setError(res.message);
         return;
       }
-      setValue(plaintext ?? res.data.placeholder);
+      setValue(res.data.plaintext ?? '—');
       setRevealed(true);
     });
-  }, [campo, hasValue, label, pacienteId, plaintext, requireReason]);
+  }, [campo, hasValue, label, pacienteId, plaintextOverride, requireReason]);
 
   const handleHide = useCallback(() => {
     setRevealed(false);

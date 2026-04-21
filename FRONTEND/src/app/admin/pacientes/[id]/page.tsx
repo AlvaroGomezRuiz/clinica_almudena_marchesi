@@ -265,7 +265,7 @@ export default async function FichaPacientePage({
                 pacienteId={paciente.id}
                 campo="email"
                 hasValue={Boolean(paciente.email_ciphertext)}
-                plaintext={profile?.email ?? null}
+                plaintextOverride={profile?.email ?? null}
               />
               <SensitiveField
                 label="Dirección"
@@ -275,9 +275,9 @@ export default async function FichaPacientePage({
                 requireReason
               />
               <SensitiveField
-                label="Contacto emergencia"
+                label="Contacto emergencia (teléfono)"
                 pacienteId={paciente.id}
-                campo="contacto_emergencia"
+                campo="contacto_emergencia_telefono"
                 hasValue={Boolean(
                   paciente.contacto_emergencia_telefono_ciphertext
                 )}

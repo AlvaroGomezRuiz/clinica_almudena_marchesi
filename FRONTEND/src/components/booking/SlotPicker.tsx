@@ -18,12 +18,12 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import MonthCalendar from '@/components/booking/MonthCalendar';
 import { Chip, SurfaceCard } from '@/components/portal-shell/ui';
+import PaymentElementDrawer from '@/components/portal/pagos/PaymentElementDrawer';
 import {
   getDisponibilidadAction,
   reservarCitaAction,
   type Slot,
 } from '@/services/citas/actions';
-import { crearCheckoutCitaAction } from '@/services/pagos/actions';
 
 export interface ServicioOption {
   readonly id: string;
@@ -64,6 +64,11 @@ export default function SlotPicker({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reservando, startReserva] = useTransition();
+  const [pendingPayment, setPendingPayment] = useState<{
+    citaId: string;
+    amount: number;
+    titulo: string;
+  } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const servicio = servicios.find((s) => s.id === servicioId) ?? null;
@@ -119,17 +124,17 @@ export default function SlotPicker({
         return;
       }
 
-      // Sin bono → pre-reserva creada (bloqueo_temporal). Creamos Checkout
-      // Session en Stripe y redirigimos al hosted checkout. Si Stripe falla,
-      // avisamos y el bloqueo caducará solo (TTL servidor).
-      const checkout = await crearCheckoutCitaAction(res.citaId);
-      if (!checkout.ok) {
-        setError(
-          'Hemos reservado tu hueco 15 min, pero no pudimos iniciar el pago. Reintenta desde Bonos y pagos.'
-        );
-        return;
-      }
-      window.location.href = checkout.url;
+      // Sin bono → pre-reserva creada (bloqueo_temporal 15 min). Abrimos el
+      // drawer con Payment Element embebido. Si el usuario cierra sin pagar
+      // el bloqueo caducará solo por TTL servidor.
+      const titulo = servicio
+        ? `${servicio.nombre} · ${format(new Date(slot.slot_inicio), "EEEE d MMM HH:mm", { locale: es })}`
+        : 'Reserva de sesión';
+      setPendingPayment({
+        citaId: res.citaId,
+        amount: servicio?.precio_centimos ?? 0,
+        titulo,
+      });
     });
   };
 
@@ -345,6 +350,19 @@ export default function SlotPicker({
             </div>
           </dl>
         </SurfaceCard>
+      ) : null}
+
+      {pendingPayment ? (
+        <PaymentElementDrawer
+          open
+          onClose={() => {
+            setPendingPayment(null);
+            router.refresh();
+          }}
+          target={{ kind: 'cita', citaId: pendingPayment.citaId }}
+          amountHint={pendingPayment.amount}
+          titleHint={pendingPayment.titulo}
+        />
       ) : null}
     </div>
   );

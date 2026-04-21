@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * Tarjeta cliente para comprar un bono. Crea la sesión Stripe vía Server Action
- * y redirige al hosted checkout. Si falla, muestra el error inline.
+ * Tarjeta cliente para comprar un bono.
+ * Flujo F5: abre el <PaymentElementDrawer/> (embebido) en vez de redirigir
+ * a Stripe Checkout. El hosted checkout queda como fallback opcional.
  */
 
-import { useTransition, useState } from 'react';
+import { useState } from 'react';
 
 import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
-import { crearCheckoutBonoAction } from '@/services/pagos/actions';
+import PaymentElementDrawer from '@/components/portal/pagos/PaymentElementDrawer';
 
 export interface BonoConfigItem {
   readonly id: string;
@@ -29,22 +30,9 @@ function euro(c: number): string {
 }
 
 export default function BonoCompraCard({ bono }: Props) {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   const precioPorSesion = bono.precio_centimos / bono.sesiones;
-
-  const handleCheckout = () => {
-    setError(null);
-    startTransition(async () => {
-      const res = await crearCheckoutBonoAction(bono.id);
-      if (!res.ok) {
-        setError('No pudimos iniciar el pago. Reintenta.');
-        return;
-      }
-      window.location.href = res.url;
-    });
-  };
 
   return (
     <SurfaceCard
@@ -93,27 +81,22 @@ export default function BonoCompraCard({ bono }: Props) {
 
       <div className="mt-6">
         <Button
-          onClick={handleCheckout}
+          onClick={() => setOpen(true)}
           variant={bono.destacado ? 'primary' : 'surface'}
-          icon={isPending ? 'sync' : 'shopping_bag'}
-          disabled={isPending}
+          icon="shopping_bag"
           className="w-full justify-between"
         >
-          {isPending ? 'Redirigiendo a Stripe…' : 'Comprar ahora'}
+          Comprar ahora
         </Button>
       </div>
 
-      {error ? (
-        <p
-          role="alert"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#b2675e]/12 ring-1 ring-inset ring-[#b2675e]/22 px-3 py-1.5 font-body text-[0.78rem] text-[#8c4d44]"
-        >
-          <span className="material-symbols-outlined text-[0.95rem]" aria-hidden="true">
-            error
-          </span>
-          {error}
-        </p>
-      ) : null}
+      <PaymentElementDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        target={{ kind: 'bono', bonoConfigId: bono.id }}
+        amountHint={bono.precio_centimos}
+        titleHint={bono.nombre}
+      />
     </SurfaceCard>
   );
 }
