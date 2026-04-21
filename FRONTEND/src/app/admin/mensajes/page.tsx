@@ -9,6 +9,7 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import NuevaConversacionButton from '@/components/admin/mensajes/NuevaConversacionButton';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Mensajes | Panel Almudena' };
@@ -52,6 +53,7 @@ export default async function AdminMensajesPage() {
         eyebrow={`${conversaciones.length} conversaciones · ${totalUnread} sin leer`}
         title="Bandeja clínica"
         description="Canal seguro con tus pacientes. TLS en tránsito, RLS en reposo, auditado."
+        actions={<NuevaConversacionButton />}
       />
 
       {conversaciones.length === 0 ? (
@@ -96,16 +98,16 @@ export default async function AdminMensajesPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-4">
-                        <p className="font-display text-[1.05rem] text-ink leading-tight truncate tracking-[-0.01em]">
+                        <p className="font-display text-[1.05rem] text-ink leading-tight truncate tracking-[-0.01em] dark:text-white">
                           {display}
                         </p>
                         {when ? (
-                          <p className="flex-shrink-0 font-body text-[0.7rem] text-ink-muted tabular-nums">
+                          <p className="flex-shrink-0 font-body text-[0.7rem] text-ink-muted tabular-nums dark:text-white/55">
                             {when}
                           </p>
                         ) : null}
                       </div>
-                      <p className="mt-1.5 line-clamp-1 font-body text-[0.85rem] text-ink-soft">
+                      <p className="mt-1.5 line-clamp-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
                         {preview}
                       </p>
                     </div>

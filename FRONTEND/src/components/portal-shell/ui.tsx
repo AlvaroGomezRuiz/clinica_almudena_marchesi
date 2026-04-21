@@ -82,18 +82,18 @@ export function PageHeader({ eyebrow, title, description, actions }: PageHeaderP
     <header className="mb-12 flex flex-col gap-7 md:mb-14 md:flex-row md:items-end md:justify-between">
       <div className="max-w-3xl">
         {eyebrow ? (
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-ink/8 bg-white/50 px-3 py-1 backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
-            <span className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-soft">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-ink/8 bg-white/50 px-3 py-1 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary dark:bg-primary-fixed-dim" aria-hidden="true" />
+            <span className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-soft dark:text-white/65">
               {eyebrow}
             </span>
           </div>
         ) : null}
-        <h1 className="font-display text-[clamp(2rem,5vw,3.25rem)] italic leading-[1.02] text-ink text-balance tracking-[-0.025em]">
+        <h1 className="font-display text-[clamp(2rem,5vw,3.25rem)] italic leading-[1.02] text-ink text-balance tracking-[-0.025em] dark:text-white">
           {title}
         </h1>
         {description ? (
-          <p className="mt-5 max-w-xl font-body text-[0.98rem] leading-[1.65] text-ink-soft">
+          <p className="mt-5 max-w-xl font-body text-[0.98rem] leading-[1.65] text-ink-soft dark:text-white/70">
             {description}
           </p>
         ) : null}
@@ -120,10 +120,10 @@ interface StatCardProps {
 export function StatCard({ label, value, delta, icon, footnote }: StatCardProps) {
   const trendCls =
     delta?.trend === 'up'
-      ? 'bg-primary/10 text-primary'
+      ? 'bg-primary/10 text-primary dark:bg-primary/25 dark:text-white'
       : delta?.trend === 'down'
-        ? 'bg-[#b2675e]/12 text-[#8c4d44]'
-        : 'bg-ink/8 text-ink-soft';
+        ? 'bg-[#b2675e]/12 text-[#8c4d44] dark:bg-[#b2675e]/25 dark:text-[#f3b3aa]'
+        : 'bg-ink/8 text-ink-soft dark:bg-white/10 dark:text-white/70';
   const trendIcon =
     delta?.trend === 'up' ? 'trending_up' : delta?.trend === 'down' ? 'trending_down' : 'trending_flat';
 
@@ -131,10 +131,10 @@ export function StatCard({ label, value, delta, icon, footnote }: StatCardProps)
     <SurfaceCard>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-body text-[0.65rem] uppercase tracking-[0.22em] text-ink-muted">
+          <p className="font-body text-[0.65rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
             {label}
           </p>
-          <p className="mt-4 font-display text-[clamp(2.25rem,3.5vw,2.875rem)] leading-[0.95] italic text-ink tabular-nums tracking-[-0.02em]">
+          <p className="mt-4 font-display text-[clamp(2.25rem,3.5vw,2.875rem)] leading-[0.95] italic text-ink tabular-nums tracking-[-0.02em] dark:text-white">
             {value}
           </p>
           {delta ? (
@@ -146,7 +146,7 @@ export function StatCard({ label, value, delta, icon, footnote }: StatCardProps)
             </div>
           ) : null}
           {footnote ? (
-            <p className="mt-3 font-body text-[0.72rem] text-ink-muted tracking-tight">{footnote}</p>
+            <p className="mt-3 font-body text-[0.72rem] text-ink-muted dark:text-white/55 tracking-tight">{footnote}</p>
           ) : null}
         </div>
         {icon ? (
@@ -183,14 +183,14 @@ export function EmptyState({
   return (
     <SurfaceCard className="py-16 text-center">
       <span
-        className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/70 ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+        className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/70 ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:bg-white/[0.06] dark:ring-white/10"
         aria-hidden="true"
       >
-        <span className="material-symbols-outlined text-[1.5rem] text-primary/70">{icon}</span>
+        <span className="material-symbols-outlined text-[1.5rem] text-primary/70 dark:text-primary-fixed-dim">{icon}</span>
       </span>
-      <h3 className="mt-5 font-display text-[1.5rem] italic text-ink tracking-[-0.01em]">{title}</h3>
+      <h3 className="mt-5 font-display text-[1.5rem] italic text-ink tracking-[-0.01em] dark:text-white">{title}</h3>
       {description ? (
-        <p className="mx-auto mt-2 max-w-sm font-body text-[0.9rem] leading-[1.6] text-ink-soft">
+        <p className="mx-auto mt-2 max-w-sm font-body text-[0.9rem] leading-[1.6] text-ink-soft dark:text-white/65">
           {description}
         </p>
       ) : null}
@@ -213,11 +213,11 @@ export function SectionTitle({ kicker, title, action }: SectionTitleProps) {
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
         {kicker ? (
-          <p className="mb-2 font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted">
+          <p className="mb-2 font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
             {kicker}
           </p>
         ) : null}
-        <h2 className="font-display text-[clamp(1.5rem,2.4vw,1.875rem)] italic text-ink leading-none tracking-[-0.015em]">
+        <h2 className="font-display text-[clamp(1.5rem,2.4vw,1.875rem)] italic text-ink leading-none tracking-[-0.015em] dark:text-white">
           {title}
         </h2>
       </div>
@@ -266,21 +266,21 @@ export function Button({
 
   const variantCls =
     variant === 'primary'
-      ? 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_28px_-10px_rgba(75,100,95,0.45)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_16px_36px_-10px_rgba(75,100,95,0.55)] hover:bg-primary-dim'
+      ? 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_28px_-10px_rgba(75,100,95,0.45)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_16px_36px_-10px_rgba(75,100,95,0.55)] hover:bg-primary-dim dark:bg-primary-fixed dark:text-[#1C1C19] dark:hover:bg-primary-fixed-dim'
       : variant === 'destructive'
         ? 'bg-[#b2675e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_28px_-10px_rgba(178,103,94,0.45)] hover:bg-[#9e5a53]'
         : variant === 'surface'
-          ? 'bg-white/75 text-ink ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_22px_-10px_rgba(75,100,95,0.18)] hover:bg-white backdrop-blur-md'
-          : 'text-ink-soft hover:text-ink hover:bg-ink/5 ring-1 ring-inset ring-ink/10 hover:ring-ink/20';
+          ? 'bg-white/75 text-ink ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_22px_-10px_rgba(75,100,95,0.18)] hover:bg-white backdrop-blur-md dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:hover:bg-white/[0.1]'
+          : 'text-ink-soft hover:text-ink hover:bg-ink/5 ring-1 ring-inset ring-ink/10 hover:ring-ink/20 dark:text-white/70 dark:hover:text-white dark:hover:bg-white/5 dark:ring-white/10 dark:hover:ring-white/20';
 
   const iconPillCls =
     variant === 'primary'
-      ? 'bg-white/15 text-on-primary group-hover:bg-white/25'
+      ? 'bg-white/15 text-on-primary group-hover:bg-white/25 dark:bg-black/20 dark:text-[#1C1C19] dark:group-hover:bg-black/30'
       : variant === 'destructive'
         ? 'bg-white/15 text-white group-hover:bg-white/25'
         : variant === 'surface'
-          ? 'bg-primary/10 text-primary group-hover:bg-primary/15'
-          : 'bg-ink/8 text-ink group-hover:bg-ink/12';
+          ? 'bg-primary/10 text-primary group-hover:bg-primary/15 dark:bg-primary/30 dark:text-white dark:group-hover:bg-primary/40'
+          : 'bg-ink/8 text-ink group-hover:bg-ink/12 dark:bg-white/10 dark:text-white dark:group-hover:bg-white/15';
 
   const motion =
     'transition-[transform,box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97]';
@@ -313,13 +313,13 @@ export function Button({
 export function SectionDivider({ label }: { label?: string }) {
   return (
     <div className="my-10 flex items-center gap-4">
-      <span className="h-px flex-1 bg-ink/10" />
+      <span className="h-px flex-1 bg-ink/10 dark:bg-white/10" />
       {label ? (
-        <span className="font-body text-[0.7rem] uppercase tracking-[0.2em] text-ink-muted">
+        <span className="font-body text-[0.7rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
           {label}
         </span>
       ) : null}
-      <span className="h-px flex-1 bg-ink/10" />
+      <span className="h-px flex-1 bg-ink/10 dark:bg-white/10" />
     </div>
   );
 }
@@ -335,14 +335,14 @@ interface ChipProps {
 export function Chip({ children, tone = 'neutral' }: ChipProps) {
   const toneCls =
     tone === 'positive'
-      ? 'bg-primary/10 text-primary ring-primary/15'
+      ? 'bg-primary/10 text-primary ring-primary/15 dark:bg-primary/25 dark:text-white dark:ring-primary/30'
       : tone === 'warning'
-        ? 'bg-[#c89b5a]/15 text-[#8a6530] ring-[#c89b5a]/25'
+        ? 'bg-[#c89b5a]/15 text-[#8a6530] ring-[#c89b5a]/25 dark:bg-[#c89b5a]/20 dark:text-[#e9c88a] dark:ring-[#c89b5a]/35'
         : tone === 'critical'
-          ? 'bg-[#b2675e]/12 text-[#8c4d44] ring-[#b2675e]/22'
+          ? 'bg-[#b2675e]/12 text-[#8c4d44] ring-[#b2675e]/22 dark:bg-[#b2675e]/22 dark:text-[#f3b3aa] dark:ring-[#b2675e]/35'
           : tone === 'info'
-            ? 'bg-[#456377]/10 text-[#456377] ring-[#456377]/18'
-            : 'bg-ink/6 text-ink-soft ring-ink/10';
+            ? 'bg-[#456377]/10 text-[#456377] ring-[#456377]/18 dark:bg-[#456377]/28 dark:text-[#c5e4fc] dark:ring-[#456377]/40'
+            : 'bg-ink/6 text-ink-soft ring-ink/10 dark:bg-white/8 dark:text-white/70 dark:ring-white/12';
 
   const dotCls =
     tone === 'positive'

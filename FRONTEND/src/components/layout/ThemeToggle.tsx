@@ -1,92 +1,111 @@
 'use client';
 
 /**
- * ThemeToggle — Botón Sol/Luna para modo claro/oscuro
+ * ThemeToggle — selector de tema claro / oscuro / sistema.
  *
- * Patrón ZERO FOUC:
- * - El estado `mounted` previene hydration mismatch:
- *   el servidor no sabe el tema del usuario → renderiza un
- *   placeholder de tamaño idéntico para evitar Layout Shift.
- * - `useTheme` de next-themes lee la clase `.dark` del <html>
- *   que fue fijada sin parpadeo por el ThemeProvider del layout.
- * - SVG icons inline → sin dependencia de fuente de iconos,
- *   cero bloqueo de render.
+ * Se apoya en next-themes (ya inicializado en src/app/layout.tsx con
+ * attribute="class"). Render SSR-safe: mientras `mounted === false`
+ * devolvemos un placeholder del mismo tamaño para evitar hydration mismatch.
+ *
+ * Variantes:
+ *   - compact: un único botón que cicla light → dark → system (ideal en topbar)
+ *   - segmented: tres botones horizontales (ideal en dropdowns o ajustes)
  */
-import { useTheme } from 'next-themes';
+
 import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 
-function SunIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <line x1="12" y1="2" x2="12" y2="5" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="4.22" y1="4.22" x2="6.34" y2="6.34" />
-      <line x1="17.66" y1="17.66" x2="19.78" y2="19.78" />
-      <line x1="2" y1="12" x2="5" y2="12" />
-      <line x1="19" y1="12" x2="22" y2="12" />
-      <line x1="4.22" y1="19.78" x2="6.34" y2="17.66" />
-      <line x1="17.66" y1="6.34" x2="19.78" y2="4.22" />
-    </svg>
-  );
+type Variant = 'compact' | 'segmented';
+
+interface ThemeToggleProps {
+  readonly variant?: Variant;
+  readonly className?: string;
 }
 
-function MoonIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
+const ORDER = ['light', 'dark', 'system'] as const;
+type Mode = (typeof ORDER)[number];
+
+function nextMode(current: Mode): Mode {
+  const idx = ORDER.indexOf(current);
+  return ORDER[(idx + 1) % ORDER.length];
 }
 
-export default function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
+function iconFor(mode: Mode): string {
+  return mode === 'dark' ? 'dark_mode' : mode === 'light' ? 'light_mode' : 'computer';
+}
+
+function labelFor(mode: Mode): string {
+  return mode === 'dark' ? 'Oscuro' : mode === 'light' ? 'Claro' : 'Sistema';
+}
+
+export default function ThemeToggle({ variant = 'compact', className = '' }: ThemeToggleProps) {
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Hydration guard: sólo renderizar el icono real en el cliente
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Placeholder con las mismas dimensiones → evita Layout Shift (CLS = 0)
+  const current = (theme as Mode | undefined) ?? 'system';
+
   if (!mounted) {
+    // Placeholder SSR-safe con las mismas dimensiones que el control real
+    const skeleton =
+      variant === 'compact'
+        ? 'h-9 w-9 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8'
+        : 'h-9 w-32 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8';
+    return <span aria-hidden="true" className={`${skeleton} ${className}`} />;
+  }
+
+  if (variant === 'segmented') {
     return (
       <div
-        className="w-9 h-9 rounded-full"
-        aria-hidden="true"
-      />
+        role="radiogroup"
+        aria-label="Tema"
+        className={`inline-flex items-center gap-0.5 rounded-full bg-white/60 p-1 ring-1 ring-inset ring-ink/8 backdrop-blur-md dark:bg-white/5 dark:ring-white/10 ${className}`}
+      >
+        {ORDER.map((mode) => {
+          const active = current === mode;
+          return (
+            <button
+              key={mode}
+              role="radio"
+              aria-checked={active}
+              type="button"
+              onClick={() => setTheme(mode)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-body text-[0.72rem] uppercase tracking-[0.14em] transition-[background-color,color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+                active
+                  ? 'bg-primary/12 text-primary dark:bg-primary/25 dark:text-white'
+                  : 'text-ink-soft hover:text-ink dark:text-white/60 dark:hover:text-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+                {iconFor(mode)}
+              </span>
+              <span>{labelFor(mode)}</span>
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
-  const isDark = resolvedTheme === 'dark';
+  const displayMode = current === 'system' ? ((resolvedTheme as Mode) ?? 'light') : current;
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="flex items-center justify-center w-9 h-9 rounded-full text-ink-soft hover:text-ink hover:bg-ink/[0.05] dark:text-ink-soft dark:hover:text-ink dark:hover:bg-white/[0.06] transition-colors duration-300 ease-apple"
-      aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      title={isDark ? 'Modo claro' : 'Modo oscuro'}
+      onClick={() => setTheme(nextMode(current))}
+      aria-label={`Cambiar tema (actual: ${labelFor(current)})`}
+      title={`Tema: ${labelFor(current)}`}
+      className={`group grid h-9 w-9 place-items-center rounded-full bg-white/55 ring-1 ring-inset ring-ink/10 backdrop-blur-md transition-[background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/80 dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10 ${className}`}
     >
-      {isDark ? <SunIcon /> : <MoonIcon />}
+      <span
+        className="material-symbols-outlined text-[1.1rem] text-ink-soft group-hover:text-primary transition-colors dark:text-white/70 dark:group-hover:text-white"
+        aria-hidden="true"
+      >
+        {iconFor(displayMode)}
+      </span>
     </button>
   );
 }

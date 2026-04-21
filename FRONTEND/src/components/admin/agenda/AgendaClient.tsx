@@ -1,0 +1,871 @@
+'use client';
+
+/**
+ * AgendaClient — orquesta las 3 vistas (día / semana / mes) de la agenda admin.
+ *
+ * Datos:
+ *   - citas[]        (v_citas_expandidas, estado != cancelada)
+ *   - bloqueos[]     (agenda_bloqueos activos)
+ *   - plantillas[]   (horario_plantillas activas)
+ *   - aplicaciones[] (agenda_plantilla_aplicaciones activas)
+ *
+ * Navegación:
+ *   - fecha ancla persistida en URL `?d=yyyy-MM-dd&vista=dia|semana|mes`
+ *   - replaceState para no romper el historial de navegación
+ *
+ * Performance: todas las listas son del mes actual ±15 días -> O(n) irrelevante.
+ */
+
+import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isWithinInterval, parse, startOfMonth, startOfWeek, subDays, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo, useState, useTransition } from 'react';
+
+import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
+import {
+  aplicarPlantillaAction,
+  cancelarAplicacionPlantillaAction,
+  crearBloqueoAction,
+  eliminarBloqueoAction,
+} from '@/services/admin/agenda-actions';
+
+export interface CitaRow {
+  readonly id: string;
+  readonly inicio: string;
+  readonly fin: string;
+  readonly estado: string;
+  readonly servicio_nombre: string;
+  readonly paciente_user_id: string | null;
+}
+export interface BloqueoRow {
+  readonly id: string;
+  readonly inicio: string;
+  readonly fin: string;
+  readonly motivo: string | null;
+  readonly dia_completo: boolean;
+}
+export interface PlantillaRow {
+  readonly id: string;
+  readonly nombre: string;
+  readonly descripcion: string | null;
+  readonly color: string | null;
+  readonly bloquea_dia_completo: boolean;
+}
+export interface AplicacionRow {
+  readonly id: string;
+  readonly plantilla_id: string;
+  readonly fecha_desde: string;
+  readonly fecha_hasta: string;
+  readonly nota: string | null;
+}
+
+type Vista = 'dia' | 'semana' | 'mes';
+
+interface AgendaClientProps {
+  readonly citas: readonly CitaRow[];
+  readonly bloqueos: readonly BloqueoRow[];
+  readonly plantillas: readonly PlantillaRow[];
+  readonly aplicaciones: readonly AplicacionRow[];
+  readonly fechaISO: string; // yyyy-MM-dd de referencia
+  readonly vista: Vista;
+}
+
+const VISTAS: readonly { id: Vista; label: string; icon: string }[] = [
+  { id: 'dia',    label: 'Día',    icon: 'today' },
+  { id: 'semana', label: 'Semana', icon: 'view_week' },
+  { id: 'mes',    label: 'Mes',    icon: 'calendar_month' },
+];
+
+export default function AgendaClient({
+  citas,
+  bloqueos,
+  plantillas,
+  aplicaciones,
+  fechaISO,
+  vista,
+}: AgendaClientProps): JSX.Element {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const fechaAncla = useMemo(
+    () => parse(fechaISO, 'yyyy-MM-dd', new Date()),
+    [fechaISO]
+  );
+
+  // ─── Navegación por URL ─────────────────────────────────────────────────
+  const pushParams = useCallback(
+    (nextDate: Date, nextVista: Vista) => {
+      const sp = new URLSearchParams(searchParams.toString());
+      sp.set('d', format(nextDate, 'yyyy-MM-dd'));
+      sp.set('vista', nextVista);
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  const shift = useCallback(
+    (delta: -1 | 1) => {
+      const next =
+        vista === 'mes'
+          ? (delta === 1 ? addMonths(fechaAncla, 1) : subMonths(fechaAncla, 1))
+          : vista === 'semana'
+            ? (delta === 1 ? addDays(fechaAncla, 7) : subDays(fechaAncla, 7))
+            : (delta === 1 ? addDays(fechaAncla, 1) : subDays(fechaAncla, 1));
+      pushParams(next, vista);
+    },
+    [vista, fechaAncla, pushParams]
+  );
+
+  const eyebrow = useMemo(() => {
+    if (vista === 'dia') return format(fechaAncla, "EEEE d 'de' MMMM yyyy", { locale: es });
+    if (vista === 'semana') {
+      const ini = startOfWeek(fechaAncla, { weekStartsOn: 1 });
+      const fin = endOfWeek(fechaAncla, { weekStartsOn: 1 });
+      return `Semana ${format(ini, "d MMM", { locale: es })} – ${format(fin, "d MMM yyyy", { locale: es })}`;
+    }
+    return format(fechaAncla, "LLLL yyyy", { locale: es });
+  }, [vista, fechaAncla]);
+
+  return (
+    <>
+      {/* ─── Toolbar: vista + navegación + hoy ─── */}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div
+          role="tablist"
+          aria-label="Cambiar vista de agenda"
+          className="inline-flex rounded-full bg-white/60 p-1 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10"
+        >
+          {VISTAS.map((v) => {
+            const active = v.id === vista;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => pushParams(fechaAncla, v.id)}
+                className={`group inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-body text-[0.78rem] font-medium tracking-tight transition-[background-color,color] duration-300 ${
+                  active
+                    ? 'bg-ink text-canvas dark:bg-white dark:text-[#111]'
+                    : 'text-ink-soft hover:text-ink dark:text-white/65 dark:hover:text-white'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[1.05rem]" aria-hidden="true">
+                  {v.icon}
+                </span>
+                {v.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="inline-flex items-center gap-1 ml-1">
+          <button
+            type="button"
+            onClick={() => shift(-1)}
+            aria-label="Anterior"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/60 ring-1 ring-inset ring-ink/8 text-ink-soft hover:text-ink transition-colors dark:bg-white/5 dark:ring-white/10 dark:text-white/65 dark:hover:text-white"
+          >
+            <span className="material-symbols-outlined text-[1.15rem]" aria-hidden="true">chevron_left</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => pushParams(new Date(), vista)}
+            className="px-3.5 py-1.5 rounded-full bg-white/60 ring-1 ring-inset ring-ink/8 font-body text-[0.78rem] text-ink hover:bg-white transition-colors dark:bg-white/5 dark:ring-white/10 dark:text-white/80 dark:hover:bg-white/10"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={() => shift(1)}
+            aria-label="Siguiente"
+            className="grid h-9 w-9 place-items-center rounded-full bg-white/60 ring-1 ring-inset ring-ink/8 text-ink-soft hover:text-ink transition-colors dark:bg-white/5 dark:ring-white/10 dark:text-white/65 dark:hover:text-white"
+          >
+            <span className="material-symbols-outlined text-[1.15rem]" aria-hidden="true">chevron_right</span>
+          </button>
+        </div>
+
+        <div className="flex-1 text-right">
+          <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
+            Rango visible
+          </p>
+          <p className="font-display text-[1.05rem] italic text-ink tracking-[-0.01em] dark:text-white">
+            {eyebrow}
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Plantillas reutilizables ─── */}
+      <TemplateBar
+        plantillas={plantillas}
+        aplicaciones={aplicaciones}
+        fechaAncla={fechaAncla}
+      />
+
+      {/* ─── Vista dinámica ─── */}
+      {vista === 'dia' ? (
+        <DayView fecha={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} />
+      ) : vista === 'semana' ? (
+        <WeekGrid fechaAncla={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} onSelectDay={(d) => pushParams(d, 'dia')} />
+      ) : (
+        <MonthOverview fechaAncla={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} onSelectDay={(d) => pushParams(d, 'dia')} />
+      )}
+    </>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Template Bar — plantillas disponibles + aplicaciones activas
+// ═════════════════════════════════════════════════════════════════════════════
+function TemplateBar({
+  plantillas,
+  aplicaciones,
+  fechaAncla,
+}: {
+  readonly plantillas: readonly PlantillaRow[];
+  readonly aplicaciones: readonly AplicacionRow[];
+  readonly fechaAncla: Date;
+}): JSX.Element {
+  const [plantillaSel, setPlantillaSel] = useState<string>('');
+  const [desde, setDesde] = useState<string>(format(fechaAncla, 'yyyy-MM-dd'));
+  const [hasta, setHasta] = useState<string>(format(addDays(fechaAncla, 7), 'yyyy-MM-dd'));
+  const [nota, setNota] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const apply = () => {
+    if (!plantillaSel) {
+      setError('Selecciona una plantilla');
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await aplicarPlantillaAction({
+        plantillaId: plantillaSel,
+        fechaInicio: desde,
+        fechaFin: hasta,
+        observaciones: nota || null,
+      });
+      if (!res.ok) setError(res.message);
+      else {
+        setNota('');
+      }
+    });
+  };
+
+  const cancel = (id: string) => {
+    startTransition(async () => {
+      await cancelarAplicacionPlantillaAction(id);
+    });
+  };
+
+  const plantillaById = useMemo(
+    () => new Map(plantillas.map((p) => [p.id, p])),
+    [plantillas]
+  );
+
+  return (
+    <SurfaceCard className="mb-8">
+      <header className="mb-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
+            Plantillas de horario
+          </p>
+          <h3 className="mt-1.5 font-display text-[1.25rem] italic text-ink leading-none tracking-[-0.01em] dark:text-white">
+            Aplicar una plantilla a un rango de fechas
+          </h3>
+        </div>
+        <Chip tone={aplicaciones.length > 0 ? 'positive' : 'neutral'}>
+          {aplicaciones.length} activa{aplicaciones.length === 1 ? '' : 's'}
+        </Chip>
+      </header>
+
+      <div className="grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr_auto] items-end">
+        <label className="flex flex-col gap-1">
+          <span className="font-body text-[0.68rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+            Plantilla
+          </span>
+          <select
+            value={plantillaSel}
+            onChange={(e) => setPlantillaSel(e.target.value)}
+            className="rounded-xl bg-white/80 px-3 py-2 font-body text-[0.88rem] text-ink ring-1 ring-inset ring-ink/8 outline-none focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:ring-white/10"
+          >
+            <option value="">— Selecciona —</option>
+            {plantillas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre}{p.bloquea_dia_completo ? ' · día completo' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="font-body text-[0.68rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+            Desde
+          </span>
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            className="rounded-xl bg-white/80 px-3 py-2 font-body text-[0.88rem] text-ink ring-1 ring-inset ring-ink/8 outline-none focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:ring-white/10"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="font-body text-[0.68rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+            Hasta
+          </span>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+            className="rounded-xl bg-white/80 px-3 py-2 font-body text-[0.88rem] text-ink ring-1 ring-inset ring-ink/8 outline-none focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:ring-white/10"
+          />
+        </label>
+
+        <Button
+          variant="primary"
+          icon="auto_awesome_motion"
+          onClick={apply}
+          disabled={isPending}
+        >
+          {isPending ? 'Aplicando…' : 'Aplicar plantilla'}
+        </Button>
+      </div>
+
+      <label className="mt-3 flex flex-col gap-1">
+        <span className="font-body text-[0.68rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+          Nota (opcional)
+        </span>
+        <input
+          type="text"
+          value={nota}
+          onChange={(e) => setNota(e.target.value)}
+          placeholder="Ej: vacaciones agosto, congreso Madrid…"
+          maxLength={240}
+          className="rounded-xl bg-white/80 px-3 py-2 font-body text-[0.88rem] text-ink ring-1 ring-inset ring-ink/8 outline-none focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        />
+      </label>
+
+      {error ? (
+        <p className="mt-3 font-body text-[0.8rem] text-[#8c4d44] dark:text-[#f3b3aa]">
+          Error: {error}
+        </p>
+      ) : null}
+
+      {aplicaciones.length > 0 ? (
+        <ul className="mt-5 divide-y divide-ink/5 dark:divide-white/5">
+          {aplicaciones.map((a) => {
+            const p = plantillaById.get(a.plantilla_id);
+            return (
+              <li key={a.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="h-9 w-1.5 rounded-full"
+                    style={{ background: p?.color ?? '#889' }}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-display text-[1rem] text-ink tracking-[-0.01em] dark:text-white">
+                      {p?.nombre ?? 'Plantilla'}
+                    </p>
+                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                      {format(new Date(a.fecha_desde), "d MMM", { locale: es })}
+                      {' → '}
+                      {format(new Date(a.fecha_hasta), "d MMM yyyy", { locale: es })}
+                      {a.nota ? ` · ${a.nota}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => cancel(a.id)}
+                  disabled={isPending}
+                  className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 font-body text-[0.72rem] text-ink-soft hover:text-[#8c4d44] hover:bg-[#8c4d44]/10 transition-colors dark:text-white/60 dark:hover:text-[#f3b3aa] dark:hover:bg-[#f3b3aa]/10"
+                >
+                  <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+                    undo
+                  </span>
+                  Desactivar
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </SurfaceCard>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Helpers compartidos — estado de un día
+// ═════════════════════════════════════════════════════════════════════════════
+
+interface DiaEstado {
+  readonly citasDia: readonly CitaRow[];
+  readonly bloqueosDia: readonly BloqueoRow[];
+  readonly bloqueadoPorPlantilla: boolean;
+  readonly plantillaActiva: PlantillaRow | null;
+}
+
+function computeDiaEstado(
+  dia: Date,
+  citas: readonly CitaRow[],
+  bloqueos: readonly BloqueoRow[],
+  aplicaciones: readonly AplicacionRow[],
+  plantillas: readonly PlantillaRow[]
+): DiaEstado {
+  const iniDia = new Date(dia);
+  iniDia.setHours(0, 0, 0, 0);
+  const finDia = new Date(dia);
+  finDia.setHours(23, 59, 59, 999);
+
+  const citasDia = citas.filter((c) => {
+    const t = new Date(c.inicio).getTime();
+    return t >= iniDia.getTime() && t <= finDia.getTime();
+  });
+
+  const bloqueosDia = bloqueos.filter((b) => {
+    const ini = new Date(b.inicio).getTime();
+    const fin = new Date(b.fin).getTime();
+    return ini <= finDia.getTime() && fin >= iniDia.getTime();
+  });
+
+  const aplicablesHoy = aplicaciones.filter((a) =>
+    isWithinInterval(dia, {
+      start: new Date(a.fecha_desde),
+      end: new Date(a.fecha_hasta),
+    })
+  );
+
+  const plantillaActiva =
+    aplicablesHoy
+      .map((a) => plantillas.find((p) => p.id === a.plantilla_id))
+      .find((p): p is PlantillaRow => Boolean(p)) ?? null;
+
+  const bloqueadoPorPlantilla = aplicablesHoy.some((a) => {
+    const p = plantillas.find((pp) => pp.id === a.plantilla_id);
+    return p?.bloquea_dia_completo ?? false;
+  });
+
+  return { citasDia, bloqueosDia, bloqueadoPorPlantilla, plantillaActiva };
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// DayView — vista día con acciones inline (bloquear día completo)
+// ═════════════════════════════════════════════════════════════════════════════
+function DayView({
+  fecha,
+  citas,
+  bloqueos,
+  aplicaciones,
+  plantillas,
+}: {
+  readonly fecha: Date;
+  readonly citas: readonly CitaRow[];
+  readonly bloqueos: readonly BloqueoRow[];
+  readonly aplicaciones: readonly AplicacionRow[];
+  readonly plantillas: readonly PlantillaRow[];
+}): JSX.Element {
+  const estado = computeDiaEstado(fecha, citas, bloqueos, aplicaciones, plantillas);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const bloquearDiaCompleto = () => {
+    const ini = new Date(fecha); ini.setHours(0, 0, 0, 0);
+    const fin = new Date(fecha); fin.setHours(23, 59, 59, 999);
+    startTransition(async () => {
+      const res = await crearBloqueoAction({
+        inicioISO: ini.toISOString(),
+        finISO: fin.toISOString(),
+        motivo: 'Día completo bloqueado',
+        diaCompleto: true,
+      });
+      if (!res.ok) setError(res.message);
+    });
+  };
+
+  const eliminarBloqueo = (id: string) => {
+    startTransition(async () => {
+      await eliminarBloqueoAction(id);
+    });
+  };
+
+  const items = [
+    ...estado.citasDia.map((c) => ({ kind: 'cita' as const, item: c, time: new Date(c.inicio).getTime() })),
+    ...estado.bloqueosDia.map((b) => ({ kind: 'bloqueo' as const, item: b, time: new Date(b.inicio).getTime() })),
+  ].sort((a, b) => a.time - b.time);
+
+  return (
+    <SurfaceCard>
+      <header className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
+            {format(fecha, "EEEE", { locale: es })}
+          </p>
+          <h3 className="mt-1 font-display text-[1.7rem] italic text-ink leading-none tracking-[-0.02em] dark:text-white">
+            {format(fecha, "d 'de' MMMM", { locale: es })}
+          </h3>
+          {estado.plantillaActiva ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+              <span
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ background: estado.plantillaActiva.color ?? '#889' }}
+                aria-hidden="true"
+              />
+              Plantilla activa: {estado.plantillaActiva.nombre}
+            </p>
+          ) : null}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="event_busy"
+            onClick={bloquearDiaCompleto}
+            disabled={isPending || estado.bloqueadoPorPlantilla}
+          >
+            Bloquear día
+          </Button>
+          <Link href={`/admin/agenda?nuevo=1&d=${format(fecha, 'yyyy-MM-dd')}`}>
+            <Button variant="primary" size="sm" icon="add">Nueva cita</Button>
+          </Link>
+        </div>
+      </header>
+
+      {estado.bloqueadoPorPlantilla ? (
+        <div className="mb-4 rounded-xl bg-[#c89b5a]/10 px-4 py-3 font-body text-[0.82rem] text-ink-soft ring-1 ring-inset ring-[#c89b5a]/25 dark:text-white/75 dark:bg-[#c89b5a]/15 dark:ring-[#c89b5a]/30">
+          Este día está bloqueado por una plantilla activa. Las citas programadas deben gestionarse manualmente.
+        </div>
+      ) : null}
+
+      {error ? (
+        <p className="mb-3 font-body text-[0.8rem] text-[#8c4d44] dark:text-[#f3b3aa]">
+          Error: {error}
+        </p>
+      ) : null}
+
+      {items.length === 0 ? (
+        <p className="py-8 text-center font-body text-[0.9rem] text-ink-soft dark:text-white/55">
+          Sin eventos en este día. Hueco libre.
+        </p>
+      ) : (
+        <ul className="divide-y divide-ink/5 dark:divide-white/5">
+          {items.map((it) => (
+            <li key={`${it.kind}-${it.item.id}`} className="flex items-center gap-4 py-3">
+              <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
+                {format(new Date(it.item.inicio), 'HH:mm')}
+              </span>
+              <span className="h-10 w-px bg-ink/10 dark:bg-white/10" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="font-body text-[0.92rem] text-ink dark:text-white">
+                  {it.kind === 'bloqueo'
+                    ? (it.item.motivo ?? 'Bloqueo')
+                    : it.item.servicio_nombre}
+                </p>
+                <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                  Hasta {format(new Date(it.item.fin), 'HH:mm')}
+                  {it.kind === 'cita' ? ` · ${it.item.estado}` : it.item.dia_completo ? ' · día completo' : ''}
+                </p>
+              </div>
+              <Chip tone={it.kind === 'bloqueo' ? 'warning' : 'positive'}>
+                {it.kind === 'bloqueo' ? 'Bloqueo' : it.item.estado}
+              </Chip>
+              {it.kind === 'bloqueo' ? (
+                <button
+                  type="button"
+                  onClick={() => eliminarBloqueo(it.item.id)}
+                  disabled={isPending}
+                  aria-label="Eliminar bloqueo"
+                  className="grid h-8 w-8 place-items-center rounded-full text-ink-muted hover:text-[#8c4d44] hover:bg-[#8c4d44]/10 transition-colors dark:text-white/60 dark:hover:text-[#f3b3aa] dark:hover:bg-[#f3b3aa]/10"
+                >
+                  <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">close</span>
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+    </SurfaceCard>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// WeekGrid — 7 columnas × slots 30 min
+// ═════════════════════════════════════════════════════════════════════════════
+function WeekGrid({
+  fechaAncla,
+  citas,
+  bloqueos,
+  aplicaciones,
+  plantillas,
+  onSelectDay,
+}: {
+  readonly fechaAncla: Date;
+  readonly citas: readonly CitaRow[];
+  readonly bloqueos: readonly BloqueoRow[];
+  readonly aplicaciones: readonly AplicacionRow[];
+  readonly plantillas: readonly PlantillaRow[];
+  readonly onSelectDay: (d: Date) => void;
+}): JSX.Element {
+  const inicioSemana = startOfWeek(fechaAncla, { weekStartsOn: 1 });
+  const dias = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
+
+  // Rango horario visual: 08:00 - 21:00 (26 slots de 30 min)
+  const hourStart = 8;
+  const hourEnd = 21;
+  const slotMin = 30;
+  const totalSlots = ((hourEnd - hourStart) * 60) / slotMin;
+
+  return (
+    <SurfaceCard className="overflow-hidden">
+      <div className="grid grid-cols-[64px_repeat(7,1fr)] border-b border-ink/8 dark:border-white/8">
+        <div />
+        {dias.map((d) => {
+          const esHoy = isSameDay(d, new Date());
+          return (
+            <button
+              key={d.toISOString()}
+              type="button"
+              onClick={() => onSelectDay(d)}
+              className={`border-l border-ink/8 py-2 text-left px-2 transition-colors hover:bg-white/40 dark:border-white/8 dark:hover:bg-white/5 ${
+                esHoy ? 'bg-primary/5 dark:bg-primary/10' : ''
+              }`}
+            >
+              <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
+                {format(d, 'EEE', { locale: es })}
+              </p>
+              <p
+                className={`mt-0.5 font-display text-[1.05rem] tabular-nums tracking-[-0.01em] ${
+                  esHoy ? 'text-primary dark:text-primary-fixed-dim' : 'text-ink dark:text-white'
+                }`}
+              >
+                {format(d, 'd')}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-[64px_repeat(7,1fr)] relative">
+        {/* Columna de horas */}
+        <div>
+          {Array.from({ length: hourEnd - hourStart }, (_, i) => (
+            <div
+              key={`h-${i}`}
+              className="h-14 border-b border-ink/5 px-2 text-right font-body text-[0.62rem] tabular-nums text-ink-muted dark:border-white/5 dark:text-white/40"
+            >
+              {String(hourStart + i).padStart(2, '0')}:00
+            </div>
+          ))}
+        </div>
+
+        {/* 7 columnas */}
+        {dias.map((dia) => {
+          const estado = computeDiaEstado(dia, citas, bloqueos, aplicaciones, plantillas);
+          return (
+            <div
+              key={`col-${dia.toISOString()}`}
+              className="relative border-l border-ink/5 dark:border-white/5"
+              style={{ height: `${(hourEnd - hourStart) * 56}px` }}
+            >
+              {/* Overlay día bloqueado */}
+              {estado.bloqueadoPorPlantilla ? (
+                <div
+                  className="absolute inset-0 z-10 grid place-items-center bg-[#c89b5a]/12 backdrop-blur-[1px]"
+                  aria-label="Día bloqueado"
+                >
+                  <div className="rotate-[-8deg] rounded-xl bg-[#c89b5a]/20 px-3 py-1.5 font-body text-[0.72rem] uppercase tracking-[0.2em] text-[#8a6530] ring-1 ring-[#c89b5a]/30 dark:text-[#e9c88a] dark:bg-[#c89b5a]/25 dark:ring-[#c89b5a]/35">
+                    {estado.plantillaActiva?.nombre ?? 'Bloqueado'}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Grid de slots horarios (guías visuales) */}
+              {Array.from({ length: totalSlots }, (_, s) => (
+                <div
+                  key={`s-${s}`}
+                  className={`h-7 ${s % 2 === 0 ? 'border-t border-ink/5 dark:border-white/5' : ''}`}
+                />
+              ))}
+
+              {/* Eventos: citas + bloqueos */}
+              {estado.citasDia.map((c) => (
+                <EventoBlock
+                  key={c.id}
+                  inicio={new Date(c.inicio)}
+                  fin={new Date(c.fin)}
+                  hourStart={hourStart}
+                  tone="cita"
+                  title={c.servicio_nombre}
+                  subtitle={c.estado}
+                />
+              ))}
+              {estado.bloqueosDia.map((b) => (
+                <EventoBlock
+                  key={b.id}
+                  inicio={new Date(b.inicio)}
+                  fin={new Date(b.fin)}
+                  hourStart={hourStart}
+                  tone="bloqueo"
+                  title={b.motivo ?? 'Bloqueo'}
+                  subtitle={b.dia_completo ? 'Día completo' : undefined}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </SurfaceCard>
+  );
+}
+
+function EventoBlock({
+  inicio,
+  fin,
+  hourStart,
+  tone,
+  title,
+  subtitle,
+}: {
+  readonly inicio: Date;
+  readonly fin: Date;
+  readonly hourStart: number;
+  readonly tone: 'cita' | 'bloqueo';
+  readonly title: string;
+  readonly subtitle?: string;
+}): JSX.Element | null {
+  const minutosDesdeInicio =
+    (inicio.getHours() - hourStart) * 60 + inicio.getMinutes();
+  const duracionMin = Math.max(
+    15,
+    (fin.getTime() - inicio.getTime()) / 60000
+  );
+  if (minutosDesdeInicio < 0) return null;
+
+  const top = (minutosDesdeInicio / 30) * 28; // cada slot 30m = 28px (h-7)
+  const height = (duracionMin / 30) * 28;
+
+  const cls =
+    tone === 'cita'
+      ? 'bg-primary/12 ring-1 ring-inset ring-primary/25 text-primary-dim dark:bg-primary/30 dark:ring-primary-fixed/35 dark:text-white'
+      : 'bg-[#c89b5a]/15 ring-1 ring-inset ring-[#c89b5a]/30 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:ring-[#c89b5a]/35 dark:text-[#e9c88a]';
+
+  return (
+    <div
+      className={`absolute left-1 right-1 rounded-lg px-1.5 py-1 overflow-hidden ${cls}`}
+      style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px' }}
+      title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}
+    >
+      <p className="font-body text-[0.68rem] font-semibold leading-tight tabular-nums">
+        {format(inicio, 'HH:mm')}
+      </p>
+      <p className="font-body text-[0.7rem] leading-tight truncate">
+        {title}
+      </p>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MonthOverview — vista calendario (6 semanas × 7 días)
+// ═════════════════════════════════════════════════════════════════════════════
+function MonthOverview({
+  fechaAncla,
+  citas,
+  bloqueos,
+  aplicaciones,
+  plantillas,
+  onSelectDay,
+}: {
+  readonly fechaAncla: Date;
+  readonly citas: readonly CitaRow[];
+  readonly bloqueos: readonly BloqueoRow[];
+  readonly aplicaciones: readonly AplicacionRow[];
+  readonly plantillas: readonly PlantillaRow[];
+  readonly onSelectDay: (d: Date) => void;
+}): JSX.Element {
+  const inicio = startOfWeek(startOfMonth(fechaAncla), { weekStartsOn: 1 });
+  const fin = endOfWeek(endOfMonth(fechaAncla), { weekStartsOn: 1 });
+  const total = Math.round((fin.getTime() - inicio.getTime()) / (24 * 3600 * 1000)) + 1;
+  const dias = Array.from({ length: total }, (_, i) => addDays(inicio, i));
+
+  return (
+    <SurfaceCard className="overflow-hidden">
+      <div className="grid grid-cols-7 border-b border-ink/8 pb-2 mb-2 dark:border-white/8">
+        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((d) => (
+          <p
+            key={d}
+            className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted text-center dark:text-white/55"
+          >
+            {d}
+          </p>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {dias.map((dia) => {
+          const estado = computeDiaEstado(dia, citas, bloqueos, aplicaciones, plantillas);
+          const esHoy = isSameDay(dia, new Date());
+          const esOtroMes = dia.getMonth() !== fechaAncla.getMonth();
+          const tieneEventos =
+            estado.citasDia.length > 0 || estado.bloqueosDia.length > 0;
+
+          return (
+            <button
+              key={dia.toISOString()}
+              type="button"
+              onClick={() => onSelectDay(dia)}
+              className={`min-h-[92px] rounded-xl p-2 text-left transition-colors ring-1 ring-inset ${
+                estado.bloqueadoPorPlantilla
+                  ? 'bg-[#c89b5a]/12 ring-[#c89b5a]/25 dark:bg-[#c89b5a]/20 dark:ring-[#c89b5a]/30'
+                  : esHoy
+                    ? 'bg-primary/8 ring-primary/20 dark:bg-primary/20 dark:ring-primary-fixed/30'
+                    : 'bg-white/50 ring-ink/5 hover:bg-white dark:bg-white/3 dark:ring-white/5 dark:hover:bg-white/6'
+              } ${esOtroMes ? 'opacity-40' : ''}`}
+            >
+              <p
+                className={`font-display text-[0.95rem] tabular-nums tracking-[-0.01em] ${
+                  esHoy
+                    ? 'text-primary dark:text-primary-fixed-dim font-semibold'
+                    : 'text-ink dark:text-white'
+                }`}
+              >
+                {format(dia, 'd')}
+              </p>
+              {tieneEventos ? (
+                <div className="mt-1 flex flex-wrap gap-0.5">
+                  {estado.citasDia.slice(0, 3).map((c) => (
+                    <span
+                      key={c.id}
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-primary dark:bg-primary-fixed-dim"
+                      aria-hidden="true"
+                    />
+                  ))}
+                  {estado.bloqueosDia.length > 0 ? (
+                    <span
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-[#c89b5a]"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+              {estado.citasDia.length > 0 ? (
+                <p className="mt-1 font-body text-[0.65rem] text-ink-muted tabular-nums dark:text-white/50">
+                  {estado.citasDia.length} cita{estado.citasDia.length === 1 ? '' : 's'}
+                </p>
+              ) : null}
+              {estado.plantillaActiva && estado.bloqueadoPorPlantilla ? (
+                <p className="mt-0.5 font-body text-[0.6rem] text-[#8a6530] truncate dark:text-[#e9c88a]">
+                  {estado.plantillaActiva.nombre}
+                </p>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </SurfaceCard>
+  );
+}

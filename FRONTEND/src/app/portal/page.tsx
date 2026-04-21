@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+import CountdownCita from '@/components/portal/CountdownCita';
 import {
   Button,
   Chip,
@@ -95,6 +96,27 @@ export default async function PortalInicioPage() {
         .maybeSingle<{ unread_paciente: number }>()).data?.unread_paciente ?? 0
     : 0;
 
+  const ultimoMensaje = conversacionId
+    ? (await supabase
+        .from('mensajes')
+        .select('id, body_ciphertext, created_at, sender_user_id')
+        .eq('conversation_id', conversacionId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle<{
+          id: string;
+          body_ciphertext: string;
+          created_at: string;
+          sender_user_id: string;
+        }>()).data
+    : null;
+
+  const ultimoMensajePreview =
+    ultimoMensaje && ultimoMensaje.body_ciphertext
+      ? ultimoMensaje.body_ciphertext.slice(0, 160)
+      : null;
+  const ultimoMensajeEsMio = ultimoMensaje?.sender_user_id === user.id;
+
   const proxima = proximaRaw;
   const bono = bonoActivoRaw;
   const sesionesRestantes = bono
@@ -153,13 +175,11 @@ export default async function PortalInicioPage() {
                   Ver detalles
                 </Button>
               </Link>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/50 ring-1 ring-inset ring-white/50 px-3 py-1.5 backdrop-blur-md">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-3 py-1.5 ring-1 ring-inset ring-white/50 backdrop-blur-md dark:bg-white/10 dark:ring-white/10">
                 <span className="material-symbols-outlined text-[0.95rem] text-primary" aria-hidden="true">
                   schedule
                 </span>
-                <p className="font-body text-[0.75rem] text-ink-soft">
-                  {formatDistanceToNow(new Date(proxima.inicio), { locale: es, addSuffix: true })}
-                </p>
+                <CountdownCita target={proxima.inicio} />
               </div>
             </footer>
           </SurfaceCard>
@@ -196,8 +216,9 @@ export default async function PortalInicioPage() {
                       cy="48"
                       r="42"
                       fill="none"
-                      stroke="rgba(28,28,25,0.08)"
+                      stroke="currentColor"
                       strokeWidth="6"
+                      className="text-ink/8 dark:text-white/12"
                     />
                     <circle
                       cx="48"
@@ -265,6 +286,77 @@ export default async function PortalInicioPage() {
           icon="hourglass_top"
           footnote={proxima ? 'Días hasta tu sesión' : 'Sin próximas sesiones'}
         />
+      </section>
+
+      {/* ─── Mensajes recientes ─── */}
+      <section className="mt-12 portal-rise portal-rise-delay-3">
+        <SectionTitle
+          kicker="Conversación"
+          title="Últimos mensajes"
+          action={
+            <Link
+              href="/portal/mensajes"
+              className="group inline-flex items-center gap-1.5 font-body text-[0.82rem] text-ink-soft transition-colors hover:text-primary dark:text-white/60 dark:hover:text-primary"
+            >
+              <span>Abrir chat{unreadMensajes > 0 ? ` · ${unreadMensajes}` : ''}</span>
+              <span
+                className="material-symbols-outlined text-[1rem] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                aria-hidden="true"
+              >
+                arrow_outward
+              </span>
+            </Link>
+          }
+        />
+        {ultimoMensajePreview ? (
+          <Link href="/portal/mensajes" className="block">
+            <SurfaceCard interactive glow="sage" className="flex items-start gap-4">
+              <span
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 dark:bg-primary/20 dark:ring-primary/30"
+                aria-hidden="true"
+              >
+                <span className="material-symbols-outlined text-[1.15rem] text-primary">
+                  {ultimoMensajeEsMio ? 'send' : 'chat_bubble'}
+                </span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <p className="font-display text-[1rem] italic text-ink dark:text-white">
+                    {ultimoMensajeEsMio ? 'Tú' : 'Almudena'}
+                  </p>
+                  <time
+                    className="font-body text-[0.7rem] text-ink-muted tabular-nums dark:text-white/55"
+                    dateTime={ultimoMensaje!.created_at}
+                  >
+                    {formatDistanceToNow(new Date(ultimoMensaje!.created_at), {
+                      locale: es,
+                      addSuffix: true,
+                    })}
+                  </time>
+                  {unreadMensajes > 0 && !ultimoMensajeEsMio ? (
+                    <Chip tone="info">{unreadMensajes} sin leer</Chip>
+                  ) : null}
+                </div>
+                <p className="mt-1 line-clamp-2 font-body text-[0.88rem] leading-[1.55] text-ink-soft dark:text-white/70">
+                  {ultimoMensajePreview}
+                </p>
+              </div>
+            </SurfaceCard>
+          </Link>
+        ) : (
+          <EmptyState
+            icon="forum"
+            title="Aún no hay mensajes"
+            description="Puedes escribir a Almudena cuando lo necesites. Las conversaciones son confidenciales."
+            action={
+              <Link href="/portal/mensajes">
+                <Button variant="primary" icon="edit">
+                  Abrir conversación
+                </Button>
+              </Link>
+            }
+          />
+        )}
       </section>
 
       {/* ─── Recursos recientes ─── */}

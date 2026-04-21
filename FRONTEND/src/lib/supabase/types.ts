@@ -66,6 +66,19 @@ export interface Paciente {
   motivo_consulta_ciphertext: string | null;
   consentimiento_rgpd: boolean;
   firma_rgpd_storage_path: string | null;
+  // Migración 0012: campos clínicos adicionales (ciphertext + metadata)
+  direccion_ciphertext: string | null;
+  email_ciphertext: string | null;
+  email_bidx: string | null;
+  contacto_emergencia_nombre_ciphertext: string | null;
+  contacto_emergencia_telefono_ciphertext: string | null;
+  alergias_ciphertext: string | null;
+  medicacion_base_ciphertext: string | null;
+  objetivos_ciphertext: string | null;
+  preferencias_clinicas_ciphertext: string | null;
+  avatar_url: string | null;
+  color_etiqueta: string | null;
+  tags: readonly string[];
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -100,8 +113,82 @@ export interface AgendaBloqueo {
   inicio: string;
   fin: string;
   motivo: string | null;
+  dia_completo: boolean;
+  creado_por: string | null;
   activo: boolean;
   created_at: string;
+}
+
+export interface FacturacionNota {
+  id: number;
+  nota: string;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface HorarioPlantilla {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  color: string | null;
+  // Items: array jsonb con {weekday, hora_inicio, hora_fin, libre}
+  items: unknown;
+  bloquea_dia_completo: boolean;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgendaPlantillaAplicacion {
+  id: string;
+  plantilla_id: string;
+  fecha_desde: string;
+  fecha_hasta: string;
+  nota: string | null;
+  activo: boolean;
+  created_at: string;
+}
+
+export interface CitaNotaPaciente {
+  id: string;
+  cita_id: string;
+  paciente_id: string;
+  autor_user_id: string;
+  contenido: string | null;
+  contenido_ciphertext: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RgpdTipo =
+  | 'exportar'
+  | 'borrado'
+  | 'rectificar'
+  | 'oposicion'
+  | 'portabilidad'
+  | 'limitacion';
+
+export type RgpdEstado =
+  | 'pendiente'
+  | 'en_revision'
+  | 'resuelta'
+  | 'rechazada'
+  | 'expirada';
+
+export interface RgpdRequest {
+  id: string;
+  user_id: string;
+  tipo: RgpdTipo;
+  estado: RgpdEstado;
+  motivo: string | null;
+  payload: Record<string, unknown>;
+  resolucion: string | null;
+  fecha_limite: string;
+  resuelta_por: string | null;
+  resuelta_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Pago {
@@ -148,6 +235,7 @@ export interface Recurso {
   size_bytes: number | null;
   created_by: string | null;
   activo: boolean;
+  publico: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -162,6 +250,8 @@ export interface RecursoAsignacion {
   activo: boolean;
 }
 
+export type PreferenciaTema = 'light' | 'dark' | 'system';
+
 export interface NotificacionesPrefs {
   user_id: string;
   welcome: boolean;
@@ -169,6 +259,12 @@ export interface NotificacionesPrefs {
   booking_cancelled: boolean;
   reminder_24h: boolean;
   nueva_asignacion: boolean;
+  tema: PreferenciaTema;
+  privacy_mode_default: boolean;
+  sound: boolean;
+  desktop_notifications: boolean;
+  chat_nuevo_mensaje: boolean;
+  marketing: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -205,6 +301,21 @@ export interface Mensaje {
   created_at: string;
 }
 
+export type MensajeAdjuntoTipo = 'archivo' | 'imagen' | 'audio' | 'video';
+
+export interface MensajeAdjunto {
+  id: string;
+  mensaje_id: string;
+  storage_path: string;
+  nombre: string;
+  mime: string | null;
+  size_bytes: number | null;
+  tipo: MensajeAdjuntoTipo;
+  duracion_ms: number | null;
+  transcripcion_ciphertext: string | null;
+  created_at: string;
+}
+
 export interface HistorialSesion {
   id: string;
   paciente_id: string;
@@ -218,20 +329,117 @@ export interface HistorialSesion {
   updated_at: string;
 }
 
+export type DiagnosticoSeveridad = 'leve' | 'moderado' | 'severo';
+export type DiagnosticoEstado = 'activo' | 'remision' | 'resuelto' | 'descartado';
+
+export interface PacienteDiagnostico {
+  id: string;
+  paciente_id: string;
+  cie_code: string | null;
+  titulo: string | null;
+  descripcion: string | null;
+  titulo_ciphertext: string | null;
+  notas_ciphertext: string | null;
+  severidad: DiagnosticoSeveridad | null;
+  estado: DiagnosticoEstado;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  created_by: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PacienteMedicacion {
+  id: string;
+  paciente_id: string;
+  nombre: string;
+  dosis: string | null;
+  frecuencia: string | null;
+  via: string | null;
+  prescrita_por: string | null;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  notas: string | null;
+  notas_ciphertext: string | null;
+  created_by: string | null;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PacienteAdjunto {
+  id: string;
+  paciente_id: string;
+  storage_path: string;
+  nombre: string;
+  mime: string | null;
+  size_bytes: number | null;
+  descripcion: string | null;
+  subido_por: string | null;
+  created_at: string;
+}
+
+export type AdminLookupCampo =
+  | 'dni_nie'
+  | 'telefono'
+  | 'email'
+  | 'direccion'
+  | 'contacto_emergencia'
+  | 'alergias'
+  | 'medicacion_base'
+  | 'objetivos'
+  | 'preferencias_clinicas'
+  | 'historial_clinico'
+  | 'diagnostico'
+  | 'bulk_export';
+
+export interface AdminLookup {
+  id: string;
+  admin_id: string;
+  paciente_id: string;
+  campo: AdminLookupCampo;
+  justificacion: string | null;
+  ip_origen: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
 /**
  * Shape mínimo del schema para `createClient<Database>()`.
  * Una vez generemos types con el CLI, reemplazar por la versión completa.
  *
- * Nota: `Relationships: []` es REQUERIDO por supabase-js para inferencia correcta.
+ * Nota 1: `Relationships: []` es REQUERIDO por supabase-js para inferencia
+ *         correcta (ver GenericTable en postgrest-js).
+ *
+ * Nota 2: `Prettify<Row>` convierte la interface en un mapped type, condición
+ *         necesaria para que satisfaga `Record<string, unknown>` que exige
+ *         `GenericTable`. Sin esto `.insert()` / `.update()` devuelven
+ *         PostgrestFilterBuilder<{...}, never, never, ...> y tipo `never`.
  */
+/**
+ * Normaliza una interface para que satisfaga `Record<string, unknown>`
+ * que exige `GenericTable` del cliente postgrest-js.
+ *
+ * TypeScript no asigna interfaces a Record<string, unknown> de forma
+ * implícita (excess property checks), así que aquí añadimos un index
+ * signature vía intersection.
+ */
+type WithIndexSignature<T> = { [K in keyof T]: T[K] } & {
+  [key: string]: unknown;
+};
+
 type TableDef<Row> = {
-  Row: Row;
-  Insert: Partial<Row>;
-  Update: Partial<Row>;
+  Row: WithIndexSignature<Row>;
+  Insert: WithIndexSignature<Partial<Row>>;
+  Update: WithIndexSignature<Partial<Row>>;
   Relationships: [];
 };
 
 export interface Database {
+  __InternalSupabase: {
+    PostgrestVersion: '12';
+  };
   public: {
     Tables: {
       profiles:             TableDef<Profile>;
@@ -248,19 +456,29 @@ export interface Database {
       conversaciones:       TableDef<Conversacion>;
       mensajes:             TableDef<Mensaje>;
       historial_sesiones:   TableDef<HistorialSesion>;
+      facturacion_nota:              TableDef<FacturacionNota>;
+      horario_plantillas:            TableDef<HorarioPlantilla>;
+      agenda_plantilla_aplicaciones: TableDef<AgendaPlantillaAplicacion>;
+      rgpd_requests:                 TableDef<RgpdRequest>;
+      citas_notas_paciente:          TableDef<CitaNotaPaciente>;
+      mensajes_adjuntos:             TableDef<MensajeAdjunto>;
+      paciente_diagnosticos:         TableDef<PacienteDiagnostico>;
+      paciente_medicacion:           TableDef<PacienteMedicacion>;
+      paciente_adjuntos:             TableDef<PacienteAdjunto>;
+      admin_lookups:                 TableDef<AdminLookup>;
     };
     Views: {
       v_citas_expandidas: {
-        Row: Cita & {
+        Row: WithIndexSignature<Cita & {
           servicio_nombre: string;
           duracion_minutos: number;
           precio_centimos: number;
           paciente_user_id: string | null;
-        };
+        }>;
         Relationships: [];
       };
       v_conversaciones_admin: {
-        Row: {
+        Row: WithIndexSignature<{
           conversacion_id: string;
           paciente_id: string;
           paciente_display_name: string | null;
@@ -269,7 +487,37 @@ export interface Database {
           estado: ConversacionEstado;
           unread_admin: number;
           unread_paciente: number;
-        };
+        }>;
+        Relationships: [];
+      };
+      v_pacientes_resumen_admin: {
+        Row: WithIndexSignature<{
+          id: string;
+          user_id: string | null;
+          fecha_alta: string;
+          fecha_nacimiento: string | null;
+          activo: boolean;
+          tags: readonly string[];
+          color_etiqueta: string | null;
+          avatar_url: string | null;
+          consentimiento_rgpd: boolean;
+          created_at: string;
+          updated_at: string;
+          has_dni: boolean;
+          has_telefono: boolean;
+          has_email: boolean;
+          has_direccion: boolean;
+          has_contacto_emergencia: boolean;
+          has_alergias: boolean;
+          has_medicacion_base: boolean;
+          has_objetivos: boolean;
+          diagnosticos_activos: number;
+          medicaciones_activas: number;
+          adjuntos_total: number;
+          sesiones_completadas: number;
+          ultima_cita: string | null;
+          proxima_cita: string | null;
+        }>;
         Relationships: [];
       };
     };
@@ -294,6 +542,16 @@ export interface Database {
         Returns: Array<{ mensaje_id: string }>;
       };
       chat_marcar_leidos: { Args: { p_conversacion_id: string }; Returns: boolean };
+      registrar_consulta_sensible: {
+        Args: {
+          p_paciente_id: string;
+          p_campo: string;
+          p_justificacion?: string | null;
+          p_ip?: string | null;
+          p_user_agent?: string | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: UserRole;

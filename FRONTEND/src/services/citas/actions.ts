@@ -163,17 +163,30 @@ async function dispatchBookingConfirmedEmail(
   if (!data) return;
 
   // Supabase infers relaciones como objeto o array según cardinalidad; normalizamos.
-  const servicio = Array.isArray((data as { servicio: unknown }).servicio)
-    ? ((data as { servicio: Array<{ nombre: string; duracion_minutos: number }> }).servicio[0] ?? null)
-    : ((data as { servicio: { nombre: string; duracion_minutos: number } | null }).servicio);
-  const paciente = Array.isArray((data as { paciente: unknown }).paciente)
-    ? ((data as { paciente: Array<{ user_id: string | null }> }).paciente[0] ?? null)
-    : ((data as { paciente: { user_id: string | null } | null }).paciente);
+  // Usamos `unknown` como puente porque nuestra `Database` no declara Relationships
+  // (los tipos se generan a mano; pendiente migrar a `supabase gen types`).
+  const raw = data as unknown as {
+    inicio: string;
+    servicio:
+      | { nombre: string; duracion_minutos: number }
+      | Array<{ nombre: string; duracion_minutos: number }>
+      | null;
+    paciente:
+      | { user_id: string | null }
+      | Array<{ user_id: string | null }>
+      | null;
+  };
+  const servicio = Array.isArray(raw.servicio)
+    ? (raw.servicio[0] ?? null)
+    : raw.servicio;
+  const paciente = Array.isArray(raw.paciente)
+    ? (raw.paciente[0] ?? null)
+    : raw.paciente;
 
   if (!servicio || !paciente?.user_id) return;
 
   const ctx: CitaEmailContext = {
-    inicio: (data as { inicio: string }).inicio,
+    inicio: raw.inicio,
     duracion_minutos: servicio.duracion_minutos,
     servicio_nombre: servicio.nombre,
     user_id: paciente.user_id,

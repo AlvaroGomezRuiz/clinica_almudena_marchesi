@@ -1,0 +1,139 @@
+/**
+ * POST /api/mensajes/attach
+ *
+ * Sube un adjunto al bucket `chat-adjuntos` y lo registra en
+ * public.mensajes_adjuntos vinculándolo a un nuevo mensaje (body puede ser
+ * texto del usuario o un placeholder "[adjunto]").
+ *
+ * Path convención: `<conversacion_id>/<mensaje_id>/<filename>`.
+ *
+ * Restricciones:
+ *   - Tipos permitidos: png, jpeg, webp, heic, pdf.
+ *     (audios / video → fase posterior con MediaRecorder.)
+ *   - Tamaño máx: 25 MB (coincide con límite del bucket).
+ */
+
+import { NextResponse, type NextRequest } from 'next/server';
+
+import { createServerClient } from '@/lib/supabase/server';
+import { sendMensajeAction } from '@/services/mensajes/actions';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const ALLOWED = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/heic',
+  'application/pdf',
+]);
+const MAX_BYTES = 25 * 1024 * 1024;
+
+function tipoFromMime(mime: string): 'archivo' | 'imagen' {
+  if (mime.startsWith('image/')) return 'imagen';
+  return 'archivo';
+}
+
+function sanitizeFilename(name: string): string {
+  const clean = name.normalize('NFKD').replace(/[^\w.\- ]/g, '_').trim();
+  return clean.slice(0, 120) || 'archivo';
+}
+
+export async function POST(req: NextRequest): Promise<Response> {
+  const supabase = createServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'form_invalido' }, { status: 400 });
+  }
+
+  const file = form.get('file');
+  const conversacionId = String(form.get('conversation_id') ?? '');
+  const bodyRaw = String(form.get('body') ?? '').trim();
+
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: 'file_requerido' }, { status: 400 });
+  }
+  if (!/^[0-9a-f-]{36}$/i.test(conversacionId)) {
+    return NextResponse.json({ error: 'conversacion_invalida' }, { status: 400 });
+  }
+  if (!ALLOWED.has(file.type)) {
+    return NextResponse.json(
+      { error: 'mime_no_soportado', mime: file.type },
+      { status: 415 }
+    );
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
+  }
+
+  const nombre = sanitizeFilename(file.name);
+  const body = bodyRaw || `📎 ${nombre}`;
+
+  // 1) Crear mensaje (RPC valida length/trim). Devuelve la fila.
+  const msgRes = await sendMensajeAction(conversacionId, body);
+  if (!msgRes.ok) {
+    return NextResponse.json(
+      { error: msgRes.message, code: msgRes.code },
+      { status: msgRes.code === 'forbidden' ? 403 : 400 }
+    );
+  }
+  const mensajeId = msgRes.mensaje.id;
+  const storagePath = `${conversacionId}/${mensajeId}/${nombre}`;
+
+  // 2) Subir binario al bucket (privado)
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const { error: upErr } = await supabase.storage
+    .from('chat-adjuntos')
+    .upload(storagePath, bytes, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: '3600',
+    });
+
+  if (upErr) {
+    // rollback blanco: no podemos borrar el mensaje (RPC lo insertó), pero
+    // dejamos un error claro para el cliente.
+    return NextResponse.json(
+      { error: `storage_failed: ${upErr.message}` },
+      { status: 500 }
+    );
+  }
+
+  // 3) Registrar adjunto en tabla
+  const { data: adjunto, error: insErr } = await supabase
+    .from('mensajes_adjuntos')
+    .insert({
+      mensaje_id: mensajeId,
+      storage_path: storagePath,
+      nombre,
+      mime: file.type,
+      size_bytes: file.size,
+      tipo: tipoFromMime(file.type),
+    } as never)
+    .select('id')
+    .single<{ id: string }>();
+
+  if (insErr) {
+    // best-effort cleanup del binario
+    await supabase.storage.from('chat-adjuntos').remove([storagePath]);
+    return NextResponse.json({ error: insErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    mensaje_id: mensajeId,
+    adjunto_id: adjunto.id,
+    storage_path: storagePath,
+  });
+}

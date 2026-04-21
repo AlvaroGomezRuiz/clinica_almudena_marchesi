@@ -2,9 +2,10 @@
 // -----------------------------------------------------------------------------
 // Recibe eventos de Stripe (sin JWT porque Stripe no manda uno), verifica la
 // firma HMAC-SHA256 con STRIPE_WEBHOOK_SECRET, y procesa los eventos soportados:
-//   * checkout.session.completed       → confirma cita o crea bono
-//   * checkout.session.async_payment_succeeded  (SEPA) → idem
-//   * payment_intent.payment_failed    → marca pago fallido
+//   * checkout.session.completed                → confirma cita o crea bono
+//   * checkout.session.async_payment_succeeded  → idem (SEPA, Klarna)
+//   * payment_intent.succeeded                  → idem (Payment Element embebido)
+//   * payment_intent.payment_failed             → marca pago fallido
 //
 // Idempotencia: pagos.stripe_event_id UNIQUE + tabla stripe_events.
 // Toda la mutación va vía RPC SECURITY DEFINER procesar_pago_stripe.
@@ -14,6 +15,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { verifyWebhookSignature } from "../_shared/stripe.ts";
+import { captureEdgeError, captureEdgeMessage } from "../_shared/sentry.ts";
 
 interface StripeEvent {
   id: string;
@@ -48,6 +50,10 @@ Deno.serve(async (req) => {
     | null;
 
   if (!event) {
+    captureEdgeMessage("stripe webhook invalid signature", {
+      area: "stripe-webhook",
+      fingerprint: ["stripe-webhook", "invalid-signature"],
+    }, "warning");
     return json({ error: "invalid_signature" }, 400);
   }
 
@@ -75,6 +81,8 @@ Deno.serve(async (req) => {
       event.type === "checkout.session.async_payment_succeeded"
     ) {
       await handleCheckoutCompleted(admin, event);
+    } else if (event.type === "payment_intent.succeeded") {
+      await handlePaymentIntentSucceeded(admin, event);
     } else if (event.type === "payment_intent.payment_failed") {
       await handlePaymentFailed(admin, event);
     }
@@ -92,6 +100,14 @@ Deno.serve(async (req) => {
       .from("stripe_events")
       .update({ processing_error: msg })
       .eq("id", event.id);
+
+    // Sentry: crítico, alertar a Almudena. Un webhook que revienta = pago perdido.
+    captureEdgeError(err, {
+      area: "stripe-webhook",
+      event_type: event.type,
+      entity_id: event.id,
+      fingerprint: ["stripe-webhook", event.type],
+    });
 
     // Stripe reintentará si devolvemos 5xx (hasta 72h con backoff).
     return json({ error: "processing_error", detail: msg }, 500);
@@ -157,6 +173,70 @@ async function handleCheckoutCompleted(
   if (!result || result.ya_procesado) return;
 
   // Disparar email de confirmación (fire-and-forget, no bloqueamos el webhook)
+  if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
+    await triggerBookingEmail(userId, metadata.cita_id);
+  }
+}
+
+async function handlePaymentIntentSucceeded(
+  admin: ReturnType<typeof createClient>,
+  event: StripeEvent,
+): Promise<void> {
+  const pi = event.data.object;
+  if (!pi || pi.status !== "succeeded") return;
+
+  // Si el PI forma parte de un Checkout Session, ignoramos: lo procesa el
+  // handler de checkout.session.completed (evitamos doble inserción).
+  // Los PaymentIntents creados por Checkout incluyen invoice o metadata.session_id,
+  // pero la señal más fiable es comprobar si la Session existe.
+  const metadata = (pi.metadata ?? {}) as Record<string, string>;
+  const kind = metadata.kind;
+  const userId = metadata.user_id;
+
+  if (!userId || (kind !== "cita" && kind !== "bono")) {
+    // Sin metadata nuestra → no es un pago del portal, ignorar.
+    return;
+  }
+
+  // Anti-doble-procesado: si ya existe un pago con este PI, salimos.
+  const { data: existing } = await admin
+    .from("pagos")
+    .select("id")
+    .eq("stripe_payment_intent", pi.id)
+    .maybeSingle();
+  if (existing) return;
+
+  const metodo: string | null =
+    pi.charges?.data?.[0]?.payment_method_details?.type ??
+    pi.payment_method_types?.[0] ??
+    null;
+
+  const { data, error } = await admin.rpc("procesar_pago_stripe", {
+    p_stripe_event_id:       event.id,
+    p_stripe_session_id:     null,
+    p_stripe_payment_intent: pi.id,
+    p_stripe_customer_id:    pi.customer ?? null,
+    p_user_id:               userId,
+    p_cita_id:               kind === "cita" ? (metadata.cita_id ?? null) : null,
+    p_bono_config_id:        kind === "bono" ? (metadata.bono_config_id ?? null) : null,
+    p_importe_centimos:      pi.amount_received ?? pi.amount ?? 0,
+    p_moneda:                (pi.currency ?? "eur").toUpperCase(),
+    p_metodo:                metodo,
+    p_metadata:              metadata,
+  });
+
+  if (error) throw new Error(`procesar_pago_stripe: ${error.message}`);
+
+  const result = (Array.isArray(data) ? data[0] : data) as {
+    pago_id: string;
+    cita_confirmada: boolean;
+    bono_creado: boolean;
+    bono_id: string | null;
+    ya_procesado: boolean;
+  } | null;
+
+  if (!result || result.ya_procesado) return;
+
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
     await triggerBookingEmail(userId, metadata.cita_id);
   }

@@ -72,7 +72,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://vercel.live;",
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live; connect-src 'self' https://vitals.vercel-insights.com https://vercel.live https://*.ingest.de.sentry.io https://*.ingest.sentry.io; worker-src 'self' blob:;",
           },
           // Prevenir XSS (legacy browsers)
           {
@@ -106,4 +106,39 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// ─── SENTRY ───
+// withSentryConfig envuelve el config de Next para: (1) subir source maps en
+// build a Sentry (si hay AUTH_TOKEN), (2) tunnelar eventos para saltar ad-blockers,
+// (3) tree-shake los imports de Sentry en client.
+const { withSentryConfig } = require('@sentry/nextjs');
+
+module.exports = withSentryConfig(nextConfig, {
+  // Org/project — relleno opcional; sin AUTH_TOKEN solo se usan para el tunnel.
+  org: process.env.SENTRY_ORG || undefined,
+  project: process.env.SENTRY_PROJECT || undefined,
+
+  // Silenciar logs de build en local. En CI Vercel los deja visibles.
+  silent: !process.env.CI,
+
+  // Upload de source maps: solo si Vercel tiene el token configurado.
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Tunnel: enmascara peticiones Sentry detrás de nuestro dominio → evade
+  // ad-blockers y ofusca el DSN. Ruta dedicada /monitoring.
+  tunnelRoute: '/monitoring',
+
+  // No adjuntar stacktraces de node_modules (ruido y riesgo de leak de código).
+  widenClientFileUpload: false,
+
+  // Deshabilitar telemetría de Sentry Next.js (no les mandamos build data).
+  telemetry: false,
+
+  // No subir source maps si no hay AUTH_TOKEN (evita errores en build local).
+  disableLogger: true,
+
+  // Seguridad: borrar los source maps después de subirlos a Sentry. Así no
+  // quedan expuestos en el dominio público (evita reverse engineering).
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+});

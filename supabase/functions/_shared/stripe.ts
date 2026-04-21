@@ -96,7 +96,13 @@ export interface CreateCheckoutInput {
   metadata: Record<string, string>;
   line_items: CheckoutLineItem[];
   idempotency_key: string;
+  /**
+   * Si se omite o es true, Stripe elige automáticamente todos los métodos
+   * habilitados en Dashboard (card + Apple/Google Pay + Klarna + Bizum...).
+   * Si se pasa un array, se usa `payment_method_types` explícito.
+   */
   payment_method_types?: string[];
+  automatic_payment_methods?: boolean;
   locale?: string;
 }
 
@@ -114,6 +120,10 @@ export interface CheckoutSession {
 export async function createCheckoutSession(
   input: CreateCheckoutInput,
 ): Promise<CheckoutSession> {
+  const usarAuto =
+    input.automatic_payment_methods ??
+    (input.payment_method_types === undefined);
+
   const body: Record<string, unknown> = {
     mode: "payment",
     customer_email: input.customer_email,
@@ -121,7 +131,6 @@ export async function createCheckoutSession(
     cancel_url: input.cancel_url,
     client_reference_id: input.client_reference_id,
     locale: input.locale ?? "es",
-    payment_method_types: input.payment_method_types ?? ["card"],
     metadata: input.metadata,
     line_items: input.line_items.map((it) => ({
       price_data: {
@@ -134,11 +143,19 @@ export async function createCheckoutSession(
       },
       quantity: it.quantity ?? 1,
     })),
-    "payment_intent_data[metadata]": undefined, // placeholder
   };
 
-  // metadata tambien dentro del PaymentIntent (para que el webhook lo tenga
-  // accesible tanto si escuchamos checkout.session.completed como payment_intent.succeeded)
+  // Métodos de pago: auto (wallets + Klarna) o lista explícita.
+  if (usarAuto) {
+    body["automatic_payment_methods[enabled]"] = "true";
+    body["automatic_payment_methods[allow_redirects]"] = "always";
+  } else if (input.payment_method_types && input.payment_method_types.length > 0) {
+    body.payment_method_types = input.payment_method_types;
+  }
+
+  // metadata también dentro del PaymentIntent (para que el webhook lo tenga
+  // accesible tanto si escuchamos checkout.session.completed como
+  // payment_intent.succeeded).
   for (const [k, v] of Object.entries(input.metadata)) {
     body[`payment_intent_data[metadata][${k}]`] = v;
   }
@@ -148,6 +165,57 @@ export async function createCheckoutSession(
     "POST",
     body,
     input.idempotency_key,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PaymentIntents (para Payment Element embebido)
+// ---------------------------------------------------------------------------
+
+export interface CreatePaymentIntentInput {
+  amount_centimos: number;
+  currency?: string;                    // 'eur' por defecto
+  customer_email: string;
+  description?: string;
+  metadata: Record<string, string>;
+  idempotency_key: string;
+  /** Si true → automatic_payment_methods + allow_redirects=always (Klarna, etc). */
+  automatic_payment_methods?: boolean;
+  /** Si se omite, se usa la moneda por defecto (EUR). */
+  receipt_email?: string;
+}
+
+export interface PaymentIntent {
+  id: string;
+  client_secret: string;
+  status: string;
+  amount: number;
+  currency: string;
+  metadata?: Record<string, string>;
+}
+
+export async function createPaymentIntent(
+  input: CreatePaymentIntentInput
+): Promise<PaymentIntent> {
+  const body: Record<string, unknown> = {
+    amount: input.amount_centimos,
+    currency: input.currency ?? "eur",
+    receipt_email: input.receipt_email ?? input.customer_email,
+    description: input.description,
+    metadata: input.metadata,
+  };
+
+  const auto = input.automatic_payment_methods ?? true;
+  if (auto) {
+    body["automatic_payment_methods[enabled]"] = "true";
+    body["automatic_payment_methods[allow_redirects]"] = "always";
+  }
+
+  return await stripeRequest<PaymentIntent>(
+    "/payment_intents",
+    "POST",
+    body,
+    input.idempotency_key
   );
 }
 

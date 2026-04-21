@@ -1,0 +1,87 @@
+/**
+ * POST /api/admin/avatar/upload
+ *
+ * Sube una imagen al bucket `avatares` y actualiza `profiles.avatar_url`.
+ * Path: `<user_id>/avatar.<ext>` (overwrite=true para UX "reemplazar").
+ * Público (bucket público) pero el nombre es predecible → sirve como URL estable.
+ */
+
+import { NextResponse, type NextRequest } from 'next/server';
+
+import { createServerClient } from '@/lib/supabase/server';
+import { getSupabaseEnv } from '@/lib/supabase/env';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const MAX_BYTES = 2 * 1024 * 1024; // 2MB
+
+export async function POST(req: NextRequest): Promise<Response> {
+  const supabase = createServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'form_invalido' }, { status: 400 });
+  }
+
+  const file = form.get('file');
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: 'file_requerido' }, { status: 400 });
+  }
+  if (!ALLOWED.has(file.type)) {
+    return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
+  }
+
+  const extByMime: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/webp': 'webp',
+  };
+  const ext = extByMime[file.type] ?? 'png';
+  const path = `${user.id}/avatar.${ext}`;
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  const { error: uploadErr } = await supabase.storage
+    .from('avatares')
+    .upload(path, bytes, {
+      contentType: file.type,
+      upsert: true,
+      cacheControl: '60',
+    });
+
+  if (uploadErr) {
+    return NextResponse.json({ error: uploadErr.message }, { status: 500 });
+  }
+
+  // Construimos URL pública estable (bucket `avatares` es público)
+  const { url: supaUrl } = getSupabaseEnv();
+  const publicUrl = `${supaUrl}/storage/v1/object/public/avatares/${path}?v=${Date.now()}`;
+
+  const { error: updErr } = await supabase
+    .from('profiles')
+    .update({
+      avatar_url: publicUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', user.id);
+
+  if (updErr) {
+    return NextResponse.json({ error: updErr.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, url: publicUrl });
+}

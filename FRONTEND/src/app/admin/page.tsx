@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+import AdminFab from '@/components/admin/AdminFab';
+import QuickNotes from '@/components/admin/QuickNotes';
 import {
   Button,
   Chip,
@@ -61,6 +63,9 @@ export default async function AdminInicioPage() {
     { data: pagosMes },
     { data: conversaciones },
     { count: citasSemanaCount },
+    { data: bonosAlerta },
+    { data: rgpdPendientes },
+    { data: notaGlobal },
   ] = await Promise.all([
     supabase
       .from('pacientes')
@@ -90,6 +95,24 @@ export default async function AdminInicioPage() {
       .gte('inicio', semanaStart)
       .lte('inicio', semanaEnd)
       .in('estado', ['confirmada', 'completada']),
+    supabase
+      .from('bonos_pacientes')
+      .select('id, paciente_id, sesiones_totales, sesiones_consumidas, fecha_expiracion')
+      .eq('estado', 'activo')
+      .eq('activo', true)
+      .order('sesiones_consumidas', { ascending: false })
+      .limit(20),
+    supabase
+      .from('rgpd_requests')
+      .select('id, tipo, estado, created_at, fecha_limite, user_id')
+      .in('estado', ['pendiente', 'en_revision'])
+      .order('created_at', { ascending: true })
+      .limit(10),
+    supabase
+      .from('facturacion_nota')
+      .select('nota')
+      .eq('id', 1)
+      .maybeSingle<{ nota: string }>(),
   ]);
 
   const pagosMesList = (pagosMes as PagoRecienteRow[] | null) ?? [];
@@ -103,6 +126,37 @@ export default async function AdminInicioPage() {
     (acc, p) => acc + p.importe_centimos,
     0
   ) ?? 0;
+
+  // Bonos con <= 2 sesiones restantes o expirando en <= 14 días
+  type BonoAlertaRow = {
+    id: string;
+    paciente_id: string;
+    sesiones_totales: number;
+    sesiones_consumidas: number;
+    fecha_expiracion: string | null;
+  };
+  const bonosList = (bonosAlerta as BonoAlertaRow[] | null) ?? [];
+  const hoy = new Date();
+  const alertasBonos = bonosList
+    .map((b) => ({
+      ...b,
+      restantes: b.sesiones_totales - b.sesiones_consumidas,
+      diasRestantes: b.fecha_expiracion
+        ? Math.floor((new Date(b.fecha_expiracion).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24))
+        : null,
+    }))
+    .filter((b) => b.restantes <= 2 || (b.diasRestantes !== null && b.diasRestantes <= 14));
+
+  type RgpdPendienteRow = {
+    id: string;
+    tipo: string;
+    estado: string;
+    created_at: string;
+    fecha_limite: string;
+    user_id: string;
+  };
+  const rgpdList = (rgpdPendientes as RgpdPendienteRow[] | null) ?? [];
+  const notaInicial = notaGlobal?.nota ?? '';
 
   return (
     <>
@@ -306,6 +360,76 @@ export default async function AdminInicioPage() {
           </div>
         </SurfaceCard>
       </section>
+
+      {/* ─── Alertas operativas + notas rápidas ─── */}
+      <section className="mt-16 grid gap-6 lg:grid-cols-[1.35fr_1fr] portal-rise portal-rise-delay-3">
+        <SurfaceCard>
+          <header className="mb-6 flex items-end justify-between">
+            <div>
+              <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted">
+                Alertas operativas
+              </p>
+              <h3 className="mt-2 font-display text-[1.375rem] italic text-ink leading-none tracking-[-0.01em]">
+                Bonos por agotar · RGPD pendiente
+              </h3>
+            </div>
+            <Chip tone={alertasBonos.length + rgpdList.length > 0 ? 'warning' : 'positive'}>
+              {alertasBonos.length + rgpdList.length} eventos
+            </Chip>
+          </header>
+
+          {alertasBonos.length === 0 && rgpdList.length === 0 ? (
+            <p className="font-body text-[0.88rem] text-ink-soft py-6 text-center">
+              Sin alertas. Todo bajo control.
+            </p>
+          ) : (
+            <ul className="-mx-2 divide-y divide-ink/5 dark:divide-white/5">
+              {alertasBonos.slice(0, 5).map((b) => (
+                <li key={b.id} className="flex items-center justify-between gap-4 px-2 py-3">
+                  <div className="min-w-0">
+                    <p className="font-display text-[1rem] text-ink tabular-nums tracking-[-0.01em]">
+                      Bono · {b.restantes} {b.restantes === 1 ? 'sesión restante' : 'sesiones restantes'}
+                    </p>
+                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted">
+                      {b.diasRestantes !== null
+                        ? `Expira en ${b.diasRestantes} ${b.diasRestantes === 1 ? 'día' : 'días'}`
+                        : 'Sin fecha de expiración'}
+                    </p>
+                  </div>
+                  <Link href={`/admin/pacientes/${b.paciente_id}`}>
+                    <Button variant="ghost" size="sm" icon="arrow_outward">
+                      Paciente
+                    </Button>
+                  </Link>
+                </li>
+              ))}
+              {rgpdList.slice(0, 5).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-4 px-2 py-3">
+                  <div className="min-w-0">
+                    <p className="font-display text-[1rem] text-ink tracking-[-0.01em] capitalize">
+                      RGPD · {r.tipo.replace(/_/g, ' ')}
+                    </p>
+                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted">
+                      Límite: {format(new Date(r.fecha_limite), "d MMM yyyy", { locale: es })} · Estado: {r.estado}
+                    </p>
+                  </div>
+                  <Link href="/admin/configuracion">
+                    <Button variant="ghost" size="sm" icon="privacy_tip">
+                      Gestionar
+                    </Button>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SurfaceCard>
+
+        <SurfaceCard>
+          <QuickNotes initial={notaInicial} />
+        </SurfaceCard>
+      </section>
+
+      <AdminFab />
     </>
   );
 }

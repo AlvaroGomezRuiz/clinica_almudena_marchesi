@@ -116,6 +116,8 @@ Deno.serve(async (req) => {
           amount_centimos: ctx.importe_centimos,
           quantity: 1,
         }],
+        automatic_payment_methods: true,
+        locale: "es",
         idempotency_key: `cita-${ctx.cita_id}-${user.id}`,
       });
 
@@ -153,6 +155,8 @@ Deno.serve(async (req) => {
           amount_centimos: ctx.importe_centimos,
           quantity: 1,
         }],
+        automatic_payment_methods: true,
+        locale: "es",
         idempotency_key: idempotencyKey,
       });
 

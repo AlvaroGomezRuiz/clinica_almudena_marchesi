@@ -11,12 +11,13 @@
  *   - Si slot_ocupado → refresca disponibilidad sin perder scroll.
  */
 
-import { addDays, format, isSameDay, startOfDay } from 'date-fns';
+import { addDays, format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
-import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
+import MonthCalendar from '@/components/booking/MonthCalendar';
+import { Chip, SurfaceCard } from '@/components/portal-shell/ui';
 import {
   getDisponibilidadAction,
   reservarCitaAction,
@@ -38,7 +39,7 @@ interface SlotPickerProps {
   readonly preseleccionadoId?: string;
 }
 
-const HORIZON_DAYS = 14;
+const HORIZON_DAYS = 60;
 
 function euro(c: number): string {
   return (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -51,10 +52,7 @@ export default function SlotPicker({
 }: SlotPickerProps) {
   const router = useRouter();
   const today = useMemo(() => startOfDay(new Date()), []);
-  const days = useMemo(
-    () => Array.from({ length: HORIZON_DAYS }, (_, i) => addDays(today, i)),
-    [today]
-  );
+  const maxDate = useMemo(() => addDays(today, HORIZON_DAYS), [today]);
 
   const [servicioId, setServicioId] = useState<string>(
     preseleccionadoId && servicios.some((s) => s.id === preseleccionadoId)
@@ -186,63 +184,28 @@ export default function SlotPicker({
         </ul>
       </SurfaceCard>
 
-      {/* ── Paso 2: día ── */}
+      {/* ── Paso 2: día (calendario mensual) ── */}
       <SurfaceCard>
         <header className="mb-4 flex items-baseline justify-between gap-3">
           <div>
-            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted">
+            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
               Paso 2
             </p>
-            <h2 className="mt-1 font-display text-[1.25rem] italic text-ink tracking-[-0.01em]">
+            <h2 className="mt-1 font-display text-[1.25rem] italic tracking-[-0.01em] text-ink dark:text-white">
               Escoge el día
             </h2>
+            <p className="mt-1 font-body text-[0.78rem] text-ink-soft dark:text-white/60">
+              Navega por los próximos {HORIZON_DAYS} días. Selecciona cualquier día y abajo verás los huecos reales.
+            </p>
           </div>
         </header>
 
-        <div
-          className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:thin] snap-x snap-mandatory"
-          role="radiogroup"
-          aria-label="Días disponibles"
-        >
-          {days.map((d) => {
-            const selected = isSameDay(d, fecha);
-            const weekday = format(d, 'EEE', { locale: es });
-            const dayNum = format(d, 'd');
-            const month = format(d, 'MMM', { locale: es });
-            return (
-              <button
-                key={d.toISOString()}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setFecha(d)}
-                className={`snap-start shrink-0 flex flex-col items-center gap-0.5 rounded-2xl px-4 py-3 min-w-[76px] transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
-                  selected
-                    ? 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_14px_32px_-14px_rgba(75,100,95,0.45)]'
-                    : 'bg-white/55 text-ink hover:bg-white/80 ring-1 ring-inset ring-white/50 hover:-translate-y-[2px]'
-                }`}
-              >
-                <span
-                  className={`font-body text-[0.6rem] uppercase tracking-[0.2em] ${
-                    selected ? 'text-on-primary/80' : 'text-ink-muted'
-                  }`}
-                >
-                  {weekday}
-                </span>
-                <span className="font-display text-[1.5rem] italic tabular-nums leading-none tracking-[-0.02em]">
-                  {dayNum}
-                </span>
-                <span
-                  className={`font-body text-[0.6rem] uppercase tracking-[0.18em] ${
-                    selected ? 'text-on-primary/80' : 'text-ink-muted'
-                  }`}
-                >
-                  {month}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <MonthCalendar
+          selected={fecha}
+          onSelect={(d) => setFecha(d)}
+          minDate={today}
+          maxDate={maxDate}
+        />
       </SurfaceCard>
 
       {/* ── Paso 3: slots ── */}
@@ -327,7 +290,7 @@ export default function SlotPicker({
         ) : null}
 
         {reservando ? (
-          <p className="mt-3 inline-flex items-center gap-1.5 font-body text-[0.78rem] text-ink-soft">
+          <p className="mt-3 inline-flex items-center gap-1.5 font-body text-[0.78rem] text-ink-soft dark:text-white/65">
             <span className="material-symbols-outlined text-[0.95rem] animate-spin" aria-hidden="true">
               sync
             </span>
@@ -335,6 +298,54 @@ export default function SlotPicker({
           </p>
         ) : null}
       </SurfaceCard>
+
+      {/* ── Resumen de la reserva ── */}
+      {servicio ? (
+        <SurfaceCard className="bg-white/40 dark:bg-white/[0.03]">
+          <header className="mb-3 flex items-baseline justify-between">
+            <h2 className="font-display text-[1.05rem] italic text-ink dark:text-white">
+              Resumen
+            </h2>
+            <p className="font-body text-[0.7rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+              Antes de confirmar
+            </p>
+          </header>
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <dt className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
+                Servicio
+              </dt>
+              <dd className="mt-1 font-display text-[0.95rem] italic text-ink dark:text-white">
+                {servicio.nombre}
+              </dd>
+              <p className="font-body text-[0.75rem] text-ink-soft dark:text-white/65">
+                {servicio.duracion_minutos} min
+              </p>
+            </div>
+            <div>
+              <dt className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
+                Día elegido
+              </dt>
+              <dd className="mt-1 font-display text-[0.95rem] italic text-ink dark:text-white">
+                {format(fecha, "EEEE d 'de' MMMM", { locale: es })}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
+                Importe
+              </dt>
+              <dd className="mt-1 font-display text-[1.1rem] italic tabular-nums text-primary">
+                {tieneBono ? 'Cubierto por tu bono' : euro(servicio.precio_centimos)}
+              </dd>
+              <p className="font-body text-[0.72rem] text-ink-soft dark:text-white/65">
+                {tieneBono
+                  ? 'Se descontará 1 sesión al confirmar.'
+                  : 'Se reservará el hueco 15 min mientras pagas con tarjeta o wallet.'}
+              </p>
+            </div>
+          </dl>
+        </SurfaceCard>
+      ) : null}
     </div>
   );
 }

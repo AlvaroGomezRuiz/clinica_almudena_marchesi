@@ -28,8 +28,18 @@ import {
   type KeyboardEvent,
 } from 'react';
 
+import ChatAttachButton from '@/components/chat/ChatAttachButton';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { marcarLeidosAction, sendMensajeAction } from '@/services/mensajes/actions';
+
+export interface ChatAdjunto {
+  readonly id: string;
+  readonly nombre: string;
+  readonly mime: string | null;
+  readonly size_bytes: number | null;
+  readonly tipo: 'archivo' | 'imagen' | 'audio' | 'video';
+  readonly signed_url: string | null;
+}
 
 export interface ChatMensaje {
   readonly id: string;
@@ -38,6 +48,7 @@ export interface ChatMensaje {
   readonly body_ciphertext: string;
   readonly created_at: string;
   readonly read_at: string | null;
+  readonly adjuntos?: readonly ChatAdjunto[];
   readonly pending?: boolean;
   readonly failed?: boolean;
 }
@@ -204,29 +215,29 @@ export default function ChatPanel({
 
   return (
     <section
-      className="relative flex h-[calc(100vh-220px)] min-h-[480px] flex-col overflow-hidden rounded-[1.625rem] bg-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_20px_48px_-24px_rgba(75,100,95,0.14)] backdrop-blur-xl"
+      className="relative flex h-[calc(100vh-220px)] min-h-[480px] flex-col overflow-hidden rounded-[1.625rem] bg-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_20px_48px_-24px_rgba(75,100,95,0.14)] backdrop-blur-xl dark:bg-[#161616]/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_48px_-24px_rgba(0,0,0,0.6)]"
       aria-label="Conversación de chat"
     >
       {/* Cabecera */}
       <header className="flex items-center justify-between gap-3 px-6 py-4">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-            <span className="material-symbols-outlined text-[1.25rem] text-primary" aria-hidden="true">
+          <span className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:bg-primary/25 dark:ring-primary/30 dark:shadow-none">
+            <span className="material-symbols-outlined text-[1.25rem] text-primary dark:text-white" aria-hidden="true">
               person
             </span>
           </span>
           <div className="min-w-0">
-            <p className="font-display text-[1.05rem] italic text-ink leading-tight tracking-[-0.01em] truncate">
+            <p className="font-display text-[1.05rem] italic text-ink leading-tight tracking-[-0.01em] truncate dark:text-white">
               {otherLabel}
             </p>
             {otherSubtitle ? (
-              <p className="font-body text-[0.72rem] text-ink-muted truncate">{otherSubtitle}</p>
+              <p className="font-body text-[0.72rem] text-ink-muted truncate dark:text-white/55">{otherSubtitle}</p>
             ) : null}
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/50 ring-1 ring-inset ring-white/50 px-2.5 py-1 backdrop-blur-md">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/50 ring-1 ring-inset ring-white/50 px-2.5 py-1 backdrop-blur-md dark:bg-white/5 dark:ring-white/10">
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
-          <span className="font-body text-[0.65rem] uppercase tracking-[0.18em] text-ink-soft">
+          <span className="font-body text-[0.65rem] uppercase tracking-[0.18em] text-ink-soft dark:text-white/60">
             En vivo
           </span>
         </span>
@@ -283,7 +294,7 @@ export default function ChatPanel({
       {/* Composer */}
       <form
         onSubmit={onSubmit}
-        className="relative border-t border-ink/5 bg-white/40 backdrop-blur-md px-3 py-3 md:px-5"
+        className="relative border-t border-ink/5 bg-white/40 backdrop-blur-md px-3 py-3 md:px-5 dark:border-white/5 dark:bg-white/[0.02]"
       >
         {error ? (
           <p
@@ -298,6 +309,10 @@ export default function ChatPanel({
         ) : null}
 
         <div className="flex items-end gap-2">
+          <ChatAttachButton
+            conversationId={conversacionId}
+            disabled={isPending}
+          />
           <textarea
             name="mensaje"
             rows={1}
@@ -306,7 +321,7 @@ export default function ChatPanel({
             onKeyDown={onTextareaKey}
             placeholder="Escribe un mensaje… (Enter para enviar · Shift+Enter salto)"
             maxLength={MAX_LENGTH}
-            className="flex-1 resize-none rounded-2xl bg-white/80 px-4 py-3 font-body text-[0.92rem] leading-relaxed text-ink placeholder:text-ink-muted/80 ring-1 ring-inset ring-ink/8 outline-none transition-[box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] focus:bg-white focus:ring-primary/40"
+            className="flex-1 resize-none rounded-2xl bg-white/80 px-4 py-3 font-body text-[0.92rem] leading-relaxed text-ink placeholder:text-ink-muted/80 ring-1 ring-inset ring-ink/8 outline-none transition-[box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] focus:bg-white focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40 dark:ring-white/10 dark:focus:bg-white/10 dark:focus:ring-primary/60"
             aria-label="Escribir mensaje"
             disabled={isPending}
           />
@@ -322,7 +337,7 @@ export default function ChatPanel({
           </button>
         </div>
 
-        <p className="mt-1.5 flex items-center justify-between font-body text-[0.65rem] text-ink-muted">
+        <p className="mt-1.5 flex items-center justify-between font-body text-[0.65rem] text-ink-muted dark:text-white/55">
           <span>Los mensajes se envían cifrados en tránsito (TLS) y quedan archivados.</span>
           <span className="tabular-nums">
             {draft.length}/{MAX_LENGTH}
@@ -341,13 +356,69 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
     'max-w-[78%] rounded-2xl px-4 py-2.5 font-body text-[0.92rem] leading-[1.5] whitespace-pre-wrap break-words shadow-[0_6px_20px_-14px_rgba(28,28,25,0.3)]';
   const own = mensaje.failed
     ? 'bg-[#b2675e]/85 text-white'
-    : 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_-12px_rgba(75,100,95,0.45)]';
-  const other = 'bg-white text-ink ring-1 ring-inset ring-ink/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_-14px_rgba(28,28,25,0.2)]';
+    : 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_-12px_rgba(75,100,95,0.45)] dark:bg-primary-dark dark:text-white';
+  const other =
+    'bg-white text-ink ring-1 ring-inset ring-ink/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_-14px_rgba(28,28,25,0.2)] dark:bg-white/5 dark:text-white dark:ring-white/10 dark:shadow-none';
+
+  const adjuntos = mensaje.adjuntos ?? [];
 
   return (
     <div className={`my-1 flex ${esMio ? 'justify-end' : 'justify-start'}`}>
       <div className={`${base} ${esMio ? own : other} ${mensaje.pending ? 'opacity-70' : ''}`}>
         <p>{mensaje.body_ciphertext}</p>
+        {adjuntos.length > 0 ? (
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {adjuntos.map((a) => (
+              <li key={a.id}>
+                {a.tipo === 'imagen' && a.signed_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <a href={a.signed_url} target="_blank" rel="noreferrer">
+                    <img
+                      src={a.signed_url}
+                      alt={a.nombre}
+                      className="max-h-56 max-w-full rounded-xl object-cover ring-1 ring-inset ring-white/40"
+                    />
+                  </a>
+                ) : a.signed_url ? (
+                  <a
+                    href={a.signed_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 ring-1 ring-inset transition ${
+                      esMio
+                        ? 'bg-white/15 ring-white/20 text-on-primary hover:bg-white/25'
+                        : 'bg-white ring-ink/10 text-ink hover:bg-white/80 dark:bg-white/10 dark:text-white dark:ring-white/15'
+                    }`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[1rem]"
+                      aria-hidden="true"
+                    >
+                      {a.mime === 'application/pdf' ? 'picture_as_pdf' : 'attach_file'}
+                    </span>
+                    <span className="max-w-[220px] truncate font-body text-[0.8rem]">
+                      {a.nombre}
+                    </span>
+                  </a>
+                ) : (
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 font-body text-[0.78rem] opacity-70 ring-1 ring-inset ${
+                      esMio ? 'ring-white/20' : 'ring-ink/10 dark:ring-white/15'
+                    }`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[1rem]"
+                      aria-hidden="true"
+                    >
+                      lock
+                    </span>
+                    {a.nombre} (no disponible)
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <p
           className={`mt-1 flex items-center gap-1 font-body text-[0.62rem] tabular-nums ${
             esMio ? 'justify-end text-on-primary/75' : 'text-ink-muted'

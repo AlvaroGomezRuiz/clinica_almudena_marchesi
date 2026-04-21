@@ -241,3 +241,66 @@ export function renderNuevaAsignacion(data: NuevaAsignacionData): { subject: str
   const text = `Nuevo recurso asignado: ${data.titulo_recurso} (${data.tipo_recurso})\n\nVer en el portal: ${data.app_url}/portal/recursos`;
   return { subject: `Nuevo recurso: ${data.titulo_recurso}`, html, text };
 }
+
+// ---------------------------------------------------------------------------
+// RGPD — acuse de recibo + exportación lista
+// ---------------------------------------------------------------------------
+
+const TIPO_LABELS: Record<string, string> = {
+  exportar: "exportación de datos",
+  borrado: "supresión (baja de cuenta)",
+  rectificar: "rectificación",
+  oposicion: "oposición al tratamiento",
+  portabilidad: "portabilidad",
+  limitacion: "limitación del tratamiento",
+};
+
+export interface RgpdAckData {
+  display_name?: string | null;
+  tipo: string;
+  fecha_limite: string | null;
+  app_url: string;
+}
+
+export function renderRgpdAck(data: RgpdAckData): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const tipoLabel = TIPO_LABELS[data.tipo] ?? "solicitud RGPD";
+  const plazo = data.fecha_limite
+    ? formatDateEs(data.fecha_limite)
+    : "30 días naturales";
+  const html = shell(
+    `${eyebrow("Solicitud RGPD recibida")}
+     ${h1(name ? `Hemos recibido tu solicitud, ${name}` : "Solicitud RGPD recibida")}
+     <p style="margin:0 0 16px 0;">Tu solicitud de <strong>${escapeHtml(tipoLabel)}</strong> está registrada. Almudena te responderá en un plazo máximo de <strong>${escapeHtml(plazo)}</strong>, conforme al art. 12 del RGPD.</p>
+     <p style="margin:0 0 16px 0;">Puedes consultar el estado desde tu portal en cualquier momento.</p>
+     ${button("Ver estado", `${data.app_url}/portal/ajustes`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si la solicitud fue un error, contacta con nosotros respondiendo a este correo.</p>`,
+    { preheader: `Solicitud de ${tipoLabel} registrada`, appUrl: data.app_url },
+  );
+  const text = `Solicitud RGPD recibida: ${tipoLabel}\nPlazo de respuesta: ${plazo}\n\nVer estado: ${data.app_url}/portal/ajustes`;
+  return { subject: `Tu solicitud RGPD de ${tipoLabel}`, html, text };
+}
+
+export interface RgpdExportReadyData {
+  display_name?: string | null;
+  signed_url: string;
+  expires_at: string;
+  app_url: string;
+}
+
+export function renderRgpdExportReady(
+  data: RgpdExportReadyData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const expira = formatDateEs(data.expires_at);
+  const html = shell(
+    `${eyebrow("Exportación lista")}
+     ${h1(name ? `Tu copia está lista, ${name}` : "Tu copia de datos está lista")}
+     <p style="margin:0 0 16px 0;">Hemos preparado un archivo con todos tus datos personales, citas, pagos, mensajes y adjuntos. El enlace caduca el <strong>${escapeHtml(expira)}</strong> por seguridad.</p>
+     ${button("Descargar mi copia", data.signed_url)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si el enlace caduca, puedes solicitar una nueva exportación desde tu portal en cualquier momento.</p>`,
+    { preheader: "Tu exportación RGPD está lista.", appUrl: data.app_url },
+  );
+  const text = `Tu copia de datos está lista.\nEnlace (caduca ${expira}): ${data.signed_url}\n\nSi caduca, puedes solicitar otra desde ${data.app_url}/portal/ajustes`;
+  return { subject: "Tu copia de datos RGPD está lista", html, text };
+}

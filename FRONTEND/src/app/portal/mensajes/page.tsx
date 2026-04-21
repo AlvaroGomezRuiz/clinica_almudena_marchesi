@@ -3,8 +3,9 @@ import {
   PageHeader,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
-import ChatPanel, { type ChatMensaje } from '@/components/chat/ChatPanel';
+import ChatPanel from '@/components/chat/ChatPanel';
 import { createServerClient } from '@/lib/supabase/server';
+import { enrichMensajesWithAdjuntos } from '@/services/mensajes/fetch-adjuntos';
 
 export const metadata = { title: 'Mensajes | Portal Paciente' };
 export const dynamic = 'force-dynamic';
@@ -56,7 +57,9 @@ export default async function PortalMensajesPage() {
     .order('created_at', { ascending: true })
     .limit(200);
 
-  const mensajes: ChatMensaje[] = (mensajesRaw as MensajeRow[] | null) ?? [];
+  const mensajes = await enrichMensajesWithAdjuntos(
+    (mensajesRaw as MensajeRow[] | null) ?? []
+  );
 
   return (
     <>
