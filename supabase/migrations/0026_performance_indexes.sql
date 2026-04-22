@@ -1,85 +1,63 @@
 -- ============================================================================
 -- 0026_performance_indexes.sql
 -- ----------------------------------------------------------------------------
--- Índices compuestos para queries frecuentes detectadas en auditoría senior.
+-- Índices compuestos para queries clínicas frecuentes. Idempotente (IF NOT EXISTS).
 --
--- Patrones de query optimizados:
---   1. Ficha de paciente: últimas citas → paciente + inicio DESC
---   2. Agenda admin por rango: rango tstzrange + estado
---   3. Pagos del paciente: paciente + fecha_pago DESC
---   4. Facturación por rango: fecha_pago + estado
---   5. Mensajes por conversación: conversacion + created_at DESC
---   6. Adjuntos por mensaje: mensaje_id + created_at
+-- Patrones optimizados:
+--   1. Ficha de paciente: últimas citas → (paciente_id, inicio DESC)
+--   2. Dashboard admin: citas activas del día → parcial por estado
+--   3. Historial de pagos del paciente → (paciente_id, fecha_pago DESC)
+--   4. Facturación por estado + fecha → (estado, fecha_pago DESC)
+--   5. Chat: mensajes por conversación → (conversation_id, created_at DESC)
+--   6. Adjuntos: por mensaje → (mensaje_id, created_at ASC)
+--   7. Stripe events pendientes → parcial WHERE processed_at IS NULL
+--   8. Filtro admin por rol en profiles
 --
--- Estos NO reemplazan índices ya existentes; los COMPLEMENTAN.
--- `CONCURRENTLY` no se usa porque Supabase CLI no lo soporta en migrations.
--- En cambio, usamos `IF NOT EXISTS` para reejecución idempotente.
---
--- Todos los índices son B-tree salvo el GIST ya existente sobre tstzrange.
+-- Estos NO reemplazan índices existentes; los COMPLEMENTAN.
+-- `CONCURRENTLY` no se usa porque Supabase migrations corren en transacción.
+-- Al final, ANALYZE de las tablas para refrescar estadísticas del planner.
 -- ============================================================================
 
--- ── 1. citas: patrón "últimas N citas de un paciente" (ficha) ──
+-- 1. citas por paciente + inicio desc (ficha paciente, últimas N citas)
 create index if not exists citas_paciente_inicio_idx
   on public.citas(paciente_id, inicio desc);
 
--- ── 2. citas por estado (ej: listar "pendientes") ──
--- Ya existen citas_estado_idx, pero añadimos parcial para estados "activos" si
--- Supabase lo permite (acelera filtros típicos del dashboard).
+-- 2. citas activas del dashboard (confirmadas + bloqueos temporales).
+--    Enum `cita_estado` no tiene 'propuesta'; estados reales son
+--    bloqueo_temporal, confirmada, completada, cancelada, no_asistio.
 create index if not exists citas_estado_activas_idx
   on public.citas(inicio)
-  where estado in ('confirmada', 'propuesta');
+  where estado in ('confirmada', 'bloqueo_temporal');
 
--- ── 3. pagos: historial de pagos por paciente ordenado por fecha ──
+-- 3. pagos: historial por paciente ordenado por fecha desc
 create index if not exists pagos_paciente_fecha_idx
   on public.pagos(paciente_id, fecha_pago desc);
 
--- ── 4. pagos por estado + fecha (facturación, exports) ──
+-- 4. pagos por estado + fecha (facturación, exports CSV)
 create index if not exists pagos_estado_fecha_idx
   on public.pagos(estado, fecha_pago desc);
 
--- ── 5. mensajes por conversación ordenados por fecha ──
--- Si la tabla no existe (chat aún no desplegado en algún entorno), saltamos.
-do $$
-begin
-  if to_regclass('public.mensajes') is not null then
-    execute 'create index if not exists mensajes_conversacion_created_idx
-             on public.mensajes(conversacion_id, created_at desc)';
-  end if;
-end $$;
+-- 5. mensajes por conversación ordenados por fecha (chat realtime)
+create index if not exists mensajes_conversation_created_idx
+  on public.mensajes(conversation_id, created_at desc);
 
--- ── 6. adjuntos por mensaje ──
-do $$
-begin
-  if to_regclass('public.mensajes_adjuntos') is not null then
-    execute 'create index if not exists mensajes_adjuntos_mensaje_idx
-             on public.mensajes_adjuntos(mensaje_id, created_at asc)';
-  end if;
-end $$;
+-- 6. adjuntos por mensaje
+create index if not exists mensajes_adjuntos_mensaje_idx
+  on public.mensajes_adjuntos(mensaje_id, created_at asc);
 
--- ── 7. Stripe webhook idempotency: si existe tabla ──
-do $$
-begin
-  if to_regclass('public.stripe_webhook_events') is not null then
-    execute 'create index if not exists stripe_webhook_events_processed_idx
-             on public.stripe_webhook_events(processed_at)
-             where processed_at is null';
-  end if;
-end $$;
+-- 7. stripe_events pendientes de procesar (retry queue, webhook idempotency)
+create index if not exists stripe_events_processed_at_idx
+  on public.stripe_events(received_at desc)
+  where processed_at is null;
 
--- ── 8. Auditoría: índice por actor + fecha para reviews RGPD ──
-do $$
-begin
-  if to_regclass('public.ficha_clinica_auditoria') is not null then
-    execute 'create index if not exists ficha_auditoria_actor_fecha_idx
-             on public.ficha_clinica_auditoria(actor_id, created_at desc)';
-  end if;
-end $$;
+-- 8. Profiles por rol (filtros admin "listar pacientes")
+create index if not exists profiles_role_idx
+  on public.profiles(role);
 
--- ── 9. Profiles por rol (admin queries "listar pacientes") ──
--- Ya hay PK en id; añadimos por rol para filtros rápidos.
-create index if not exists profiles_role_idx on public.profiles(role);
-
--- Mantener estadísticas frescas tras crear índices.
+-- Refrescar estadísticas del planner tras crear índices.
 analyze public.citas;
 analyze public.pagos;
 analyze public.profiles;
+analyze public.mensajes;
+analyze public.mensajes_adjuntos;
+analyze public.stripe_events;
