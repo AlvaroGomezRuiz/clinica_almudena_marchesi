@@ -52,10 +52,15 @@ function buildCsp() {
        scripts firmados. En legacy browsers, `'unsafe-inline'` actúa de fallback. */
     "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com",
     /* style-src: `'unsafe-inline'` necesario por Tailwind arbitrary values y
-       next-themes (seteo inline del atributo style en <html>). */
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    /* font-src: self (nuestras .woff2 subset) + gstatic para fallbacks. */
-    "font-src 'self' data: https://fonts.gstatic.com",
+       next-themes (seteo inline del atributo style en <html>). Ya NO se
+       permite fonts.googleapis.com porque todas las fuentes están
+       self-hosted en /public/fonts/ (ver scripts/vendor-fonts.mjs). */
+    "style-src 'self' 'unsafe-inline'",
+    /* font-src: sólo self. Incluye data: para casos excepcionales (p.ej. si
+       un componente inlinea una fuente via base64). NO se permite
+       fonts.gstatic.com — rompe el principio de "cero dependencias de
+       terceros en runtime". */
+    "font-src 'self' data:",
     /* img-src: self + data-uri + blob (para Avatar Uploader) + avatares Google
        + Supabase Storage. */
     `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com ${supabaseHost}`.trim(),

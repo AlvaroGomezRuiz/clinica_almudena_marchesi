@@ -3,40 +3,66 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { ThemeProvider } from 'next-themes';
-import { Cormorant_Garamond, Outfit, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 /* ─────────────────────────────────────────────────────────────
-   FUENTES — optimizadas para LCP y mínimo bytes en wire.
-   - Cormorant (display): solo 400/500 normal+italic → pesos realmente usados.
-   - Outfit (body): 300/400/500 → el 600 no se usa en ningún sitio (semibold mapea a 500 en display, 600 en body es raro).
-   - JetBrains Mono: un solo peso (400). El 300 solo aparecía en fallbacks.
-   Preload solo en la fuente del LCP (body Outfit) → menos archivos críticos.
-   ───────────────────────────────────────────────────────────── */
-const fontDisplay = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400', '500'],
-  style: ['normal', 'italic'],
-  variable: '--font-display',
-  display: 'swap',
-  preload: false,
-});
+   FUENTES — 100 % self-hosted desde /public/fonts/.
+   No se hace ninguna petición a fonts.googleapis.com ni a
+   fonts.gstatic.com en build-time ni en runtime.
+   Las fuentes originales se descargaron con:
+     node scripts/vendor-fonts.mjs
+   Si se vuelven a necesitar otros pesos/estilos, añadir el archivo
+   físico y referenciarlo aquí — jamás volver a `next/font/google`.
 
-const fontBody = Outfit({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+   - Outfit → variable (wght 100-900, 1 archivo cubre todo).
+   - Cormorant Garamond → 3 instancias estáticas (400n, 400i, 500n).
+   - JetBrains Mono → 1 peso (400n, sólo lo usa algún label debug).
+   Preload solo en la fuente del LCP (body) → menos archivos críticos.
+   ───────────────────────────────────────────────────────────── */
+const fontBody = localFont({
+  src: './fonts/outfit-variable.woff2',
+  weight: '100 900',
+  style: 'normal',
   variable: '--font-body',
   display: 'swap',
   preload: true,
+  fallback: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
 });
 
-const fontMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400'],
+const fontDisplay = localFont({
+  src: [
+    {
+      path: './fonts/cormorant-garamond-400-normal.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './fonts/cormorant-garamond-400-italic.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+    {
+      path: './fonts/cormorant-garamond-500-normal.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-display',
+  display: 'swap',
+  preload: false,
+  fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+});
+
+const fontMono = localFont({
+  src: './fonts/jetbrains-mono-400-normal.woff2',
+  weight: '400',
+  style: 'normal',
   variable: '--font-mono',
   display: 'swap',
   preload: false,
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
 });
 
 export const viewport: Viewport = {

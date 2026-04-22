@@ -165,11 +165,20 @@ for (const g of SAFE) icons.add(g);
 /* (palabras reservadas que el regex capturó como falsos positivos)    */
 /* ------------------------------------------------------------------ */
 const BLACKLIST = new Set([
+  /* Palabras reservadas / JS tokens */
   'true', 'false', 'null', 'undefined', 'void', 'return', 'const', 'let', 'var',
   'function', 'class', 'async', 'await', 'yield', 'throw', 'new', 'this',
   'super', 'import', 'export', 'default', 'as', 'from',
   'string', 'number', 'boolean', 'object', 'symbol', 'any', 'unknown',
+  /* Direcciones genéricas (no son glyphs) */
   'dark', 'light', 'up', 'down', 'left', 'right', 'audio',
+  /* Falsos positivos frecuentes del regex (no son iconos reales de
+     Material Symbols; Google Fonts los descartaría silenciosamente y,
+     en el peor caso, corrompe el subset). */
+  '_blank', 'button', 'submit', 'apple',
+  'completado', 'critical', 'neutral', 'positive', 'warm',
+  'dni_nie', 'efectivo', 'telefono',
+  'google_fill',
 ]);
 for (const b of BLACKLIST) icons.delete(b);
 
