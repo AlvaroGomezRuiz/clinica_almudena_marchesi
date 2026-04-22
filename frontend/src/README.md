@@ -15,11 +15,11 @@ UI y composición.
 - `components/auth/`, `components/admin/`, `components/payments/`: features.
 
 ## `services/`
-Acceso a API (fetch/axios) y Server Actions agrupadas por dominio.
+Server Actions agrupadas por dominio (llaman a Supabase RPCs y Edge Functions vía `@supabase/ssr`).
 
 ## `contracts/`
-Interfaces TypeScript para requests/responses compartidos con backend.
+Interfaces TypeScript para tipos de dominio compartidos dentro del frontend.
 
 ## `lib/`
-Constantes y helpers puros (sin React).
+Constantes y helpers puros (sin React). Incluye `lib/supabase/` con clientes server/browser/middleware y `lib/security/` con rate-limit y validación binaria.
 

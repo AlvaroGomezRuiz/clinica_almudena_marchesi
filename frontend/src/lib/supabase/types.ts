@@ -575,6 +575,25 @@ export interface Database {
         };
         Returns: string;
       };
+      paciente_autoregistro_cifrada: {
+        Args: {
+          p_nombre_completo: string;
+          p_dni_nie: string;
+          p_telefono?: string | null;
+          p_email?: string | null;
+          p_fecha_nacimiento?: string | null;
+          p_direccion?: string | null;
+          p_contacto_emergencia_nombre?: string | null;
+          p_contacto_emergencia_telefono?: string | null;
+          p_alergias?: string | null;
+          p_medicacion_base?: string | null;
+          p_objetivos?: string | null;
+          p_motivo_consulta_inicial?: string | null;
+          p_experiencia_terapia?: string | null;
+          p_consentimiento_rgpd?: boolean;
+        };
+        Returns: string;
+      };
       paciente_actualizar_cifrado: {
         Args: { p_id: string; p_cambios: Record<string, string | null> };
         Returns: boolean;

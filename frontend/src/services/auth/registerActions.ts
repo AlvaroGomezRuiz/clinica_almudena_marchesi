@@ -1,370 +1,305 @@
-"use server";
+'use server';
 
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
+/**
+ * Server Actions de registro público de paciente — Supabase Auth.
+ *
+ * Reemplaza el flujo FastAPI previo (deprecado con la migración total a
+ * Supabase). El flujo de UX se mantiene en 2 pasos:
+ *
+ *  1. `startRegistrationAction` (/registro-paciente)
+ *     - Valida el formulario completo (datos clínicos).
+ *     - Guarda los datos sensibles en cookies httpOnly `draft_*` (15 min TTL).
+ *     - Llama `supabase.auth.signInWithOtp({ shouldCreateUser: true })` para
+ *       enviar código OTP al email. NO pide contraseña aún.
+ *     - Redirige a /registro-paciente/verificar.
+ *
+ *  2. `verifyOtpAction` (/registro-paciente/verificar)
+ *     - Verifica el OTP con `supabase.auth.verifyOtp({ type: 'email' })` →
+ *       crea la sesión.
+ *     - Establece la contraseña con `supabase.auth.updateUser({ password })`.
+ *     - Llama RPC `paciente_autoregistro_cifrada` con los datos de cookies
+ *       draft → crea la ficha clínica cifrada vinculada a auth.uid().
+ *     - Limpia cookies draft y redirige a /portal (o /portal/citas/reservar
+ *       si venía con plan).
+ *
+ * Requisito de configuración (una sola vez en Supabase Dashboard):
+ *   * Authentication → Email Templates → "Magic Link": usar `{{ .Token }}`
+ *     en lugar de `{{ .ConfirmationURL }}` para enviar código de 6 dígitos.
+ */
 
-type ErrorPayload = {
-  detail?: string;
-  message?: string;
-};
+import { cookies, headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-type LoginPayload = {
-  access_token: string;
-};
+import { createServerClient } from '@/lib/supabase/server';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+// ---------------------------------------------------------------------------
+// Helpers de cookies draft — 15 min, httpOnly, sameSite=strict
+// ---------------------------------------------------------------------------
+const DRAFT_TTL_SECONDS = 15 * 60;
+
+function setDraft(name: string, value: string, maxLen = 500): void {
+  cookies().set(name, value.slice(0, maxLen), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: DRAFT_TTL_SECONDS,
+  });
 }
 
-function parseErrorPayload(data: unknown): ErrorPayload | null {
-  if (!isRecord(data)) return null;
-  const detail = data["detail"];
-  const message = data["message"];
-  return {
-    ...(typeof detail === "string" ? { detail } : {}),
-    ...(typeof message === "string" ? { message } : {}),
-  };
+function getDraft(name: string): string {
+  return cookies().get(name)?.value ?? '';
 }
 
-function parseLoginPayload(data: unknown): LoginPayload | null {
-  if (!isRecord(data)) return null;
-  const token = data["access_token"] ?? data["jwt"] ?? data["token"];
-  if (typeof token !== "string" || !token.trim()) return null;
-  return { access_token: token.trim() };
+function clearDrafts(): void {
+  const names = [
+    'draft_email',
+    'draft_plan',
+    'draft_paciente_nombre',
+    'draft_paciente_dni',
+    'draft_paciente_telefono',
+    'draft_paciente_motivo',
+    'draft_paciente_experiencia',
+    'draft_paciente_fn',
+    'draft_paciente_medicacion',
+    'draft_paciente_alergias',
+  ];
+  for (const n of names) cookies().delete(n);
 }
 
+// ---------------------------------------------------------------------------
+// Redirección con error legible
+// ---------------------------------------------------------------------------
 function redirectRegistroError(message: string, plan: string): never {
   const params = new URLSearchParams();
-  if (plan) params.set("plan", plan);
-  params.set("error", message);
+  if (plan) params.set('plan', plan);
+  params.set('error', message);
   redirect(`/registro-paciente?${params.toString()}`);
 }
 
 function redirectOtpError(message: string, plan: string): never {
   const params = new URLSearchParams();
-  if (plan) params.set("plan", plan);
-  params.set("error", message);
+  if (plan) params.set('plan', plan);
+  params.set('error', message);
   redirect(`/registro-paciente/verificar?${params.toString()}`);
 }
 
-export async function startRegistrationAction(
-  formData: FormData
-): Promise<void> {
-  const email = String(formData.get("email") ?? "").trim();
-  const nombreCompleto = String(formData.get("nombre_completo") ?? "").trim();
-  const dniNie = String(formData.get("dni_nie") ?? "").trim();
-  const telefonoRaw = String(formData.get("telefono") ?? "").trim();
-  const experienciaTerapiaRaw = String(
-    formData.get("experiencia_terapia") ?? ""
-  ).trim();
-  const motivoConsulta = String(
-    formData.get("motivo_consulta_inicial") ?? ""
-  ).trim();
-  const fechaNacimientoRaw = String(formData.get("fecha_nacimiento") ?? "").trim();
-  const planRaw = String(formData.get("plan") ?? "").trim();
-  const plan = /^[a-zA-Z0-9_-]{1,64}$/.test(planRaw) ? planRaw : "";
+// ---------------------------------------------------------------------------
+// PASO 1 — startRegistrationAction
+// ---------------------------------------------------------------------------
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const DNI_RE = /^[0-9A-Za-z]{6,16}$/;
+const PHONE_RE = /^[+()0-9\s-]{6,20}$/;
+const EXPERIENCE_VALUES = new Set(['primera_vez', 'hace_tiempo', 'recientemente']);
 
-  if (!email) {
-    redirectRegistroError("Email obligatorio.", plan);
+function parseFechaNacimiento(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  const cleaned = v.replace(/\s+/g, '');
+
+  // YYYY-MM-DD (input type=date)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return cleaned;
+
+  // DD/MM/YYYY o DD-MM-YYYY
+  const m = cleaned.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+  if (!m) return null;
+  const dd = Number(m[1]);
+  const mm = Number(m[2]);
+  const yyyy = Number(m[3]);
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 1900) return null;
+  return `${String(yyyy).padStart(4, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+}
+
+export async function startRegistrationAction(formData: FormData): Promise<void> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const nombreCompleto = String(formData.get('nombre_completo') ?? '').trim();
+  const dniNie = String(formData.get('dni_nie') ?? '').trim();
+  const telefonoRaw = String(formData.get('telefono') ?? '').trim();
+  const experienciaTerapiaRaw = String(formData.get('experiencia_terapia') ?? '').trim();
+  const motivoConsulta = String(formData.get('motivo_consulta_inicial') ?? '').trim();
+  const fechaNacimientoRaw = String(formData.get('fecha_nacimiento') ?? '').trim();
+  const medicacion = String(formData.get('medicacion_base') ?? '').trim();
+  const alergias = String(formData.get('alergias') ?? '').trim();
+  const consentimientoRgpd = formData.get('consentimiento_rgpd') === 'on';
+  const planRaw = String(formData.get('plan') ?? '').trim();
+  const plan = /^[a-zA-Z0-9_-]{1,64}$/.test(planRaw) ? planRaw : '';
+
+  // Validaciones mínimas
+  if (!EMAIL_RE.test(email)) redirectRegistroError('Introduce un email válido.', plan);
+  if (nombreCompleto.length < 2 || nombreCompleto.length > 100) {
+    redirectRegistroError('Nombre completo obligatorio (2–100 caracteres).', plan);
+  }
+  if (!DNI_RE.test(dniNie)) redirectRegistroError('DNI/NIE no válido.', plan);
+  if (telefonoRaw && !PHONE_RE.test(telefonoRaw)) {
+    redirectRegistroError('Teléfono no válido.', plan);
+  }
+  if (!consentimientoRgpd) {
+    redirectRegistroError('Debes aceptar la política de privacidad.', plan);
   }
 
-  if (!nombreCompleto) {
-    redirectRegistroError("Nombre completo obligatorio.", plan);
-  }
+  // Enviar OTP por email (crea usuario si no existe)
+  const supabase = createServerClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-  if (!dniNie) {
-    redirectRegistroError("DNI/NIE obligatorio.", plan);
-  }
-
-  const backendUrl =
-    `${process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1"}/auth`;
-
-  const res = await fetch(`${backendUrl}/register/start`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${appUrl}/auth/callback?type=signup`,
+      data: {
+        display_name: nombreCompleto.slice(0, 80),
+        role: 'paciente',
+        needs_clinical_intake: true,
+      },
     },
-    body: JSON.stringify({ email }),
-    cache: "no-store",
   });
 
-  const data: unknown = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const err = parseErrorPayload(data);
-
-    redirectRegistroError(
-      err?.detail ?? err?.message ?? `Registro fallido (${res.status})`,
-      plan
-    );
+  if (error) {
+    // Evitamos leak "email ya existe" → mensaje genérico + seguir flujo
+    const sensitive = /already registered|user.*exists|email.*already/i.test(error.message);
+    if (!sensitive) {
+      redirectRegistroError(error.message, plan);
+    }
   }
 
-  cookies().set("draft_email", email, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 15 * 60,
-  });
+  // Persistir datos clínicos en cookies draft (httpOnly, 15 min)
+  setDraft('draft_email', email);
+  setDraft('draft_paciente_nombre', nombreCompleto, 100);
+  setDraft('draft_paciente_dni', dniNie, 32);
 
-  cookies().set("draft_paciente_nombre", nombreCompleto.slice(0, 100), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 15 * 60,
-  });
-
-  cookies().set("draft_paciente_dni", dniNie.slice(0, 32), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 15 * 60,
-  });
-
-  const telefono = telefonoRaw ? telefonoRaw.replace(/\s+/g, "") : "";
-  if (telefono) {
-    cookies().set("draft_paciente_telefono", telefono.slice(0, 20), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 15 * 60,
-    });
+  if (telefonoRaw) {
+    setDraft('draft_paciente_telefono', telefonoRaw.replace(/\s+/g, ''), 20);
   }
+  if (motivoConsulta) setDraft('draft_paciente_motivo', motivoConsulta, 2000);
+  if (fechaNacimientoRaw) setDraft('draft_paciente_fn', fechaNacimientoRaw, 32);
+  if (medicacion) setDraft('draft_paciente_medicacion', medicacion, 1000);
+  if (alergias) setDraft('draft_paciente_alergias', alergias, 1000);
+  if (plan) setDraft('draft_plan', plan);
 
-  if (motivoConsulta) {
-    cookies().set("draft_paciente_motivo", motivoConsulta.slice(0, 2000), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 15 * 60,
-    });
-  }
-
-  const experienciaTerapia = /^[a-zA-Z0-9_-]{1,64}$/.test(experienciaTerapiaRaw)
-    ? experienciaTerapiaRaw
-    : "";
-
-  if (experienciaTerapia) {
-    cookies().set("draft_paciente_experiencia", experienciaTerapia, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 15 * 60,
-    });
-  }
-
-  if (fechaNacimientoRaw) {
-    cookies().set("draft_paciente_fn", fechaNacimientoRaw.slice(0, 32), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 15 * 60,
-    });
-  }
-
-  if (plan) {
-    cookies().set("draft_plan", plan, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 15 * 60,
-    });
+  if (EXPERIENCE_VALUES.has(experienciaTerapiaRaw)) {
+    setDraft('draft_paciente_experiencia', experienciaTerapiaRaw, 32);
   }
 
   redirect(
     plan
       ? `/registro-paciente/verificar?plan=${encodeURIComponent(plan)}`
-      : "/registro-paciente/verificar"
+      : '/registro-paciente/verificar'
   );
 }
 
-export async function verifyOtpAction(
-  formData: FormData
-): Promise<void> {
-  const draftEmail = cookies().get("draft_email")?.value;
-  const draftPlanRaw = cookies().get("draft_plan")?.value ?? "";
-  const draftPlan = /^[a-zA-Z0-9_-]{1,64}$/.test(draftPlanRaw) ? draftPlanRaw : "";
-
-  const draftNombre = cookies().get("draft_paciente_nombre")?.value ?? "";
-  const draftDni = cookies().get("draft_paciente_dni")?.value ?? "";
-  const draftTelefono = cookies().get("draft_paciente_telefono")?.value ?? "";
-  const draftMotivo = cookies().get("draft_paciente_motivo")?.value ?? "";
-  const draftExperiencia = cookies().get("draft_paciente_experiencia")?.value ?? "";
-  const draftFn = cookies().get("draft_paciente_fn")?.value ?? "";
-
-  const code = String(formData.get("code") ?? "")
-    .trim()
-    .replace(/\s+/g, "");
-
-  const password = String(formData.get("password") ?? "").trim();
-  const passwordConfirm = String(formData.get("password_confirm") ?? "").trim();
+// ---------------------------------------------------------------------------
+// PASO 2 — verifyOtpAction
+// ---------------------------------------------------------------------------
+export async function verifyOtpAction(formData: FormData): Promise<void> {
+  const draftEmail = getDraft('draft_email');
+  const draftPlanRaw = getDraft('draft_plan');
+  const draftPlan = /^[a-zA-Z0-9_-]{1,64}$/.test(draftPlanRaw) ? draftPlanRaw : '';
 
   if (!draftEmail) {
-    redirectRegistroError("Sesión de registro expirada. Reinicia el registro.", draftPlan);
+    redirectRegistroError('Sesión de registro expirada. Reinicia el registro.', draftPlan);
   }
 
-  if (!code) {
-    redirectOtpError("Código obligatorio.", draftPlan);
+  const code = String(formData.get('code') ?? '')
+    .trim()
+    .replace(/\s+/g, '');
+  const password = String(formData.get('password') ?? '');
+  const passwordConfirm = String(formData.get('password_confirm') ?? '');
+
+  if (!/^\d{6}$/.test(code)) {
+    redirectOtpError('Código OTP inválido (6 dígitos).', draftPlan);
+  }
+  if (password.length < 14) {
+    redirectOtpError('La contraseña debe tener al menos 14 caracteres.', draftPlan);
+  }
+  if (password !== passwordConfirm) {
+    redirectOtpError('Las contraseñas no coinciden.', draftPlan);
   }
 
-  if (!password || !passwordConfirm) {
-    redirectOtpError("Contraseña y confirmación obligatorias.", draftPlan);
-  }
+  const supabase = createServerClient();
 
-  const backendUrl =
-    `${process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1"}/auth`;
-
-  const res = await fetch(`${backendUrl}/register/verify-otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: draftEmail,
-      code,
-      password,
-      password_confirm: passwordConfirm,
-    }),
-    cache: "no-store",
-  });
-
-  const data: unknown = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    const err = parseErrorPayload(data);
-
-    redirectOtpError(
-      err?.detail ?? err?.message ?? `OTP inválido (${res.status})`,
-      draftPlan
-    );
-  }
-
-  const h = headers();
-  const userAgent = h.get("user-agent") ?? "";
-  const forwardedFor = h.get("x-forwarded-for") ?? h.get("X-Forwarded-For") ?? "";
-  const realIp = h.get("x-real-ip") ?? h.get("X-Real-IP") ?? "";
-
-  const loginRes = await fetch(`${backendUrl}/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(userAgent ? { "User-Agent": userAgent } : {}),
-      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
-      ...(realIp ? { "X-Real-IP": realIp } : {}),
-    },
-    body: JSON.stringify({
-      username: draftEmail,
-      password,
-      trust_device: false,
-      device_fingerprint: null,
-    }),
-    cache: "no-store",
-  });
-
-  const loginData: unknown = await loginRes.json().catch(() => null);
-
-  if (!loginRes.ok) {
-    const err = parseErrorPayload(loginData);
-
-    redirectOtpError(
-      err?.detail ?? err?.message ?? `Login fallido tras OTP (${loginRes.status})`,
-      draftPlan
-    );
-  }
-
-  const parsedLogin = parseLoginPayload(loginData);
-  if (!parsedLogin) {
-    redirectOtpError("JWT ausente tras OTP.", draftPlan);
-  }
-  const jwt = parsedLogin.access_token;
-
-  // Crea el perfil Paciente (cifrado en backend) para habilitar el checkout.
-  const backendApiUrl =
-    process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:8000/api/v1";
-
-  const parseFechaNacimiento = (raw: string): string | null => {
-    const v = raw.trim();
-    if (!v) return null;
-
-    const cleaned = v.replace(/\s+/g, "");
-
-    // YYYY-MM-DD (input type=date)
-    if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return cleaned;
-
-    // DD/MM/YYYY o DD-MM-YYYY
-    const m = cleaned.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
-    if (!m) return null;
-    const dd = Number(m[1]);
-    const mm = Number(m[2]);
-    const yyyy = Number(m[3]);
-    if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 1900) return null;
-    const iso = `${String(yyyy).padStart(4, "0")}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
-    return iso;
-  };
-
-  const pacientePayload: Record<string, unknown> = {
-    dni_nie: draftDni,
-    nombre_completo: draftNombre,
+  // 1. Verificar OTP → crea sesión
+  const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
     email: draftEmail,
-  };
+    token: code,
+    type: 'email',
+  });
 
-  if (draftTelefono) pacientePayload.telefono = draftTelefono;
-  if (draftMotivo) {
-    pacientePayload.motivo_consulta_inicial = draftMotivo;
-    pacientePayload.motivo_consulta = draftMotivo;
+  if (verifyError || !verifyData.session) {
+    redirectOtpError(verifyError?.message ?? 'Código incorrecto o expirado.', draftPlan);
   }
-  if (draftExperiencia) pacientePayload.experiencia_terapia = draftExperiencia;
-  const fnIso = parseFechaNacimiento(draftFn);
-  if (fnIso) pacientePayload.fecha_nacimiento = fnIso;
 
-  const pacienteRes = await fetch(`${backendApiUrl}/pacientes/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${jwt}`,
+  // 2. Establecer contraseña (el usuario existe y está logueado via OTP)
+  const { error: pwdError } = await supabase.auth.updateUser({ password });
+  if (pwdError) {
+    redirectOtpError(`No se pudo guardar la contraseña: ${pwdError.message}`, draftPlan);
+  }
+
+  // 3. Crear ficha clínica cifrada vinculada a auth.uid()
+  const draftNombre = getDraft('draft_paciente_nombre');
+  const draftDni = getDraft('draft_paciente_dni');
+  const draftTelefono = getDraft('draft_paciente_telefono');
+  const draftMotivo = getDraft('draft_paciente_motivo');
+  const draftExperiencia = getDraft('draft_paciente_experiencia');
+  const draftFn = getDraft('draft_paciente_fn');
+  const draftMedicacion = getDraft('draft_paciente_medicacion');
+  const draftAlergias = getDraft('draft_paciente_alergias');
+
+  const fechaNacimientoIso = parseFechaNacimiento(draftFn);
+
+  const { error: rpcError } = await supabase.rpc('paciente_autoregistro_cifrada', {
+    p_nombre_completo: draftNombre,
+    p_dni_nie: draftDni,
+    p_telefono: draftTelefono || null,
+    p_email: draftEmail,
+    p_fecha_nacimiento: fechaNacimientoIso,
+    p_motivo_consulta_inicial: draftMotivo || null,
+    p_experiencia_terapia: EXPERIENCE_VALUES.has(draftExperiencia) ? draftExperiencia : null,
+    p_medicacion_base: draftMedicacion || null,
+    p_alergias: draftAlergias || null,
+    p_consentimiento_rgpd: true,
+  });
+
+  if (rpcError) {
+    // NO abortamos el flujo: la cuenta ya existe y el password está puesto.
+    // El paciente podrá completar la ficha desde el portal.
+    // Logueamos vía headers para que sentry/vercel capture el error si procede.
+    const h = headers();
+    console.error('[registro-paciente] RPC paciente_autoregistro_cifrada falló:', {
+      message: rpcError.message,
+      code: rpcError.code,
+      user_agent: h.get('user-agent'),
+    });
+  }
+
+  clearDrafts();
+
+  // 4. Redirigir según plan preseleccionado
+  redirect(draftPlan
+    ? `/portal/citas/reservar?plan=${encodeURIComponent(draftPlan)}`
+    : '/portal'
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Reenvío de OTP (si el usuario no recibió el email)
+// ---------------------------------------------------------------------------
+export async function resendOtpAction(): Promise<{ ok: true } | { ok: false; message: string }> {
+  const draftEmail = getDraft('draft_email');
+  if (!draftEmail) {
+    return { ok: false, message: 'Sesión de registro expirada. Vuelve a iniciar el registro.' };
+  }
+
+  const supabase = createServerClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: draftEmail,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: `${appUrl}/auth/callback?type=signup`,
     },
-    body: JSON.stringify(pacientePayload),
-    cache: "no-store",
   });
 
-  if (!pacienteRes.ok) {
-    const pacienteData: unknown = await pacienteRes.json().catch(() => null);
-    const err = parseErrorPayload(pacienteData);
-    const detail = err?.detail ?? null;
-
-    const isConflict =
-      pacienteRes.status === 400 && typeof detail === "string" && detail.includes("Conflicto");
-
-    if (!isConflict) {
-      redirectOtpError(
-        detail ?? `Alta de paciente fallida (${pacienteRes.status})`,
-        draftPlan
-      );
-    }
-  }
-
-  cookies().set("auth_token", jwt, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-  });
-
-  cookies().delete("draft_email");
-  cookies().delete("draft_plan");
-  cookies().delete("draft_paciente_nombre");
-  cookies().delete("draft_paciente_dni");
-  cookies().delete("draft_paciente_telefono");
-  cookies().delete("draft_paciente_motivo");
-  cookies().delete("draft_paciente_experiencia");
-  cookies().delete("draft_paciente_fn");
-
-  redirect(draftPlan ? `/pagos?plan=${encodeURIComponent(draftPlan)}` : "/pagos");
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
 }

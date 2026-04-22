@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Nota sobre PII:
- *   - Los nombres y DNIs viven en columnas _ciphertext (AES-256-GCM backend).
+ *   - Los nombres y DNIs viven en columnas _ciphertext (AES-256-GCM a nivel Postgres vía pgcrypto + Vault).
  *   - Esta vista usa `v_pacientes_resumen_admin` que SOLO expone flags booleanos
  *     (has_dni, has_telefono…) + métricas agregadas. El plaintext sólo se sirve
  *     desde la ficha individual vía RPC auditado (migración 0012).

@@ -4,6 +4,8 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 
 > Este README es la **guía de producción**. Para el bootstrap inicial de Supabase mira `supabase/BOOTSTRAP.md`.
 
+> **Arquitectura unificada (hito 14 · 22-abr-2026):** se eliminó por completo el legacy FastAPI stand-by. Todo el backend vive ahora en Supabase (Postgres RPCs + Edge Functions Deno). El auto-registro público (`/registro-paciente`) usa flujo OTP nativo de Supabase Auth + RPC cifrada `paciente_autoregistro_cifrada`.
+
 ---
 
 ## 1. Arquitectura
@@ -36,13 +38,9 @@ almudena/
 │     ├─ components/            # UI: chat, booking, auth, pagos, portal-shell
 │     ├─ lib/supabase/          # Clientes: server, browser, middleware, env, types
 │     └─ services/              # Server Actions por dominio
-├─ backend/                     # FastAPI stand-by (no desplegado)
-│  ├─ app/                      # Rutas, modelos SQLAlchemy, servicios
-│  ├─ migrations/               # Alembic (historico)
-│  └─ requirements.txt
 ├─ supabase/
-│  ├─ migrations/               # 0001..0024 ordenadas e idempotentes
-│  ├─ functions/                # Edge Functions (Deno)
+│  ├─ migrations/               # 0001..0029 ordenadas e idempotentes
+│  ├─ functions/                # Edge Functions (Deno) — send-email, stripe-*, health, rgpd, invoice-pdf
 │  ├─ scripts/                  # bundle_for_deploy.mjs + smoke_test.mjs
 │  └─ BOOTSTRAP.md              # Setup paso a paso
 ├─ docs/                        # Documentacion completa (ver seccion 12)
@@ -88,9 +86,11 @@ npm run dev
 
 ### 4.1 Registro & login
 
-1. `POST /signup` (formulario) → `supabase.auth.signUp` → trigger `tg_handle_new_user` crea `public.profiles` con role `'paciente'`.
-2. Email de verificación (Supabase Auth).
-3. Login → cookie httpOnly Supabase + `middleware.ts` valida sesión y redirige por rol a `/admin` o `/portal`.
+1. **Auto-registro paciente** (`/registro-paciente`, dos pasos):
+   - Paso 1 (`RegistroPacienteClient`): recoge datos clínicos completos (nombre, DNI/NIE, teléfono, fecha nacimiento, motivo, experiencia previa, medicación psiquiátrica opcional, alergias). Server Action `startRegistrationAction` almacena los datos clínicos en cookies `httpOnly` con TTL de 15 min y dispara `supabase.auth.signInWithOtp({ shouldCreateUser: true })` → redirige a `/registro-paciente/verificar`.
+   - Paso 2 (`VerificarOtpClient`): usuario introduce OTP + define contraseña (≥14 chars). `verifyOtpAction` valida el código, llama a `supabase.auth.updateUser({ password })` y luego a RPC `public.paciente_autoregistro_cifrada(...)` para persistir la ficha completa cifrada (AES-256 vía Vault).
+   - Trigger `tg_handle_new_user` había creado ya `public.profiles` con role `'paciente'`.
+2. **Login**: cookie httpOnly Supabase + `middleware.ts` valida sesión y redirige por rol a `/admin` o `/portal`.
 
 ### 4.2 Reserva
 
@@ -280,6 +280,8 @@ Orden estricto:
 | 0021 | `security_lints_fix` | `security_invoker=true` en vistas + `search_path` fijo en funciones. |
 | 0022-0024b | Cifrado F5 | pgcrypto + vault + RPCs CRUD cifrados + triggers auto-encrypt. |
 | **0026** | **`performance_indexes`** | **8 índices compuestos + ANALYZE (aplicado 2026-04-22).** |
+| 0027-0028 | `audit_admin_lookups` + `retirar_seed_demo` | Auditoría blind-index + script idempotente de purga demo. |
+| **0029** | **`paciente_autoregistro`** | **RPC cifrada para auto-registro público (paso 2 OTP, hito 14). Reemplaza al flujo legacy FastAPI.** |
 
 Aplicar todas:
 

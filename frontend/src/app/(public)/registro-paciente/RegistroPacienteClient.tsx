@@ -9,7 +9,6 @@ import { es } from 'date-fns/locale';
 
 import { startRegistrationAction } from '@/services/auth/registerActions';
 import ScrollReveal from '@/components/landing/ScrollReveal';
-import PasswordInput from '@/components/ui/PasswordInput';
 import PremiumCard from '@/components/ui/PremiumCard';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -26,8 +25,8 @@ function SubmitButton(): JSX.Element {
       type="submit"
       disabled={pending}
     >
-      <span className="material-symbols-outlined text-xl">encrypted</span>
-      {pending ? 'Procesando...' : 'Guardar con Cifrado AES-256'}
+      <span className="material-symbols-outlined text-xl">mail</span>
+      {pending ? 'Procesando...' : 'Enviarme código de verificación'}
     </button>
   );
 }
@@ -221,10 +220,6 @@ export default function RegistroPacienteClient(): JSX.Element {
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className={labelClasses}>Contraseña Segura</label>
-                        <PasswordInput />
-                      </div>
-                      <div className="md:col-span-2">
                         <label className={labelClasses}>Fecha de Nacimiento</label>
                         <div className="relative">
                           <input
@@ -303,6 +298,40 @@ export default function RegistroPacienteClient(): JSX.Element {
                         <span className="material-symbols-outlined text-xs">info</span>
                         Toda la información es confidencial y solo será leída por la profesional.
                       </p>
+                    </div>
+
+                    <div>
+                      <label className={labelClasses}>
+                        Medicación psiquiátrica actual
+                        <span className="ml-2 text-[10px] tracking-normal text-ink-muted/70 normal-case">
+                          (recomendado, no obligatorio)
+                        </span>
+                      </label>
+                      <textarea
+                        className={`${inputClasses} resize-none bg-canvas-alt`}
+                        placeholder="Nombre y dosis si la recuerdas. Si no tomas nada, déjalo vacío."
+                        rows={3}
+                        name="medicacion_base"
+                      />
+                      <p className="mt-2 text-[0.78rem] text-ink-muted italic flex items-center gap-2">
+                        <span className="material-symbols-outlined text-xs">medication</span>
+                        Esta información ayuda a adaptar el proceso terapéutico a tu caso clínico.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className={labelClasses}>
+                        Alergias o condiciones médicas relevantes
+                        <span className="ml-2 text-[10px] tracking-normal text-ink-muted/70 normal-case">
+                          (opcional)
+                        </span>
+                      </label>
+                      <textarea
+                        className={`${inputClasses} resize-none bg-canvas-alt`}
+                        placeholder="Alergias a medicamentos, condiciones crónicas, etc."
+                        rows={2}
+                        name="alergias"
+                      />
                     </div>
 
                     <div className="pt-6 border-t border-line">

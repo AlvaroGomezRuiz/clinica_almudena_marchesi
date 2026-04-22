@@ -80,8 +80,8 @@
 - App URLs: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL`
 - Cron: `CRON_SECRET` (para que las Server Actions puedan firmar callbacks)
 
-### 3.2 Backend FastAPI
-**Decisión**: no se despliega FastAPI. Todo el backend vive en Supabase (Postgres + Edge Functions). Variable no aplicable.
+### 3.2 Backend legacy (FastAPI) — ELIMINADO (hito 14 · 22-abr-2026)
+**Decisión arquitectónica final**: el directorio `backend/` y todas sus dependencias (`services/citas.ts`, `services/payments/*` client-side, rutas `/api/admin/facturacion/nota-administrativa`, `/api/admin/config/backup-keys`, `components/admin/AdminNotaAdministrativaSticker.tsx`, `scripts/update-imports.js`) fueron **eliminados del repositorio**. El auto-registro público se migró a Supabase Auth OTP + RPC `paciente_autoregistro_cifrada` (migración `0029`). Cualquier futura necesidad de lógica servidor va como Edge Function Deno, no como servicio Python aparte.
 
 ---
 
@@ -259,3 +259,42 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 - [ ] Activar las 7 reglas de Sentry documentadas en `ALERTAS_OPERATIVAS.md`.
 - [ ] Crear monitor UptimeRobot contra `/functions/v1/health`.
 - [ ] Rotar passwords (Outlook, Supabase, Vercel, Stripe) + invalidar tokens antiguos.
+
+---
+
+## 9) Hito 14 — Limpieza final y unificación arquitectónica (22-abr-2026)
+
+> Revisión meticulosa "senior lead" del proyecto completo. Objetivo: base de código limpia, una única fuente de verdad, sin dependencias zombis.
+
+### 9.1 Eliminado del repositorio (117.56 MB liberados)
+- [x] **`backend/`** — directorio FastAPI stand-by completo (46 archivos Python, `alembic.ini`, `dockerfile`, `requirements.txt`, `venv/`, `uploads/`, seeds, scripts).
+- [x] **`frontend/src/services/citas.ts`** + **`frontend/src/types/citas.ts`** — cliente axios que apuntaba al FastAPI ya eliminado.
+- [x] **`frontend/src/app/api/admin/config/backup-keys/route.ts`** — endpoint huérfano sin consumidores.
+- [x] **`frontend/src/app/api/admin/facturacion/nota-administrativa/route.ts`** + **`frontend/src/components/admin/AdminNotaAdministrativaSticker.tsx`** — feature dependiente del FastAPI.
+- [x] **`frontend/scripts/update-imports.js`** — script de refactor obsoleto que sólo referenciaba al sticker eliminado.
+- [x] **`supabase/functions/.bundled/`** + **`**/__pycache__/`** — cachés de build (y confirmado que `.gitignore` los cubre).
+
+### 9.2 Iconografía Material Symbols — cobertura completa
+- [x] **`frontend/scripts/extract-icons.mjs`** reescrito con 8 regex (incluye JSX multilínea, ternarios, `icon="…"`, `icon: "…"`, `data-icon`, `metodoIcon/action.icon/iconFor/trendIcon`, `return 'icono'`) + `BLACKLIST` de palabras falsas.
+- [x] Subset regenerado vía `fetch-icons-font.mjs`: **202 glyphs** (antes 181) en **18.1 KB WOFF2**. 0 iconos faltantes.
+
+### 9.3 Auto-registro paciente público — migrado a Supabase Auth (sin FastAPI)
+- [x] **Migración SQL `0029_paciente_autoregistro.sql`**: RPC `public.paciente_autoregistro_cifrada(p_nombre_completo, p_dni_nie, p_telefono, p_email, p_fecha_nacimiento, p_direccion, p_contacto_emergencia_*, p_alergias, p_medicacion_base, p_objetivos, p_motivo_consulta_inicial, p_experiencia_terapia, p_consentimiento_rgpd)`. SECURITY DEFINER, exige `auth.uid()` del propio usuario, idempotente, cifra PII con `app_encrypt` + `app_bidx`. `grant execute` solo a `authenticated`.
+- [x] **`services/auth/registerActions.ts`** reescrito con 3 acciones:
+  - `startRegistrationAction`: valida datos clínicos, guarda en cookies `httpOnly` (TTL 15 min) + `signInWithOtp({ shouldCreateUser: true })` → email con OTP + usuario en `auth.users`.
+  - `verifyOtpAction`: `verifyOtp(type:'email')` + `updateUser({ password })` + RPC `paciente_autoregistro_cifrada` + limpia cookies → redirige a `/portal` (o `/portal/citas/reservar` si venía con plan preseleccionado).
+  - `resendOtpAction`: reintentar envío del código si el paciente no lo recibió.
+- [x] **`RegistroPacienteClient.tsx`**: añadidos `textarea` para `medicacion_base` (recomendado, psiquiatría) y `alergias` (opcional). Eliminado `PasswordInput` (ahora se define en el paso 2). CTA: "Enviarme código de verificación".
+- [x] **`VerificarOtpClient.tsx`**: paso 2 con password ≥14 chars + complejidad + reenvío de OTP.
+
+### 9.4 Flujos revisados y verificados OK (sin bugs)
+- [x] **Reserva de horas (`/portal/citas/reservar`)** — `SlotPicker` → `getDisponibilidadAction` → RPC `obtener_disponibilidad` → selección → `reservarCitaAction` → RPC `reservar_cita` + (si no hay bono) `PaymentElementDrawer` con `crearPaymentIntentCitaAction`. 100% Supabase, sin FastAPI.
+- [x] **Upload foto perfil** — `AvatarUploader` + `/api/admin/avatar/upload`: rate-limit 10/h, `validateImageMagicBytes`, bucket `avatares` con RLS por `user_id`. Admin y paciente.
+- [x] **Pagos** — Payment Element embebido + Edge Function `stripe-webhook v19` con idempotencia en `pagos.stripe_event_id UNIQUE` + `stripe_events` audit.
+
+### 9.5 Documentación y `.env`/`.cursorrules`
+- [x] **`frontend/.env.example`** — eliminadas `NEXT_PUBLIC_API_URL` y `NEXT_PUBLIC_BACKEND_API_URL` (apuntaban a FastAPI).
+- [x] **`.gitignore`** — sección Python generalizada (`**/venv/`, `**/.venv/`) tras eliminar `backend/`.
+- [x] **`.cursorrules`** — sección "Monorepo boundary" reescrita: ya no habla de FastAPI sino de Supabase como único backend. Sección "Backend excellence" reescrita con reglas de RLS, cifrado vía `app_encrypt`, convenciones de migraciones, auditoría `admin_lookups`.
+- [x] **`README.md`** — árbol monorepo actualizado (sin `backend/`), aviso de hito 14 arriba, flujo de auto-registro OTP documentado, tabla de migraciones con 0027/0028/0029.
+- [x] **Este checklist** — §3.2 marca el backend como eliminado + §9 documenta todo el hito.

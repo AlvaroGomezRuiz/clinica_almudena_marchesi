@@ -1,6 +1,6 @@
 # =============================================================================
 # .gitignore — Clinica Almudena Marchesi
-# Arquitectura: Next.js (frontend) + FastAPI stand-by (backend) + Supabase
+# Arquitectura: Next.js (frontend) + Supabase (Postgres + Auth + Storage + Edge Functions)
 # Convencion: todas las rutas en minusculas. Patrones globales con **.
 # =============================================================================
 
@@ -27,11 +27,10 @@ supabase/functions/.bundled/
 *.p12
 
 # -----------------------------------------------------------------------------
-# BACKEND (Python / FastAPI stand-by)
+# PYTHON (scripts operativos si los hubiera)
 # -----------------------------------------------------------------------------
-backend/venv/
-backend/.venv/
-backend/uploads/
+**/venv/
+**/.venv/
 **/__pycache__/
 *.py[cod]
 *$py.class
