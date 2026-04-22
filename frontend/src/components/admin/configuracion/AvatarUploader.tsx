@@ -1,12 +1,14 @@
 'use client';
 
 /**
- * AvatarUploader — sube imagen y actualiza `profiles.avatar_url`.
- * Muestra preview inmediato (objectURL) y gestiona estado de subida.
+ * AvatarUploader — recorte + subida al bucket `avatares` y actualización de
+ * `profiles.avatar_url`. El recorte evita fotos desalineadas y reduce peso.
  */
 
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+
+import AvatarCropDialog from '@/components/admin/configuracion/AvatarCropDialog';
 
 interface Props {
   readonly currentUrl: string | null;
@@ -22,6 +24,26 @@ export default function AvatarUploader({
   const [preview, setPreview] = useState<string | null>(currentUrl);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPreview(currentUrl);
+  }, [currentUrl]);
+
+  const revokeCrop = (): void => {
+    if (cropSrc?.startsWith('blob:')) {
+      URL.revokeObjectURL(cropSrc);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cropSrc?.startsWith('blob:')) {
+        URL.revokeObjectURL(cropSrc);
+      }
+    };
+  }, [cropSrc]);
 
   const initials = displayName
     .split(' ')
@@ -48,11 +70,29 @@ export default function AvatarUploader({
     }
 
     setError(null);
+    revokeCrop();
     const url = URL.createObjectURL(file);
-    setPreview(url);
+    setCropSrc(url);
+    setCropOpen(true);
+    e.target.value = '';
+  };
+
+  const handleCropCancel = (): void => {
+    revokeCrop();
+    setCropSrc(null);
+    setCropOpen(false);
+  };
+
+  const handleCropConfirm = (jpegBlob: Blob): void => {
+    setCropOpen(false);
+    revokeCrop();
+    setCropSrc(null);
+
+    const localPreview = URL.createObjectURL(jpegBlob);
+    setPreview(localPreview);
 
     const form = new FormData();
-    form.append('file', file);
+    form.append('file', new File([jpegBlob], 'avatar.jpg', { type: 'image/jpeg' }));
 
     startTransition(async () => {
       try {
@@ -64,19 +104,29 @@ export default function AvatarUploader({
         if (!res.ok || !body.ok) {
           setError(body.error ?? `Error ${res.status}`);
           setPreview(currentUrl);
+          URL.revokeObjectURL(localPreview);
           return;
         }
-        setPreview(body.url ?? preview);
+        URL.revokeObjectURL(localPreview);
+        setPreview(body.url ?? currentUrl);
         router.refresh();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'error_red');
         setPreview(currentUrl);
+        URL.revokeObjectURL(localPreview);
       }
     });
   };
 
   return (
     <div className="flex items-center gap-4">
+      <AvatarCropDialog
+        open={cropOpen && Boolean(cropSrc)}
+        imageSrc={cropSrc ?? ''}
+        onCancel={handleCropCancel}
+        onConfirm={handleCropConfirm}
+      />
+
       <div
         className="grid h-16 w-16 place-items-center overflow-hidden rounded-2xl bg-primary/10 font-display text-[1.4rem] italic text-primary ring-1 ring-inset ring-primary/15 dark:bg-primary/25 dark:text-white dark:ring-primary/30"
         aria-hidden="true"
@@ -113,7 +163,7 @@ export default function AvatarUploader({
           {isPending ? 'Subiendo…' : 'Cambiar avatar'}
         </button>
         <p className="mt-1 font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-          PNG, JPG o WebP · máx 2 MB
+          PNG, JPG o WebP · máx 2 MB · podrás recortar antes de guardar
         </p>
         {error ? (
           <p className="mt-1 font-body text-[0.7rem] text-red-600 dark:text-red-400">

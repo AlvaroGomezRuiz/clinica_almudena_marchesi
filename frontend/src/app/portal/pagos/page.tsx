@@ -186,6 +186,9 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
 
   const servicioIndividual = servicios.find((s) => s.nombre === 'Sesión individual');
   const servicioPareja = servicios.find((s) => s.nombre === 'Terapia de pareja');
+  const servicioIndividualPareja = servicios.find(
+    (s) => s.nombre === 'Sesión individual pareja'
+  );
 
   const bonosConfigTyped = bonosConfig as (BonoConfigItem & { readonly servicio_id?: string })[];
   const bonosCatalogoIndividual = bonosConfigTyped.filter((b) => {
@@ -245,18 +248,32 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
       </section>
 
       <SectionDivider label="Precio de una sesión suelta" />
-      {servicioIndividual && servicioPareja ? (
-        <div className="mb-8 grid gap-5 md:grid-cols-2">
-          <SesionSueltaInfoCard
-            titulo="Sesión individual"
-            descripcion="Una sesión de terapia individual. Al reservar eliges franja; el pago se realiza con la cita (tarjeta, wallets o métodos habilitados en Stripe)."
-            precioCentimos={servicioIndividual.precio_centimos}
-          />
-          <SesionSueltaInfoCard
-            titulo="Terapia de pareja"
-            descripcion="Sesión para dos personas. Reserva y pago vinculados a la cita, con los mismos métodos de pago seguros."
-            precioCentimos={servicioPareja.precio_centimos}
-          />
+      {servicioIndividual || servicioPareja || servicioIndividualPareja ? (
+        <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {servicioIndividual ? (
+            <SesionSueltaInfoCard
+              titulo="Sesión individual"
+              descripcion="Una sesión de terapia individual. Al reservar eliges franja; el pago se realiza con la cita (tarjeta, wallets o métodos habilitados en Stripe)."
+              precioCentimos={servicioIndividual.precio_centimos}
+              servicioId={servicioIndividual.id}
+            />
+          ) : null}
+          {servicioIndividualPareja ? (
+            <SesionSueltaInfoCard
+              titulo="Sesión individual pareja"
+              descripcion="Sesión más breve para dos personas cuando conviene otro ritmo que la sesión larga de pareja. Reserva y pago con la cita."
+              precioCentimos={servicioIndividualPareja.precio_centimos}
+              servicioId={servicioIndividualPareja.id}
+            />
+          ) : null}
+          {servicioPareja ? (
+            <SesionSueltaInfoCard
+              titulo="Terapia de pareja"
+              descripcion="Sesión para dos personas. Reserva y pago vinculados a la cita, con los mismos métodos de pago seguros."
+              precioCentimos={servicioPareja.precio_centimos}
+              servicioId={servicioPareja.id}
+            />
+          ) : null}
         </div>
       ) : null}
 

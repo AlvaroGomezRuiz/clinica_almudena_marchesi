@@ -13,6 +13,27 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 
+/**
+ * JWT para invocar Edge Functions con `verify_jwt=true`.
+ * `getSession()` a veces no devuelve `access_token` en Server Actions;
+ * intentamos `refreshSession()` antes de fallar con 401 en el gateway.
+ */
+async function getAccessTokenForEdgeFunctions(
+  supabase: ReturnType<typeof createServerClient>
+): Promise<string | null> {
+  const {
+    data: { session: s1 },
+  } = await supabase.auth.getSession();
+  if (s1?.access_token) {
+    return s1.access_token;
+  }
+  const { data: refreshed, error } = await supabase.auth.refreshSession();
+  if (error || !refreshed.session?.access_token) {
+    return null;
+  }
+  return refreshed.session.access_token;
+}
+
 export type CheckoutResult =
   | { readonly ok: true; readonly url: string; readonly sessionId: string }
   | { readonly ok: false; readonly error: string };
@@ -25,9 +46,12 @@ async function invokeCheckout(
   const env = getSupabaseEnv();
   const supabase = createServerClient();
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    return { ok: false, error: 'No estás autenticado.' };
+  const accessToken = await getAccessTokenForEdgeFunctions(supabase);
+  if (!accessToken) {
+    return {
+      ok: false,
+      error: 'Sesión caducada o no disponible. Vuelve a iniciar sesión e inténtalo de nuevo.',
+    };
   }
 
   const controller = new AbortController();
@@ -38,7 +62,8 @@ async function invokeCheckout(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
+        apikey: env.anonKey,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -99,9 +124,12 @@ async function invokePaymentIntent(
   const env = getSupabaseEnv();
   const supabase = createServerClient();
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    return { ok: false, error: 'No estás autenticado.' };
+  const accessToken = await getAccessTokenForEdgeFunctions(supabase);
+  if (!accessToken) {
+    return {
+      ok: false,
+      error: 'Sesión caducada o no disponible. Vuelve a iniciar sesión e inténtalo de nuevo.',
+    };
   }
 
   const controller = new AbortController();
@@ -112,7 +140,8 @@ async function invokePaymentIntent(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
+        apikey: env.anonKey,
       },
       body: JSON.stringify(body),
       signal: controller.signal,

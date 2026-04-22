@@ -31,6 +31,7 @@ export default async function ReservarPage({ searchParams }: PageProps) {
       .select('id, nombre, duracion_minutos, precio_centimos, descripcion')
       .eq('activo', true)
       .order('precio_centimos', { ascending: false })
+      .order('nombre', { ascending: true })
       .returns<ServicioOption[]>(),
     supabase
       .from('bonos_pacientes')

@@ -25,6 +25,17 @@
  *   - Stripe, Vercel Analytics y Sentry tunnel (vía /monitoring) son los únicos
  *     orígenes externos permitidos.
  */
+/** Hostname del proyecto Supabase (Storage avatares, etc.) para next/image. */
+function getSupabaseHostname() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+}
+
 function buildCsp() {
   const rawSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   let supabaseHost = '';
@@ -82,6 +93,8 @@ function buildCsp() {
   return directives.join('; ').replace(/\s+;/g, ';').replace(/\s{2,}/g, ' ').trim();
 }
 
+const supabaseImageHost = getSupabaseHostname();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -102,6 +115,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' },
       { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
       { protocol: 'https', hostname: 'upload.wikimedia.org', pathname: '/**' },
+      ...(supabaseImageHost
+        ? [{ protocol: 'https', hostname: supabaseImageHost, pathname: '/**' }]
+        : []),
     ],
   },
 
@@ -142,7 +158,7 @@ const nextConfig = {
       {
         key: 'Permissions-Policy',
         value:
-          'camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), clipboard-read=(self), clipboard-write=(self)',
+          'camera=(), microphone=(self), geolocation=(), payment=(self "https://js.stripe.com"), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), fullscreen=(self), clipboard-read=(self), clipboard-write=(self)',
       },
       // CSP estricta (construida en build-time con env de Supabase).
       { key: 'Content-Security-Policy', value: buildCsp() },

@@ -7,6 +7,8 @@ interface Props {
   readonly descripcion: string;
   /** Precio en céntimos. */
   readonly precioCentimos: number;
+  /** Preselección en el selector de reserva. */
+  readonly servicioId?: string;
 }
 
 function euro(c: number): string {
@@ -21,7 +23,12 @@ export default function SesionSueltaInfoCard({
   titulo,
   descripcion,
   precioCentimos,
+  servicioId,
 }: Props): JSX.Element {
+  const reservarHref =
+    servicioId != null && servicioId.length > 0
+      ? `/portal/citas/reservar?servicio=${encodeURIComponent(servicioId)}`
+      : '/portal/citas/reservar';
   return (
     <SurfaceCard variant="glass" className="h-full">
       <p className="font-body text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/50">
@@ -41,7 +48,7 @@ export default function SesionSueltaInfoCard({
       </p>
       <div className="mt-5">
         <Link
-          href="/portal/citas/reservar"
+          href={reservarHref}
           className="group relative inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-white/75 pl-5 pr-1.5 py-1.5 font-display text-[0.84rem] font-medium tracking-tight text-ink ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_22px_-10px_rgba(75,100,95,0.18)] transition-[transform,box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white active:scale-[0.97] backdrop-blur-md dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:hover:bg-white/[0.1]"
         >
           <span className="whitespace-nowrap">Reservar cita (pago al agendar)</span>

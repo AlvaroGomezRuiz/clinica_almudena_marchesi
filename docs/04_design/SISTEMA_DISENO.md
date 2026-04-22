@@ -17,17 +17,17 @@
 
 ### Paleta base (light)
 | Rol             | Token            | Hex      | Uso                                    |
-|-----------------|-------------------|----------|----------------------------------------|
-| Fondo principal | `canvas`         | `#F7F4EE` | body, layouts                          |
-| Fondo alternativo | `parchment`    | `#EFE9DC` | superficies secundarias                 |
-| Tinta           | `ink`            | `#1B1E17` | titulares + texto largo                |
-| Tinta suave     | `ink-soft`       | `#4B4F45` | subtitulos, metadata                   |
-| Primario        | `primary`        | `#5C6B4E` | CTAs, focus, acentos                   |
-| Primario suave  | `primary-soft`   | `#A5B590` | hover, backgrounds de realce           |
-| Exito           | `success`        | `#6C8D62` | pagos ok, confirmaciones               |
-| Aviso           | `warning`        | `#C79952` | alertas no destructivas                |
-| Error           | `error`          | `#B14A3A` | fallos, validacion                     |
-| Info            | `info`           | `#6A7F94` | tips, info contextual                  |
+|-----------------|------------------|----------|----------------------------------------|
+| Fondo principal | `canvas`         | `#F7F4EE` | body, layouts                         |
+| Fondo alternativo | `parchment`    | `#EFE9DC` | superficies secundarias               |
+| Tinta           | `ink`            | `#1B1E17` | titulares + texto largo               |
+| Tinta suave     | `ink-soft`       | `#4B4F45` | subtitulos, metadata                  |
+| Primario        | `primary`        | `#5C6B4E` | CTAs, focus, acentos                  |
+| Primario suave  | `primary-soft`   | `#A5B590` | hover, backgrounds de realce          |
+| Exito           | `success`        | `#6C8D62` | pagos ok, confirmaciones              |
+| Aviso           | `warning`        | `#C79952` | alertas no destructivas               |
+| Error           | `error`          | `#B14A3A` | fallos, validacion                    |
+| Info            | `info`           | `#6A7F94` | tips, info contextual                 |
 
 ### Paleta oscura (portal night mode)
 - `canvas-dark`: `#14171A`

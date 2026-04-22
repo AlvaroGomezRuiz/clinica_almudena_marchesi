@@ -144,10 +144,10 @@ export default function SlotPicker({
       <SurfaceCard>
         <header className="mb-5 flex items-baseline justify-between gap-3">
           <div>
-            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted">
+            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
               Paso 1
             </p>
-            <h2 className="mt-1 font-display text-[1.25rem] italic text-ink tracking-[-0.01em]">
+            <h2 className="mt-1 font-display text-[1.25rem] italic tracking-[-0.01em] text-ink dark:text-white">
               Elige el tipo de sesión
             </h2>
           </div>
@@ -164,21 +164,29 @@ export default function SlotPicker({
                   aria-pressed={selected}
                   className={`group w-full rounded-2xl p-5 text-left transition-[transform,box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
                     selected
-                      ? 'bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_40px_-20px_rgba(75,100,95,0.28)] ring-1 ring-inset ring-primary/30'
-                      : 'bg-white/55 hover:bg-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_28px_-16px_rgba(75,100,95,0.14)] hover:-translate-y-[2px] ring-1 ring-inset ring-white/50'
+                      ? 'bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_18px_40px_-20px_rgba(75,100,95,0.28)] ring-1 ring-inset ring-primary/30 dark:bg-[#f4f3ef] dark:text-ink dark:shadow-[0_22px_56px_-28px_rgba(0,0,0,0.72)] dark:ring-primary/45'
+                      : 'bg-white/55 hover:bg-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_28px_-16px_rgba(75,100,95,0.14)] hover:-translate-y-[2px] ring-1 ring-inset ring-white/50 dark:bg-white/[0.07] dark:hover:bg-white/[0.11] dark:shadow-none dark:ring-white/14 dark:hover:ring-white/22'
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <Chip tone={selected ? 'positive' : 'info'}>{s.duracion_minutos} min</Chip>
-                    <p className="font-display text-[1.25rem] italic text-primary tabular-nums tracking-[-0.01em]">
+                    <p className="font-display text-[1.25rem] italic text-primary tabular-nums tracking-[-0.01em] dark:text-primary-fixed-dim">
                       {euro(s.precio_centimos)}
                     </p>
                   </div>
-                  <h3 className="mt-3 font-display text-[1.1rem] italic text-ink leading-tight tracking-[-0.01em]">
+                  <h3
+                    className={`mt-3 font-display text-[1.1rem] italic leading-tight tracking-[-0.01em] ${
+                      selected ? 'text-ink' : 'text-ink dark:text-white'
+                    }`}
+                  >
                     {s.nombre}
                   </h3>
                   {s.descripcion ? (
-                    <p className="mt-2 font-body text-[0.82rem] text-ink-soft leading-[1.5] line-clamp-2">
+                    <p
+                      className={`mt-2 font-body text-[0.82rem] leading-[1.5] line-clamp-2 ${
+                        selected ? 'text-ink-soft dark:text-ink/85' : 'text-ink-soft dark:text-white/72'
+                      }`}
+                    >
                       {s.descripcion}
                     </p>
                   ) : null}
@@ -217,13 +225,13 @@ export default function SlotPicker({
       <SurfaceCard>
         <header className="mb-4 flex items-baseline justify-between gap-3">
           <div>
-            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted">
+            <p className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
               Paso 3
             </p>
-            <h2 className="mt-1 font-display text-[1.25rem] italic text-ink tracking-[-0.01em]">
+            <h2 className="mt-1 font-display text-[1.25rem] italic tracking-[-0.01em] text-ink dark:text-white">
               Selecciona hora
             </h2>
-            <p className="mt-1 font-body text-[0.82rem] text-ink-soft">
+            <p className="mt-1 font-body text-[0.82rem] text-ink-soft dark:text-white/65">
               {format(fecha, "EEEE d 'de' MMMM", { locale: es })}
               {servicio ? ` · ${servicio.nombre}` : ''}
             </p>
@@ -241,24 +249,24 @@ export default function SlotPicker({
               <div
                 key={i}
                 aria-hidden="true"
-                className="h-11 rounded-xl bg-white/45 ring-1 ring-inset ring-white/40 animate-pulse"
+                className="h-11 rounded-xl bg-white/45 ring-1 ring-inset ring-white/40 animate-pulse dark:bg-white/[0.08] dark:ring-white/12"
               />
             ))}
           </div>
         ) : slots.length === 0 ? (
-          <div className="rounded-2xl bg-white/40 ring-1 ring-inset ring-white/50 p-8 text-center">
+          <div className="rounded-2xl bg-white/40 ring-1 ring-inset ring-white/50 p-8 text-center dark:bg-white/[0.05] dark:ring-white/12">
             <span
               aria-hidden="true"
-              className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10"
+              className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 dark:bg-primary/25"
             >
-              <span className="material-symbols-outlined text-[1.2rem] text-primary">
+              <span className="material-symbols-outlined text-[1.2rem] text-primary dark:text-primary-fixed-dim">
                 event_busy
               </span>
             </span>
-            <p className="mt-3 font-display text-[1rem] italic text-ink">
+            <p className="mt-3 font-display text-[1rem] italic text-ink dark:text-white">
               Sin disponibilidad este día
             </p>
-            <p className="mt-1 font-body text-[0.82rem] text-ink-soft">
+            <p className="mt-1 font-body text-[0.82rem] text-ink-soft dark:text-white/65">
               Prueba otro día o contacta con Almudena por mensaje.
             </p>
           </div>
@@ -274,7 +282,7 @@ export default function SlotPicker({
                 type="button"
                 disabled={reservando}
                 onClick={() => handleReservar(s)}
-                className="group h-11 rounded-xl bg-white/60 font-body text-[0.88rem] tabular-nums text-ink ring-1 ring-inset ring-white/50 transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-primary hover:text-on-primary hover:-translate-y-[2px] hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="group h-11 rounded-xl bg-white/60 font-body text-[0.88rem] tabular-nums text-ink ring-1 ring-inset ring-white/50 transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-primary hover:text-on-primary hover:-translate-y-[2px] hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary"
               >
                 {format(new Date(s.slot_inicio), 'HH:mm')}
               </button>
