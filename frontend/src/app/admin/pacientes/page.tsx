@@ -21,10 +21,31 @@ export const dynamic = 'force-dynamic';
  *   - Esta vista usa `v_pacientes_resumen_admin` que SOLO expone flags booleanos
  *     (has_dni, has_telefono…) + métricas agregadas. El plaintext sólo se sirve
  *     desde la ficha individual vía RPC auditado (migración 0012).
- *   - Búsqueda por nombre/email: se resuelve contra profiles (display_name/email)
- *     haciendo match por `user_id`. Para búsqueda por DNI real habría que hashear
- *     el query con la key de bidx → deferred a F5 (backend encryption).
+ *   - Búsqueda:
+ *       · display_name / email → match en `profiles` (join por user_id).
+ *       · DNI/NIE, teléfono y email RGPD → lookup via RPC
+ *         `paciente_buscar_por_campo` (blind index HMAC, no se envía
+ *         plaintext al cliente).
  */
+
+function detectarCampoBlind(
+  query: string
+): 'dni_nie' | 'telefono' | 'email' | null {
+  const trimmed = query.trim();
+  if (trimmed.length < 3) return null;
+  // Email: contiene exactamente una '@' con algo a cada lado.
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return 'email';
+  // DNI español: 8 dígitos + letra ó NIE (X/Y/Z) + 7 dígitos + letra.
+  if (/^([XYZ]\d{7}|\d{8})[A-Z]$/i.test(trimmed.replace(/\s/g, '')))
+    return 'dni_nie';
+  // Teléfono: sólo dígitos, +, espacios, guiones; al menos 7 dígitos.
+  if (
+    /^[+\d][\d\s\-()]{6,24}$/.test(trimmed) &&
+    trimmed.replace(/\D/g, '').length >= 7
+  )
+    return 'telefono';
+  return null;
+}
 
 const PAGE_SIZE = 25;
 
@@ -81,8 +102,14 @@ export default async function AdminPacientesPage({
 
   const supabase = createServerClient();
 
-  // 1. Si hay query: filtramos profiles por display_name/email → user_ids
+  // 1. Si hay query:
+  //    a) profiles.display_name / profiles.email → lista de user_ids
+  //    b) si el query parece DNI / teléfono / email → blind index RPC
+  //       `paciente_buscar_por_campo` (devuelve paciente_id sin plaintext)
   let filterUserIds: string[] | null = null;
+  let filterPacienteIds: string[] | null = null;
+  let blindCampoDetectado: 'dni_nie' | 'telefono' | 'email' | null = null;
+
   if (query.length > 1) {
     const safe = query.replace(/[%_\\]/g, '\\$&');
     const filter = `%${safe}%`;
@@ -94,6 +121,16 @@ export default async function AdminPacientesPage({
       .limit(500);
 
     filterUserIds = (matches as ProfileLite[] | null)?.map((m) => m.id) ?? [];
+
+    blindCampoDetectado = detectarCampoBlind(query);
+    if (blindCampoDetectado) {
+      const { data: blindId } = await supabase.rpc('paciente_buscar_por_campo', {
+        p_campo: blindCampoDetectado,
+        p_valor: query.trim(),
+      });
+      const found = (blindId as string | null) ?? null;
+      filterPacienteIds = found ? [found] : [];
+    }
   }
 
   const from = (page - 1) * PAGE_SIZE;
@@ -109,12 +146,21 @@ export default async function AdminPacientesPage({
     .eq('activo', true)
     .order('fecha_alta', { ascending: false });
 
-  if (filterUserIds !== null) {
-    if (filterUserIds.length === 0) {
-      // Sin coincidencias — forzamos resultado vacío sin romper paginación.
+  if (filterUserIds !== null || filterPacienteIds !== null) {
+    const userHits = filterUserIds ?? [];
+    const pacHits = filterPacienteIds ?? [];
+    if (userHits.length === 0 && pacHits.length === 0) {
+      // Ninguna coincidencia en profiles ni blind index: forzamos vacío.
       q1 = q1.eq('user_id', '00000000-0000-0000-0000-000000000000');
+    } else if (userHits.length > 0 && pacHits.length > 0) {
+      // Combinación OR sobre user_id / id.
+      q1 = q1.or(
+        `user_id.in.(${userHits.join(',')}),id.in.(${pacHits.join(',')})`
+      );
+    } else if (userHits.length > 0) {
+      q1 = q1.in('user_id', userHits);
     } else {
-      q1 = q1.in('user_id', filterUserIds);
+      q1 = q1.in('id', pacHits);
     }
   }
 
@@ -214,7 +260,7 @@ export default async function AdminPacientesPage({
         <form action="/admin/pacientes" method="get" className="flex flex-wrap gap-3 items-end">
           <label className="flex flex-col gap-1 flex-1 min-w-[220px]">
             <span className="font-body text-[0.62rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
-              Buscar por nombre o email
+              Buscar — nombre, email, DNI o teléfono
             </span>
             <div className="relative">
               <span
@@ -227,10 +273,14 @@ export default async function AdminPacientesPage({
                 type="search"
                 name="q"
                 defaultValue={query}
-                placeholder="Ej: María, marchesi@…"
+                placeholder="María · marchesi@… · 12345678A · +34 600…"
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/80 ring-1 ring-inset ring-ink/8 font-body text-[0.9rem] text-ink outline-none focus:ring-primary/40 dark:bg-white/5 dark:ring-white/10 dark:text-white"
               />
             </div>
+            <span className="font-body text-[0.64rem] text-ink-muted dark:text-white/45">
+              DNI, email y teléfono se resuelven con blind index (HMAC) —
+              sin exponer plaintext.
+            </span>
           </label>
           <div className="flex gap-2">
             <Button type="submit" variant="primary" icon="search">

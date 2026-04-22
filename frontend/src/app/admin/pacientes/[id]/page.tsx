@@ -11,6 +11,8 @@ import {
   SectionDivider,
 } from '@/components/portal-shell/ui';
 import SensitiveField from '@/components/admin/ficha/SensitiveField';
+import EditableSensitiveField from '@/components/admin/ficha/EditableSensitiveField';
+import NotaSesionAdminEditor from '@/components/admin/ficha/NotaSesionAdminEditor';
 import DiagnosticosCard from '@/components/admin/ficha/DiagnosticosCard';
 import MedicacionCard from '@/components/admin/ficha/MedicacionCard';
 import TagsEditor from '@/components/admin/ficha/TagsEditor';
@@ -138,6 +140,18 @@ export default async function FichaPacientePage({
     .order('fecha_registro', { ascending: false })
     .limit(20);
   const sesiones = (sesionesData as HistorialSesionRow[] | null) ?? [];
+
+  // Mapa cita_id → notaId de `citas_notas_paciente`. Solo metadata, sin
+  // descifrar. El admin expande una nota y se descifra on-demand
+  // (genera 1 entrada `lectura_nota_admin` en admin_lookups).
+  const { data: notasCitaData } = await supabase
+    .from('citas_notas_paciente')
+    .select('id, cita_id')
+    .eq('paciente_id', id);
+  const notaIdByCita = new Map<string, string>();
+  for (const n of (notasCitaData as { id: string; cita_id: string }[] | null) ?? []) {
+    notaIdByCita.set(n.cita_id, n.id);
+  }
 
   // Pre-descifrado de la ficha completa (una sola RPC + una sola
   // entrada de auditoría `acceso_ficha_completa` en admin_lookups).
@@ -325,38 +339,52 @@ export default async function FichaPacientePage({
             </div>
 
             <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <SensitiveField
+              <EditableSensitiveField
                 label="DNI / NIE"
                 pacienteId={paciente.id}
                 campo="dni_nie"
-                value={sensibles?.dni_nie}
+                campoEdit="dni_nie"
+                value={sensibles?.dni_nie ?? null}
                 keepShape
+                placeholder="12345678A"
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Teléfono"
                 pacienteId={paciente.id}
                 campo="telefono"
+                campoEdit="telefono"
                 value={sensibles?.telefono ?? null}
                 keepShape
+                inputType="tel"
+                placeholder="+34 600 00 00 00"
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Email"
                 pacienteId={paciente.id}
                 campo="email"
+                campoEdit="email"
                 value={sensibles?.email ?? profile?.email ?? null}
+                inputType="email"
+                placeholder="paciente@email.com"
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Dirección"
                 pacienteId={paciente.id}
                 campo="direccion"
+                campoEdit="direccion"
                 value={sensibles?.direccion ?? null}
+                multiline
+                placeholder="Calle, número, CP, ciudad"
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Contacto emergencia (teléfono)"
                 pacienteId={paciente.id}
                 campo="contacto_emergencia_telefono"
+                campoEdit="contacto_emergencia_telefono"
                 value={sensibles?.contacto_emergencia_telefono ?? null}
                 keepShape
+                inputType="tel"
+                placeholder="+34 600 00 00 00"
               />
               <div>
                 <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -405,23 +433,32 @@ export default async function FichaPacientePage({
               Campos cifrados. Pulsa el ojo (queda auditado) para revelarlos.
             </p>
             <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <SensitiveField
+              <EditableSensitiveField
                 label="Alergias"
                 pacienteId={paciente.id}
                 campo="alergias"
+                campoEdit="alergias"
                 value={sensibles?.alergias ?? null}
+                multiline
+                placeholder="Alergias conocidas, intolerancias..."
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Medicación base"
                 pacienteId={paciente.id}
                 campo="medicacion_base"
+                campoEdit="medicacion_base"
                 value={sensibles?.medicacion_base ?? null}
+                multiline
+                placeholder="Medicación habitual actual"
               />
-              <SensitiveField
+              <EditableSensitiveField
                 label="Objetivos terapéuticos"
                 pacienteId={paciente.id}
                 campo="objetivos"
+                campoEdit="objetivos"
                 value={sensibles?.objetivos ?? null}
+                multiline
+                placeholder="Objetivos acordados con el paciente"
               />
               <div>
                 <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -631,12 +668,28 @@ export default async function FichaPacientePage({
                         #{citas.length - idx}
                       </span>
                     </div>
-                    {/* Las notas clínicas están cifradas — mostramos solo metadata */}
-                    <p className="font-body text-[0.82rem] leading-[1.6] text-ink-soft dark:text-white/65">
-                      {active
-                        ? 'Sesión más reciente. Revisa el panel de auditoría para consultar las notas clínicas cifradas registradas para esta cita.'
-                        : 'Notas clínicas cifradas — accesibles desde la cita en la agenda.'}
-                    </p>
+                    {/* Las notas clínicas están cifradas en reposo y solo
+                         se descifran al expandir el editor (una entrada
+                         `lectura_nota_admin` por apertura). */}
+                    {(() => {
+                      const notaId = notaIdByCita.get(c.id) ?? null;
+                      const hasNota = notaId !== null;
+                      return (
+                        <>
+                          <p className="font-body text-[0.82rem] leading-[1.6] text-ink-soft dark:text-white/65">
+                            {hasNota
+                              ? 'Nota clínica cifrada registrada para esta cita.'
+                              : 'Sin nota clínica todavía para esta sesión.'}
+                          </p>
+                          <NotaSesionAdminEditor
+                            citaId={c.id}
+                            pacienteId={paciente.id}
+                            notaId={notaId}
+                            hasNota={hasNota}
+                          />
+                        </>
+                      );
+                    })()}
                   </div>
                 </li>
               );

@@ -142,9 +142,9 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 - [x] Tipos Supabase (`lib/supabase/types.ts`) extendidos con todas las RPCs F5.
 
 **Queda por migrar** (no bloqueante, cuando haya diseño de UI):
-- [ ] `/admin/pacientes/[id]` edit inline de campos sensibles → usar `actualizarPacienteSensiblesAction(id, {campo: valor})`.
-- [ ] UI para que admin escriba nota post-sesión vía `nota_cita_guardar_cifrada` (ahora mismo sólo escribe el paciente).
-- [ ] Búsqueda en `/admin/pacientes` por email/DNI/teléfono usando `buscarPacientePorCampoAction` (blind index).
+- [x] `/admin/pacientes/[id]` edit inline de campos sensibles → componente `EditableSensitiveField` con `actualizarPacienteSensiblesAction` (completado 22-abr-2026).
+- [x] UI admin para notas post-sesión vía `nota_cita_guardar_cifrada` → `NotaSesionAdminEditor` expandible en timeline de la ficha, descifrado on-demand (completado 22-abr-2026).
+- [x] Búsqueda en `/admin/pacientes` por email/DNI/teléfono → detección automática de patrón y lookup vía `paciente_buscar_por_campo` (blind index HMAC, completado 22-abr-2026).
 
 **Migración futura `0025_cifrado_drop_plaintext`** (SOLO tras 100% confianza en que nadie lee plaintext):
 - [ ] Drop columnas `titulo`, `descripcion` de `paciente_diagnosticos` (mantener `_ciphertext`).
@@ -174,6 +174,7 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 - [ ] Invalidar tokens antiguos (GitHub/Vercel/etc.).
 - [ ] Crear usuarios admin/paciente reales con credenciales fuertes y borrar seeds demo (`usuario@visualizacion.com` / `Almudena2026!`).
 - [ ] Borrar toda fila de testing en `pacientes`, `citas`, `pagos`, `mensajes`, `bonos_pacientes`, `stripe_events` antes de abrir al público.
+  - [x] Script idempotente listo: `supabase/migrations/0028_retirar_seed_demo.sql`. **Ejecutar desde Supabase SQL Editor justo antes del go-live** (tras crear el paciente real y antes de exponer el dominio).
 
 ---
 
@@ -217,3 +218,44 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 ### 7.6 Advisors Supabase (estado tras la ronda)
 - Security advisors: 1 WARN restante (`auth_leaked_password_protection` — requiere Supabase Pro · aceptado).
 - Performance advisors: solo INFO (unindexed foreign keys en tablas de baja escritura · impacto despreciable).
+
+---
+
+## 8) Fases no-dominio ejecutadas (22-abr-2026)
+
+> Ejecutadas en el orden pedido por el cliente: "todo por fases, lo del dominio al final".
+
+### 8.1 FASE 1 — UX admin cifrada (COMPLETADO)
+- [x] **1.1 Edición inline de campos sensibles** — nuevo `EditableSensitiveField` aplicado a DNI, teléfono, email, dirección, contacto emergencia, alergias, medicación y objetivos. Guarda vía `actualizarPacienteSensiblesAction` → RPC `paciente_actualizar_cifrado`.
+- [x] **1.2 Nota post-sesión cifrada desde admin** — nuevo `NotaSesionAdminEditor` integrado en el timeline de la ficha. Guardado con `nota_cita_guardar_cifrada`; lectura on-demand con `registro_clinico_descifrar` y justificación `lectura_nota_admin`.
+- [x] **1.3 Búsqueda blind index en `/admin/pacientes`** — detección automática de patrones (DNI / email / teléfono) y lookup vía `paciente_buscar_por_campo`; combinada con el match por `profiles.display_name/email` existente (OR sobre `user_id` e `id`).
+
+### 8.2 FASE 2 — Cleanup y build (COMPLETADO)
+- [x] **2.1 Legacy `services/payments` + `components/payments` eliminados** — la ruta pública `/pagos` redirige a `/citas/nueva` (que usa `PaymentElement` embebido). Elimina la dependencia del backend FastAPI para el flujo de pago.
+- [x] **2.2 Build de producción limpio** — `npm run build` OK, 42 páginas generadas, 0 errores de tipo, único warn residual: `<img>` en `ChatPanel` con Signed URLs de Storage (decisión consciente, no optimizable por `next/image`).
+
+### 8.3 FASE 3 — Observabilidad y healthcheck (COMPLETADO)
+- [x] **3.1 Edge Function `health`** — `supabase/functions/health/index.ts` + entrada en `config.toml` con `verify_jwt=false`. Verifica conectividad DB (`horario_plantillas` head-only) y `public.app_encryption_ready()` (vault). Devuelve `200 healthy` / `200 degraded` / `503 down` con metadatos mínimos (sin PII).
+- [x] **3.2 Runbook de alertas operativas** — `docs/05_operations/ALERTAS_OPERATIVAS.md`. Incluye 7 reglas Sentry (Stripe webhook, PaymentIntent, invoice PDF, RGPD, cifrado clínico, client errors, EF genérica), flujo de pago fallido (email paciente + admin), Resend webhook (bounce/complaint), monitores externos y matriz de responsabilidad.
+
+### 8.4 FASE 4 — Seeds demo (COMPLETADO, pendiente ejecutar)
+- [x] **Script idempotente** `supabase/migrations/0028_retirar_seed_demo.sql`. Borra en orden seguro: mensajes + adjuntos, notas de cita, historial sesiones, factura_nota, emails_log, pagos, citas, bonos, recurso_asignaciones, diagnósticos/medicación/adjuntos, admin_lookups, preferencias, paciente, profile y `auth.users` del demo (`usuario@visualizacion.com`).
+- [ ] **Ejecutar** en Supabase SQL Editor tras crear el usuario real y antes de exponer el dominio.
+
+### 8.5 FASE 5 — Documentación (COMPLETADO)
+- [x] `ROADMAP.md` — migraciones 0027/0028 y Edge Function health marcadas; items UX de admin marcados como hechos.
+- [x] `PENDIENTES_Y_CHECKLIST.md` (este documento) — reflejado lo ejecutado en §5.1 y §6.
+
+### 8.6 FASE FINAL — pospuesta explícitamente (DOMINIO)
+> Todo lo siguiente depende de decisiones/compra del dominio `amclinicapsicologia.es` y se ejecuta como última fase.
+
+- [ ] Comprar `amclinicapsicologia.es` y apuntar DNS a Vercel.
+- [ ] Añadir dominio en Vercel + **Supabase Auth → URL configuration / redirect URLs**.
+- [ ] Buzón `contacto@amclinicapsicologia.es` + `FACTURA_EMISOR_EMAIL` + `RESEND_FROM_EMAIL` con remitente del dominio.
+- [ ] `FRONTEND_URL` en Edge Secrets = `https://amclinicapsicologia.es`.
+- [ ] Verificar dominio en Resend (SPF/DKIM/DMARC) y activar webhook bounce/complaint.
+- [ ] Migrar cuenta Stripe a modo Live + rotar `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`.
+- [ ] Ejecutar `0028_retirar_seed_demo.sql`.
+- [ ] Activar las 7 reglas de Sentry documentadas en `ALERTAS_OPERATIVAS.md`.
+- [ ] Crear monitor UptimeRobot contra `/functions/v1/health`.
+- [ ] Rotar passwords (Outlook, Supabase, Vercel, Stripe) + invalidar tokens antiguos.

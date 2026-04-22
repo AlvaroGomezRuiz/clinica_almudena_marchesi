@@ -8,9 +8,10 @@
 ## Horizonte 1 — Pre-launch (bloquea go-live)
 
 ### Infraestructura
-- [x] **Migracion `0026_performance_indexes` aplicada (2026-04-22)** — 8 indices compuestos + ANALYZE. Cubre citas, pagos, mensajes, mensajes_adjuntos, stripe_events, profiles. Nota: el nombre `0026_retirar_seed_demo.sql` del plan original fue reasignado; la limpieza de seeds se hace manual desde Dashboard/SQL Editor antes del go-live.
-- [ ] Limpieza seeds demo (SQL manual pre-launch, ver `PENDIENTES_Y_CHECKLIST.md` §6).
-- [ ] Crear Edge Function `health` que verifica `app_encryption_ready()` + vault.
+- [x] **Migracion `0026_performance_indexes` aplicada (2026-04-22)** — 8 indices compuestos + ANALYZE. Cubre citas, pagos, mensajes, mensajes_adjuntos, stripe_events, profiles.
+- [x] **Migracion `0027_ficha_bulk_descifrar`** — RPC `paciente_ficha_sensibles_bulk` que descifra toda la ficha con 1 audit.
+- [x] **Migracion `0028_retirar_seed_demo`** — script idempotente listo; pendiente ejecutar justo antes del go-live.
+- [x] **Edge Function `health`** — verifica `app_encryption_ready()` + conectividad DB; publica en `config.toml` con `verify_jwt=false` para monitor externo.
 - [ ] Rotar master `app_encryption_key` (solo si fue manipulada en dev).
 
 ### Stripe
@@ -24,10 +25,10 @@
 - [ ] Activar webhook de bounce/complaint.
 
 ### Frontend cleanup
-- [ ] Consolidar `services/payments/` → `services/pagos/` (legacy folder).
-- [ ] Consolidar `components/payments/` → `components/pagos/`.
-- [x] Google Fonts ya via `next/font` (Cormorant / Outfit / JetBrains Mono). Material Symbols self-hosted en subset local (`/public/fonts/material-symbols-subset.woff2`, 6.4 KB).
-- [x] `npm run build` con 0 errores (verificado 2026-04-22). Warn residual: `<img>` en `ChatPanel` para URLs Supabase Storage firmadas (no optimizable por `next/image`, decisión consciente).
+- [x] **Consolidar `services/payments/` → `services/pagos/`** (eliminado 2026-04-22). La ruta pública `/pagos` redirige a `/citas/nueva`; el legacy llamaba al backend FastAPI deprecado.
+- [x] **Consolidar `components/payments/` → `components/pagos/`** (eliminado 2026-04-22). `CheckoutButton` del flujo legacy retirado.
+- [x] Google Fonts ya via `next/font` (Cormorant / Outfit / JetBrains Mono). Material Symbols self-hosted en subset local (`/public/fonts/material-symbols-subset.woff2`, 17.9 KB tras ampliar el extractor a 184 iconos).
+- [x] `npm run build` con 0 errores (verificado 2026-04-22 tras consolidar pagos). Warn residual: `<img>` en `ChatPanel` para URLs Supabase Storage firmadas (no optimizable por `next/image`, decisión consciente).
 - [ ] Lighthouse mobile >= 90 en rutas publicas + portal.
 
 ### Verificacion
@@ -40,9 +41,9 @@
 ## Horizonte 2 — Primer trimestre post-launch
 
 ### UX
-- [ ] `/admin/pacientes/[id]` edit inline de campos sensibles via `actualizarPacienteSensiblesAction`.
-- [ ] UI admin para escribir notas post-sesion via `nota_cita_guardar_cifrada`.
-- [ ] Busqueda `/admin/pacientes` por email/DNI/telefono usando blind index.
+- [x] **Edición inline de campos sensibles en `/admin/pacientes/[id]`** — componente `EditableSensitiveField` con `actualizarPacienteSensiblesAction` (RPC `paciente_actualizar_cifrado`).
+- [x] **UI admin para notas post-sesión** — componente `NotaSesionAdminEditor` expandible en el timeline de la ficha; descifrado on-demand vía `registro_clinico_descifrar`, guardado vía `nota_cita_guardar_cifrada`.
+- [x] **Búsqueda `/admin/pacientes` por email/DNI/teléfono (blind index)** — detección automática de DNI/email/teléfono y lookup vía `paciente_buscar_por_campo` (HMAC).
 - [ ] Agenda admin drag & drop (FullCalendar sobre `v_citas_expandidas`).
 - [ ] Cancelacion de cita con reembolso parcial Stripe si aplica.
 - [ ] Webhook Resend → auto-desactivar preferencia en bounce/complaint.
@@ -52,10 +53,11 @@
 - [ ] Test restore DB en staging. Documentar RTO/RPO.
 
 ### Observabilidad
-- [ ] Alertas Sentry: error rate > 1% en 5 min.
-- [ ] Alertas pago fallido via email.
+- [x] **Runbook alertas operativas** documentado en `docs/05_operations/ALERTAS_OPERATIVAS.md` (7 reglas Sentry + pago fallido + Resend + uptime).
+- [ ] Activar las 7 reglas Sentry descritas en §1 del runbook (requiere acceso cuenta Sentry).
+- [ ] Template Resend `pago_fallido` + prueba con tarjeta de declive.
+- [ ] Configurar monitor externo (UptimeRobot/healthchecks.io) contra `/functions/v1/health`.
 - [ ] Monitor Resend rate limit (>80% quota).
-- [ ] Uptime monitoring externo (UptimeRobot o similar).
 
 ### Seguridad
 - [ ] Pentest externo basico.

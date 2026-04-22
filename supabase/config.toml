@@ -124,3 +124,10 @@ verify_jwt = true
 # con RESEND_WEBHOOK_SECRET dentro de la función.
 [functions.resend-webhook]
 verify_jwt = false
+
+# health: endpoint público para monitor externo (UptimeRobot, healthchecks.io).
+# Devuelve metadata mínima (ok, status, latencias) sin PII ni ciphertext.
+# No requiere JWT — usa SERVICE_ROLE_KEY server-side para chequear
+# `app_encryption_ready()` + una query DB trivial.
+[functions.health]
+verify_jwt = false

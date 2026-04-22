@@ -103,6 +103,37 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - Reescritura `.gitignore` + `README.md`.
 - 6 auditorias tecnicas + informe ejecutivo para cliente (ver `01_audits/` y `02_reports/`).
 
+## Hito 13 — Cierre pre-launch: UX admin + observabilidad + cleanup (22-abr-2026)
+
+> Ejecutado en 5 fases secuenciales dejando explícitamente todo lo
+> dependiente del dominio para el final del proyecto.
+
+- **UX admin cifrada** (FASE 1):
+  - Edición inline de campos sensibles en la ficha del paciente
+    (`EditableSensitiveField` + `paciente_actualizar_cifrado`).
+  - Nota post-sesión cifrada desde admin en el timeline
+    (`NotaSesionAdminEditor` + `nota_cita_guardar_cifrada`, descifrado
+    on-demand con auditoría minimal).
+  - Búsqueda por DNI/email/teléfono con blind index HMAC
+    (`paciente_buscar_por_campo`), detección automática de patrón.
+- **Cleanup legacy** (FASE 2):
+  - Retirada de `services/payments/` y `components/payments/` (flujo
+    antiguo vía backend FastAPI). `/pagos` ahora redirige a
+    `/citas/nueva` (Payment Element embebido).
+  - `npm run build` limpio (42 páginas, 0 errores TS).
+- **Observabilidad** (FASE 3):
+  - Nueva Edge Function `health` que verifica `app_encryption_ready()`
+    + conectividad DB, con `verify_jwt=false` para monitores externos.
+  - `docs/05_operations/ALERTAS_OPERATIVAS.md` con 7 reglas Sentry,
+    flujo de pago fallido (email paciente + admin), Resend webhook,
+    monitor externo y matriz de responsabilidad.
+- **Data hygiene** (FASE 4):
+  - Migración idempotente `0028_retirar_seed_demo.sql` lista para
+    ejecutar justo antes del go-live (limpia demo sin tocar admins).
+- **Docs** (FASE 5): `ROADMAP.md` y `PENDIENTES_Y_CHECKLIST.md`
+  reflejan todo lo anterior; FASE FINAL (dominio) queda listada y
+  pospuesta.
+
 ## Hito 12 — Retirada de MySQL (22-abr-2026)
 
 - **Motivo**: la fuente de verdad unica es Supabase Postgres; mantener MySQL
