@@ -28,7 +28,7 @@ export default function MoncloaSection() {
                 className="w-full h-[350px] lg:h-[420px] object-cover transition-transform duration-1000 ease-apple group-hover:scale-105"
                 height={420}
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                src="/images/moncloa.jpg"
+                src="/images/moncloa.avif"
                 width={800}
               />
             </Link>

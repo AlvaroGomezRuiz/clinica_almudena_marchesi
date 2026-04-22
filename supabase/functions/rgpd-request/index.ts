@@ -24,7 +24,7 @@ import {
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 const FROM = Deno.env.get("EMAIL_FROM") ?? "Almudena <hola@almudenaagullo.com>";
-const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://clinica-almudena.vercel.app";
+const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
 
 interface RgpdRow {
   id: string;

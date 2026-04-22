@@ -21,6 +21,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,16 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   if (profile?.role !== 'admin') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  /* Rate-limit: 30 subidas/hora por admin (muy conservador). */
+  const rate = enforceRateLimit({
+    key: `recurso-upload:${user.id}`,
+    max: 30,
+    windowMs: 60 * 60_000,
+  });
+  if (!rate.ok) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
   let form: FormData;

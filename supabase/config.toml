@@ -44,7 +44,9 @@ enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
-  "https://clinica-almudena.vercel.app/auth/callback"
+  "https://clinica-almudena.vercel.app/auth/callback",
+  "https://amclinicapsicologia.es/auth/callback",
+  "https://www.amclinicapsicologia.es/auth/callback"
 ]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true

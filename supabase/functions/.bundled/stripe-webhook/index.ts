@@ -9,6 +9,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://clinica-almudena.vercel.app",
+  "https://amclinicapsicologia.es",
+  "https://www.amclinicapsicologia.es",
   Deno.env.get("FRONTEND_URL") ?? "",
 ].filter(Boolean);
 
@@ -405,7 +407,7 @@ function json(body: unknown, status: number): Response {
   });
 }
 
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://clinica-almudena.vercel.app";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);

@@ -8,6 +8,12 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  detectFileKind,
+  kindFromMime,
+  type AllowedFileKind,
+} from '@/lib/security/file-validation';
+import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 
@@ -15,6 +21,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const ALLOWED_KINDS: readonly AllowedFileKind[] = ['png', 'jpeg', 'webp'];
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -25,6 +32,16 @@ export async function POST(req: NextRequest): Promise<Response> {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  /* Rate-limit: 10 cambios de avatar/hora. */
+  const rate = enforceRateLimit({
+    key: `avatar:${user.id}`,
+    max: 10,
+    windowMs: 60 * 60_000,
+  });
+  if (!rate.ok) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
   let form: FormData;
@@ -45,6 +62,22 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
   }
 
+  const declaredKind = kindFromMime(file.type);
+  if (!declaredKind) {
+    return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  /* Magic bytes check — el MIME del cliente es inseguro. */
+  const detectedKind = detectFileKind(bytes, ALLOWED_KINDS);
+  if (!detectedKind || detectedKind !== declaredKind) {
+    return NextResponse.json(
+      { error: 'file_signature_mismatch' },
+      { status: 415 }
+    );
+  }
+
   const extByMime: Record<string, string> = {
     'image/png': 'png',
     'image/jpeg': 'jpg',
@@ -52,8 +85,6 @@ export async function POST(req: NextRequest): Promise<Response> {
   };
   const ext = extByMime[file.type] ?? 'png';
   const path = `${user.id}/avatar.${ext}`;
-
-  const bytes = new Uint8Array(await file.arrayBuffer());
 
   const { error: uploadErr } = await supabase.storage
     .from('avatares')

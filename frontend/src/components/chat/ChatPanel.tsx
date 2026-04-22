@@ -14,8 +14,6 @@
  *            RLS ya garantiza que el paciente solo vea su conversación.
  */
 
-import { format, isSameDay } from 'date-fns';
-import { es } from 'date-fns/locale';
 import {
   useCallback,
   useEffect,
@@ -31,6 +29,32 @@ import {
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { marcarLeidosAction, sendMensajeAction } from '@/services/mensajes/actions';
+
+/* Formatters Intl reutilizables → cero coste de date-fns en este bundle.
+   Instanciarlos en módulo en lugar de en cada render es ~5× más rápido. */
+const timeFormatter = new Intl.DateTimeFormat('es-ES', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+const dayLabelFormatter = new Intl.DateTimeFormat('es-ES', {
+  day: 'numeric',
+  month: 'long',
+});
+const dayKeyFormatter = new Intl.DateTimeFormat('sv-SE', {
+  /* locale sv-SE produce formato ISO "YYYY-MM-DD" nativo */
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function isSameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
 
 export interface ChatAdjunto {
   readonly id: string;
@@ -376,6 +400,8 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
                     <img
                       src={a.signed_url}
                       alt={a.nombre}
+                      loading="lazy"
+                      decoding="async"
                       className="max-h-56 max-w-full rounded-xl object-cover ring-1 ring-inset ring-white/40"
                     />
                   </a>
@@ -424,7 +450,7 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
             esMio ? 'justify-end text-on-primary/75' : 'text-ink-muted'
           }`}
         >
-          {format(new Date(mensaje.created_at), 'HH:mm')}
+          {timeFormatter.format(new Date(mensaje.created_at))}
           {esMio && mensaje.pending ? (
             <span className="material-symbols-outlined text-[0.8rem]" aria-hidden="true">
               schedule
@@ -465,14 +491,14 @@ function groupByDay(mensajes: readonly ChatMensaje[]): readonly Grupo[] {
 
   for (const m of mensajes) {
     const d = new Date(m.created_at);
-    const key = format(d, 'yyyy-MM-dd');
+    const key = dayKeyFormatter.format(d);
     const last = out[out.length - 1];
     if (!last || last.key !== key) {
-      const label = isSameDay(d, today)
+      const label = isSameLocalDay(d, today)
         ? 'Hoy'
-        : isSameDay(d, yesterday)
+        : isSameLocalDay(d, yesterday)
           ? 'Ayer'
-          : format(d, "d 'de' MMMM", { locale: es });
+          : dayLabelFormatter.format(d);
       out.push({ key, label, mensajes: [m] });
     } else {
       (last.mensajes as ChatMensaje[]).push(m);

@@ -26,6 +26,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   NotificacionesPrefs,
@@ -157,7 +158,7 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
               <p className="mt-1 font-body text-[0.7rem] text-ink-muted dark:text-white/50">
                 Para cambiar el email,{' '}
                 <Link
-                  href="mailto:hola@almudenaagullo.com"
+                  href={`mailto:${CLINIC_CONTACT_EMAIL}`}
                   className="underline decoration-dotted underline-offset-2 hover:text-ink dark:hover:text-white"
                 >
                   contacta con Almudena
@@ -206,7 +207,7 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
           <p className="mt-4 font-body text-[0.72rem] text-ink-muted dark:text-white/50">
             ¿Dudas sobre seguridad?{' '}
             <Link
-              href="mailto:soporte@almudenaagullo.com"
+              href={`mailto:${CLINIC_CONTACT_EMAIL}`}
               className="underline decoration-dotted underline-offset-2 hover:text-ink dark:hover:text-white"
             >
               Contacta con soporte

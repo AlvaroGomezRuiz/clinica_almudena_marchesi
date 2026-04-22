@@ -15,6 +15,12 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  detectFileKind,
+  kindFromMime,
+  type AllowedFileKind,
+} from '@/lib/security/file-validation';
+import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { sendMensajeAction } from '@/services/mensajes/actions';
 
@@ -28,6 +34,7 @@ const ALLOWED = new Set([
   'image/heic',
   'application/pdf',
 ]);
+const ALLOWED_KINDS: readonly AllowedFileKind[] = ['png', 'jpeg', 'webp', 'heic', 'pdf'];
 const MAX_BYTES = 25 * 1024 * 1024;
 
 function tipoFromMime(mime: string): 'archivo' | 'imagen' {
@@ -48,6 +55,24 @@ export async function POST(req: NextRequest): Promise<Response> {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  /* Rate-limit: 20 uploads/minuto por usuario. Protege bucket de abuso y costos. */
+  const rate = enforceRateLimit({
+    key: `attach:${user.id}`,
+    max: 20,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: 'rate_limited' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil((rate.resetAt - Date.now()) / 1000).toString(),
+        },
+      }
+    );
   }
 
   let form: FormData;
@@ -77,6 +102,21 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
   }
 
+  /* Verificación magic-bytes: el Content-Type viene del cliente y es trivial
+     de falsificar. Revisamos la firma real del archivo contra la lista blanca. */
+  const declaredKind = kindFromMime(file.type);
+  if (!declaredKind) {
+    return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const detectedKind = detectFileKind(bytes, ALLOWED_KINDS);
+  if (!detectedKind || detectedKind !== declaredKind) {
+    return NextResponse.json(
+      { error: 'file_signature_mismatch' },
+      { status: 415 }
+    );
+  }
+
   const nombre = sanitizeFilename(file.name);
   const body = bodyRaw || `📎 ${nombre}`;
 
@@ -91,8 +131,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const mensajeId = msgRes.mensaje.id;
   const storagePath = `${conversacionId}/${mensajeId}/${nombre}`;
 
-  // 2) Subir binario al bucket (privado)
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  // 2) Subir binario al bucket (privado). El buffer ya fue leído arriba.
   const { error: upErr } = await supabase.storage
     .from('chat-adjuntos')
     .upload(storagePath, bytes, {

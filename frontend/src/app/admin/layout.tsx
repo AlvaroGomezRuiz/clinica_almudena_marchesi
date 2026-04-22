@@ -1,8 +1,10 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
+import { SSH_KEYS } from '@/lib/supabase/middleware';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
 
@@ -16,7 +18,12 @@ type ProfileLite = Pick<Profile, 'id' | 'role' | 'display_name' | 'avatar_url' |
  *   - Exige role='admin' en public.profiles.
  *   - RLS activo en todas las consultas ancladas a este layout.
  *
- * Mantiene liquid glass + Editorial Serenity del sitio público.
+ * Performance:
+ *   - El middleware ya verificó al usuario e inyectó la identidad vía
+ *     request headers internos (`x-ss-*`). Si están presentes, evitamos
+ *     las 2 llamadas a Supabase (getUser + profiles) → ahorro ~100-300 ms
+ *     por navegación. Si no (ruta fuera del matcher o fallo del middleware),
+ *     hacemos fallback seguro.
  */
 
 const ADMIN_NAV: readonly NavItem[] = [
@@ -30,25 +37,46 @@ const ADMIN_NAV: readonly NavItem[] = [
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const supabase = createServerClient();
+  const h = headers();
+  const hId = h.get(SSH_KEYS.id);
+  const hEmail = h.get(SSH_KEYS.email);
+  const hRole = h.get(SSH_KEYS.role);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let profile: ProfileLite | null = null;
 
-  if (!user || !user.email) {
-    redirect('/login?reason=no_session');
-  }
+  if (hId && hEmail && hRole) {
+    /* Fast path: datos verificados por el middleware. */
+    if (hRole !== 'admin') {
+      redirect(hRole === 'paciente' ? '/portal' : '/login?reason=role_mismatch');
+    }
+    profile = {
+      id: hId,
+      email: hEmail,
+      role: hRole as 'admin',
+      display_name: h.get(SSH_KEYS.name),
+      avatar_url: h.get(SSH_KEYS.avatar),
+    };
+  } else {
+    /* Fallback: el middleware no inyectó identidad. Verificamos a mano. */
+    const supabase = createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, role, display_name, avatar_url, email')
-    .eq('id', user.id)
-    .maybeSingle<ProfileLite>();
+    if (!user || !user.email) {
+      redirect('/login?reason=no_session');
+    }
 
-  if (!profile || profile.role !== 'admin') {
-    // Paciente que llega a /admin → a su portal
-    redirect(profile?.role === 'paciente' ? '/portal' : '/login?reason=role_mismatch');
+    const { data: fetched } = await supabase
+      .from('profiles')
+      .select('id, role, display_name, avatar_url, email')
+      .eq('id', user.id)
+      .maybeSingle<ProfileLite>();
+
+    if (!fetched || fetched.role !== 'admin') {
+      redirect(fetched?.role === 'paciente' ? '/portal' : '/login?reason=role_mismatch');
+    }
+    profile = fetched;
   }
 
   return (

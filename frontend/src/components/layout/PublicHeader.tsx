@@ -3,9 +3,16 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import LiquidGlass from '@/components/landing/LiquidGlass';
 import ThemeToggle from '@/components/layout/ThemeToggle';
+
+/* Drawer móvil cargado sólo cuando el usuario toca el hamburger.
+   ssr:false → framer-motion queda fuera del bundle inicial. */
+const PublicMobileDrawer = dynamic(
+  () => import('@/components/layout/PublicMobileDrawer'),
+  { ssr: false },
+);
 
 const NAV_ITEMS = [
   { href: '/enfoque', label: 'Enfoque' },
@@ -24,23 +31,31 @@ const MOBILE_NAV_ITEMS = [
 export default function PublicHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  /* Mantenemos el drawer en el árbol después de haberlo abierto una vez
+     para que las animaciones de salida corran. */
+  const [drawerMounted, setDrawerMounted] = useState(false);
   const pathname = usePathname();
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 40);
+        ticking = false;
+      });
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => {
       document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -48,6 +63,11 @@ export default function PublicHeader() {
   }, [pathname]);
 
   const isActive = (href: string) => pathname === href;
+
+  const openMobile = () => {
+    setDrawerMounted(true);
+    setMobileOpen(true);
+  };
 
   return (
     <>
@@ -122,16 +142,30 @@ export default function PublicHeader() {
                 </Link>
               </div>
 
-              {/* Mobile: ThemeToggle + Hamburger */}
+              {/* Mobile: ThemeToggle + Hamburger (SVG inline, sin material-symbols) */}
               <div className="md:hidden flex items-center ml-auto gap-1">
                 <ThemeToggle />
                 <button
                   type="button"
                   className="flex items-center justify-center w-12 h-12 rounded-full hover:bg-ink/[0.04] transition-colors"
-                  onClick={() => setMobileOpen(true)}
+                  onClick={openMobile}
                   aria-label="Abrir menú"
                 >
-                  <span className="material-symbols-outlined text-2xl text-ink">menu</span>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    className="text-ink"
+                    aria-hidden="true"
+                  >
+                    <line x1="4" y1="7" x2="20" y2="7" />
+                    <line x1="4" y1="12" x2="20" y2="12" />
+                    <line x1="4" y1="17" x2="20" y2="17" />
+                  </svg>
                 </button>
               </div>
             </nav>
@@ -139,104 +173,15 @@ export default function PublicHeader() {
         </div>
       </header>
 
-      {/* Mobile Full-Screen Overlay — Native backdrop-blur (no SVG LiquidGlass) */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            className="fixed inset-0 z-[60] md:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Native backdrop-blur overlay — performs well on all mobile devices */}
-            <div
-              className="absolute inset-0 bg-canvas/90 dark:bg-[#111111]/90 transition-colors duration-500"
-              style={{
-                backdropFilter: 'blur(40px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-              }}
-              onClick={() => setMobileOpen(false)}
-            />
-
-            {/* Content */}
-            <div className="relative z-[70] flex flex-col h-full px-8 py-6">
-              {/* Header row: brand + close */}
-              <div className="flex items-center justify-between">
-                <Link
-                  href="/"
-                  className="flex flex-col leading-none flex-1 py-4 pr-12 -my-4 -ml-2 active:opacity-50 transition-opacity"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Ir a Inicio"
-                >
-                  <span className="font-display text-[1.05rem] text-ink font-medium">
-                    Almudena Marchesi
-                  </span>
-                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-muted">
-                    Psicología Clínica
-                  </span>
-                </Link>
-
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 transition-all duration-300"
-                  style={{
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                  }}
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Cerrar menú"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 18 18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    className="text-ink"
-                  >
-                    <line x1="3" y1="3" x2="15" y2="15" />
-                    <line x1="15" y1="3" x2="3" y2="15" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Links */}
-              <nav className="flex-1 flex flex-col justify-center gap-2 -mt-12">
-                {MOBILE_NAV_ITEMS.map((item, i) => (
-                  <motion.div
-                    key={item.href}
-                    initial={reduceMotion ? undefined : { opacity: 0, y: 20 }}
-                    animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 + i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-4 px-4 py-4 rounded-apple transition-colors ${
-                        isActive(item.href)
-                          ? 'bg-sage/8 text-sage'
-                          : 'text-ink hover:bg-ink/[0.03]'
-                      }`}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <span className="material-symbols-outlined text-xl opacity-40">{item.icon}</span>
-                      <span className="font-display text-2xl font-light">{item.label}</span>
-                    </Link>
-                  </motion.div>
-                ))}
-              </nav>
-
-              <div className="flex items-center justify-between pb-4">
-                <p className="font-mono text-label-sm uppercase text-ink-muted">
-                  Psicología Clínica — Moncloa, Madrid
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Drawer móvil: solo se monta tras primer clic. */}
+      {drawerMounted && (
+        <PublicMobileDrawer
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          items={MOBILE_NAV_ITEMS}
+          isActive={isActive}
+        />
+      )}
     </>
   );
 }

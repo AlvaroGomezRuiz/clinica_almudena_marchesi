@@ -39,43 +39,18 @@ function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => p !== '/' && pathname.startsWith(`${p}/`));
 }
 
-function buildCsp(isProd: boolean): string {
-  const supabaseDomain = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-  const backendApi = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? 'http://localhost:8000';
-
-  const directives = [
-    "default-src 'self'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-    `script-src 'self' ${isProd ? '' : "'unsafe-eval'"} 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com " + supabaseDomain,
-    `connect-src 'self' ${supabaseDomain} wss://${supabaseDomain.replace(/^https?:\/\//, '')} ${backendApi} https://api.stripe.com`,
-    "frame-src https://js.stripe.com https://hooks.stripe.com",
-    'upgrade-insecure-requests',
-  ];
-  return directives.join('; ').replace(/\s{2,}/g, ' ').trim();
-}
-
-function applySecurityHeaders(response: NextResponse, isProd: boolean): NextResponse {
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), usb=()'
-  );
-  response.headers.set('Content-Security-Policy', buildCsp(isProd));
-
-  if (isProd) {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=63072000; includeSubDomains; preload'
-    );
-  }
+/**
+ * Las cabeceras de seguridad (CSP, HSTS, X-Frame, COOP, etc.) se configuran
+ * como **única fuente de verdad** en `next.config.js` → `async headers()`.
+ * Evitamos duplicarlas aquí para no generar divergencias entre rutas
+ * estáticas (que no pasan por middleware) y dinámicas (que sí).
+ *
+ * El middleware solo añade cabeceras específicas de SESIÓN autenticada.
+ */
+function applyRuntimeHeaders(response: NextResponse): NextResponse {
+  /* Vary: garantiza que la cache de Vercel no sirva la misma respuesta a
+     usuarios con distintas cookies (evita fuga de sesiones entre usuarios). */
+  response.headers.set('Vary', 'Cookie, Accept-Encoding');
   return response;
 }
 
@@ -89,7 +64,6 @@ function redirectTo(request: NextRequest, path: string, reason?: string): NextRe
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  const isProd = process.env.NODE_ENV === 'production';
   const { pathname } = request.nextUrl;
 
   const isAdminZone   = pathname.startsWith('/admin');
@@ -100,14 +74,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   // Rutas completamente públicas: no tocar sesión (perf).
   if (!isProtected && !isLoginPage && !isPagosZone && isPublicPath(pathname)) {
-    return applySecurityHeaders(NextResponse.next(), isProd);
+    return applyRuntimeHeaders(NextResponse.next());
   }
 
   const { response, user } = await updateSupabaseSession(request);
 
   // ─── Zona protegida sin sesión → expulsar a /login ───
   if (isProtected && !user) {
-    return applySecurityHeaders(redirectTo(request, '/login', 'no_session'), isProd);
+    return applyRuntimeHeaders(redirectTo(request, '/login', 'no_session'));
   }
 
   // ─── RBAC: rol no coincide con zona ───
@@ -115,25 +89,27 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     const role = user.profile.role;
 
     if (isAdminZone && role !== 'admin') {
-      return applySecurityHeaders(redirectTo(request, '/portal', 'role_mismatch'), isProd);
+      return applyRuntimeHeaders(redirectTo(request, '/portal', 'role_mismatch'));
     }
     if (isPortalZone && role !== 'paciente') {
-      return applySecurityHeaders(redirectTo(request, '/admin', 'role_mismatch'), isProd);
+      return applyRuntimeHeaders(redirectTo(request, '/admin', 'role_mismatch'));
     }
   }
 
   // ─── Usuario autenticado intenta ver /login → home según rol ───
   if (user && user.profile && isLoginPage) {
     const target = user.profile.role === 'admin' ? '/admin' : '/portal';
-    return applySecurityHeaders(redirectTo(request, target), isProd);
+    return applyRuntimeHeaders(redirectTo(request, target));
   }
 
-  return applySecurityHeaders(response, isProd);
+  return applyRuntimeHeaders(response);
 }
 
 export const config = {
   matcher: [
-    // Excluir solo assets estáticos; todo lo demás pasa por middleware.
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2)).*)',
+    /* Excluidas del middleware: assets estáticos, endpoints de monitoring
+       (tunnel Sentry), metadata de AI/SEO y recursos sin cookies.
+       Cuanto menor sea la superficie del matcher, menor latencia global. */
+    '/((?!_next/static|_next/image|_next/data|favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml|monitoring|llms.txt|llms-full.txt|ai/|.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2|txt|json|xml)).*)',
   ],
 };

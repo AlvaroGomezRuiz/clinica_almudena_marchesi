@@ -1,12 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
-import {
-  motion,
-  useInView,
-  useReducedMotion,
-  type Variant,
-} from 'framer-motion';
+import { useEffect, useRef, useState, type CSSProperties, type JSX } from 'react';
 
 type ScrollRevealProps = {
   children: React.ReactNode;
@@ -15,7 +9,7 @@ type ScrollRevealProps = {
   offset?: number;
   /** Animation duration in seconds. Default 0.8 */
   duration?: number;
-  /** Stagger delay in seconds (for use inside a parent). Default 0 */
+  /** Stagger delay in seconds. Default 0 */
   delay?: number;
   /** How much of the element must be visible. Default 0.15 */
   amount?: number;
@@ -27,17 +21,19 @@ type ScrollRevealProps = {
   as?: keyof JSX.IntrinsicElements;
 };
 
-const directionMap: Record<string, { x?: number; y?: number }> = {
-  up: { y: 1 },
-  down: { y: -1 },
-  left: { x: 1 },
-  right: { x: -1 },
+const directionMap: Record<string, { x: number; y: number }> = {
+  up: { x: 0, y: 1 },
+  down: { x: 0, y: -1 },
+  left: { x: 1, y: 0 },
+  right: { x: -1, y: 0 },
 };
 
 /**
- * Apple iPhone 17 Pro-style bidirectional scroll reveal.
- * Elements reveal when scrolling down into view and hide when scrolling back up.
- * Uses `once: false` so the animation replays every time the element enters/exits.
+ * Reveal bidireccional basado en IntersectionObserver + CSS transitions.
+ * Reemplaza la versión anterior que usaba framer-motion (~50 KB) para ahorrar
+ * peso en el bundle público sin cambio visual.
+ *
+ * Nota: soporta prefers-reduced-motion (elimina transform y filter).
  */
 export default function ScrollReveal({
   children,
@@ -50,52 +46,62 @@ export default function ScrollReveal({
   scale = 1,
   as = 'div',
 }: ScrollRevealProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduceMotion = useReducedMotion();
+  const ref = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
-  const isInView = useInView(ref, {
-    once: false,
-    amount,
-  });
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduceMotion(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    /* Si el navegador no soporta IntersectionObserver (muy raro) → se muestra sin animar. */
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          setVisible(entry.isIntersecting && entry.intersectionRatio >= amount);
+        }
+      },
+      { threshold: [0, amount, 1] },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [amount]);
+
+  const Tag = as as React.ElementType;
+
+  /* Reduced-motion: render simple sin transform ni blur. */
   if (reduceMotion) {
-    const Tag = as as React.ElementType;
     return <Tag className={className}>{children}</Tag>;
   }
 
-  const dir = directionMap[direction] || directionMap.up;
+  const dir = directionMap[direction] ?? directionMap.up;
 
-  const hidden: Variant = {
-    opacity: 0,
-    x: (dir.x ?? 0) * offset,
-    y: (dir.y ?? 0) * offset,
-    scale: scale < 1 ? scale : 1,
-    filter: 'blur(4px)',
+  const style: CSSProperties = {
+    opacity: visible ? 1 : 0,
+    transform: visible
+      ? 'translate3d(0,0,0) scale(1)'
+      : `translate3d(${dir.x * offset}px, ${dir.y * offset}px, 0) scale(${scale < 1 ? scale : 1})`,
+    filter: visible ? 'blur(0px)' : 'blur(4px)',
+    transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+    willChange: 'opacity, transform',
   };
-
-  const visible: Variant = {
-    opacity: 1,
-    x: 0,
-    y: 0,
-    scale: 1,
-    filter: 'blur(0px)',
-  };
-
-  const Component = motion[as as keyof typeof motion] as React.ElementType;
 
   return (
-    <Component
-      ref={ref}
-      className={className}
-      initial={hidden}
-      animate={isInView ? visible : hidden}
-      transition={{
-        duration,
-        delay,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-    >
+    <Tag ref={ref as never} className={className} style={style}>
       {children}
-    </Component>
+    </Tag>
   );
 }

@@ -52,6 +52,10 @@ interface Emisor {
   email: string;
   telefono: string;
   iban: string;
+  /** Nº colegiación COPM (ej. M-40804). Opcional en env. */
+  colegiada: string;
+  /** Nº REGCESS de la consulta si aplica. Opcional (p. ej. pendiente de colegio). */
+  regcess: string;
 }
 
 function json(body: unknown, status: number, cors: Record<string, string>): Response {
@@ -73,6 +77,8 @@ function readEmisor(): Emisor | null {
     email: Deno.env.get("FACTURA_EMISOR_EMAIL") ?? "",
     telefono: Deno.env.get("FACTURA_EMISOR_TELEFONO") ?? "",
     iban: Deno.env.get("FACTURA_EMISOR_IBAN") ?? "",
+    colegiada: Deno.env.get("FACTURA_EMISOR_COLEGIADA") ?? "",
+    regcess: Deno.env.get("FACTURA_EMISOR_REGCESS") ?? "",
   };
 }
 
@@ -135,14 +141,31 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const ctx: DrawCtx = { page, font, bold };
 
-  // Encabezado
-  drawText(ctx, emisor.nombre, 50, 790, 16, { bold: true });
-  drawText(ctx, `NIF: ${emisor.nif}`, 50, 770, 9);
-  emisor.direccion.split("\n").forEach((line, i) => {
-    drawText(ctx, line, 50, 758 - i * 12, 9);
+  // Encabezado (eje Y descendente)
+  let hy = 790;
+  drawText(ctx, emisor.nombre, 50, hy, 16, { bold: true });
+  hy -= 20;
+  drawText(ctx, `NIF: ${emisor.nif}`, 50, hy, 9);
+  hy -= 12;
+  if (emisor.colegiada) {
+    drawText(ctx, `Col. COPM: ${emisor.colegiada}`, 50, hy, 9);
+    hy -= 12;
+  }
+  if (emisor.regcess) {
+    drawText(ctx, `REGCESS: ${emisor.regcess}`, 50, hy, 9);
+    hy -= 12;
+  }
+  emisor.direccion.split("\n").forEach((line) => {
+    drawText(ctx, line, 50, hy, 9);
+    hy -= 12;
   });
-  if (emisor.email) drawText(ctx, emisor.email, 50, 722, 9);
-  if (emisor.telefono) drawText(ctx, emisor.telefono, 50, 710, 9);
+  if (emisor.email) {
+    drawText(ctx, emisor.email, 50, hy, 9);
+    hy -= 12;
+  }
+  if (emisor.telefono) {
+    drawText(ctx, emisor.telefono, 50, hy, 9);
+  }
 
   // Bloque factura (arriba derecha)
   drawText(ctx, "FACTURA", 400, 790, 18, { bold: true });
@@ -233,7 +256,7 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
   const pieY = 110;
   drawText(
     ctx,
-    "Servicios de psicología sanitaria exentos de IVA (art. 20.1.3 Ley 37/1992).",
+    "Servicios de psicología sanitaria exentos de IVA (art. 20.1.3 Ley 37/1992). Titulación PGS (máster habilitante).",
     50,
     pieY + 36,
     8,

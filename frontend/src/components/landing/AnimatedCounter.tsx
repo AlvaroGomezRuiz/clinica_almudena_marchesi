@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { useInView } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 
 type AnimatedCounterProps = {
   /** Final number to count to */
@@ -17,8 +16,9 @@ type AnimatedCounterProps = {
 };
 
 /**
- * A real-time counting animation that triggers when the element scrolls into view.
- * Counts from 0 to the target number with an easeOut curve for a decelerating finish.
+ * Contador con easeOutQuart en requestAnimationFrame.
+ * Antes dependía de framer-motion (useInView). Ahora usa IntersectionObserver
+ * nativo para cero coste extra en el bundle público.
  */
 export default function AnimatedCounter({
   target,
@@ -28,40 +28,50 @@ export default function AnimatedCounter({
   className = '',
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: false, amount: 0.5 });
   const [count, setCount] = useState(0);
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const animatingRef = useRef(false);
 
   useEffect(() => {
-    if (!isInView) {
-      // Reset when out of view so it re-animates when scrolled back
-      setCount(0);
-      setHasAnimated(false);
+    const node = ref.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setCount(target);
       return;
     }
 
-    if (hasAnimated) return;
-    setHasAnimated(true);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const inView = entry.isIntersecting && entry.intersectionRatio >= 0.5;
 
-    const startTime = performance.now();
+          if (!inView) {
+            /* Reset al salir de viewport para re-animar al volver */
+            setCount(0);
+            animatingRef.current = false;
+            continue;
+          }
 
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+          if (animatingRef.current) continue;
+          animatingRef.current = true;
 
-      // easeOutQuart for a satisfying deceleration
-      const eased = 1 - Math.pow(1 - progress, 4);
-      const currentValue = Math.round(eased * target);
+          const startTime = performance.now();
+          const step = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 4);
+            setCount(Math.round(eased * target));
+            if (progress < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+      },
+      { threshold: [0, 0.5, 1] },
+    );
 
-      setCount(currentValue);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [isInView, target, duration, hasAnimated]);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [target, duration]);
 
   return (
     <span ref={ref} className={className}>

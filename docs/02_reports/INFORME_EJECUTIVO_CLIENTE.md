@@ -133,7 +133,7 @@ Este registro se guarda en formato **tamper-evident** (si alguien intentase modi
 | Supabase                      | Free        | 0 EUR          | Base de datos, auth, edge, 500MB  |
 | Stripe                        | N/A        | comision 1,5% + 0,25 EUR por cobro | Pagos con tarjeta                 |
 | Resend                        | Free        | 0 EUR          | 3.000 emails/mes                  |
-| Dominio (ej. clinicamarchesi.es) | -         | ~12 EUR/ano    | Registro con tu proveedor        |
+| Dominio **amclinicapsicologia.es** | Pendiente compra | ~12 EUR/ano | Registro; luego DNS Vercel + Resend |
 | Sentry                        | Free        | 0 EUR          | 5k errores/mes monitorizados      |
 
 **Total fijo mensual**: **~1 EUR/mes** (domino prorateado) + **comision pagos Stripe**.
@@ -149,7 +149,7 @@ Escalable si un dia superas los limites gratuitos:
 
 ### Inmediato (antes de go-live, requiere tu input)
 1. Decidir dominio definitivo (te pedi opciones en lista).
-2. Darnos tu NIF, numero colegiada COPM, numero REGCESS, titulacion sanitaria.
+2. ~~NIF, COPM (M-40804), titulación PGS~~ — recibido; pendiente **REGCESS** cuando el colegio lo confirme y **compra del dominio** al cierre.
 3. Rotar todas las contrasenas y API keys tecnicas (hay checklist en el repo).
 4. Revision legal de politica de privacidad y aviso legal por tu abogada.
 

@@ -1,9 +1,10 @@
-'use client';
-
 import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import HeroImage from '@/components/landing/HeroImage';
 
+/* Server Component puro. El único client boundary es ScrollReveal.
+   Esto saca el Hero del bundle inicial y deja sólo los fragmentos
+   animados como islas cliente. */
 export default function HeroSection() {
   return (
     <section

@@ -1,8 +1,8 @@
-'use client';
-
 import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import PremiumCard from '@/components/ui/PremiumCard';
+
+/* Server Component. Los islands cliente son ScrollReveal y PremiumCard. */
 
 const STEPS = [
   {

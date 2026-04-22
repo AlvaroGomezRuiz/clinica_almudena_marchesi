@@ -7,19 +7,23 @@
 
 ---
 
-## 1) Pendiente de Almudena (bloqueos de dominio y facturación)
+## 1) Datos recibidos de Almudena (abril 2026)
 
-- [ ] **Dominio elegido** (de la lista propuesta).
-- [ ] **NIF (DNI con letra)** para `FACTURA_EMISOR_NIF`.
-- [ ] **Nº colegiada COPM** para `FACTURA_EMISOR_COLEGIADA` *(opcional recomendado)*.
-- [ ] **Nº REGCESS** para `FACTURA_EMISOR_REGCESS` *(opcional recomendado)*.
-- [ ] **Confirmación titulación sanitaria** (PGS / Especialista Clínica) para sustentar exención IVA.
+| Dato | Estado | Uso |
+|------|--------|-----|
+| **Dominio** | **amclinicapsicologia.es** (elegido; **compra y DNS al final** del go-live) | Vercel + Resend + URLs canónicas en código (`frontend/src/lib/clinic.ts`). |
+| **NIF / DNI** | `04850571D` | Secret `FACTURA_EMISOR_NIF` (Supabase Edge) + textos legales en web. |
+| **Col. COPM** | `M-40804` | Secret `FACTURA_EMISOR_COLEGIADA` + PDF factura + aviso/privacidad. |
+| **REGCESS** | Pendiente (consulta en colegio; confirmar mañana) | Secret `FACTURA_EMISOR_REGCESS` cuando exista; PDF lo omite si vacío. |
+| **Titulación** | PGS — *Máster habilitante* (sanitaria) | Sustenta exención IVA 20.1.3 LIVA; texto en factura (pie) y legales. |
 
-Cuando llegue el dominio:
-- [ ] Configurar DNS en registrador (A/CNAME) para Vercel.
+### Último tramo (cuando se compre el dominio)
+
+- [ ] Comprar **amclinicapsicologia.es** y apuntar DNS a Vercel.
+- [ ] Añadir el dominio en Vercel y **Supabase Auth → URL configuration / redirect URLs** (ya listados en `supabase/config.toml` como referencia local).
 - [ ] Verificar dominio en Resend (SPF/DKIM/DMARC).
-- [ ] Definir `FACTURA_EMISOR_EMAIL` (p. ej. `facturacion@<dominio>`).
-- [ ] Cambiar `RESEND_FROM_EMAIL` desde `onboarding@resend.dev` al dominio final.
+- [ ] Buzón **contacto@amclinicapsicologia.es** (o el acordado) y secret `FACTURA_EMISOR_EMAIL` + `RESEND_FROM_EMAIL` con remitente del dominio.
+- [ ] `FRONTEND_URL` en Edge Secrets = `https://amclinicapsicologia.es` (hasta entonces puede mantenerse el preview de Vercel sin romper; el código ya usa el dominio final como canónico y CORS).
 
 ---
 
@@ -38,18 +42,18 @@ Cuando llegue el dominio:
 - [x] `STRIPE_WEBHOOK_SECRET` *(test)* — **a rotar al pasar a Live**
 
 ### 2.4 App
-- [x] `FRONTEND_URL` *(temporal: `https://clinica-almudena.vercel.app`)*
 - [x] `CRON_SECRET`
+- [ ] `FRONTEND_URL` en producción: `https://amclinicapsicologia.es` *(hasta DNS: opcional dejar el preview de Vercel en Secrets)*
 
 ### 2.5 Facturas (mínimo para generar PDF válido)
 - [x] `FACTURA_EMISOR_NOMBRE`
-- [ ] `FACTURA_EMISOR_NIF` *(pendiente Almudena)*
+- [ ] `FACTURA_EMISOR_NIF` → **`04850571D`**
 - [x] `FACTURA_EMISOR_DIRECCION`
 - [x] `FACTURA_EMISOR_CP_CIUDAD`
-- [ ] `FACTURA_EMISOR_EMAIL` *(pendiente dominio)*
+- [ ] `FACTURA_EMISOR_EMAIL` → sugerido **`contacto@amclinicapsicologia.es`** (crear buzón al activar el dominio)
 - [x] `FACTURA_IVA_EXENCION_TEXTO` *(opcional; el EF trae default si se omite)*
-- [ ] `FACTURA_EMISOR_COLEGIADA` *(pendiente Almudena, opcional)*
-- [ ] `FACTURA_EMISOR_REGCESS` *(pendiente Almudena, opcional)*
+- [ ] `FACTURA_EMISOR_COLEGIADA` → **`M-40804`**
+- [ ] `FACTURA_EMISOR_REGCESS` → **pendiente** (rellenar cuando el colegio/REGCESS lo confirme)
 
 ### 2.6 Cifrado de columnas (F5) — COMPLETADO
 - [x] Migración `0022_cifrado_setup` aplicada (pgcrypto + supabase_vault + helpers).

@@ -29,11 +29,22 @@ interface PagoRow {
   stripe_session_id: string | null;
 }
 
+/**
+ * Escapa un valor para CSV RFC 4180 + protección CSV-injection (OWASP).
+ *
+ * Si el valor empieza por =, +, -, @, \t o \r, Excel lo trata como fórmula y
+ * puede ejecutar expresiones (incluyendo `=cmd|...`, `=HYPERLINK(...)`) al abrir
+ * el archivo. Prefijamos con apostrofe para forzar a que Excel lo lea como texto.
+ */
 function csvEscape(value: string): string {
-  if (/[",\n\r]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let safe = value;
+  if (/^[=+\-@\t\r]/.test(safe)) {
+    safe = `'${safe}`;
   }
-  return value;
+  if (/[",\n\r]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
+  }
+  return safe;
 }
 
 export async function GET(req: NextRequest): Promise<Response> {

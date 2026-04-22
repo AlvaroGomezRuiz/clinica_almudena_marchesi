@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Política de Privacidad — Almudena Marchesi Fernández, Psicóloga',
   description:
@@ -34,8 +36,16 @@ export default function PrivacidadPage() {
                 Fernández
               </li>
               <li>
+                <strong className="text-ink">NIF:</strong> 04850571D
+              </li>
+              <li>
                 <strong className="text-ink">Colegiación:</strong> Col. M-40804
                 (Colegio Oficial de Psicólogos de Madrid)
+              </li>
+              <li>
+                <strong className="text-ink">Titulación sanitaria:</strong> Psicología
+                General Sanitaria (máster habilitante), con ejercicio acreditado ante el
+                Colegio Oficial de Psicólogos de Madrid (COPM).
               </li>
               <li>
                 <strong className="text-ink">Dirección:</strong> Calle de Meléndez
@@ -43,7 +53,12 @@ export default function PrivacidadPage() {
               </li>
               <li>
                 <strong className="text-ink">Contacto:</strong>{' '}
-                contacto@almudenamarche.si
+                <a
+                  className="text-sage underline underline-offset-2"
+                  href={`mailto:${CLINIC_CONTACT_EMAIL}`}
+                >
+                  {CLINIC_CONTACT_EMAIL}
+                </a>
               </li>
             </ul>
           </div>
@@ -194,7 +209,7 @@ export default function PrivacidadPage() {
             </ul>
             <p className="mt-3">
               Para ejercer estos derechos, contacte con la responsable del tratamiento en{' '}
-              <strong className="text-ink">contacto@almudenamarche.si</strong>. Se responderá en un plazo máximo
+              <strong className="text-ink">{CLINIC_CONTACT_EMAIL}</strong>. Se responderá en un plazo máximo
               de 30 días. Si considera que sus derechos no han sido debidamente atendidos, puede presentar una
               reclamación ante la{' '}
               <strong className="text-ink">Agencia Española de Protección de Datos (AEPD)</strong>, con sede en

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Política de Cookies — Almudena Marchesi Fernández, Psicóloga',
   description:
@@ -171,7 +173,7 @@ export default function CookiesPage() {
             <p>
               Para cualquier consulta sobre esta política de cookies, puede
               contactar con Almudena Marchesi Fernández en{' '}
-              <strong className="text-ink">contacto@almudenamarche.si</strong>.
+              <strong className="text-ink">{CLINIC_CONTACT_EMAIL}</strong>.
             </p>
           </div>
 

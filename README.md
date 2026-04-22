@@ -75,7 +75,7 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_URL` | all | Pública, visible en bundle cliente. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | all | Pública; cada request va con RLS del usuario. |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | **NUNCA** expongas esto al cliente. Solo webhooks. |
-| `NEXT_PUBLIC_APP_URL` | all | Ej. `https://clinica-almudena.vercel.app`. |
+| `NEXT_PUBLIC_APP_URL` | all | Ej. `https://amclinicapsicologia.es` (dominio definitivo; preview Vercel hasta DNS). |
 | `STRIPE_SECRET_KEY` | server | `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | server | `whsec_...` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | all | `pk_live_...` |
@@ -299,7 +299,7 @@ frontend/src/lib/email/send.ts   # Helper server-only fire-and-forget
 **1) Alta y verificación en Resend**
 
 ```
-https://resend.com → Sign up → Domains → Add Domain (ej. clinicamarchesi.es)
+https://resend.com → Sign up → Domains → Add Domain (ej. amclinicapsicologia.es)
 → Copiar registros DNS (MX, SPF, DKIM) al DNS del dominio → Verify
 → API Keys → Create → guardar el token `re_xxx`
 ```
@@ -310,9 +310,9 @@ Dashboard → Project Settings → **Edge Functions → Secrets**:
 
 ```bash
 RESEND_API_KEY        = re_xxx
-RESEND_FROM_EMAIL     = "Clínica Almudena <hola@clinicamarchesi.es>"
-RESEND_REPLY_TO       = almudena@clinicamarchesi.es
-FRONTEND_URL          = https://clinica-almudena.vercel.app
+RESEND_FROM_EMAIL     = "Clínica Almudena <contacto@amclinicapsicologia.es>"
+RESEND_REPLY_TO       = contacto@amclinicapsicologia.es
+FRONTEND_URL          = https://amclinicapsicologia.es
 CRON_SECRET           = <32+ chars aleatorios — solo para el cron>
 # SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya están inyectados por la plataforma
 ```
@@ -353,7 +353,7 @@ Host:       smtp.resend.com
 Port:       465     (TLS)
 Username:   resend
 Password:   re_xxx  (la misma API key)
-Sender:     Clínica Almudena <hola@clinicamarchesi.es>
+Sender:     Clínica Almudena <contacto@amclinicapsicologia.es>
 ```
 
 ### Verificación end-to-end

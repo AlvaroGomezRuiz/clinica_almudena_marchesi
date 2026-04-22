@@ -2,6 +2,28 @@
 
 import { useRef, useState, useEffect, useMemo, useId } from 'react';
 
+/**
+ * Detecta si el dispositivo puede permitirse el filtro SVG de displacement
+ * sin caer de 60 fps. Criterios:
+ *   - Ancho ≥ 1024 (desktop/tablet horizontal)
+ *   - hover:hover (mouse real, no táctil puro)
+ *   - no prefers-reduced-motion
+ * En móvil se usa un fallback con backdrop-filter nativo (~1/20 del coste).
+ */
+function useSupportsHeavyFilter(): boolean {
+  const [supports, setSupports] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(
+      '(min-width: 1024px) and (hover: hover) and (not (prefers-reduced-motion: reduce))',
+    );
+    const update = () => setSupports(mql.matches);
+    update();
+    mql.addEventListener('change', update);
+    return () => mql.removeEventListener('change', update);
+  }, []);
+  return supports;
+}
+
 type LiquidGlassProps = {
   children?: React.ReactNode;
   className?: string;
@@ -52,10 +74,15 @@ export default function LiquidGlass({
   const [dimensions, setDimensions] = useState({ width: 400, height: 200 });
   const uniqueFilterId = useId();
   const filterId = `liquid-glass-${uniqueFilterId}`;
+  const heavyFilter = useSupportsHeavyFilter();
 
   useEffect(() => {
+    /* En móvil usamos el fallback CSS puro → no necesitamos observar
+       dimensiones y evitamos re-renders en cada resize. */
+    if (!heavyFilter) return;
     if (!containerRef.current) return;
 
+    let raf = 0;
     const updateDimensions = () => {
       if (!containerRef.current) return;
       const { width, height } = containerRef.current.getBoundingClientRect();
@@ -64,10 +91,16 @@ export default function LiquidGlass({
     };
 
     updateDimensions();
-    const observer = new ResizeObserver(updateDimensions);
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateDimensions);
+    });
     observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, [heavyFilter]);
 
   const displacementDataUri = useMemo(() => {
     const { width, height } = dimensions;
@@ -97,13 +130,53 @@ export default function LiquidGlass({
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   }, [dimensions, radius, border, lightness, alpha, blur]);
 
+  /* Fallback ligero (móvil / reduced motion): backdrop-filter nativo.
+     Visual casi idéntico para el usuario (el displacement SVG apenas se
+     percibe a esa escala), coste en compositor enormemente menor. */
+  if (!heavyFilter) {
+    return (
+      <div
+        ref={containerRef}
+        className={className}
+        style={{ position: 'relative', ...style }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 0,
+            borderRadius: radius,
+            background: `hsl(0 0% 100% / ${Math.max(frost, 0.1)})`,
+            backdropFilter: 'blur(16px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: 'none',
+            borderRadius: radius,
+            background: `linear-gradient(315deg, ${borderColor} 0%, rgba(120,120,120,0) 30%, rgba(120,120,120,0) 70%, ${borderColor} 100%) border-box`,
+            mask: 'linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0)',
+            maskComposite: 'exclude',
+            WebkitMaskComposite: 'xor',
+            border: '1px solid transparent',
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 2 }}>{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
       className={className}
       style={{ position: 'relative', ...style }}
     >
-      {/* SVG Filter Glass Layer */}
+      {/* SVG Filter Glass Layer (solo desktop con mouse). */}
       <div
         style={{
           width: '100%',

@@ -40,7 +40,7 @@ El backend productivo vive **integramente en Supabase** (Postgres + Edge Functio
 ### 2.2 Patrones correctos observados
 
 - **`wrapEdgeHandler` universal**: toda funcion envuelve su handler para capturar excepciones en Sentry antes de rethrow, preservando stack.
-- **CORS allowlist** (`_shared/cors.ts`): dominios explicitos (localhost + `clinica-almudena.vercel.app`), no `*`.
+- **CORS allowlist** (`_shared/cors.ts`): localhost, preview Vercel, `amclinicapsicologia.es` (+ www), `FRONTEND_URL`; no `*`.
 - **Rechazo temprano** (401/405): todas las EF comprueban metodo + auth antes de parsear body.
 - **Firma HMAC** en webhooks: `stripe-webhook` y `resend-webhook` verifican con `crypto.subtle.verify`. Si falla ⇒ 400.
 - **Idempotencia**: `stripe-webhook` hace UPSERT en `stripe_events` por `id` y RPC detecta duplicado.
@@ -59,9 +59,9 @@ El backend productivo vive **integramente en Supabase** (Postgres + Edge Functio
 ### 2.4 Secretos requeridos (Supabase Edge Functions → Secrets)
 
 Ver `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` seccion 2. Todos presentes excepto:
-- `FACTURA_EMISOR_NIF` (pendiente Almudena)
-- `FACTURA_EMISOR_EMAIL` (pendiente dominio)
-- `FACTURA_EMISOR_COLEGIADA`, `FACTURA_EMISOR_REGCESS` (pendientes, opcionales)
+- `FACTURA_EMISOR_NIF` / `FACTURA_EMISOR_COLEGIADA` — valores acordados; configurar en Secrets (ver `PENDIENTES_Y_CHECKLIST.md`).
+- `FACTURA_EMISOR_EMAIL` — sugerido `contacto@amclinicapsicologia.es` al activar dominio.
+- `FACTURA_EMISOR_REGCESS` — pendiente confirmación colegio.
 
 ---
 

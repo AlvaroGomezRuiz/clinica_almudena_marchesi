@@ -23,6 +23,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   AdminLookup,
@@ -229,7 +230,7 @@ export default async function AdminConfiguracionPage(): Promise<JSX.Element> {
           <p className="mt-4 font-body text-[0.72rem] text-ink-muted dark:text-white/50">
             ¿Crees que alguien accedió sin permiso?{' '}
             <Link
-              href="mailto:soporte@almudenaagullo.com"
+              href={`mailto:${CLINIC_CONTACT_EMAIL}`}
               className="underline decoration-dotted underline-offset-2 hover:text-ink dark:hover:text-white"
             >
               Contacta con soporte

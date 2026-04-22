@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
-import zxcvbn from 'zxcvbn';
 
 import { verifyOtpAction } from '@/services/auth/registerActions';
+
+/* Tipo local para el resultado de zxcvbn → evita arrastrar sus types al bundle. */
+type ZxcvbnFn = (password: string) => { score: 0 | 1 | 2 | 3 | 4 };
 
 function SubmitButton({ disabled }: { disabled: boolean }): JSX.Element {
   const { pending } = useFormStatus();
@@ -27,6 +29,7 @@ export default function VerificarOtpClient(): JSX.Element {
 
   const [password, setPassword] = useState<string>('');
   const [passwordConfirm, setPasswordConfirm] = useState<string>('');
+  const [zxcvbnFn, setZxcvbnFn] = useState<ZxcvbnFn | null>(null);
 
   const passwordPolicy = useMemo(() => {
     return {
@@ -38,10 +41,27 @@ export default function VerificarOtpClient(): JSX.Element {
     };
   }, [password]);
 
+  /* Cargamos zxcvbn (~400 KB) sólo cuando el usuario empieza a escribir.
+     Así el First Load JS de esta ruta baja drásticamente. */
+  useEffect(() => {
+    if (!password || zxcvbnFn) return;
+    let cancelled = false;
+    import('zxcvbn')
+      .then((mod) => {
+        if (!cancelled) setZxcvbnFn(() => mod.default as ZxcvbnFn);
+      })
+      .catch(() => {
+        /* Si falla la descarga, la política básica sigue funcionando. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [password, zxcvbnFn]);
+
   const zxcvbnResult = useMemo(() => {
-    if (!password) return null;
-    return zxcvbn(password);
-  }, [password]);
+    if (!password || !zxcvbnFn) return null;
+    return zxcvbnFn(password);
+  }, [password, zxcvbnFn]);
 
   const isPolicyOk =
     passwordPolicy.minLength &&
@@ -50,7 +70,10 @@ export default function VerificarOtpClient(): JSX.Element {
     passwordPolicy.hasDigit &&
     passwordPolicy.hasSymbol;
 
-  const isEntropyOk = (zxcvbnResult?.score ?? 0) >= 3;
+  /* Si zxcvbn aún no ha cargado, no bloqueamos por entropy (la política
+     básica ya garantiza 14 chars + todas las clases). Cuando cargue,
+     se aplica el threshold de score ≥ 3. */
+  const isEntropyOk = zxcvbnFn ? (zxcvbnResult?.score ?? 0) >= 3 : true;
   const passwordsMatch = password.length > 0 && password === passwordConfirm;
   const isSubmitBlocked = !(isPolicyOk && isEntropyOk && passwordsMatch);
 

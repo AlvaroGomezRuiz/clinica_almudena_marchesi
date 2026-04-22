@@ -49,6 +49,13 @@ export default function HeroImage({ className }: HeroImageProps) {
           - quality={85} → balance óptimo calidad/peso (AVIF reduce ~40% vs WebP)
           - sizes → evita descargar imagen más grande de lo necesario
         */}
+        {/*
+          next/image con optimización activa:
+          - priority + fetchPriority="high" → preload en <head>, LCP inmediato.
+          - quality={78} → AVIF perceptualmente idéntico y ~25% más ligero que 85.
+          - sizes ajustado al layout real del hero (máx 480px en desktop, 340px en tablet, 90vw en móvil).
+          - Next redimensiona a deviceSizes/imageSizes → móvil baja de ~68 KB a ~18-25 KB.
+        */}
         <Image
           src="/images/almudena-profile.avif"
           alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
@@ -56,10 +63,9 @@ export default function HeroImage({ className }: HeroImageProps) {
           height={680}
           priority
           fetchPriority="high"
-          quality={85}
-          unoptimized={true}
+          quality={78}
           className="w-full h-auto object-cover rounded-apple block"
-          sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 480px"
+          sizes="(max-width: 640px) 340px, (max-width: 1024px) 440px, 480px"
         />
       </div>
     </div>

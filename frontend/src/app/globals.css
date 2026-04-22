@@ -1,5 +1,8 @@
-/* Fuentes auto-alojadas (Self-hosted) para máximo rendimiento y privacidad */
-@import 'material-symbols/outlined.css';
+/* Fuente de iconos auto-hospedada y subset.
+   Se genera con `node scripts/fetch-icons-font.mjs` → solo contiene los
+   iconos realmente usados en el código (≈6 KB vs ≈3.8 MB del paquete
+   completo `material-symbols`). Regenerar al añadir un icono nuevo. */
+@import '../styles/material-symbols.css';
 
 /* ══════════════════════════════════════════════════
    SISTEMA DE TOKENS — Light Mode (default)
@@ -101,13 +104,8 @@
 }
 
 @layer components {
-  /* ── Material Symbols ── */
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
-    vertical-align: middle;
-  }
-
-
+  /* Las reglas de .material-symbols-outlined se definen ya en el CSS
+     del subset auto-hospedado (src/styles/material-symbols.css). */
 
   /* ── Apple-style Nav Pill ── */
   .nav-pill {
@@ -280,6 +278,19 @@
 }
 
 @layer utilities {
+  /* ── Content-visibility: el navegador salta el pintado y layout de
+     secciones fuera de viewport hasta que entran. Reduce el tiempo de
+     pintura inicial enormemente en landings largas. contain-intrinsic-size
+     reserva espacio para evitar saltos de scroll. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 800px;
+  }
+  .cv-auto-sm {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 500px;
+  }
+
   .bento-card {
     border: 1px solid rgba(121, 123, 118, 0.1);
   }

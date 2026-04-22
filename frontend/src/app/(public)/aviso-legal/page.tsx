@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+
 export const metadata: Metadata = {
   title: 'Aviso Legal — Almudena Marchesi Fernández, Psicóloga',
   description:
@@ -33,6 +35,9 @@ export default function AvisoLegalPage() {
                 <strong className="text-ink">Titular:</strong> Almudena Marchesi Fernández
               </li>
               <li>
+                <strong className="text-ink">NIF:</strong> 04850571D
+              </li>
+              <li>
                 <strong className="text-ink">Colegiación:</strong> Colegio Oficial de Psicólogos de
                 Madrid, Col. M-40804
               </li>
@@ -41,10 +46,26 @@ export default function AvisoLegalPage() {
                 1D, 28015 Madrid, España
               </li>
               <li>
-                <strong className="text-ink">Correo electrónico:</strong> contacto@almudenamarche.si
+                <strong className="text-ink">Correo electrónico:</strong>{' '}
+                <a className="text-sage underline underline-offset-2" href={`mailto:${CLINIC_CONTACT_EMAIL}`}>
+                  {CLINIC_CONTACT_EMAIL}
+                </a>
               </li>
               <li>
-                <strong className="text-ink">Actividad:</strong> Servicios de psicología clínica y sanitaria
+                <strong className="text-ink">Actividad:</strong> Servicios de psicología clínica y
+                sanitaria (titulación PGS, máster habilitante)
+              </li>
+              <li>
+                <strong className="text-ink">Sitio web:</strong>{' '}
+                <a
+                  className="text-sage underline underline-offset-2"
+                  href="https://amclinicapsicologia.es"
+                  rel="noopener noreferrer"
+                >
+                  amclinicapsicologia.es
+                </a>{' '}
+                (dominio en proceso de registro; hasta entonces el acceso puede ser la URL de
+                preproducción en Vercel)
               </li>
             </ul>
           </div>

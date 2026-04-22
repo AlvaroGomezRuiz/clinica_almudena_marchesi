@@ -1,6 +1,7 @@
 import {
   CLINIC_ADDRESS_LINE1,
   CLINIC_ADDRESS_LINE2,
+  CLINIC_CONTACT_EMAIL,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
 import Link from 'next/link';
@@ -80,10 +81,10 @@ export default function PublicFooter() {
                 {CLINIC_ADDRESS_LINE2}
               </a>
               <a
-                href="mailto:info@almudenamarchesi.es"
+                href={`mailto:${CLINIC_CONTACT_EMAIL}`}
                 className="block hover:text-white transition-colors duration-300"
               >
-                info@almudenamarchesi.es
+                {CLINIC_CONTACT_EMAIL}
               </a>
             </div>
           </div>

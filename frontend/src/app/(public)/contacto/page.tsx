@@ -9,6 +9,7 @@ import {
   CLINIC_ADDRESS,
   CLINIC_ADDRESS_LINE1,
   CLINIC_ADDRESS_LINE2,
+  CLINIC_CONTACT_EMAIL,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
 
@@ -29,8 +30,8 @@ const CONTACT_ITEMS = [
   {
     icon: 'mail',
     label: 'Correo Electrónico',
-    value: 'info@almudenamarchesi.es',
-    href: 'mailto:info@almudenamarchesi.es',
+    value: CLINIC_CONTACT_EMAIL,
+    href: `mailto:${CLINIC_CONTACT_EMAIL}`,
     external: false,
   },
 ] as const;

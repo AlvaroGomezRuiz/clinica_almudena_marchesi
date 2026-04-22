@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
 import HeroSection from '@/components/sections/HeroSection';
+import { CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
+
+const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 
 /* ── Dynamic imports para secciones below-the-fold ──────────────────
    ssr: true  → Google los indexa en el HTML inicial (SEO intacto)
@@ -15,7 +18,7 @@ const PhilosophySection = dynamic(
     ssr: true,
     loading: () => (
       <div
-        className="py-28 md:py-40 bg-canvas-alt"
+        className="py-28 md:py-40 bg-canvas-alt cv-auto"
         aria-hidden="true"
         style={{ minHeight: '600px' }}
       />
@@ -29,7 +32,7 @@ const BunkerSection = dynamic(
     ssr: true,
     loading: () => (
       <div
-        className="py-28 md:py-40 bg-canvas"
+        className="py-28 md:py-40 bg-canvas cv-auto"
         aria-hidden="true"
         style={{ minHeight: '500px' }}
       />
@@ -43,7 +46,7 @@ const MoncloaSection = dynamic(
     ssr: true,
     loading: () => (
       <div
-        className="py-24 md:py-36 bg-canvas-alt"
+        className="py-24 md:py-36 bg-canvas-alt cv-auto"
         aria-hidden="true"
         style={{ minHeight: '480px' }}
       />
@@ -57,7 +60,7 @@ const CTASection = dynamic(
     ssr: true,
     loading: () => (
       <div
-        className="py-28 md:py-40 bg-canvas"
+        className="py-28 md:py-40 bg-canvas cv-auto-sm"
         aria-hidden="true"
         style={{ minHeight: '380px' }}
       />
@@ -67,7 +70,7 @@ const CTASection = dynamic(
 
 /* ── Metadata enriquecida (SEO + OpenGraph + Twitter) ─────────────── */
 export const metadata: Metadata = {
-  metadataBase: new URL('https://almudenamarchesi.es'),
+  metadataBase: new URL(CLINIC_PUBLIC_SITE_URL),
   title: 'Almudena Marchesi | Psicología Clínica Madrid · Moncloa',
   description:
     'Acompañamiento profesional en el corazón de Moncloa, Madrid. Psicología clínica basada en evidencia. Primera sesión exploratoria disponible.',
@@ -75,11 +78,11 @@ export const metadata: Metadata = {
     title: 'Almudena Marchesi — Psicología Clínica',
     description:
       'Acompañamiento profesional en el corazón de Moncloa, Madrid. Rigor clínico y calidez humana.',
-    url: 'https://almudenamarchesi.es',
+    url: CLINIC_PUBLIC_SITE_URL,
     siteName: 'Clínica Almudena Marchesi',
     images: [
       {
-        url: 'https://almudenamarchesi.es/images/almudena-profile.avif',
+        url: ogProfileImage,
         width: 1200,
         height: 630,
         alt: 'Almudena Marchesi, psicóloga clínica en Moncloa, Madrid',
@@ -92,7 +95,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Almudena Marchesi | Psicología Clínica Madrid',
     description: 'Acompañamiento profesional en el corazón de Moncloa.',
-    images: ['https://almudenamarchesi.es/images/almudena-profile.avif'],
+    images: [ogProfileImage],
   },
   robots: {
     index: true,
@@ -106,7 +109,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://almudenamarchesi.es',
+    canonical: CLINIC_PUBLIC_SITE_URL,
   },
 };
 
@@ -117,9 +120,9 @@ const jsonLd = {
   name: 'Clínica Almudena Marchesi',
   description:
     'Psicología clínica en Moncloa, Madrid. Acompañamiento profesional basado en evidencia.',
-  url: 'https://almudenamarchesi.es',
+  url: CLINIC_PUBLIC_SITE_URL,
   telephone: '+34646445991',
-  image: 'https://almudenamarchesi.es/images/almudena-profile.avif',
+  image: ogProfileImage,
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Moncloa',
@@ -176,11 +179,20 @@ export default function HomePage() {
         {/* Hero: importación estática — carga inmediata, máxima prioridad */}
         <HeroSection />
 
-        {/* Below-the-fold: dynamic chunks — alivian el bundle inicial */}
-        <PhilosophySection />
-        <BunkerSection />
-        <MoncloaSection />
-        <CTASection />
+        {/* Below-the-fold: dynamic chunks + content-visibility. El navegador
+            omite layout/paint hasta que entran en viewport. */}
+        <div className="cv-auto">
+          <PhilosophySection />
+        </div>
+        <div className="cv-auto">
+          <BunkerSection />
+        </div>
+        <div className="cv-auto">
+          <MoncloaSection />
+        </div>
+        <div className="cv-auto-sm">
+          <CTASection />
+        </div>
       </div>
     </>
   );

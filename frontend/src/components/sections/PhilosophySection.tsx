@@ -1,8 +1,8 @@
-'use client';
-
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import AnimatedCounter from '@/components/landing/AnimatedCounter';
 import PremiumCard from '@/components/ui/PremiumCard';
+
+/* Server Component. Los islands cliente son ScrollReveal, AnimatedCounter y PremiumCard. */
 
 const PILLARS = [
   {

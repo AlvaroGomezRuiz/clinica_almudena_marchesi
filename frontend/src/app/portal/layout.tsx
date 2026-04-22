@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
+import { SSH_KEYS } from '@/lib/supabase/middleware';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
 
@@ -15,8 +17,13 @@ type ProfileLite = Pick<Profile, 'id' | 'role' | 'display_name' | 'avatar_url' |
  * Seguridad:
  *   - Valida sesión Supabase (getUser).
  *   - Exige role='paciente'.
- *   - Payment-gate: si no tiene pagos completados y no es consulta inicial gratuita,
- *     redirige a /pagos. (Se valida vía consulta directa a `pagos`, no a FastAPI.)
+ *   - RLS Postgres como última línea si algo falla.
+ *
+ * Performance:
+ *   - Fast path: lee la identidad ya verificada por el middleware desde
+ *     headers internos `x-ss-*`. Evita 2 RTT a Supabase por navegación.
+ *   - Fallback: si el middleware no inyectó nada (ruta fuera del matcher),
+ *     verifica a mano. Idéntico comportamiento al original.
  */
 
 const PATIENT_NAV: readonly NavItem[] = [
@@ -29,24 +36,44 @@ const PATIENT_NAV: readonly NavItem[] = [
 ];
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
-  const supabase = createServerClient();
+  const h = headers();
+  const hId = h.get(SSH_KEYS.id);
+  const hEmail = h.get(SSH_KEYS.email);
+  const hRole = h.get(SSH_KEYS.role);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let profile: ProfileLite | null = null;
 
-  if (!user || !user.email) {
-    redirect('/login?reason=no_session');
-  }
+  if (hId && hEmail && hRole) {
+    if (hRole !== 'paciente') {
+      redirect(hRole === 'admin' ? '/admin' : '/login?reason=role_mismatch');
+    }
+    profile = {
+      id: hId,
+      email: hEmail,
+      role: hRole as 'paciente',
+      display_name: h.get(SSH_KEYS.name),
+      avatar_url: h.get(SSH_KEYS.avatar),
+    };
+  } else {
+    const supabase = createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, role, display_name, avatar_url, email')
-    .eq('id', user.id)
-    .maybeSingle<ProfileLite>();
+    if (!user || !user.email) {
+      redirect('/login?reason=no_session');
+    }
 
-  if (!profile || profile.role !== 'paciente') {
-    redirect(profile?.role === 'admin' ? '/admin' : '/login?reason=role_mismatch');
+    const { data: fetched } = await supabase
+      .from('profiles')
+      .select('id, role, display_name, avatar_url, email')
+      .eq('id', user.id)
+      .maybeSingle<ProfileLite>();
+
+    if (!fetched || fetched.role !== 'paciente') {
+      redirect(fetched?.role === 'admin' ? '/admin' : '/login?reason=role_mismatch');
+    }
+    profile = fetched;
   }
 
   const footerCta = (

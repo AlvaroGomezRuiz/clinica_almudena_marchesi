@@ -9,6 +9,8 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://clinica-almudena.vercel.app",
+  "https://amclinicapsicologia.es",
+  "https://www.amclinicapsicologia.es",
   Deno.env.get("FRONTEND_URL") ?? "",
 ].filter(Boolean);
 
@@ -470,7 +472,7 @@ interface PrefsRow {
   nueva_asignacion: boolean;
 }
 
-const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://clinica-almudena.vercel.app";
+const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "Clínica Almudena <onboarding@resend.dev>";
 const REPLY_TO = Deno.env.get("RESEND_REPLY_TO") ?? undefined;
 
