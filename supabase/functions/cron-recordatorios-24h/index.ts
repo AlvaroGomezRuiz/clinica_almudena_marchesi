@@ -23,7 +23,7 @@ interface CandidateRow {
   duracion_min: number;
 }
 
-const APP_URL    = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
+const APP_URL    = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "Clínica Almudena <onboarding@resend.dev>";
 const REPLY_TO   = Deno.env.get("RESEND_REPLY_TO") ?? undefined;
 

@@ -12,12 +12,20 @@ import {
   CLINIC_CONTACT_EMAIL,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
+import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-export const metadata: Metadata = {
-  title: 'Contacto | Almudena Marchesi — Psicología Clínica',
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/contacto',
+  title: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
   description:
-    'Contacta con la consulta de Psicología Clínica de Almudena Marchesi en Moncloa, Madrid. Información de contacto, horario y cómo llegar.',
-};
+    'Consulta de psicología en Calle Meléndez Valdés (Moncloa-Chamberí): teléfono, correo contacto@ampsicologia.es, horario y cómo llegar en Madrid.',
+  keywords: [
+    'contacto psicóloga Madrid',
+    'consulta Meléndez Valdés',
+    'psicología Moncloa',
+    'cita psicología Madrid',
+  ],
+});
 
 const CONTACT_ITEMS = [
   {

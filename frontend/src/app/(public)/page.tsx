@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
 import HeroSection from '@/components/sections/HeroSection';
-import { CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
+import {
+  CLINIC_CONTACT_EMAIL,
+  CLINIC_PUBLIC_SITE_URL,
+  getClinicAbsoluteImageUrl,
+  getClinicGoogleMapsHref,
+} from '@/lib/clinic';
 
 const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 
@@ -110,60 +115,93 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: CLINIC_PUBLIC_SITE_URL,
+    languages: { 'es-ES': CLINIC_PUBLIC_SITE_URL },
   },
+  keywords: [
+    'psicóloga Madrid',
+    'psicología clínica Moncloa',
+    'terapia Madrid',
+    'psicólogo Chamberí',
+    'consulta psicología Meléndez Valdés',
+    'Almudena Marchesi',
+  ],
 };
 
-/* ── JSON-LD Structured Data ──────────────────────────────────────── */
+/* ── JSON-LD @graph — WebSite + LocalBusiness/MedicalBusiness (GEO + marca) ─ */
+const baseUrl = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
+const localBusinessId = `${baseUrl}/#localbusiness`;
+const websiteId = `${baseUrl}/#website`;
+
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': ['LocalBusiness', 'MedicalBusiness'],
-  name: 'Clínica Almudena Marchesi',
-  description:
-    'Psicología clínica en Moncloa, Madrid. Acompañamiento profesional basado en evidencia.',
-  url: CLINIC_PUBLIC_SITE_URL,
-  telephone: '+34646445991',
-  image: ogProfileImage,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: 'Moncloa',
-    addressLocality: 'Madrid',
-    addressRegion: 'Madrid',
-    addressCountry: 'ES',
-    postalCode: '28008',
-  },
-  geo: {
-    '@type': 'GeoCoordinates',
-    latitude: 40.431,
-    longitude: -3.7188,
-  },
-  openingHoursSpecification: [
+  '@graph': [
     {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      opens: '09:00',
-      closes: '20:00',
-    },
-  ],
-  priceRange: '€€',
-  currenciesAccepted: 'EUR',
-  paymentAccepted: 'Cash, Credit Card, Bank Transfer',
-  knowsAbout: [
-    'Psicología Clínica',
-    'Terapia Cognitivo-Conductual',
-    'Ansiedad',
-    'Depresión',
-    'Trauma',
-    'Terapia Individual',
-  ],
-  founder: {
-    '@type': 'Person',
-    name: 'Almudena Marchesi',
-    jobTitle: 'Psicóloga Clínica',
-    worksFor: {
-      '@type': 'MedicalBusiness',
+      '@type': 'WebSite',
+      '@id': websiteId,
       name: 'Clínica Almudena Marchesi',
+      url: baseUrl,
+      inLanguage: 'es-ES',
+      publisher: { '@id': localBusinessId },
     },
-  },
+    {
+      '@type': ['LocalBusiness', 'MedicalBusiness'],
+      '@id': localBusinessId,
+      name: 'Clínica Almudena Marchesi',
+      alternateName: 'Almudena Marchesi — Psicología Clínica Madrid',
+      description:
+        'Psicología clínica en Moncloa (Madrid). Acompañamiento profesional basado en evidencia.',
+      url: baseUrl,
+      telephone: '+34646445991',
+      email: CLINIC_CONTACT_EMAIL,
+      image: ogProfileImage,
+      logo: ogProfileImage,
+      priceRange: '€€',
+      currenciesAccepted: 'EUR',
+      paymentAccepted: 'Cash, Credit Card, Bank Transfer',
+      hasMap: getClinicGoogleMapsHref(),
+      medicalSpecialty: 'https://schema.org/Psychotherapy',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: 'Calle de Meléndez Valdés 22, 1D',
+        addressLocality: 'Madrid',
+        addressRegion: 'Madrid',
+        addressCountry: 'ES',
+        postalCode: '28015',
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: 40.4347,
+        longitude: -3.7049,
+      },
+      areaServed: [
+        { '@type': 'City', name: 'Madrid', containedInPlace: { '@type': 'Country', name: 'España' } },
+        { '@type': 'AdministrativeArea', name: 'Comunidad de Madrid' },
+      ],
+      openingHoursSpecification: [
+        {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          opens: '09:00',
+          closes: '20:00',
+        },
+      ],
+      knowsAbout: [
+        'Psicología Clínica',
+        'Terapia Cognitivo-Conductual',
+        'Ansiedad',
+        'Depresión',
+        'Trauma',
+        'Terapia Individual',
+        'Terapia de pareja',
+      ],
+      founder: {
+        '@type': 'Person',
+        name: 'Almudena Marchesi Fernández',
+        jobTitle: 'Psicóloga sanitaria',
+        worksFor: { '@id': localBusinessId },
+      },
+    },
+  ],
 };
 
 export default function HomePage() {

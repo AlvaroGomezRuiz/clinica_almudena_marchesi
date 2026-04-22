@@ -3,6 +3,8 @@
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "https://clinica-almudena.vercel.app",
+  "https://ampsicologia.es",
+  "https://www.ampsicologia.es",
   "https://amclinicapsicologia.es",
   "https://www.amclinicapsicologia.es",
   Deno.env.get("FRONTEND_URL") ?? "",

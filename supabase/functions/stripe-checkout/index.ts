@@ -14,7 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
 import { createCheckoutSession, StripeApiError } from "../_shared/stripe.ts";
 
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
 interface CheckoutRequest {
   kind: "cita" | "bono";

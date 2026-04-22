@@ -1,16 +1,20 @@
 import type { MetadataRoute } from 'next';
 
+import { LEGAL_LAST_UPDATED_ISO } from '@/lib/seo/legal-version';
+
 function getBaseUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
     process.env.SITE_URL ??
-    'http://localhost:3000';
+    'https://ampsicologia.es';
   return raw.replace(/\/+$/, '');
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getBaseUrl();
   const now = new Date();
+  const legalModified = new Date(`${LEGAL_LAST_UPDATED_ISO}T12:00:00.000Z`);
 
   return [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: 'weekly', priority: 1 },
@@ -40,19 +44,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/cookies`,
-      lastModified: now,
+      lastModified: legalModified,
       changeFrequency: 'yearly',
       priority: 0.2,
     },
     {
       url: `${baseUrl}/privacidad`,
-      lastModified: now,
+      lastModified: legalModified,
       changeFrequency: 'yearly',
       priority: 0.2,
     },
     {
       url: `${baseUrl}/aviso-legal`,
-      lastModified: now,
+      lastModified: legalModified,
       changeFrequency: 'yearly',
       priority: 0.2,
     },

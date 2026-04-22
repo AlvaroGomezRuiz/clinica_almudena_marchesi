@@ -8,12 +8,20 @@ import {
   CLINIC_SESSION_DURATION_MIN,
   CLINIC_SESSION_PRICE_LABEL,
 } from '@/lib/clinic';
+import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-export const metadata: Metadata = {
-  title: 'Servicios | Almudena Marchesi — Psicología Clínica',
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/servicios',
+  title: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
   description:
-    'Terapia individual, de pareja, infanto-juvenil y online. Consulta tarifas y bonos para tu proceso terapéutico en Moncloa, Madrid.',
-};
+    'Terapia individual y de pareja, enfoque infanto-juvenil u online cuando proceda. Tarifas transparentes y bonos en consulta Moncloa / Chamberí · Madrid.',
+  keywords: [
+    'terapia individual Madrid',
+    'terapia de pareja Madrid',
+    'psicología online',
+    'tarifas psicólogo Madrid',
+  ],
+});
 
 const SERVICES = [
   {

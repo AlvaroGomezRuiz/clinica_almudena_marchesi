@@ -9,8 +9,9 @@
 //      número de factura asignado (advisory-lock por año).
 //   3. Renderiza PDF con pdf-lib y lo devuelve con Content-Type: application/pdf.
 //
-// Emisor: se lee de env vars FACTURA_EMISOR_*. Si alguna no está configurada,
-// responde 503 con un error claro para evitar emitir facturas inválidas.
+// Emisor: se lee de env vars FACTURA_EMISOR_*. Obligatorias: NOMBRE, NIF, DIRECCION.
+// CP_CIUDAD (opcional) se concatena en una segunda línea bajo DIRECCION en el PDF.
+// TELEFONO, IBAN, REGCESS opcionales (omitir secret o vacío).
 //
 // IVA: los servicios de psicología sanitaria están EXENTOS (art. 20.1.3 LIVA).
 // -----------------------------------------------------------------------------
@@ -68,8 +69,12 @@ function json(body: unknown, status: number, cors: Record<string, string>): Resp
 function readEmisor(): Emisor | null {
   const nombre = Deno.env.get("FACTURA_EMISOR_NOMBRE");
   const nif = Deno.env.get("FACTURA_EMISOR_NIF");
-  const direccion = Deno.env.get("FACTURA_EMISOR_DIRECCION");
-  if (!nombre || !nif || !direccion) return null;
+  const direccionLinea = Deno.env.get("FACTURA_EMISOR_DIRECCION");
+  if (!nombre || !nif || !direccionLinea) return null;
+  const cpCiudad = Deno.env.get("FACTURA_EMISOR_CP_CIUDAD")?.trim();
+  const direccion = cpCiudad
+    ? `${direccionLinea.trim()}\n${cpCiudad}`
+    : direccionLinea.trim();
   return {
     nombre,
     nif,

@@ -6,6 +6,8 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 
 > **Arquitectura unificada (hito 14 · 22-abr-2026):** se eliminó por completo el legacy FastAPI stand-by. Todo el backend vive ahora en Supabase (Postgres RPCs + Edge Functions Deno). El auto-registro público (`/registro-paciente`) usa flujo OTP nativo de Supabase Auth + RPC cifrada `paciente_autoregistro_cifrada`.
 
+> **SEO / GEO / Legal (23-abr-2026):** dominio canónico de producción **`https://ampsicologia.es`**. Metadata unificada con `buildPublicPageMetadata`, JSON-LD `@graph` (WebSite + LocalBusiness/MedicalBusiness) en la home con coordenadas y dirección postal completas, `WebPage` + `dateModified` en `/aviso-legal`, `/cookies`, `/privacidad`. Contacto público **`contacto@ampsicologia.es`**. Documentación de referencia: `docs/03_engineering/GEO_Y_SEO_ELITE.md`. Las tres páginas legales llevan versión **`2026-04-23-v1`**.
+
 ---
 
 ## 1. Arquitectura
@@ -73,7 +75,7 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_URL` | all | Pública, visible en bundle cliente. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | all | Pública; cada request va con RLS del usuario. |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | **NUNCA** expongas esto al cliente. Solo webhooks. |
-| `NEXT_PUBLIC_APP_URL` | all | Ej. `https://amclinicapsicologia.es` (dominio definitivo; preview Vercel hasta DNS). |
+| `NEXT_PUBLIC_APP_URL` | all | Ej. `https://ampsicologia.es` (dominio definitivo; preview Vercel hasta DNS). |
 | `STRIPE_SECRET_KEY` | server | `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | server | `whsec_...` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | all | `pk_live_...` |
@@ -219,7 +221,7 @@ npm run dev
 
 ### 6.6 Legal / RGPD
 
-- [ ] Política de privacidad publicada en `/legal/privacidad`.
+- [ ] Política de privacidad publicada en `/privacidad` (versión vigente fechada).
 - [ ] Consentimiento explícito + firma en el onboarding (tabla `pacientes.consentimiento_rgpd` + storage bucket `firmas-rgpd`).
 - [ ] Proceso de derecho al olvido documentado (soft delete `activo=false` → purga anonimizada tras 5 años).
 - [ ] Data Processing Agreement con Supabase (EU region).
@@ -345,7 +347,7 @@ frontend/src/lib/email/send.ts   # Helper server-only fire-and-forget
 **1) Alta y verificación en Resend**
 
 ```
-https://resend.com → Sign up → Domains → Add Domain (ej. amclinicapsicologia.es)
+https://resend.com → Sign up → Domains → Add Domain (ej. ampsicologia.es)
 → Copiar registros DNS (MX, SPF, DKIM) al DNS del dominio → Verify
 → API Keys → Create → guardar el token `re_xxx`
 ```
@@ -356,9 +358,9 @@ Dashboard → Project Settings → **Edge Functions → Secrets**:
 
 ```bash
 RESEND_API_KEY        = re_xxx
-RESEND_FROM_EMAIL     = "Clínica Almudena <contacto@amclinicapsicologia.es>"
-RESEND_REPLY_TO       = contacto@amclinicapsicologia.es
-FRONTEND_URL          = https://amclinicapsicologia.es
+RESEND_FROM_EMAIL     = "Clínica Almudena <contacto@ampsicologia.es>"
+RESEND_REPLY_TO       = contacto@ampsicologia.es
+FRONTEND_URL          = https://ampsicologia.es
 CRON_SECRET           = <32+ chars aleatorios — solo para el cron>
 # SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya están inyectados por la plataforma
 ```
@@ -399,7 +401,7 @@ Host:       smtp.resend.com
 Port:       465     (TLS)
 Username:   resend
 Password:   re_xxx  (la misma API key)
-Sender:     Clínica Almudena <contacto@amclinicapsicologia.es>
+Sender:     Clínica Almudena <contacto@ampsicologia.es>
 ```
 
 ### Verificación end-to-end
@@ -488,6 +490,8 @@ STRIPE_WEBHOOK_SECRET  = whsec_xxx
 # FRONTEND_URL, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya configurados antes
 ```
 
+**Datos del emisor en facturas PDF** (`invoice-pdf`): secrets `FACTURA_EMISOR_*` con nombre, NIF, dirección, CP/ciudad, email de contacto fiscal y colegiación; opcionales teléfono, IBAN y REGCESS (omitir si no aplican). Tabla de valores vigente en **`docs/00_project_control/PENDIENTES_Y_CHECKLIST.md`** (apartado **2.5 Facturas**). Tras editar secrets en el dashboard, redeploy de `invoice-pdf` si tu flujo no los recarga en caliente.
+
 **4) Aplicar migración y desplegar Edge Functions**
 
 ```bash
@@ -570,6 +574,7 @@ docs/
 │  └─ REPORTE_EJECUCION.md
 ├─ 03_engineering/              # Arquitectura y planificacion
 │  ├─ ARQUITECTURA_TECNICA.md
+│  ├─ GEO_Y_SEO_ELITE.md         # GEO + SEO técnico (canonical, JSON-LD, sitemap)
 │  └─ ROADMAP.md
 ├─ 04_design/                   # Sistema visual
 │  └─ SISTEMA_DISENO.md

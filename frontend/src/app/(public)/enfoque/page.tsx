@@ -5,12 +5,19 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-export const metadata: Metadata = {
-  title: 'Enfoque | Almudena Marchesi — Psicología Clínica',
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/enfoque',
+  title: 'Enfoque terapéutico | Almudena Marchesi — Psicología clínica Madrid',
   description:
-    'Descubre mi metodología: escucha activa, ausencia de juicio y rigor clínico basado en evidencia. Psicología Clínica en Moncloa, Madrid.',
-};
+    'Metodología basada en escucha activa, marco no juzgante y rigor clínico. Psicología en Moncloa-Chamberí, Madrid.',
+  keywords: [
+    'enfoque psicoterapéutico',
+    'psicología basada en evidencia',
+    'terapia Moncloa',
+  ],
+});
 
 const METHODOLOGY_CARDS = [
   {

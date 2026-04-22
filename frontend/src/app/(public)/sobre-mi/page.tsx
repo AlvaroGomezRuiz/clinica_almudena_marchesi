@@ -5,12 +5,19 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-export const metadata: Metadata = {
-  title: 'Sobre Mí | Almudena Marchesi — Psicología Clínica',
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/sobre-mi',
+  title: 'Sobre mí | Almudena Marchesi — Psicóloga sanitaria en Madrid',
   description:
-    'Licenciada en Psicología Clínica con experiencia desde 2023. Conoce mi filosofía de acompañamiento terapéutico en Moncloa, Madrid.',
-};
+    'Formación en Psicología Clínica y PGS. Acompañamiento terapéutico desde la consulta en Meléndez Valdés (Moncloa). Trayectoria y valores profesionales.',
+  keywords: [
+    'psicóloga colegiada Madrid',
+    'Almudena Marchesi psicóloga',
+    'consulta psicología Moncloa',
+  ],
+});
 
 const CREDENTIALS = [
   {

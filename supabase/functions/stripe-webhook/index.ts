@@ -32,7 +32,7 @@ function json(body: unknown, status: number): Response {
   });
 }
 
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://amclinicapsicologia.es";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);

@@ -45,6 +45,8 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
   "https://clinica-almudena.vercel.app/auth/callback",
+  "https://ampsicologia.es/auth/callback",
+  "https://www.ampsicologia.es/auth/callback",
   "https://amclinicapsicologia.es/auth/callback",
   "https://www.amclinicapsicologia.es/auth/callback"
 ]

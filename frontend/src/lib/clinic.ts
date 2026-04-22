@@ -1,8 +1,14 @@
-/** Dominio elegido por la profesional (DNS y buzón pendientes de activar en el proveedor). */
-export const CLINIC_PUBLIC_SITE_URL = 'https://amclinicapsicologia.es' as const;
+/**
+ * URL canónica del sitio. En Vercel debe coincidir con NEXT_PUBLIC_SITE_URL (p. ej. https://ampsicologia.es).
+ * Orden: env de despliegue → fallback seguro para metadata/OG en build.
+ */
+export const CLINIC_PUBLIC_SITE_URL: string =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_APP_URL ??
+  'https://ampsicologia.es';
 
-/** Contacto único público (aviso legal, RGPD, pie). Ajustar en el registrador al contratar el dominio. */
-export const CLINIC_CONTACT_EMAIL = 'contacto@amclinicapsicologia.es' as const;
+/** Contacto único público (aviso legal, RGPD, pie). Dominio canónico: ampsicologia.es */
+export const CLINIC_CONTACT_EMAIL = 'contacto@ampsicologia.es' as const;
 
 export const CLINIC_SESSION_DURATION_MIN = 50;
 

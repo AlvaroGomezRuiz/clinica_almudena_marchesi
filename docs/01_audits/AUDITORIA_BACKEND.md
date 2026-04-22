@@ -58,10 +58,7 @@ El backend productivo vive **integramente en Supabase** (Postgres + Edge Functio
 
 ### 2.4 Secretos requeridos (Supabase Edge Functions → Secrets)
 
-Ver `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` seccion 2. Todos presentes excepto:
-- `FACTURA_EMISOR_NIF` / `FACTURA_EMISOR_COLEGIADA` — valores acordados; configurar en Secrets (ver `PENDIENTES_Y_CHECKLIST.md`).
-- `FACTURA_EMISOR_EMAIL` — sugerido `contacto@amclinicapsicologia.es` al activar dominio.
-- `FACTURA_EMISOR_REGCESS` — pendiente confirmación colegio.
+Ver `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` sección **2.5 Facturas**: tabla de valores de referencia para `FACTURA_EMISOR_*` (NIF, dirección, CP/ciudad, email fiscal Outlook `clinica.almudena.marchesi@outlook.com`, colegiación M-40804; teléfono/IBAN/REGCESS opcionales vacíos). El PDF concatena `FACTURA_EMISOR_DIRECCION` y `FACTURA_EMISOR_CP_CIUDAD` en dos líneas (`invoice-pdf`).
 
 ---
 

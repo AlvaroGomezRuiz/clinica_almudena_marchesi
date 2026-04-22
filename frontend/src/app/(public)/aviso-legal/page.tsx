@@ -1,16 +1,41 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 
-export const metadata: Metadata = {
-  title: 'Aviso Legal — Almudena Marchesi Fernández, Psicóloga',
+const canonicalBase = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
+import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+import { buildLegalWebPageJsonLd } from '@/lib/seo/legal-web-page-json-ld';
+import { LEGAL_DOCUMENT_VERSION, LEGAL_LAST_UPDATED_ES } from '@/lib/seo/legal-version';
+
+export const metadata: Metadata = buildPublicPageMetadata({
+  path: '/aviso-legal',
+  title: 'Aviso Legal — Almudena Marchesi Fernández, Psicóloga (Madrid)',
   description:
-    'Información legal, identificación del titular del sitio web y condiciones de uso del servicio de psicología de Almudena Marchesi Fernández.',
-};
+    'Identificación del titular, condiciones de uso del sitio ampsicologia.es y cumplimiento de la Ley 34/2002 (LSSI-CE). Clínica Almudena Marchesi.',
+  keywords: [
+    'aviso legal',
+    'LSSI',
+    'titular sitio web',
+    'psicóloga Madrid',
+    'ampsicologia.es',
+  ],
+  ogType: 'article',
+});
+
+const webPageJsonLd = buildLegalWebPageJsonLd({
+  path: '/aviso-legal',
+  name: 'Aviso Legal',
+  description:
+    'Identificación del titular del sitio web y condiciones de uso conforme a la Ley 34/2002 (LSSI-CE).',
+});
 
 export default function AvisoLegalPage() {
   return (
     <div className="bg-canvas min-h-screen pt-36 pb-24 px-6 md:px-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
+      />
       <article className="max-w-3xl mx-auto prose-clinical">
         <header className="mb-14">
           <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block">
@@ -20,8 +45,8 @@ export default function AvisoLegalPage() {
             Aviso Legal
           </h1>
           <p className="text-body-lg text-ink-soft leading-relaxed">
-            En cumplimiento de la Ley 34/2002, de 11 de julio, de Servicios de la
-            Sociedad de la Información y del Comercio Electrónico (LSSI-CE).
+            En cumplimiento de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la
+            Información y del Comercio Electrónico (LSSI-CE).
           </p>
         </header>
 
@@ -59,13 +84,11 @@ export default function AvisoLegalPage() {
                 <strong className="text-ink">Sitio web:</strong>{' '}
                 <a
                   className="text-sage underline underline-offset-2"
-                  href="https://amclinicapsicologia.es"
+                  href={canonicalBase}
                   rel="noopener noreferrer"
                 >
-                  amclinicapsicologia.es
-                </a>{' '}
-                (dominio en proceso de registro; hasta entonces el acceso puede ser la URL de
-                preproducción en Vercel)
+                  {canonicalBase.replace(/^https:\/\//, '')}
+                </a>
               </li>
             </ul>
           </div>
@@ -76,7 +99,7 @@ export default function AvisoLegalPage() {
             </h2>
             <p>
               El presente aviso legal regula el uso del sitio web y de los servicios profesionales de
-              psicología ofrecidos por Almudena Marchesi Fernández (en adelante, &ldquo;la Profesional&rdquo;).
+              psicología ofrecidos por Almudena Marchesi Fernández (en adelante, «la Profesional»).
               El acceso y la utilización de este sitio web atribuye la condición de usuario e implica la
               aceptación plena de todas las condiciones incluidas en este aviso legal.
             </p>
@@ -106,6 +129,11 @@ export default function AvisoLegalPage() {
               Profesional no se hace responsable de retrasos o bloqueos en el uso causados por deficiencias o
               sobrecargas en los servidores de Internet o en otros sistemas electrónicos.
             </p>
+            <p className="mt-3">
+              Los contenidos informativos del sitio no sustituyen la valoración clínica individualizada ni
+              constituyen diagnóstico o tratamiento; la relación terapéutica se establece en la consulta
+              conforme a la normativa sanitaria aplicable.
+            </p>
           </div>
 
           <div>
@@ -121,7 +149,7 @@ export default function AvisoLegalPage() {
 
           <div className="pt-8 border-t border-line">
             <p className="font-mono text-label-sm text-sage-mid">
-              Última actualización: 19 de abril de 2026
+              Versión {LEGAL_DOCUMENT_VERSION} · Última actualización: {LEGAL_LAST_UPDATED_ES}
             </p>
           </div>
         </section>
@@ -129,4 +157,3 @@ export default function AvisoLegalPage() {
     </div>
   );
 }
-

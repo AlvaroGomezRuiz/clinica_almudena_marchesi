@@ -77,14 +77,24 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(CLINIC_PUBLIC_SITE_URL),
+  applicationName: 'Clínica Almudena Marchesi',
   title: {
     template: '%s | Almudena Marchesi',
     default: 'Almudena Marchesi | Psicología Clínica Madrid · Moncloa',
   },
   description: 'Acompañamiento profesional en el corazón de Moncloa, Madrid. Psicología clínica basada en evidencia. Primera sesión exploratoria disponible.',
-  keywords: ['Psicóloga Madrid', 'Psicología Clínica', 'Terapia Moncloa', 'Psicólogo Moncloa', 'Ansiedad', 'Depresión', 'Almudena Marchesi'],
-  authors: [{ name: 'Almudena Marchesi' }],
-  creator: 'Almudena Marchesi',
+  keywords: [
+    'Psicóloga Madrid',
+    'Psicología clínica Moncloa',
+    'Terapia Chamberí',
+    'Psicólogo Madrid centro',
+    'consulta Meléndez Valdés',
+    'Ansiedad',
+    'Depresión',
+    'Almudena Marchesi',
+  ],
+  authors: [{ name: 'Almudena Marchesi Fernández', url: CLINIC_PUBLIC_SITE_URL }],
+  creator: 'Almudena Marchesi Fernández',
   icons: {
     icon: '/favicon.ico',
   },
@@ -117,7 +127,11 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: '/',
+    languages: {
+      'es-ES': CLINIC_PUBLIC_SITE_URL,
+    },
   },
+  category: 'health',
 };
 
 /* Host de Supabase extraído del env en build time para pre-conectar
