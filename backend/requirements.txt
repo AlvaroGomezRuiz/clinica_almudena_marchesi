@@ -5,9 +5,11 @@ slowapi==0.1.9
 python-dotenv==1.0.1
 
 # --- Base de Datos y Criptografía ---
+# PostgreSQL (Supabase en producción, Postgres local en stand-by). MySQL fue
+# retirado el 22-abr-2026: ver docs/00_project_control/CONTEXTO_HISTORICO.md.
 sqlalchemy==2.0.27
 alembic==1.13.1
-pymysql==1.1.1
+psycopg2-binary==2.9.9
 cryptography==46.0.6
 pyasn1>=0.6.3
 

@@ -8,8 +8,8 @@
 ## Horizonte 1 — Pre-launch (bloquea go-live)
 
 ### Infraestructura
-- [ ] Aplicar migracion `0026_retirar_seed_demo.sql` (borrar seed demo).
-- [ ] Generar indices `0027_index_auditoria_ts` + `0027_index_pagos_fecha`.
+- [x] **Migracion `0026_performance_indexes` aplicada (2026-04-22)** — 8 indices compuestos + ANALYZE. Cubre citas, pagos, mensajes, mensajes_adjuntos, stripe_events, profiles. Nota: el nombre `0026_retirar_seed_demo.sql` del plan original fue reasignado; la limpieza de seeds se hace manual desde Dashboard/SQL Editor antes del go-live.
+- [ ] Limpieza seeds demo (SQL manual pre-launch, ver `PENDIENTES_Y_CHECKLIST.md` §6).
 - [ ] Crear Edge Function `health` que verifica `app_encryption_ready()` + vault.
 - [ ] Rotar master `app_encryption_key` (solo si fue manipulada en dev).
 
@@ -26,8 +26,8 @@
 ### Frontend cleanup
 - [ ] Consolidar `services/payments/` → `services/pagos/` (legacy folder).
 - [ ] Consolidar `components/payments/` → `components/pagos/`.
-- [ ] Migrar Google Fonts `@import` CSS → `next/font`.
-- [ ] `npm run build` con 0 errores + 0 warnings.
+- [x] Google Fonts ya via `next/font` (Cormorant / Outfit / JetBrains Mono). Material Symbols self-hosted en subset local (`/public/fonts/material-symbols-subset.woff2`, 6.4 KB).
+- [x] `npm run build` con 0 errores (verificado 2026-04-22). Warn residual: `<img>` en `ChatPanel` para URLs Supabase Storage firmadas (no optimizable por `next/image`, decisión consciente).
 - [ ] Lighthouse mobile >= 90 en rutas publicas + portal.
 
 ### Verificacion
@@ -95,10 +95,27 @@
 
 ## Deuda tecnica reconocida
 
-| Item                                              | Severidad | Plan                         |
-|---------------------------------------------------|-----------|------------------------------|
-| `unsafe-inline` en CSP (Next.js 14 sin nonce)     | Media     | Migrar con Next 15           |
-| `mensajes.body` en plaintext dentro de DB         | Media     | Cifrado por conversacion H3  |
-| FastAPI stand-by no testeado                       | Baja      | Decision H3                  |
-| Seeds demo activos en DB                           | Alta      | Migracion `0026` pre-launch  |
-| Sin backups cifrados propios (solo Supabase auto) | Media     | pg_dump cifrado H2           |
+| Item                                                    | Severidad | Plan                                  |
+|---------------------------------------------------------|-----------|---------------------------------------|
+| `unsafe-inline` en CSP (Next.js 14 sin nonce)           | Media     | Migrar con Next 15 (nonce dinamico)   |
+| `mensajes.body` en plaintext dentro de DB               | Media     | Cifrado por conversacion H3           |
+| FastAPI stand-by no testeado                             | Baja      | Decision H3                           |
+| Seeds demo activos en DB                                 | Alta      | Limpieza SQL manual pre-launch        |
+| Sin backups cifrados propios (solo Supabase auto)       | Media     | pg_dump cifrado H2                    |
+| Rate limiter en memoria (no cross-instance)             | Media     | Upstash/Redis si hay multi-region H2  |
+| Magic-bytes no valida video/audio en recursos admin     | Baja      | Solo valida imagenes y PDF            |
+
+---
+
+## Ronda "ultra-performance + seguridad senior" (2026-04-22) — COMPLETADA
+
+Registro de lo entregado en la ultima pasada senior (detalle en `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` §7):
+
+- CSP unificada en `next.config.js` (elimina duplicacion en middleware).
+- Cookies Supabase endurecidas (`hardenCookieOptions()`).
+- Rate limiter + magic-bytes en 3 endpoints de upload.
+- CSV injection protection en export facturacion.
+- Migracion 0026 aplicada (8 indices compuestos).
+- Material Symbols self-hosted subset (99.8% menos peso).
+- Supabase client singleton en browser.
+- Rama git renombrada `FRONTEND` → `frontend` (Vercel Production Branch + Root Directory corregidos).

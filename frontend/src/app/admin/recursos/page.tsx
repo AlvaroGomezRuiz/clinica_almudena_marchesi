@@ -104,6 +104,25 @@ export default async function AdminRecursosPage({
     total += 1;
   }
 
+  // Contador de asignaciones por recurso (Almudena quiere saber dónde está
+  // usándose cada recurso). Una sola query que agrupamos en memoria.
+  const { data: asignacionesRaw } = await supabase
+    .from('recurso_asignaciones')
+    .select('recurso_id, completed_at')
+    .eq('activo', true);
+
+  const asignadosMap = new Map<string, { total: number; completados: number }>();
+  for (const a of (asignacionesRaw as {
+    recurso_id: string | null;
+    completed_at: string | null;
+  }[] | null) ?? []) {
+    if (!a.recurso_id) continue;
+    const prev = asignadosMap.get(a.recurso_id) ?? { total: 0, completados: 0 };
+    prev.total += 1;
+    if (a.completed_at) prev.completados += 1;
+    asignadosMap.set(a.recurso_id, prev);
+  }
+
   return (
     <>
       <PageHeader
@@ -158,45 +177,61 @@ export default async function AdminRecursosPage({
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {recursos.map((r) => (
-            <SurfaceCard key={r.id} interactive>
-              <header className="mb-3 flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/25">
-                    <span
-                      className="material-symbols-outlined text-primary dark:text-white"
-                      aria-hidden="true"
-                    >
-                      {iconForTipo(r.tipo)}
+          {recursos.map((r) => {
+            const uso = asignadosMap.get(r.id);
+            const asignadosN = uso?.total ?? 0;
+            const completadosN = uso?.completados ?? 0;
+            return (
+              <SurfaceCard key={r.id} interactive>
+                <header className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/25">
+                      <span
+                        className="material-symbols-outlined text-primary dark:text-white"
+                        aria-hidden="true"
+                      >
+                        {iconForTipo(r.tipo)}
+                      </span>
                     </span>
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <Chip tone="info">{r.tipo}</Chip>
-                    <Chip tone="neutral">{r.categoria}</Chip>
+                    <div className="flex flex-col gap-1">
+                      <Chip tone="info">{r.tipo}</Chip>
+                      <Chip tone="neutral">{r.categoria}</Chip>
+                    </div>
                   </div>
-                </div>
-                <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                  {filesize(r.size_bytes)}
-                </p>
-              </header>
+                  <div className="text-right">
+                    <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
+                      {filesize(r.size_bytes)}
+                    </p>
+                    {asignadosN > 0 ? (
+                      <p
+                        className="mt-1 font-body text-[0.7rem] font-semibold text-primary dark:text-primary-fixed-dim"
+                        title={`${completadosN} completados de ${asignadosN}`}
+                      >
+                        {asignadosN} asignado{asignadosN === 1 ? '' : 's'}
+                        {completadosN > 0 ? ` · ${completadosN} ✓` : ''}
+                      </p>
+                    ) : null}
+                  </div>
+                </header>
 
-              <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
-                {r.titulo}
-              </h3>
-              {r.descripcion ? (
-                <p className="mt-2 line-clamp-2 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
-                  {r.descripcion}
-                </p>
-              ) : null}
+                <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
+                  {r.titulo}
+                </h3>
+                {r.descripcion ? (
+                  <p className="mt-2 line-clamp-2 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+                    {r.descripcion}
+                  </p>
+                ) : null}
 
-              <footer className="mt-4 flex items-center justify-between">
-                <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                  {format(new Date(r.created_at), 'd MMM yyyy', { locale: es })}
-                </p>
-                <RecursoAssignButton recursoId={r.id} recursoTitulo={r.titulo} />
-              </footer>
-            </SurfaceCard>
-          ))}
+                <footer className="mt-4 flex items-center justify-between">
+                  <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
+                    {format(new Date(r.created_at), 'd MMM yyyy', { locale: es })}
+                  </p>
+                  <RecursoAssignButton recursoId={r.id} recursoTitulo={r.titulo} />
+                </footer>
+              </SurfaceCard>
+            );
+          })}
         </div>
       )}
     </>

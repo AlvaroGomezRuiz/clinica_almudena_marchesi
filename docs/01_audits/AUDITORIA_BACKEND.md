@@ -96,10 +96,10 @@ backend/
 
 | Severidad | Ubicacion                                 | Problema                                                    |
 |-----------|-------------------------------------------|-------------------------------------------------------------|
-| Alta      | `backend/alembic/versions/*.py`           | Desincronizado con `supabase/migrations/` (FastAPI migra MySQL, Supabase usa Postgres) |
+| Alta      | `backend/alembic/versions/*.py`           | Desincronizado con `supabase/migrations/`: si algun dia se despliega FastAPI, regenerar desde cero a partir del schema Supabase |
 | Alta      | `backend/scripts/rebuild_system.py`       | Drop total + seed: peligroso en produccion, restringir con guard `ENV=dev` |
 | Media     | `backend/setup_admin.py`                  | Promueve usuario a admin sin autenticar — solo dev          |
-| Media     | Dual stack DB (MySQL en FastAPI vs Postgres en Supabase) | Decidir cual es fuente de verdad antes de desplegar         |
+| Resuelta  | ~~Dual stack DB (MySQL vs Postgres)~~     | ~~Decidir cual es fuente de verdad~~ → **MySQL retirado el 22-abr-2026** (ver CONTEXTO_HISTORICO Hito 12). FastAPI ya usa psycopg2/Postgres. |
 | Baja      | CORS `allow_origins=["http://localhost:3000"]` | Endurecer con variable `CORS_ALLOWED_ORIGINS`               |
 
 ### 3.4 Recomendacion sobre FastAPI
@@ -107,10 +107,11 @@ backend/
 **Opcion A (recomendada)**: marcar como *alternativa arquitectonica* y no desplegar. Conservar el codigo como plan de contingencia ante cambio de vendor. Documentar en README.
 
 **Opcion B**: desplegar en Fly.io / Railway / Render como API publica bajo `api.<dominio>` y **migrar** las Edge Functions hacia endpoints FastAPI. Requiere:
-1. Migrar de MySQL → PostgreSQL en SQLAlchemy (cambiar driver en `db/session.py`).
-2. Refactorizar `backend/scripts/` para que no hagan drop masivo.
-3. Anadir `pytest` + coverage >= 70%.
-4. CI/CD con secrets propios.
+1. ~~Migrar de MySQL → PostgreSQL~~ → **hecho 22-abr-2026** (`psycopg2-binary` en `requirements.txt`, `DATABASE_URL=postgresql+psycopg2://...`).
+2. Regenerar migraciones Alembic desde el schema actual de Supabase (0001..0027).
+3. Refactorizar `backend/scripts/` para que no hagan drop masivo.
+4. Anadir `pytest` + coverage >= 70%.
+5. CI/CD con secrets propios.
 
 ---
 

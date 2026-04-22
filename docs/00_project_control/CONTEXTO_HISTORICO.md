@@ -6,7 +6,7 @@
 
 ## Hito 1 — Fundacion (Q4 2025)
 
-- Stack inicial: Next.js 14 (App Router) + FastAPI + MySQL + Docker.
+- Stack inicial: Next.js 14 (App Router) + FastAPI + MySQL + Docker *(MySQL y Docker retirados en Hito 12 — ver abajo)*.
 - Autenticacion propia basada en JWT emitido por FastAPI.
 - Landing publica basica, dashboard admin rudimentario.
 
@@ -103,10 +103,27 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - Reescritura `.gitignore` + `README.md`.
 - 6 auditorias tecnicas + informe ejecutivo para cliente (ver `01_audits/` y `02_reports/`).
 
+## Hito 12 — Retirada de MySQL (22-abr-2026)
+
+- **Motivo**: la fuente de verdad unica es Supabase Postgres; mantener MySQL
+  en paralelo solo duplicaba esquema y generaba deuda tecnica.
+- **Eliminado**:
+  - `docker-compose.yml` (servicio MySQL local).
+  - `.env` raiz (credenciales `MYSQL_*`).
+  - `pymysql` de `backend/requirements.txt`.
+  - Logica `SET FOREIGN_KEY_CHECKS` de `backend/scripts/rebuild_system.py`
+    (reemplazada por `DROP TABLE ... CASCADE` estandar Postgres).
+- **Migrado**:
+  - `backend/.env` ahora apunta a `postgresql+psycopg2://...` (Supabase o
+    Postgres local) con `psycopg2-binary` como driver.
+- **Resultado**: FastAPI stand-by queda con el mismo motor que produccion.
+  Si algun dia se despliega, habla contra la misma base que Supabase sin
+  puertas dobles.
+
 ## Estado actual (punto de partida para siguientes sesiones)
 
 - **Backend real**: Supabase (Postgres 15 + Edge Functions Deno + Auth + Storage + Realtime).
-- **Backend stand-by**: FastAPI en `backend/` (no desplegado).
+- **Backend stand-by**: FastAPI en `backend/` (no desplegado, ya sobre Postgres).
 - **Frontend**: Next.js 14 App Router en Vercel.
 - **Cifrado**: AES-256 via pgcrypto + blind index HMAC-SHA256 + master key en Vault.
 - **Pagos**: Stripe Payment Element embebido + webhook verificado.

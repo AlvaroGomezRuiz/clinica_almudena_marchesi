@@ -88,6 +88,73 @@ export interface RevelarCampoResult {
 }
 
 /**
+ * Ficha sensible del paciente descifrada en una sola llamada (RPC
+ * `paciente_ficha_sensibles_bulk`, migración 0027). Registra UNA entrada
+ * `acceso_ficha_completa` en admin_lookups (RGPD art. 30).
+ *
+ * Devuelve plaintext de TODOS los campos cifrados. Campos vacíos vienen
+ * como null. Seguridad garantizada por el check is_admin() de la RPC.
+ */
+export interface FichaSensiblesBulk {
+  readonly nombre_completo: string | null;
+  readonly dni_nie: string | null;
+  readonly telefono: string | null;
+  readonly email: string | null;
+  readonly direccion: string | null;
+  readonly contacto_emergencia_nombre: string | null;
+  readonly contacto_emergencia_telefono: string | null;
+  readonly alergias: string | null;
+  readonly medicacion_base: string | null;
+  readonly objetivos: string | null;
+  readonly motivo_consulta: string | null;
+  readonly motivo_consulta_inicial: string | null;
+  readonly preferencias_clinicas: string | null;
+}
+
+export async function fichaSensiblesBulkAction(
+  pacienteId: string,
+  justificacion: string | null = null
+): Promise<ActionResult<FichaSensiblesBulk>> {
+  try {
+    if (!pacienteId) return { ok: false, message: 'paciente_requerido' };
+    const { supabase } = await requireAdmin();
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: 'paciente_ficha_sensibles_bulk',
+      args: { p_id: string; p_justificacion: string | null }
+    ) => Promise<{ data: FichaSensiblesBulk | null; error: { message: string } | null }>)(
+      'paciente_ficha_sensibles_bulk',
+      {
+        p_id: pacienteId,
+        p_justificacion: justificacion?.slice(0, 240) ?? null,
+      }
+    );
+    if (error) return { ok: false, message: error.message };
+    return { ok: true, data: data ?? emptyBulk() };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'error_desconocido';
+    return { ok: false, message };
+  }
+}
+
+function emptyBulk(): FichaSensiblesBulk {
+  return {
+    nombre_completo: null,
+    dni_nie: null,
+    telefono: null,
+    email: null,
+    direccion: null,
+    contacto_emergencia_nombre: null,
+    contacto_emergencia_telefono: null,
+    alergias: null,
+    medicacion_base: null,
+    objetivos: null,
+    motivo_consulta: null,
+    motivo_consulta_inicial: null,
+    preferencias_clinicas: null,
+  };
+}
+
+/**
  * Desencripta un campo sensible y registra el acceso en admin_lookups.
  * Delegado completamente a la RPC `paciente_revelar_campo`, que:
  *   1. Verifica rol admin (código 42501 si no).

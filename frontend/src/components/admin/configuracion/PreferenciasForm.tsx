@@ -14,14 +14,26 @@ import {
 } from '@/services/admin/cuenta-actions';
 import type { NotificacionesPrefs } from '@/lib/supabase/types';
 
+type Role = 'admin' | 'paciente';
+
 interface Props {
   readonly prefs: NotificacionesPrefs;
+  /**
+   * Rol del usuario actual. Define qué toggles son visibles:
+   *   - paciente (default): toggles orientados al paciente (bienvenida,
+   *     recordatorio 24h, recursos asignados, privacidad, marketing).
+   *   - admin: toggles operativos (reserva recibida, cancelación, recordatorio
+   *     de agenda, privacidad, notificaciones desktop).
+   */
+  readonly role?: Role;
 }
 
 interface ToggleDef {
   readonly key: keyof PreferenciasPatch;
   readonly label: string;
   readonly description: string;
+  /** Roles en los que aparece este toggle. Default: ambos. */
+  readonly roles?: readonly Role[];
 }
 
 const EMAIL_TOGGLES: readonly ToggleDef[] = [
@@ -29,31 +41,34 @@ const EMAIL_TOGGLES: readonly ToggleDef[] = [
     key: 'welcome',
     label: 'Email de bienvenida',
     description: 'Confirmación al crear la cuenta.',
+    roles: ['paciente'],
   },
   {
     key: 'booking_confirmed',
     label: 'Reserva confirmada',
-    description: 'Recibes copia al agendarte una sesión.',
+    description: 'Recibes copia cuando se agenda una sesión.',
   },
   {
     key: 'booking_cancelled',
     label: 'Reserva cancelada',
-    description: 'Notificación si se cancela una sesión.',
+    description: 'Aviso si una sesión queda cancelada.',
   },
   {
     key: 'reminder_24h',
     label: 'Recordatorio 24h',
-    description: 'Aviso el día previo a la sesión.',
+    description: 'Resumen de la agenda el día previo.',
   },
   {
     key: 'nueva_asignacion',
     label: 'Nuevo recurso asignado',
     description: 'Cuando Almudena te comparte una tarea o lectura.',
+    roles: ['paciente'],
   },
   {
     key: 'marketing',
     label: 'Novedades y talleres',
     description: 'Comunicaciones esporádicas sobre grupos y contenidos.',
+    roles: ['paciente'],
   },
 ];
 
@@ -61,7 +76,7 @@ const UI_TOGGLES: readonly ToggleDef[] = [
   {
     key: 'privacy_mode_default',
     label: 'Modo privacidad por defecto',
-    description: 'Oculta nombres y datos sensibles hasta pulsar el ojo.',
+    description: 'Oculta automáticamente datos sensibles al abrir fichas y cards.',
   },
   {
     key: 'sound',
@@ -80,7 +95,10 @@ const UI_TOGGLES: readonly ToggleDef[] = [
   },
 ];
 
-export default function PreferenciasForm({ prefs }: Props): JSX.Element {
+export default function PreferenciasForm({
+  prefs,
+  role = 'paciente',
+}: Props): JSX.Element {
   const router = useRouter();
   const [local, setLocal] = useState<NotificacionesPrefs>(prefs);
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -105,18 +123,25 @@ export default function PreferenciasForm({ prefs }: Props): JSX.Element {
     });
   };
 
+  const emailToggles = EMAIL_TOGGLES.filter(
+    (t) => !t.roles || t.roles.includes(role)
+  );
+  const uiToggles = UI_TOGGLES.filter(
+    (t) => !t.roles || t.roles.includes(role)
+  );
+
   return (
     <div className="space-y-6">
       <ToggleGroup
-        title="Notificaciones por email"
-        toggles={EMAIL_TOGGLES}
+        title={role === 'admin' ? 'Avisos operativos por email' : 'Notificaciones por email'}
+        toggles={emailToggles}
         prefs={local}
         savingKey={savingKey}
         onToggle={toggle}
       />
       <ToggleGroup
         title="Experiencia en la app"
-        toggles={UI_TOGGLES}
+        toggles={uiToggles}
         prefs={local}
         savingKey={savingKey}
         onToggle={toggle}

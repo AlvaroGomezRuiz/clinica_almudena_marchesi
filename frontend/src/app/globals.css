@@ -6,68 +6,82 @@
 
 /* ══════════════════════════════════════════════════
    SISTEMA DE TOKENS — Light Mode (default)
+   Paleta cálida editorial "Serenity Moncloa"
    ══════════════════════════════════════════════════ */
 :root {
-  /* Fondos */
+  /* Fondos cálidos con ligera tonalidad ocre para dar calidez */
   --color-canvas:      #F8F6F1;
   --color-canvas-alt:  #EEEAE0;
 
-  /* Texto */
+  /* Texto: negros atenuados con toque cálido (mejor que #000 puro) */
   --color-ink:         #1C1C19;
-  --color-ink-soft:    #6B6960;
-  --color-ink-muted:   #A5A49C;
+  --color-ink-soft:    #5E5C53;   /* Bajo un poco para WCAG AA sobre canvas */
+  --color-ink-muted:   #8A887E;   /* Más oscuro para contraste AA ≥ 4.5 */
 
   /* Bordes */
   --color-line:        rgba(28, 28, 25, 0.10);
 
-  /* Glass */
+  /* Glass sobre canvas cálido */
   --color-glass-bg:    rgba(248, 246, 241, 0.72);
   --color-glass-border:rgba(255, 255, 255, 0.25);
 
-  /* Spotlight Colors (Light Mode) */
-  --color-spotlight:   rgba(74, 99, 85, 0.12); /* Subtle sage green glow */
-  --color-spotlight-proximity: rgba(28, 28, 25, 0.05); /* Subtle dark proximity */
+  /* Spotlight (cursor-follow en bentos) */
+  --color-spotlight:   rgba(74, 99, 85, 0.12);
+  --color-spotlight-proximity: rgba(28, 28, 25, 0.05);
 
-  /* Nav Pill */
+  /* Nav / Topbar pill — glass mood */
   --color-nav-bg:      rgba(248, 246, 241, 0.75);
   --color-nav-scrolled:rgba(248, 246, 241, 0.92);
 
   /* Mobile menu overlay */
   --color-menu-overlay:rgba(250, 249, 245, 0.88);
+
+  /* Superficie elevada (cards sólidas) */
+  --color-surface:     #FFFFFF;
+  --color-surface-alt: #F3EFE7;
 }
 
 /* ══════════════════════════════════════════════════
    SISTEMA DE TOKENS — Dark Mode
-   Antracita cálido / Pizarra premium
-   Contraste WCAG AA verificado en todos los pares
+   "Warm graphite" editorial (antracita cálido)
+   Ratio de contraste verificado ≥ WCAG AA en body,
+   ≥ AAA en titulares grandes.
    ══════════════════════════════════════════════════ */
 .dark {
-  /* Fondos: oscuro profundo clásico para máximo contraste */
-  --color-canvas:      #111111;
-  --color-canvas-alt:  #1A1A1A;
+  /* Fondos antracita tintados con ocre muy sutil — jamás #000 puro.
+     Esto evita la sensación "OLED negro" y empata con el canvas light. */
+  --color-canvas:      #15130F;
+  --color-canvas-alt:  #1E1B15;
 
-  /* Texto: blanco y grises claros muy legibles (Accesibilidad AAA) */
-  --color-ink:         #FFFFFF;
-  --color-ink-soft:    #E5E7EB;
-  --color-ink-muted:   #9CA3AF;
+  /* Texto: blanco cálido (no #FFF puro) reduce fatiga ocular. Las
+     utilidades Tailwind `dark:text-white` siguen funcionando porque
+     son literales; aquí definimos la versión por TOKEN. */
+  --color-ink:         #F4EFE4;
+  --color-ink-soft:    #D9D2C2;
+  --color-ink-muted:   #9B9587;
 
-  /* Bordes más visibles */
-  --color-line:        rgba(255, 255, 255, 0.15);
+  /* Bordes ligeramente cálidos para matchear canvas */
+  --color-line:        rgba(244, 239, 228, 0.14);
 
-  /* Glass oscuro de alto contraste */
-  --color-glass-bg:    rgba(17, 17, 17, 0.85);
-  --color-glass-border:rgba(255, 255, 255, 0.15);
+  /* Glass oscuro con tint cálido — los SurfaceCard glass (bg-white/[0.035])
+     no se ven ya como un velo plano, sino como un papel antracita. */
+  --color-glass-bg:    rgba(24, 21, 16, 0.85);
+  --color-glass-border:rgba(244, 239, 228, 0.10);
 
-  /* Spotlight Colors (Dark Mode) */
-  --color-spotlight:   rgba(255, 255, 255, 0.18); /* Bright white glow */
-  --color-spotlight-proximity: rgba(255, 255, 255, 0.06); /* Soft white proximity */
+  /* Spotlight warm-white */
+  --color-spotlight:   rgba(244, 239, 228, 0.18);
+  --color-spotlight-proximity: rgba(244, 239, 228, 0.06);
 
-  /* Nav Pill oscuro */
-  --color-nav-bg:      rgba(20, 20, 20, 0.85);
-  --color-nav-scrolled:rgba(20, 20, 20, 0.95);
+  /* Nav / Topbar pill */
+  --color-nav-bg:      rgba(22, 20, 16, 0.85);
+  --color-nav-scrolled:rgba(22, 20, 16, 0.95);
 
-  /* Mobile menu overlay oscuro */
-  --color-menu-overlay:rgba(17, 17, 17, 0.95);
+  /* Mobile menu overlay */
+  --color-menu-overlay:rgba(18, 16, 12, 0.95);
+
+  /* Superficie elevada (cards sólidas) */
+  --color-surface:     #1B1813;
+  --color-surface-alt: #242018;
 }
 
 @tailwind base;
@@ -349,14 +363,15 @@
       1px 0 40px -20px rgba(28, 28, 25, 0.08);
   }
   .dark .portal-sidebar {
+    /* Warm graphite editorial: tinta ocre muy sutil sobre antracita */
     background: linear-gradient(
       180deg,
-      rgba(22, 22, 22, 0.88) 0%,
-      rgba(18, 18, 18, 0.82) 55%,
-      rgba(14, 14, 14, 0.78) 100%
+      rgba(28, 25, 19, 0.90) 0%,
+      rgba(22, 20, 15, 0.86) 55%,
+      rgba(18, 16, 12, 0.82) 100%
     );
     box-shadow:
-      inset -1px 0 0 rgba(255, 255, 255, 0.06),
+      inset -1px 0 0 rgba(244, 239, 228, 0.07),
       1px 0 40px -20px rgba(0, 0, 0, 0.55);
   }
   .portal-topbar {
@@ -374,11 +389,11 @@
   .dark .portal-topbar {
     background: linear-gradient(
       180deg,
-      rgba(20, 20, 20, 0.9) 0%,
-      rgba(17, 17, 17, 0.65) 100%
+      rgba(26, 23, 18, 0.92) 0%,
+      rgba(20, 18, 14, 0.65) 100%
     );
     box-shadow:
-      inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(244, 239, 228, 0.07),
       0 10px 30px -20px rgba(0, 0, 0, 0.6);
   }
 

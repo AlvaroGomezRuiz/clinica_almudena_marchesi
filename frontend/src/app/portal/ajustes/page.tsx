@@ -16,6 +16,7 @@ import { es } from 'date-fns/locale';
 
 import AvatarUploader from '@/components/admin/configuracion/AvatarUploader';
 import BajaCuentaCard from '@/components/admin/configuracion/BajaCuentaCard';
+import MfaManager from '@/components/admin/configuracion/MfaManager';
 import NombreEditor from '@/components/admin/configuracion/NombreEditor';
 import PreferenciasForm from '@/components/admin/configuracion/PreferenciasForm';
 import DerechosRgpdCard from '@/components/portal/ajustes/DerechosRgpdCard';
@@ -44,6 +45,14 @@ interface ProfileRow {
   readonly display_name: string | null;
   readonly avatar_url: string | null;
   readonly role: 'admin' | 'paciente';
+  readonly created_at: string;
+}
+
+interface TotpFactor {
+  readonly id: string;
+  readonly factor_type: string;
+  readonly friendly_name: string | null;
+  readonly status: 'unverified' | 'verified';
   readonly created_at: string;
 }
 
@@ -93,6 +102,13 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle<NotificacionesPrefs>();
+
+  // MFA opcional para el paciente (Supabase Auth nativo, igual que admin).
+  const { data: factorsRes } = await supabase.auth.mfa.listFactors();
+  const totpFactors = ((factorsRes?.totp ?? []) as readonly TotpFactor[]).filter(
+    (f) => f.factor_type === 'totp'
+  );
+  const mfaActivo = totpFactors.some((f) => f.status === 'verified');
 
   const prefs: NotificacionesPrefs = prefsRow ?? {
     user_id: user.id,
@@ -217,6 +233,28 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
         </SurfaceCard>
       </section>
 
+      <SectionDivider label="Seguridad de tu cuenta" />
+
+      <SurfaceCard>
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          <div>
+            <h2 className="font-display text-[1.25rem] italic text-ink dark:text-white">
+              Verificación en dos pasos (2FA)
+            </h2>
+            <p className="mt-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+              Opcional pero recomendable. Añade un código TOTP (Google
+              Authenticator, 1Password, Authy…) que se pedirá al iniciar
+              sesión. Tus datos clínicos quedan protegidos incluso si
+              alguien llega a conocer tu contraseña.
+            </p>
+          </div>
+          <Chip tone={mfaActivo ? 'positive' : 'neutral'}>
+            {mfaActivo ? 'Activo' : 'Sin activar'}
+          </Chip>
+        </div>
+        <MfaManager factores={totpFactors} friendlyNamePrefix="Paciente" />
+      </SurfaceCard>
+
       <SectionDivider label="Notificaciones y experiencia" />
 
       <SurfaceCard>
@@ -227,7 +265,7 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
           Cada cambio se guarda automáticamente. Los correos de seguridad
           (recuperación de contraseña, cambios de datos) siempre se envían.
         </p>
-        <PreferenciasForm prefs={prefs} />
+        <PreferenciasForm prefs={prefs} role="paciente" />
       </SurfaceCard>
 
       <SectionDivider label="Solicitudes RGPD" />

@@ -119,6 +119,8 @@ npm run dev
 - Passwords ≥ 12 caracteres (validación Supabase + server action).
 - MFA TOTP opcional (enrollment en `/admin/configuracion`).
 - Middleware Next.js valida sesión en cada request + RBAC (`/admin/*` solo `role='admin'`).
+- Cookies Supabase endurecidas por helper `hardenCookieOptions()` en `src/lib/supabase/middleware.ts`: siempre `httpOnly: true`, `secure: true` en prod, `sameSite: 'lax'`, `path: '/'`, por encima de lo que proponga `@supabase/ssr` (defensa en profundidad).
+- Header `Vary: Cookie, Accept-Encoding` → evita que la cache CDN sirva respuestas de un usuario a otro.
 
 ### Capa 2 — RLS
 
@@ -140,6 +142,29 @@ npm run dev
 
 - Tabla `auditoria` con hash-chain: cada fila tiene `hash_integridad = SHA-256(hash_previo || usuario || accion || ts || detalles)`. Tamper-evident.
 - Inserciones desde Edge Function `audit-log` o trigger PL/pgsql.
+
+### Capa 5 — Defensas aplicativas (ronda senior · abril 2026)
+
+- **CSP unificada** — única fuente de verdad en `frontend/next.config.js` (`async headers()`). Eliminada la duplicación previa en middleware que generaba CSP divergente entre rutas estáticas y dinámicas. Directivas estrictas: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `worker-src 'self' blob:`, `upgrade-insecure-requests`. Añadidos: `Cross-Origin-Resource-Policy: same-origin`, `Origin-Agent-Cluster: ?1`.
+- **Rate limiter** en memoria (`src/lib/security/rate-limit.ts`) por `(acción, user_id)` con ventana deslizante. Aplicado a:
+  - `POST /api/mensajes/attach` → 20 uploads/min por usuario.
+  - `POST /api/admin/avatar/upload` → 10/h.
+  - `POST /api/admin/recursos/upload` → 30/h (admin).
+- **Magic-bytes validation** (`src/lib/security/file-validation.ts`) — valida la firma binaria real del archivo contra el MIME declarado. Protege contra MIME spoofing (ejecutables renombrados a `.png`). Formatos aceptados: PNG, JPEG, WEBP, HEIC/HEIF, AVIF, PDF, GIF.
+- **CSV injection (OWASP)** — `csvEscape()` en el export de facturación prefija con `'` cualquier valor que empiece por `=`, `+`, `-`, `@`, tab o CR. Previene ejecución de fórmulas al abrir el CSV en Excel.
+- **Supabase client singleton** (`src/lib/supabase/client.ts`) — una única instancia WebSocket Realtime por pestaña.
+- **Optimización de fonts**: Material Symbols self-hosted con subset (solo iconos usados) → `3.8 MB → 6.4 KB` (99.8% reducción). Fuentes con `preload: true` solo para body (LCP).
+
+### Capa 6 — Rendimiento de base de datos
+
+- Migración `0026_performance_indexes` (aplicada `2026-04-22`) — 8 índices compuestos + `ANALYZE`:
+  - `citas(paciente_id, inicio DESC)` → ficha paciente.
+  - `citas(inicio) WHERE estado IN ('confirmada','bloqueo_temporal')` → dashboard.
+  - `pagos(paciente_id, fecha_pago DESC)` y `pagos(estado, fecha_pago DESC)` → historial + export.
+  - `mensajes(conversation_id, created_at DESC)` → chat.
+  - `mensajes_adjuntos(mensaje_id, created_at ASC)`.
+  - `stripe_events(received_at DESC) WHERE processed_at IS NULL` → retry queue.
+  - `profiles(role)` → filtros admin.
 
 ---
 
@@ -216,7 +241,15 @@ vercel
 vercel deploy --prod
 ```
 
-CI/CD: Vercel detecta el push a `main` y despliega. Previews automáticos en cada PR.
+CI/CD: Vercel detecta el push a **`frontend`** (rama de producción) y despliega.
+Previews automáticos en cada PR.
+
+### Configuración Vercel vigente
+- **Production Branch** (GitHub default branch): `frontend`.
+- **Root Directory**: `frontend` (minúsculas — Linux es case-sensitive).
+- **Región**: `fra1` (Frankfurt) — misma que Supabase `eu-central-1`, definida en `frontend/vercel.json`.
+- **Cache**: `Cache-Control` inmutable para `/fonts/*`, `/images/*`, `/_next/static/*`, `/_next/image`.
+- **Runtime sensible**: `/portal/*` y `/admin/*` emiten `Cache-Control: private, no-store, must-revalidate` + `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` (ningún CDN ni buscador cachea datos clínicos).
 
 ---
 
@@ -228,7 +261,7 @@ Orden estricto:
 |---|---|---|
 | 0001 | `init.sql` | Enums, tablas, triggers, índices. |
 | 0002 | `rls.sql` | Políticas RLS. |
-| 0003 | `storage.sql` | Buckets + policies (`recursos`, `firmas-rgpd`, `avatares`). |
+| 0003 | `storage.sql` | Buckets + policies (`recursos`, `firmas-rgpd`, `avatares`, `chat-adjuntos`, `paciente-adjuntos`). |
 | 0004 | `realtime.sql` | Publication + replica identity. |
 | 0005 | `seed_servicios.sql` | Catálogo base. |
 | 0006 | `chat.sql` | Vista `v_conversaciones_admin` + RPCs chat. |
@@ -236,6 +269,17 @@ Orden estricto:
 | 0008 | `seed_demo.sql` | Datos demo (opcional, solo si existen los users demo). |
 | 0009 | `email.sql` | `emails_log`, `notificaciones_prefs`, RPC `citas_pendientes_recordatorio_24h`, `pg_cron` horario. |
 | 0010 | `stripe.sql` | `bonos_config`, `stripe_events`, RPCs `preparar_checkout_*`, `procesar_pago_stripe`. |
+| 0011 | `audit_hashchain` + `cancelacion_asignacion` | Auditoría tamper-evident + cancelación/asignación. |
+| 0012 | `auditoria_ficha_clinica` | Registro de accesos a ficha. |
+| 0013 | `chat_rgpd_preferencias` | Opt-in/out granular por tipo. |
+| 0014-0015 | `horario_plantillas` + `agenda_bloqueos_metadata` | Horarios recurrentes + metadata. |
+| 0016-0017 | `ficha_mvp_plaintext` + `citas_notas_plaintext_mvp` | MVP ficha clínica y notas. |
+| 0018 | `recursos_publico` | Recursos asignables al paciente. |
+| 0019 | `facturas` | Numeración correlativa + serie anual. |
+| 0020 | `rgpd_exports` | Exports JSON firmados. |
+| 0021 | `security_lints_fix` | `security_invoker=true` en vistas + `search_path` fijo en funciones. |
+| 0022-0024b | Cifrado F5 | pgcrypto + vault + RPCs CRUD cifrados + triggers auto-encrypt. |
+| **0026** | **`performance_indexes`** | **8 índices compuestos + ANALYZE (aplicado 2026-04-22).** |
 
 Aplicar todas:
 

@@ -26,9 +26,17 @@ interface TotpFactor {
 
 interface Props {
   readonly factores: readonly TotpFactor[];
+  /**
+   * Prefijo del friendly_name del factor al enrolar.
+   * Default "Admin". En el portal del paciente usar "Paciente".
+   */
+  readonly friendlyNamePrefix?: string;
 }
 
-export default function MfaManager({ factores }: Props): JSX.Element {
+export default function MfaManager({
+  factores,
+  friendlyNamePrefix = 'Admin',
+}: Props): JSX.Element {
   const router = useRouter();
   const supabase = useMemo(() => createBrowserClient(), []);
 
@@ -47,7 +55,7 @@ export default function MfaManager({ factores }: Props): JSX.Element {
     startTransition(async () => {
       const { data, error: err } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: `Admin · ${new Date().toISOString().slice(0, 10)}`,
+        friendlyName: `${friendlyNamePrefix} · ${new Date().toISOString().slice(0, 10)}`,
       });
       if (err || !data) {
         setError(err?.message ?? 'No se pudo iniciar el alta de MFA.');

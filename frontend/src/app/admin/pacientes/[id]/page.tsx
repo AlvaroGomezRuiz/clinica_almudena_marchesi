@@ -15,6 +15,7 @@ import DiagnosticosCard from '@/components/admin/ficha/DiagnosticosCard';
 import MedicacionCard from '@/components/admin/ficha/MedicacionCard';
 import TagsEditor from '@/components/admin/ficha/TagsEditor';
 import { createServerClient } from '@/lib/supabase/server';
+import type { FichaSensiblesBulk } from '@/services/admin/ficha-actions';
 import type {
   PacienteDiagnostico,
   PacienteMedicacion,
@@ -61,6 +62,14 @@ interface CitaRow {
   inicio: string;
   estado: string;
   servicio_nombre: string;
+}
+
+interface HistorialSesionRow {
+  readonly id: string;
+  readonly cita_id: string | null;
+  readonly estado_emocional: string | null;
+  readonly fecha_registro: string;
+  readonly activo: boolean;
 }
 
 export default async function FichaPacientePage({
@@ -120,6 +129,29 @@ export default async function FichaPacientePage({
   const adjuntos = (adjRes.data as PacienteAdjunto[] | null) ?? [];
   const lookups = (lookupRes.data as AdminLookup[] | null) ?? [];
 
+  // Historia clínica (timeline editorial inspirada en el prototipo).
+  const { data: sesionesData } = await supabase
+    .from('historial_sesiones')
+    .select('id, cita_id, estado_emocional, fecha_registro, activo')
+    .eq('paciente_id', id)
+    .eq('activo', true)
+    .order('fecha_registro', { ascending: false })
+    .limit(20);
+  const sesiones = (sesionesData as HistorialSesionRow[] | null) ?? [];
+
+  // Pre-descifrado de la ficha completa (una sola RPC + una sola
+  // entrada de auditoría `acceso_ficha_completa` en admin_lookups).
+  // Si el RPC aún no existe en este entorno o hay cualquier error,
+  // caemos al modo v1 compat (ojo + RPC por campo) pasando undefined.
+  const { data: sensiblesData } = await (supabase.rpc as unknown as (
+    fn: 'paciente_ficha_sensibles_bulk',
+    args: { p_id: string; p_justificacion: string | null }
+  ) => Promise<{ data: FichaSensiblesBulk | null; error: { message: string } | null }>)(
+    'paciente_ficha_sensibles_bulk',
+    { p_id: paciente.id, p_justificacion: 'acceso_ficha_admin_ui' }
+  );
+  const sensibles: FichaSensiblesBulk | null = sensiblesData ?? null;
+
   type ProfileLite = Pick<Profile, 'display_name' | 'email' | 'avatar_url'>;
   let profile: ProfileLite | null = null;
   if (paciente.user_id) {
@@ -144,6 +176,22 @@ export default async function FichaPacientePage({
   const proximaCita = citas.find(
     (c) => new Date(c.inicio).getTime() > Date.now() && c.estado === 'confirmada'
   );
+  const ultimaSesion = citas.find((c) => c.estado === 'completada');
+
+  // Edad calculada desde fecha_nacimiento.
+  let edadAnios: number | null = null;
+  if (paciente.fecha_nacimiento) {
+    const fn = new Date(paciente.fecha_nacimiento);
+    const now = new Date();
+    let age = now.getFullYear() - fn.getFullYear();
+    const m = now.getMonth() - fn.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < fn.getDate())) age--;
+    if (age >= 0 && age < 130) edadAnios = age;
+  }
+
+  const diagnosticoPrincipal =
+    diagnosticos.find((d) => d.activo)?.titulo ?? null;
+  const medicacionActiva = medicaciones.filter((m) => m.activo).length;
 
   return (
     <>
@@ -171,6 +219,36 @@ export default async function FichaPacientePage({
           </>
         }
       />
+
+      {/* ─── Chips editoriales de resumen (inspirado prototipo) ─── */}
+      <section className="mb-8 flex flex-wrap gap-x-10 gap-y-4 text-ink-soft dark:text-white/70 portal-rise">
+        <HeaderChip
+          label="Edad"
+          value={edadAnios !== null ? `${edadAnios} años` : '—'}
+        />
+        <HeaderChip
+          label="Última sesión"
+          value={
+            ultimaSesion
+              ? format(new Date(ultimaSesion.inicio), "d MMM yyyy", {
+                  locale: es,
+                })
+              : 'Ninguna'
+          }
+        />
+        <HeaderChip
+          label="Diagnóstico principal"
+          value={diagnosticoPrincipal ?? 'Sin diagnóstico activo'}
+        />
+        <HeaderChip
+          label="Medicación"
+          value={
+            medicacionActiva === 0
+              ? 'Ninguna activa'
+              : `${medicacionActiva} activa${medicacionActiva === 1 ? '' : 's'}`
+          }
+        />
+      </section>
 
       {/* ─── Cabecera identidad + métricas rápidas ─── */}
       <section className="grid gap-6 lg:grid-cols-[auto_1fr_1fr_1fr] mb-6 portal-rise">
@@ -251,36 +329,34 @@ export default async function FichaPacientePage({
                 label="DNI / NIE"
                 pacienteId={paciente.id}
                 campo="dni_nie"
-                hasValue={Boolean(paciente.dni_nie_ciphertext)}
-                requireReason
+                value={sensibles?.dni_nie}
+                keepShape
               />
               <SensitiveField
                 label="Teléfono"
                 pacienteId={paciente.id}
                 campo="telefono"
-                hasValue={Boolean(paciente.telefono_ciphertext)}
+                value={sensibles?.telefono ?? null}
+                keepShape
               />
               <SensitiveField
                 label="Email"
                 pacienteId={paciente.id}
                 campo="email"
-                hasValue={Boolean(paciente.email_ciphertext)}
-                plaintextOverride={profile?.email ?? null}
+                value={sensibles?.email ?? profile?.email ?? null}
               />
               <SensitiveField
                 label="Dirección"
                 pacienteId={paciente.id}
                 campo="direccion"
-                hasValue={Boolean(paciente.direccion_ciphertext)}
-                requireReason
+                value={sensibles?.direccion ?? null}
               />
               <SensitiveField
                 label="Contacto emergencia (teléfono)"
                 pacienteId={paciente.id}
                 campo="contacto_emergencia_telefono"
-                hasValue={Boolean(
-                  paciente.contacto_emergencia_telefono_ciphertext
-                )}
+                value={sensibles?.contacto_emergencia_telefono ?? null}
+                keepShape
               />
               <div>
                 <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -333,20 +409,19 @@ export default async function FichaPacientePage({
                 label="Alergias"
                 pacienteId={paciente.id}
                 campo="alergias"
-                hasValue={Boolean(paciente.alergias_ciphertext)}
+                value={sensibles?.alergias ?? null}
               />
               <SensitiveField
                 label="Medicación base"
                 pacienteId={paciente.id}
                 campo="medicacion_base"
-                hasValue={Boolean(paciente.medicacion_base_ciphertext)}
+                value={sensibles?.medicacion_base ?? null}
               />
               <SensitiveField
                 label="Objetivos terapéuticos"
                 pacienteId={paciente.id}
                 campo="objetivos"
-                hasValue={Boolean(paciente.objetivos_ciphertext)}
-                requireReason
+                value={sensibles?.objetivos ?? null}
               />
               <div>
                 <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -482,8 +557,115 @@ export default async function FichaPacientePage({
         </aside>
       </div>
 
+      <SectionDivider label="Historia clínica" />
+
+      <SurfaceCard>
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="font-display text-[1.5rem] italic text-ink dark:text-white">
+              Sesiones registradas
+            </h2>
+            <p className="mt-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+              Línea temporal editorial. Las notas clínicas están cifradas
+              (ver auditoría lateral).
+            </p>
+          </div>
+          <span className="font-body text-[0.7rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
+            {sesiones.length} sesión{sesiones.length === 1 ? '' : 'es'}
+          </span>
+        </div>
+
+        {sesiones.length === 0 && citas.length === 0 ? (
+          <p className="py-8 text-center font-body text-[0.88rem] text-ink-soft dark:text-white/55">
+            Todavía no hay sesiones registradas para este paciente.
+          </p>
+        ) : (
+          <ol className="relative space-y-6 pl-8">
+            <span
+              aria-hidden="true"
+              className="absolute left-[3px] top-2 bottom-2 w-px bg-ink/15 dark:bg-white/15"
+            />
+            {citas.slice(0, 12).map((c, idx) => {
+              const active = idx === 0;
+              const fecha = new Date(c.inicio);
+              const modalidad = c.servicio_nombre ?? 'Sesión clínica';
+              return (
+                <li key={c.id} className="relative">
+                  <span
+                    aria-hidden="true"
+                    className={`absolute -left-[33px] top-3 h-2.5 w-2.5 rounded-full ring-4 ring-canvas dark:ring-[#1a1a1a] ${
+                      active ? 'bg-primary' : 'bg-ink/30 dark:bg-white/30'
+                    }`}
+                  />
+                  <div
+                    className={`rounded-3xl p-6 transition ${
+                      active
+                        ? 'bg-white/80 ring-1 ring-inset ring-ink/10 dark:bg-white/[0.05] dark:ring-white/10'
+                        : 'bg-white/40 dark:bg-white/[0.025]'
+                    }`}
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
+                          {modalidad}
+                        </h3>
+                        <div className="mt-1 flex items-center gap-2 font-body text-[0.7rem] font-bold uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+                          <span>
+                            {format(fecha, "d MMMM yyyy", { locale: es })}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>
+                            {format(fecha, 'HH:mm', { locale: es })}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>{c.estado}</span>
+                        </div>
+                      </div>
+                      <span
+                        className={`font-body text-[0.75rem] font-bold tracking-tight ${
+                          active
+                            ? 'text-primary dark:text-primary-fixed-dim'
+                            : 'text-ink-muted dark:text-white/45'
+                        }`}
+                      >
+                        #{citas.length - idx}
+                      </span>
+                    </div>
+                    {/* Las notas clínicas están cifradas — mostramos solo metadata */}
+                    <p className="font-body text-[0.82rem] leading-[1.6] text-ink-soft dark:text-white/65">
+                      {active
+                        ? 'Sesión más reciente. Revisa el panel de auditoría para consultar las notas clínicas cifradas registradas para esta cita.'
+                        : 'Notas clínicas cifradas — accesibles desde la cita en la agenda.'}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </SurfaceCard>
+
       <SectionDivider />
     </>
+  );
+}
+
+function HeaderChip({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): JSX.Element {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="font-body text-[0.62rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
+        {label}
+      </span>
+      <span className="font-body text-[0.86rem] font-semibold text-ink dark:text-white">
+        {value}
+      </span>
+    </div>
   );
 }
 

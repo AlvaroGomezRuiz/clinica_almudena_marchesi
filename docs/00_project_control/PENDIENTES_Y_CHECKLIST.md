@@ -3,7 +3,14 @@
 > Este documento reemplaza "lo que quedó en el chat". Se actualiza en cada hito.
 > **Regla**: nada de secretos en claro aquí (solo nombres de variables y pasos).
 
-Última actualización: migraciones 0012-0024b aplicadas + Edge Functions F5 desplegadas + cifrado cliente migrado + Payment Element embebido + webhook Stripe verificado (200 OK en sandbox).
+Última actualización: **2026-04-22** — ronda senior performance + seguridad aplicada:
+- Migración `0026_performance_indexes` aplicada en producción (8 índices compuestos + ANALYZE).
+- CSP unificada y endurecida (una sola fuente en `next.config.js`); middleware deja de duplicarla.
+- Cookies Supabase endurecidas (`httpOnly`+`secure`+`sameSite`+`path` forzados).
+- Rate limiter en memoria + validación magic-bytes en endpoints de upload (`attach`, `avatar`, `recursos`).
+- Protección CSV injection en export facturación.
+- Rama git renombrada `FRONTEND` → `frontend`; Vercel Production Branch = `frontend`, Root Directory = `frontend` (case-sensitive en Linux).
+- Migraciones 0012-0024b aplicadas + Edge Functions F5 desplegadas + cifrado cliente migrado + Payment Element embebido + webhook Stripe verificado (200 OK en sandbox).
 
 ---
 
@@ -93,6 +100,8 @@
 - [x] `0021_security_lints_fix` (view `security_invoker=true` + `search_path` fijo en funciones)
 - [x] `0022_cifrado_setup` (pgcrypto + vault + `app_encrypt`/`app_decrypt`/`app_bidx`)
 - [x] `0023_cifrado_rpcs_crud` (RPCs CRUD cifradas: pacientes + diagnósticos + medicación + notas cita)
+- [x] `0024_auto_encrypt_triggers` + `0024b_fix_nota_cita_upsert`
+- [x] `0026_performance_indexes` — **2026-04-22** — 8 índices compuestos (citas, pagos, mensajes, mensajes_adjuntos, stripe_events, profiles) + ANALYZE. ~120 KB total. Ganancia esperada 2–10× en ficha paciente, agenda, chat y retry queue de webhooks.
 
 ### 4.2 Edge Functions desplegadas
 - [x] `invoice-pdf` v1 (nueva)
@@ -165,3 +174,46 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 - [ ] Invalidar tokens antiguos (GitHub/Vercel/etc.).
 - [ ] Crear usuarios admin/paciente reales con credenciales fuertes y borrar seeds demo (`usuario@visualizacion.com` / `Almudena2026!`).
 - [ ] Borrar toda fila de testing en `pacientes`, `citas`, `pagos`, `mensajes`, `bonos_pacientes`, `stripe_events` antes de abrir al público.
+
+---
+
+## 7) Ronda "ultra-performance + seguridad senior" (abril 2026)
+
+### 7.1 Seguridad aplicativa — COMPLETADO
+- [x] CSP unificada en `next.config.js` (única fuente de verdad; middleware no duplica).
+- [x] CSP endurecida: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `worker-src 'self' blob:`, `upgrade-insecure-requests`.
+- [x] Añadidos headers `Cross-Origin-Resource-Policy: same-origin`, `Origin-Agent-Cluster: ?1`.
+- [x] `/portal/*` y `/admin/*` → `Cache-Control: private, no-store, must-revalidate` + `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`.
+- [x] `/api/*` → `Cache-Control: no-store` + `X-Robots-Tag: noindex, nofollow`.
+- [x] Cookies Supabase endurecidas con helper `hardenCookieOptions()` (`httpOnly`+`secure`+`sameSite:lax`+`path:/`).
+- [x] Header `Vary: Cookie, Accept-Encoding` (previene fuga de sesiones entre usuarios en CDN).
+
+### 7.2 Rate limiting + validación binaria — COMPLETADO
+- [x] `src/lib/security/rate-limit.ts` — limiter en memoria con ventana deslizante + sweep automático.
+- [x] `src/lib/security/file-validation.ts` — validación por magic bytes (PNG/JPEG/WEBP/HEIC/AVIF/PDF/GIF).
+- [x] Aplicado a `POST /api/mensajes/attach` (20/min), `POST /api/admin/avatar/upload` (10/h), `POST /api/admin/recursos/upload` (30/h).
+- [x] CSV injection protection en `/api/admin/facturacion/export` (prefijo `'` si empieza por `=+-@\t\r`).
+
+### 7.3 Performance DB — COMPLETADO
+- [x] Migración `0026_performance_indexes` aplicada en producción.
+- [x] 8 índices compuestos verificados (16 kB cada uno en media).
+- [x] `ANALYZE` ejecutado en citas, pagos, profiles, mensajes, mensajes_adjuntos, stripe_events.
+
+### 7.4 Performance frontend — COMPLETADO
+- [x] Material Symbols self-hosted subset (3.8 MB → 6.4 KB · 99.8% reducción).
+- [x] Supabase browser client singleton (una WS Realtime por pestaña).
+- [x] `content-visibility: auto` en secciones below-the-fold.
+- [x] `preconnect` + `dns-prefetch` de Supabase, Stripe y Vercel.
+- [x] Lazy-load de `zxcvbn` (OTP page: 548 kB → 157 kB).
+- [x] `framer-motion` ya sólo en mobile drawer con `dynamic({ ssr: false })`.
+- [x] `vercel.json` con región `fra1` + `Cache-Control` inmutable en `/fonts`, `/images`, `/_next/static`.
+
+### 7.5 Repo + Vercel — COMPLETADO
+- [x] Renombrada rama Git `FRONTEND` → `frontend` (remoto + local).
+- [x] GitHub Default Branch = `frontend`.
+- [x] Vercel Root Directory corregido `FRONTEND` → `frontend` (case-sensitive).
+- [x] Build de producción verde desde rama `frontend`.
+
+### 7.6 Advisors Supabase (estado tras la ronda)
+- Security advisors: 1 WARN restante (`auth_leaked_password_protection` — requiere Supabase Pro · aceptado).
+- Performance advisors: solo INFO (unindexed foreign keys en tablas de baja escritura · impacto despreciable).

@@ -1,6 +1,6 @@
 # Reporte de Ejecucion — Consolidado
 
-> Snapshot del trabajo ingenieril completado hasta **21 abril 2026**.
+> Snapshot del trabajo ingenieril completado hasta **22 abril 2026**.
 > Cada entrega referencia migraciones, EF, componentes o commits concretos.
 
 ---
@@ -160,7 +160,63 @@ Bundler (`supabase/scripts/bundle_for_deploy.mjs`) inlinea `_shared/` antes del 
 
 ---
 
-## Bloque 8 — Reorganizacion del repositorio (abril 2026)
+## Bloque 8 — Ronda senior "ultra-performance + seguridad" (22 abril 2026)
+
+### 8.1 Seguridad aplicativa
+- CSP unificada y endurecida en `frontend/next.config.js` — unica fuente de verdad. Eliminada duplicacion en middleware. Se anaden `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `worker-src 'self' blob:`, `upgrade-insecure-requests`.
+- Nuevos headers: `Cross-Origin-Resource-Policy: same-origin`, `Origin-Agent-Cluster: ?1`, `Vary: Cookie, Accept-Encoding`.
+- `/portal/*`, `/admin/*`, `/api/*` emiten `Cache-Control: private, no-store, must-revalidate` + `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`.
+- Cookies Supabase endurecidas con helper `hardenCookieOptions()` (`httpOnly`+`secure`+`sameSite:lax`+`path:/`).
+
+### 8.2 Defensas de input (nuevos modulos)
+- `frontend/src/lib/security/rate-limit.ts` — rate limiter in-memory con ventana deslizante y sweep automatico.
+- `frontend/src/lib/security/file-validation.ts` — validacion por magic bytes (PNG/JPEG/WEBP/HEIC/AVIF/PDF/GIF).
+- Aplicados a 3 rutas de upload:
+  - `POST /api/mensajes/attach` → 20/min + magic bytes.
+  - `POST /api/admin/avatar/upload` → 10/h + magic bytes.
+  - `POST /api/admin/recursos/upload` → 30/h.
+- CSV injection protection en `POST /api/admin/facturacion/export` (OWASP WSTG-BUSL-02).
+
+### 8.3 Performance DB — migracion `0026_performance_indexes`
+Aplicada en produccion (project ref `koxsikkobjlycqqfstye`). Peso total ~120 KB:
+
+| Indice                                                                                  | Objetivo                               |
+|------------------------------------------------------------------------------------------|----------------------------------------|
+| `citas_paciente_inicio_idx` en `citas(paciente_id, inicio DESC)`                        | Ficha paciente / historial             |
+| `citas_estado_activas_idx` en `citas(inicio) WHERE estado IN ('confirmada','bloqueo_temporal')` | Dashboard agenda                       |
+| `pagos_paciente_fecha_idx` en `pagos(paciente_id, fecha_pago DESC)`                     | Historial pagos en portal              |
+| `pagos_estado_fecha_idx` en `pagos(estado, fecha_pago DESC)`                            | Export admin facturacion               |
+| `mensajes_conversation_created_idx` en `mensajes(conversation_id, created_at DESC)`      | Scroll chat realtime                   |
+| `mensajes_adjuntos_mensaje_idx` en `mensajes_adjuntos(mensaje_id, created_at ASC)`       | Galeria adjuntos                       |
+| `stripe_events_processed_at_idx` en `stripe_events(received_at DESC) WHERE processed_at IS NULL` | Retry queue webhook                    |
+| `profiles_role_idx` en `profiles(role)`                                                 | Filtro admin vs paciente               |
+
+`ANALYZE` ejecutado sobre las 6 tablas afectadas.
+
+### 8.4 Performance frontend
+- Material Symbols self-hosted en subset (`/public/fonts/material-symbols-subset.woff2`): **3.8 MB → 6.4 KB** (99.8% reduccion).
+- Supabase browser client como singleton (`frontend/src/lib/supabase/client.ts`): una sola WS Realtime por pestana.
+- `content-visibility: auto` en secciones below-the-fold de la landing.
+- `preconnect` + `dns-prefetch` para Supabase / Stripe / Vercel Insights.
+- `zxcvbn` lazy-loaded (pagina OTP: **548 kB → 157 kB**).
+- `framer-motion` reducido a un solo drawer mobile dinamico (sin SSR).
+- `vercel.json` con region `fra1` + `Cache-Control: public, max-age=31536000, immutable` en `/fonts/*`, `/images/*`, `/_next/static/*`, `/_next/image`.
+
+### 8.5 Repo + Vercel
+- Rama Git renombrada `FRONTEND` → `frontend` (remoto + local + GitHub Default Branch).
+- Vercel Production Branch = `frontend`.
+- Vercel Root Directory corregido a `frontend` (minusculas · fix case-sensitivity Linux).
+- Build de produccion verde desde la nueva rama.
+
+### 8.6 Verificacion
+- `npm run build`: 0 errores TypeScript.
+- Supabase Performance Advisor: sin WARN tras `0026` (solo INFO de FKs sin indice en tablas de baja escritura).
+- Supabase Security Advisor: 1 WARN aceptado (`auth_leaked_password_protection` · requiere Supabase Pro).
+- Migracion `0026` contada en `supabase_migrations.schema_migrations` con timestamp `2026-04-22`.
+
+---
+
+## Bloque 9 — Reorganizacion del repositorio (abril 2026)
 
 - Renombrados `BACKEND/` → `backend/` y `FRONTEND/` → `frontend/` via triple `git mv`.
 - Unificacion `.DOCS/` + `docs/` en `docs/` con 6 carpetas numeradas.
@@ -179,12 +235,16 @@ Bundler (`supabase/scripts/bundle_for_deploy.mjs`) inlinea `_shared/` antes del 
 | Check                                           | Estado    |
 |--------------------------------------------------|-----------|
 | `npx tsc --noEmit` en `frontend/`               | 0 errors  |
-| Migraciones 0001-0024b aplicadas                 | OK        |
+| `npm run build` produccion                       | 0 errors (1 warn consciente sobre `<img>` en ChatPanel) |
+| Migraciones 0001-0024b + **0026** aplicadas     | OK        |
 | 10 Edge Functions desplegadas                     | OK        |
 | Sentry activo 3 proyectos                         | OK        |
 | Webhook Stripe 200 OK en sandbox                  | OK        |
 | RLS cobertura 100% tablas                         | OK        |
 | `app_encryption_ready() = true`                   | OK        |
+| CSP unificada + headers reforzados                | OK (2026-04-22) |
+| Rate limit + magic-bytes en uploads              | OK (2026-04-22) |
+| Vercel Production Branch = `frontend`             | OK (2026-04-22) |
 | Seeds demo presentes                              | Pendiente borrar pre-launch |
 | Rotacion credenciales                             | Pendiente checklist         |
 | Dominio + DNS + Resend verify                     | Pendiente cliente           |
@@ -193,12 +253,15 @@ Bundler (`supabase/scripts/bundle_for_deploy.mjs`) inlinea `_shared/` antes del 
 
 ## Metricas del codigo
 
-- **Migraciones SQL**: 24 activas, todas idempotentes.
+- **Migraciones SQL**: 25 activas (0001-0024b + **0026**), todas idempotentes.
 - **Edge Functions**: 10 deploys Deno.
 - **Server Actions**: 40+ en 7 dominios.
 - **Componentes React**: 80+ (50% UI puros, 50% feature).
 - **Lineas codigo frontend**: ~15k TSX/TS (excluyendo generated/node_modules).
 - **Coverage tipado**: 100% strict (cero `any`).
+- **Modulos de seguridad aplicativa**: 2 (`rate-limit.ts`, `file-validation.ts`).
+- **Indices DB compuestos** (post `0026`): +8 indices, ~120 KB totales.
+- **Peso iconos**: 6.4 KB (antes 3.8 MB con CDN completo Material Symbols).
 
 ---
 

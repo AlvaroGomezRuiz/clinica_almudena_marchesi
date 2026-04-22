@@ -9,6 +9,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import MarcarCompletadoButton from '@/components/portal/recursos/MarcarCompletadoButton';
 import { createServerClient } from '@/lib/supabase/server';
 import type { RecursoCategoria, RecursoTipo } from '@/lib/supabase/types';
 
@@ -178,11 +179,18 @@ export default async function PortalRecursosPage({
               .filter((a) => a.recurso)
               .map((a) => {
                 const r = a.recurso!;
+                const isCompleted = Boolean(a.completed_at);
                 return (
                   <SurfaceCard key={a.id} interactive glow="sage">
                     <header className="mb-3 flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 dark:bg-primary/20 dark:ring-primary/30">
+                        <span
+                          className={`grid h-11 w-11 place-items-center rounded-2xl ring-1 ring-inset ${
+                            isCompleted
+                              ? 'bg-primary/20 ring-primary/30 dark:bg-primary/30 dark:ring-primary/45'
+                              : 'bg-primary/10 ring-primary/15 dark:bg-primary/20 dark:ring-primary/30'
+                          }`}
+                        >
                           <span
                             className="material-symbols-outlined text-primary"
                             aria-hidden="true"
@@ -190,14 +198,25 @@ export default async function PortalRecursosPage({
                             {iconForTipo(r.tipo)}
                           </span>
                         </span>
-                        <Chip tone="info">{r.categoria}</Chip>
+                        <div className="flex flex-col gap-1">
+                          <Chip tone="info">{r.categoria}</Chip>
+                          {isCompleted ? (
+                            <Chip tone="positive">Completado</Chip>
+                          ) : null}
+                        </div>
                       </div>
                       <p className="font-body text-[0.7rem] text-ink-muted tabular-nums dark:text-white/55">
                         {format(new Date(a.assigned_at), 'd MMM', { locale: es })}
                       </p>
                     </header>
 
-                    <h3 className="font-display text-[1.15rem] italic text-ink dark:text-white">
+                    <h3
+                      className={`font-display text-[1.15rem] italic ${
+                        isCompleted
+                          ? 'text-ink-soft line-through decoration-ink/25 decoration-1 dark:text-white/60'
+                          : 'text-ink dark:text-white'
+                      }`}
+                    >
                       {r.titulo}
                     </h3>
                     {r.descripcion ? (
@@ -206,29 +225,33 @@ export default async function PortalRecursosPage({
                       </p>
                     ) : null}
 
-                    <footer className="mt-5 flex items-center justify-between gap-3">
+                    <footer className="mt-5 flex flex-wrap items-center justify-between gap-3">
                       <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                        Asignado{' '}
-                        {formatDistanceToNow(new Date(a.assigned_at), {
-                          locale: es,
-                          addSuffix: true,
-                        })}
+                        {isCompleted && a.completed_at
+                          ? `Completado ${formatDistanceToNow(new Date(a.completed_at), { locale: es, addSuffix: true })}`
+                          : `Asignado ${formatDistanceToNow(new Date(a.assigned_at), { locale: es, addSuffix: true })}`}
                         {r.size_bytes ? ` · ${formatBytes(r.size_bytes)}` : ''}
                       </p>
-                      <a
-                        href={`/api/portal/recursos/download/${r.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-body text-[0.78rem] text-on-primary transition hover:bg-primary-dim"
-                      >
-                        <span
-                          className="material-symbols-outlined text-[1rem]"
-                          aria-hidden="true"
+                      <div className="flex items-center gap-2">
+                        <MarcarCompletadoButton
+                          asignacionId={a.id}
+                          initialCompleted={isCompleted}
+                        />
+                        <a
+                          href={`/api/portal/recursos/download/${r.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 font-body text-[0.78rem] text-on-primary transition hover:bg-primary-dim"
                         >
-                          download
-                        </span>
-                        Abrir
-                      </a>
+                          <span
+                            className="material-symbols-outlined text-[1rem]"
+                            aria-hidden="true"
+                          >
+                            download
+                          </span>
+                          Abrir
+                        </a>
+                      </div>
                     </footer>
                   </SurfaceCard>
                 );

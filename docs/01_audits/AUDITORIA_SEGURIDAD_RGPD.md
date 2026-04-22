@@ -1,7 +1,7 @@
 # Auditoria de Seguridad y Cumplimiento RGPD
 
 > **Alcance**: seguridad end-to-end + cumplimiento RGPD + Ley 41/2002 (historia clinica) + LOPDGDD.
-> **Fecha**: 2026-04-21.
+> **Fecha**: 2026-04-21 (revisada 2026-04-22 con ronda senior).
 
 ---
 
@@ -33,19 +33,43 @@ El sistema implementa un modelo de **Defense in Depth** con **4 capas** de prote
 
 ## 3. Capa 2 — Cabeceras HTTP
 
-Definidas en `frontend/next.config.js`:
+Definidas en **`frontend/next.config.js`** (unica fuente de verdad desde la ronda senior 2026-04-22; el middleware ya no las duplica para evitar divergencias).
 
-| Cabecera                       | Valor                                                 | Proteccion                        |
-|--------------------------------|-------------------------------------------------------|-----------------------------------|
-| `Strict-Transport-Security`    | `max-age=63072000; includeSubDomains; preload`       | downgrade                         |
-| `X-Frame-Options`              | `DENY`                                                | clickjacking                      |
-| `X-Content-Type-Options`       | `nosniff`                                             | MIME sniffing                     |
-| `Referrer-Policy`              | `strict-origin-when-cross-origin`                    | leak referer                      |
-| `Permissions-Policy`           | `camera=(), microphone=(), geolocation=(), payment=()` | API sensitive abuse               |
-| `Content-Security-Policy`      | script-src self + vercel + sentry                    | XSS                               |
-| `X-XSS-Protection`             | `1; mode=block`                                       | legacy XSS                        |
-| `X-Powered-By`                 | vacio                                                 | fingerprint servidor              |
-| `Cross-Origin-Opener-Policy`   | `same-origin`                                         | spectre-like                      |
+| Cabecera                         | Valor                                                                     | Proteccion                          |
+|----------------------------------|---------------------------------------------------------------------------|-------------------------------------|
+| `Strict-Transport-Security`      | `max-age=63072000; includeSubDomains; preload`                            | downgrade                           |
+| `X-Frame-Options`                | `DENY`                                                                    | clickjacking                        |
+| `X-Content-Type-Options`         | `nosniff`                                                                 | MIME sniffing                       |
+| `Referrer-Policy`                | `strict-origin-when-cross-origin`                                         | leak referer                        |
+| `Permissions-Policy`             | `camera=(), microphone=(), geolocation=(), payment=(self "https://js.stripe.com"), interest-cohort=(), browsing-topics=()` | API sensitive abuse + FLoC opt-out |
+| `Content-Security-Policy`        | ver detalle abajo                                                         | XSS                                 |
+| `X-XSS-Protection`               | `1; mode=block`                                                           | legacy XSS                          |
+| `X-Powered-By`                   | vacio                                                                     | fingerprint servidor                |
+| `Cross-Origin-Opener-Policy`     | `same-origin`                                                             | spectre-like                        |
+| `Cross-Origin-Resource-Policy`   | `same-origin`                                                             | cross-origin leaks                  |
+| `Origin-Agent-Cluster`           | `?1`                                                                      | aislamiento renderer process        |
+
+### CSP (detalle)
+```
+default-src 'self';
+script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.vercel-insights.com https://*.vercel-scripts.com;
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com;
+font-src 'self' data:;
+connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.sentry.io https://*.ingest.de.sentry.io https://vercel.live https://vitals.vercel-insights.com;
+frame-src 'self' https://js.stripe.com https://hooks.stripe.com;
+worker-src 'self' blob:;
+object-src 'none';
+base-uri 'self';
+form-action 'self' https://checkout.stripe.com;
+frame-ancestors 'none';
+upgrade-insecure-requests;
+```
+
+Notas:
+- `next/image` incluye ahora su propia CSP aislada (`contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"`).
+- Las rutas `/portal/*`, `/admin/*` y `/api/*` emiten ademas `Cache-Control: private, no-store, must-revalidate` + `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` (ni CDNs ni buscadores deben cachear o indexar datos clinicos).
+- El middleware (`frontend/src/middleware.ts`) solo anade `Vary: Cookie, Accept-Encoding` y los headers internos de identidad (`x-user-id`, `x-user-role`).
 
 ### Deuda CSP
 Actualmente `script-src` incluye `unsafe-inline` porque Next.js 14 inyecta scripts inline sin nonce. Migracion a nonce-CSP se abordara con Next 15.
@@ -58,6 +82,7 @@ Actualmente `script-src` incluye `unsafe-inline` porque Next.js 14 inyecta scrip
 - Password policy server-side: minimo 12 chars (Supabase setting).
 - MFA TOTP opcional via `authenticator` apps.
 - Cookies `httpOnly` + `Secure` + `SameSite=Lax` gestionadas por `@supabase/ssr`.
+- **Refuerzo 2026-04-22**: helper `hardenCookieOptions()` en `frontend/src/lib/supabase/middleware.ts` fuerza `httpOnly:true`, `secure:true` en prod, `sameSite:'lax'`, `path:'/'` por encima de lo que proponga la libreria (defensa en profundidad · previene downgrades accidentales).
 
 ### 4.2 Sesiones
 - Sliding refresh automatico al 50% de vida del access token.
@@ -224,6 +249,41 @@ Query de verificacion disponible en `docs/05_operations/RUNBOOK.md`.
 | Next.js < 14.2.35  | Parcheado (14.2.35)        | Multiples CVEs 2024/2025 cubiertas        |
 | cryptography < 41  | Parcheado (46.0.6)         | FastAPI no desplegado                     |
 | Supply chain       | `pip-audit` en `backend/rebuild_bunker.ps1` | Correr en CI        |
+
+## 12.bis Defensas aplicativas añadidas en la ronda senior (2026-04-22)
+
+Capa complementaria al modelo DiD, centrada en **inputs del usuario** en endpoints escritos en Next.js (no Supabase).
+
+### Rate limiting (`frontend/src/lib/security/rate-limit.ts`)
+In-memory con ventana deslizante y `sweepIfNeeded()` para evitar leaks en cold starts serverless.
+
+| Endpoint                               | Ventana | Limite | Observaciones                                 |
+|----------------------------------------|---------|--------|-----------------------------------------------|
+| `POST /api/mensajes/attach`            | 1 min   | 20     | Anti-spam en chat.                            |
+| `POST /api/admin/avatar/upload`        | 1 h     | 10     | Evita churn de storage.                       |
+| `POST /api/admin/recursos/upload`      | 1 h     | 30     | Limita volumen diario admin.                  |
+
+Nota: al no ser persistente, cada instancia de Vercel mantiene su contador. Aceptable para clinica unica (1 admin + pocos pacientes). Migrar a Upstash Redis si se pasa a multi-tenant.
+
+### Validacion de ficheros por magic bytes (`frontend/src/lib/security/file-validation.ts`)
+- Detecta firma binaria real (`89 50 4E 47` PNG, `25 50 44 46` PDF, etc.).
+- Protege contra MIME spoofing (ejecutables renombrados con extension inocua).
+- Formatos admitidos: PNG, JPEG, WEBP, HEIC/HEIF, AVIF, PDF, GIF.
+- Aplicado en `/api/mensajes/attach` y `/api/admin/avatar/upload`.
+- **Pendiente**: extender a video/audio para `/api/admin/recursos/upload` (actualmente valida solo MIME en esa ruta).
+
+### CSV injection (OWASP WSTG-BUSL-02)
+`csvEscape()` en `/api/admin/facturacion/export` prefija con comilla simple cualquier celda que empiece por `=`, `+`, `-`, `@`, tab o CR. Previene ejecucion de formulas cuando el CSV se abre en Excel/LibreOffice/Google Sheets.
+
+### Cabeceras sensibles en rutas privadas
+- `Cache-Control: private, no-store, must-revalidate` en `/portal/*`, `/admin/*`, `/api/*`.
+- `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet` en las mismas rutas.
+- `Vary: Cookie, Accept-Encoding` global (middleware).
+
+### Verificacion
+- `npm run build` pasa con 0 errores TS.
+- Supabase Performance Advisor sin WARN tras migracion `0026`.
+- Supabase Security Advisor con 1 WARN aceptado (`auth_leaked_password_protection` · requiere Supabase Pro).
 
 ## 13. Acciones recomendadas
 

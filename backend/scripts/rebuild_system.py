@@ -56,23 +56,18 @@ def _get_engine() -> Engine:
 
 
 def _drop_all_tables(engine: Engine) -> None:
+    """Drop all tables del schema público.
+
+    PostgreSQL soporta `DROP TABLE ... CASCADE` para resolver dependencias
+    circulares, así evitamos depender de banderas de motor (antes se usaba
+    SET FOREIGN_KEY_CHECKS=0 de MySQL, retirado del stack).
+    """
     inspector = inspect(engine)
     table_names = inspector.get_table_names()
 
     with engine.begin() as conn:
-        # MySQL: desactivar chequeo de FKs para permitir drop en cualquier orden
-        try:
-            conn.exec_driver_sql("SET FOREIGN_KEY_CHECKS=0")
-        except Exception:
-            pass
-
         for table in table_names:
-            conn.exec_driver_sql(f"DROP TABLE IF EXISTS `{table}`")
-
-        try:
-            conn.exec_driver_sql("SET FOREIGN_KEY_CHECKS=1")
-        except Exception:
-            pass
+            conn.exec_driver_sql(f'DROP TABLE IF EXISTS "{table}" CASCADE')
 
 
 def _alembic_initial_state() -> None:

@@ -266,7 +266,7 @@ export default async function AdminConfiguracionPage(): Promise<JSX.Element> {
         <h2 className="mb-5 font-display text-[1.25rem] italic text-ink dark:text-white">
           Notificaciones y experiencia
         </h2>
-        <PreferenciasForm prefs={prefs} />
+        <PreferenciasForm prefs={prefs} role="admin" />
       </SurfaceCard>
 
       <SectionDivider label="Registro de auditoría" />

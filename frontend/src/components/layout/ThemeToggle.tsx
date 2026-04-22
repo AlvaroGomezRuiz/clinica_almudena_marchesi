@@ -1,15 +1,17 @@
 'use client';
 
 /**
- * ThemeToggle — selector de tema claro / oscuro / sistema.
+ * ThemeToggle — selector de tema claro / oscuro.
  *
  * Se apoya en next-themes (ya inicializado en src/app/layout.tsx con
  * attribute="class"). Render SSR-safe: mientras `mounted === false`
  * devolvemos un placeholder del mismo tamaño para evitar hydration mismatch.
  *
  * Variantes:
- *   - compact: un único botón que cicla light → dark → system (ideal en topbar)
- *   - segmented: tres botones horizontales (ideal en dropdowns o ajustes)
+ *   - compact:   un único botón BINARIO. Un click alterna claro ↔ oscuro
+ *                sin pasar por "system" (UX solicitada por el cliente).
+ *   - segmented: tres botones horizontales (claro / oscuro / sistema) para
+ *                usuarios avanzados en /portal/ajustes y /admin/configuracion.
  */
 
 import { useEffect, useState } from 'react';
@@ -22,13 +24,8 @@ interface ThemeToggleProps {
   readonly className?: string;
 }
 
-const ORDER = ['light', 'dark', 'system'] as const;
-type Mode = (typeof ORDER)[number];
-
-function nextMode(current: Mode): Mode {
-  const idx = ORDER.indexOf(current);
-  return ORDER[(idx + 1) % ORDER.length];
-}
+type Mode = 'light' | 'dark' | 'system';
+const ORDER: readonly Mode[] = ['light', 'dark', 'system'];
 
 function iconFor(mode: Mode): string {
   return mode === 'dark' ? 'dark_mode' : mode === 'light' ? 'light_mode' : 'computer';
@@ -90,21 +87,26 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
     );
   }
 
-  const displayMode = current === 'system' ? ((resolvedTheme as Mode) ?? 'light') : current;
+  // Variante compacta: binaria. El tema "efectivo" se calcula siempre a partir
+  // de resolvedTheme (que ya resuelve 'system' al modo real del SO). Un click
+  // escribe el OPUESTO, de modo que siempre se alterna a la primera.
+  const effective: 'light' | 'dark' =
+    (resolvedTheme as 'light' | 'dark' | undefined) ?? 'light';
+  const nextBinary: 'light' | 'dark' = effective === 'dark' ? 'light' : 'dark';
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(nextMode(current))}
-      aria-label={`Cambiar tema (actual: ${labelFor(current)})`}
-      title={`Tema: ${labelFor(current)}`}
+      onClick={() => setTheme(nextBinary)}
+      aria-label={`Cambiar a modo ${labelFor(nextBinary).toLowerCase()} (actual: ${labelFor(effective)})`}
+      title={`Tema actual: ${labelFor(effective)} · click para ${labelFor(nextBinary).toLowerCase()}`}
       className={`group grid h-9 w-9 place-items-center rounded-full bg-white/55 ring-1 ring-inset ring-ink/10 backdrop-blur-md transition-[background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/80 dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10 ${className}`}
     >
       <span
         className="material-symbols-outlined text-[1.1rem] text-ink-soft group-hover:text-primary transition-colors dark:text-white/70 dark:group-hover:text-white"
         aria-hidden="true"
       >
-        {iconFor(displayMode)}
+        {iconFor(effective)}
       </span>
     </button>
   );

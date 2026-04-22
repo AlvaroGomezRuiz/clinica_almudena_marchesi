@@ -1,106 +1,155 @@
 'use client';
 
 /**
- * SensitiveField — campo con "ojo" auditado para la ficha clínica.
+ * SensitiveField — campo clínico con botón "ojo" individual.
  *
- * Comportamiento:
- *   - Por defecto oculta el valor con asteriscos (o "Sin datos" si `hasValue=false`).
- *   - Al pulsar el ojo, llama a `revelarCampoSensibleAction(pacienteId, campo)`
- *     que desencripta vía RPC `paciente_revelar_campo` + registra el acceso
- *     en `admin_lookups` (RGPD art. 30) en una única transacción atómica.
- *   - Revelado se auto-oculta tras 15s para minimizar exposición shoulder-surfing.
+ * Modelo v2 (abril 2026):
+ *   - Los valores llegan ya descifrados desde el servidor (la RPC
+ *     `paciente_ficha_sensibles_bulk` realiza el descifrado atómico +
+ *     una única auditoría `acceso_ficha_completa` por visita).
+ *   - Por defecto, el campo se muestra SIEMPRE visible.
+ *   - El botón "ojo" oculta o revela SOLO ese campo localmente (sin
+ *     llamar a ninguna RPC). Esto evita ruido de shoulder-surfing sin
+ *     generar ruido en admin_lookups.
  *
- * Props:
- *   - `hasValue`: si false, el ojo queda deshabilitado (no hay nada que desvelar).
- *   - `plaintextOverride`: si se pasa, se muestra directamente sin llamar a RPC
- *     (útil para valores que NO son ciphertext, p.ej. fecha de nacimiento).
+ * Modo compat v1:
+ *   - Si no se pasa `value` pero sí `pacienteId`+`campo`, mantenemos el
+ *     comportamiento antiguo (oculto por defecto + RPC al revelar).
+ *     Esto es útil para campos puntuales fuera de la ficha bulk.
+ *
+ * Auditoría:
+ *   - v2: el acceso a la ficha ya queda registrado. Ocultar/revelar
+ *     localmente NO genera eventos extra.
+ *   - v1 (compat): cada reveal llama a `paciente_revelar_campo` y
+ *     registra `admin_lookups` (antiguo flujo).
  */
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 
 import {
   revelarCampoSensibleAction,
   type CampoSensible,
 } from '@/services/admin/ficha-actions';
 
-const AUTO_HIDE_MS = 15_000;
-
 interface SensitiveFieldProps {
   readonly label: string;
   readonly pacienteId: string;
   readonly campo: CampoSensible;
-  readonly hasValue: boolean;
-  /** Valor ya descifrado (p.ej. por el backend). Si se pasa, el ojo lo muestra sin RPC. */
-  readonly plaintextOverride?: string | null;
+  /**
+   * Plaintext ya descifrado (v2). Si viene (aunque sea string vacío),
+   * el componente opera en modo "visible por defecto".
+   * - null  = campo vacío en BBDD
+   * - undefined = modo compat v1 (oculto + reveal via RPC)
+   */
+  readonly value?: string | null;
+  /**
+   * Texto cuando el campo está vacío en BBDD. Default "Sin datos".
+   */
+  readonly emptyLabel?: string;
+  /**
+   * Máscara al ocultar. Default bolitas unicode.
+   */
   readonly mask?: string;
-  readonly requireReason?: boolean;
+  /**
+   * Si true, al ocultar usamos una máscara que conserva la longitud
+   * aproximada para dar pista visual (útil para teléfono/DNI).
+   */
+  readonly keepShape?: boolean;
+}
+
+function shapedMask(value: string): string {
+  // Reemplaza cada carácter alfanumérico por "•". Deja separadores.
+  return value.replace(/[\p{L}\p{N}]/gu, '•');
 }
 
 export default function SensitiveField({
   label,
   pacienteId,
   campo,
-  hasValue,
-  plaintextOverride,
+  value,
+  emptyLabel = 'Sin datos',
   mask = '• • • • • •',
-  requireReason = false,
+  keepShape = false,
 }: SensitiveFieldProps): JSX.Element {
-  const [revealed, setRevealed] = useState(false);
-  const [value, setValue] = useState<string | null>(null);
+  // --- MODO v2: valor pre-descifrado ---
+  const v2 = value !== undefined;
+  const hasValue = v2 ? value !== null && value !== '' : false;
+
+  const [hidden, setHidden] = useState(false);
+  const toggleHidden = useCallback(() => setHidden((h) => !h), []);
+
+  // --- MODO v1 compat: reveal via RPC ---
+  const [v1Value, setV1Value] = useState<string | null>(null);
+  const [v1Revealed, setV1Revealed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (!revealed) return;
-    const t = setTimeout(() => {
-      setRevealed(false);
-      setValue(null);
-    }, AUTO_HIDE_MS);
-    return () => clearTimeout(t);
-  }, [revealed]);
-
-  const handleReveal = useCallback(() => {
-    if (!hasValue) return;
+  const v1HandleReveal = useCallback(() => {
     setError(null);
-
-    let justificacion: string | null = null;
-    if (requireReason) {
-      const reason = window.prompt(
-        `Estás a punto de ver "${label}". Este acceso queda registrado en admin_lookups (RGPD art. 30).\n\nIndica la justificación clínica u operativa:`
-      );
-      if (!reason || !reason.trim()) return;
-      justificacion = reason.trim();
-    }
-
     startTransition(async () => {
-      // Si el consumidor ya tiene el plaintext cacheado (p.ej. server-side
-      // pre-fetch), evitamos el round-trip pero mantenemos la auditoría.
-      if (plaintextOverride !== undefined && plaintextOverride !== null) {
-        await revelarCampoSensibleAction(pacienteId, campo, justificacion);
-        setValue(plaintextOverride);
-        setRevealed(true);
-        return;
-      }
-
-      const res = await revelarCampoSensibleAction(
-        pacienteId,
-        campo,
-        justificacion
-      );
+      const res = await revelarCampoSensibleAction(pacienteId, campo, null);
       if (!res.ok) {
         setError(res.message);
         return;
       }
-      setValue(res.data.plaintext ?? '—');
-      setRevealed(true);
+      setV1Value(res.data.plaintext ?? '—');
+      setV1Revealed(true);
     });
-  }, [campo, hasValue, label, pacienteId, plaintextOverride, requireReason]);
-
-  const handleHide = useCallback(() => {
-    setRevealed(false);
-    setValue(null);
+  }, [campo, pacienteId]);
+  const v1HandleHide = useCallback(() => {
+    setV1Revealed(false);
+    setV1Value(null);
   }, []);
 
+  // ─── Render ───
+  if (v2) {
+    // Valor pre-descifrado. Por defecto visible; botón ojo oculta local.
+    const shown = hasValue ? (value as string) : null;
+    const displayed = !hasValue
+      ? emptyLabel
+      : hidden
+        ? keepShape
+          ? shapedMask(shown ?? '')
+          : mask
+        : (shown ?? emptyLabel);
+
+    return (
+      <div className="group">
+        <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
+          {label}
+        </dt>
+        <dd className="mt-1 flex items-center gap-2">
+          <span
+            className={`font-display text-[0.95rem] ${
+              hidden
+                ? 'text-ink-soft tracking-[0.15em] dark:text-white/55'
+                : 'text-ink dark:text-white'
+            }`}
+            aria-live="polite"
+          >
+            {displayed}
+          </span>
+
+          {hasValue ? (
+            <button
+              type="button"
+              onClick={toggleHidden}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 transition hover:bg-white/60 hover:text-ink dark:text-white/55 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white"
+              aria-label={hidden ? `Mostrar ${label}` : `Ocultar ${label}`}
+              aria-pressed={hidden}
+              title={hidden ? `Mostrar ${label}` : `Ocultar ${label}`}
+            >
+              <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+                {hidden ? 'visibility' : 'visibility_off'}
+              </span>
+            </button>
+          ) : null}
+        </dd>
+      </div>
+    );
+  }
+
+  // ─── MODO v1 (compat): oculto por defecto + RPC al revelar ───
   return (
     <div className="group">
       <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -109,47 +158,34 @@ export default function SensitiveField({
       <dd className="mt-1 flex items-center gap-2">
         <span
           className={`font-display text-[0.95rem] ${
-            revealed
+            v1Revealed
               ? 'text-ink dark:text-white tabular-nums'
               : 'text-ink-soft tracking-[0.25em] dark:text-white/60'
           }`}
           aria-live="polite"
         >
-          {!hasValue
-            ? 'Sin datos'
-            : revealed && value !== null
-              ? value
-              : mask}
+          {v1Revealed && v1Value !== null ? v1Value : mask}
         </span>
 
-        {hasValue ? (
-          <button
-            type="button"
-            onClick={revealed ? handleHide : handleReveal}
-            disabled={isPending}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 transition hover:bg-white/60 hover:text-ink dark:text-white/55 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white disabled:cursor-wait disabled:opacity-40"
-            aria-label={revealed ? `Ocultar ${label}` : `Revelar ${label} (queda auditado)`}
-            aria-pressed={revealed}
-          >
-            <span
-              className="material-symbols-outlined text-[1rem]"
-              aria-hidden="true"
-            >
-              {isPending
-                ? 'progress_activity'
-                : revealed
-                  ? 'visibility_off'
-                  : 'visibility'}
-            </span>
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={v1Revealed ? v1HandleHide : v1HandleReveal}
+          disabled={isPending}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 transition hover:bg-white/60 hover:text-ink dark:text-white/55 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white disabled:cursor-wait disabled:opacity-40"
+          aria-label={v1Revealed ? `Ocultar ${label}` : `Revelar ${label}`}
+          aria-pressed={v1Revealed}
+          title={v1Revealed ? `Ocultar ${label}` : `Revelar ${label}`}
+        >
+          <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+            {isPending
+              ? 'progress_activity'
+              : v1Revealed
+                ? 'visibility_off'
+                : 'visibility'}
+          </span>
+        </button>
       </dd>
 
-      {revealed ? (
-        <p className="mt-1 font-body text-[0.68rem] text-amber-700 dark:text-amber-300">
-          Revelado. Se ocultará en {AUTO_HIDE_MS / 1000}s.
-        </p>
-      ) : null}
       {error ? (
         <p className="mt-1 font-body text-[0.68rem] text-red-600 dark:text-red-400">
           Error: {error}
