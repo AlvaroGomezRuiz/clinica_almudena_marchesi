@@ -14,7 +14,7 @@ interface MensajeRow {
   id: string;
   conversation_id: string;
   sender_user_id: string;
-  body_ciphertext: string;
+  body: string | null;
   read_at: string | null;
   created_at: string;
 }
@@ -51,15 +51,18 @@ export default async function PortalMensajesPage() {
   const conversacionId = String(convId);
 
   const { data: mensajesRaw } = await supabase
-    .from('mensajes')
-    .select('id, conversation_id, sender_user_id, body_ciphertext, read_at, created_at')
+    .from('v_mensajes_chat')
+    .select('id, conversation_id, sender_user_id, body, read_at, created_at')
     .eq('conversation_id', conversacionId)
     .order('created_at', { ascending: true })
     .limit(200);
 
-  const mensajes = await enrichMensajesWithAdjuntos(
-    (mensajesRaw as MensajeRow[] | null) ?? []
-  );
+  const normalizados = ((mensajesRaw as MensajeRow[] | null) ?? []).map((m) => ({
+    ...m,
+    body: m.body ?? '',
+  }));
+
+  const mensajes = await enrichMensajesWithAdjuntos(normalizados);
 
   return (
     <>

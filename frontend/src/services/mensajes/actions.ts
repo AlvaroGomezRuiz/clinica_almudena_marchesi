@@ -22,7 +22,7 @@ interface SendOk {
     readonly id: string;
     readonly conversation_id: string;
     readonly sender_user_id: string;
-    readonly body_ciphertext: string;
+    readonly body: string;
     readonly read_at: string | null;
     readonly created_at: string;
   };
@@ -75,7 +75,7 @@ export async function sendMensajeAction(
       id: String(row.id),
       conversation_id: String(row.conversation_id),
       sender_user_id: String(row.sender_user_id),
-      body_ciphertext: String(row.body_ciphertext),
+      body: String(row.body),
       read_at: row.read_at ? String(row.read_at) : null,
       created_at: String(row.created_at),
     },

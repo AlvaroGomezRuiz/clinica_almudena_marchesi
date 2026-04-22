@@ -69,7 +69,12 @@ export interface ChatMensaje {
   readonly id: string;
   readonly conversation_id: string;
   readonly sender_user_id: string;
-  readonly body_ciphertext: string;
+  /**
+   * Contenido en claro. Desde la BD llega descifrado vía la vista
+   * `v_mensajes_chat` o via RPC `chat_descifrar_mensaje`. El ciphertext
+   * bruto nunca llega a este nivel de la UI.
+   */
+  readonly body: string;
   readonly created_at: string;
   readonly read_at: string | null;
   readonly adjuntos?: readonly ChatAdjunto[];
@@ -134,6 +139,12 @@ export default function ChatPanel({
   }, [conversacionId]);
 
   // ───── Suscripción Realtime ─────
+  /*
+   * El payload de postgres_changes contiene `body_ciphertext` (cifrado con
+   * app_encrypt en BD). La UI necesita plaintext, así que tras un INSERT
+   * pedimos la fila descifrada mediante la RPC `chat_descifrar_mensaje`,
+   * que reusa la misma autorización que la RLS (admin o paciente dueño).
+   */
   useEffect(() => {
     const channel = supabase
       .channel(`chat-${conversacionId}`)
@@ -145,18 +156,65 @@ export default function ChatPanel({
           table: 'mensajes',
           filter: `conversation_id=eq.${conversacionId}`,
         },
-        (payload) => {
-          const m = payload.new as ChatMensaje;
-          setMensajes((prev) => {
-            if (prev.some((x) => x.id === m.id)) return prev;
-            const withoutOptimistic = prev.filter(
-              (x) => !(x.pending && x.body_ciphertext === m.body_ciphertext && x.sender_user_id === m.sender_user_id)
-            );
-            return [...withoutOptimistic, m];
-          });
+        async (payload) => {
+          const raw = payload.new as {
+            id?: string;
+            sender_user_id?: string;
+            read_at?: string | null;
+            created_at?: string;
+          };
+          const id = raw.id;
+          if (!id) return;
 
-          if (m.sender_user_id !== currentUserId) {
+          // Si ya existe (optimistic o dedupe), no hacemos roundtrip.
+          let alreadyPresent = false;
+          setMensajes((prev) => {
+            alreadyPresent = prev.some((x) => x.id === id);
+            return prev;
+          });
+          if (alreadyPresent) return;
+
+          // Si es propio, el optimistic ya trae plaintext; sólo reemplazamos
+          // id si aún estaba como temp-. Intentamos matching por remitente.
+          if (raw.sender_user_id === currentUserId) {
+            setMensajes((prev) => {
+              const idx = prev.findIndex(
+                (x) => x.pending && x.sender_user_id === currentUserId,
+              );
+              if (idx >= 0) {
+                const merged: ChatMensaje = {
+                  ...prev[idx],
+                  id,
+                  pending: false,
+                  read_at: raw.read_at ?? null,
+                  created_at: raw.created_at ?? prev[idx].created_at,
+                };
+                const next = prev.slice();
+                next[idx] = merged;
+                return next;
+              }
+              return prev;
+            });
+            return;
+          }
+
+          // Mensaje del otro participante: pedimos el plaintext vía RPC.
+          try {
+            const { data } = await supabase.rpc('chat_descifrar_mensaje', { p_id: id });
+            const row = Array.isArray(data) ? data[0] : data;
+            if (!row) return;
+            const decrypted: ChatMensaje = {
+              id: String(row.id),
+              conversation_id: String(row.conversation_id),
+              sender_user_id: String(row.sender_user_id),
+              body: String(row.body ?? ''),
+              read_at: row.read_at ? String(row.read_at) : null,
+              created_at: String(row.created_at),
+            };
+            setMensajes((prev) => (prev.some((x) => x.id === decrypted.id) ? prev : [...prev, decrypted]));
             marcarLeidosAction(conversacionId);
+          } catch {
+            /* Silencio: próximo POLL o refresh servirá el mensaje. */
           }
         }
       )
@@ -186,7 +244,7 @@ export default function ChatPanel({
         id: tempId,
         conversation_id: conversacionId,
         sender_user_id: currentUserId,
-        body_ciphertext: trimmed,
+        body: trimmed,
         created_at: new Date().toISOString(),
         read_at: null,
         pending: true,
@@ -389,7 +447,7 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
   return (
     <div className={`my-1 flex ${esMio ? 'justify-end' : 'justify-start'}`}>
       <div className={`${base} ${esMio ? own : other} ${mensaje.pending ? 'opacity-70' : ''}`}>
-        <p>{mensaje.body_ciphertext}</p>
+        <p>{mensaje.body}</p>
         {adjuntos.length > 0 ? (
           <ul className="mt-2 flex flex-col gap-1.5">
             {adjuntos.map((a) => (

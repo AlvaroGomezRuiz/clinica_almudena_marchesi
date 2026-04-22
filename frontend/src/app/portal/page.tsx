@@ -98,22 +98,22 @@ export default async function PortalInicioPage() {
 
   const ultimoMensaje = conversacionId
     ? (await supabase
-        .from('mensajes')
-        .select('id, body_ciphertext, created_at, sender_user_id')
+        .from('v_mensajes_chat')
+        .select('id, body, created_at, sender_user_id')
         .eq('conversation_id', conversacionId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle<{
           id: string;
-          body_ciphertext: string;
+          body: string | null;
           created_at: string;
           sender_user_id: string;
         }>()).data
     : null;
 
   const ultimoMensajePreview =
-    ultimoMensaje && ultimoMensaje.body_ciphertext
-      ? ultimoMensaje.body_ciphertext.slice(0, 160)
+    ultimoMensaje && ultimoMensaje.body
+      ? ultimoMensaje.body.slice(0, 160)
       : null;
   const ultimoMensajeEsMio = ultimoMensaje?.sender_user_id === user.id;
 

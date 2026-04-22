@@ -18,7 +18,7 @@ interface MensajeRow {
   id: string;
   conversation_id: string;
   sender_user_id: string;
-  body_ciphertext: string;
+  body: string | null;
   read_at: string | null;
   created_at: string;
 }
@@ -73,8 +73,8 @@ export default async function AdminConversacionPage({
 
   const [mensajesRes, fichaRes] = await Promise.all([
     supabase
-      .from('mensajes')
-      .select('id, conversation_id, sender_user_id, body_ciphertext, read_at, created_at')
+      .from('v_mensajes_chat')
+      .select('id, conversation_id, sender_user_id, body, read_at, created_at')
       .eq('conversation_id', convTyped.id)
       .order('created_at', { ascending: true })
       .limit(200),
@@ -87,9 +87,12 @@ export default async function AdminConversacionPage({
       .maybeSingle(),
   ]);
 
-  const mensajes = await enrichMensajesWithAdjuntos(
-    (mensajesRes.data as MensajeRow[] | null) ?? []
-  );
+  const normalizados = ((mensajesRes.data as MensajeRow[] | null) ?? []).map((m) => ({
+    ...m,
+    body: m.body ?? '',
+  }));
+
+  const mensajes = await enrichMensajesWithAdjuntos(normalizados);
   const ficha = fichaRes.data as unknown as FichaRow | null;
 
   const display =

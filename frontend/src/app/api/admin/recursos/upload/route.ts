@@ -60,7 +60,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   /* Rate-limit: 30 subidas/hora por admin (muy conservador). */
-  const rate = enforceRateLimit({
+  const rate = await enforceRateLimit({
     key: `recurso-upload:${user.id}`,
     max: 30,
     windowMs: 60 * 60_000,

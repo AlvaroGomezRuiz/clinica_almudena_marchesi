@@ -58,7 +58,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   /* Rate-limit: 20 uploads/minuto por usuario. Protege bucket de abuso y costos. */
-  const rate = enforceRateLimit({
+  const rate = await enforceRateLimit({
     key: `attach:${user.id}`,
     max: 20,
     windowMs: 60_000,

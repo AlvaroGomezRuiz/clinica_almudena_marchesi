@@ -5,7 +5,7 @@ interface MensajeBase {
   readonly id: string;
   readonly conversation_id: string;
   readonly sender_user_id: string;
-  readonly body_ciphertext: string;
+  readonly body: string;
   readonly read_at: string | null;
   readonly created_at: string;
 }

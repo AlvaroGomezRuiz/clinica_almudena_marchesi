@@ -61,6 +61,13 @@ lh-*.json
 lh-report*.json
 **/lh/
 
+# Playwright — salida de tests E2E
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/.playwright/
+frontend/e2e/.auth/
+
 # -----------------------------------------------------------------------------
 # DATOS SENSIBLES
 # -----------------------------------------------------------------------------

@@ -1,47 +1,28 @@
 /**
- * Rate limiter en-memoria, per-IP, por clave de acción.
+ * Rate limiter unificado — Upstash Redis (sliding window) + fallback in-memory.
  *
- * ⚠️  Limitaciones conocidas:
- *   - Vercel Serverless: cada instancia tiene su propio Map; múltiples instancias
- *     en cold-start pueden dividir el contador. Funciona como *mitigación*,
- *     no como bloqueo duro. Para hard-limit real se necesitaría Upstash KV o
- *     Vercel KV. No obstante, en el cluster fra1 con tráfico clínico moderado,
- *     la dispersión es mínima.
- *   - El `Map` se purga automáticamente para no filtrar memoria.
+ * Estrategia:
+ *   ▸ Si `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` están definidas,
+ *     usa `@upstash/ratelimit` con algoritmo sliding-window distribuido. El
+ *     bucket es global a todas las instancias Vercel de todas las regiones, lo
+ *     que le convierte en un hard-limit real (no una mitigación).
+ *   ▸ Si no, cae a un Map en memoria propio de cada instancia (suficiente para
+ *     dev y preview; para prod siempre se espera Upstash).
  *
- * ✅  Ventajas:
- *   - Zero dependencies, cero coste de red, cero coste económico.
- *   - Suficiente para frenar bots triviales y abusos desde el formulario de
- *     registro, /login, /password-reset y acciones de facturación.
+ * Compatibilidad:
+ *   - Mantenemos la API histórica `{ key, max, windowMs }` → `{ ok, remaining, resetAt }`
+ *     pero ahora es `async`. Todos los callers existentes son handlers de API
+ *     route o Server Actions, todos ya `async`.
  *
- * Uso:
- *   import { enforceRateLimit } from '@/lib/security/rate-limit';
- *   const rate = enforceRateLimit({ key: `register:${ip}`, max: 5, windowMs: 60_000 });
- *   if (!rate.ok) throw new Error('Too many requests');
+ * Seguridad:
+ *   - El `prefix` de Redis (`ratelimit:almudena:`) aisla los buckets por app.
+ *   - Los buckets se indexan por `key`, que los callers ya construyen como
+ *     `acción:identificador` (p.ej. `attach:<user_id>`, `register:<ip>`).
+ *   - Nunca se guarda información sensible en la key (solo UUID/IP hash).
  */
 
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
-
-/* Map global — en Vercel, se reutiliza mientras la instancia está caliente. */
-const buckets = new Map<string, Bucket>();
-
-/* Cada 5 minutos, barrer entradas expiradas para evitar fugas de memoria. */
-const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
-let lastSweep = Date.now();
-
-function sweepIfNeeded(): void {
-  const now = Date.now();
-  if (now - lastSweep < SWEEP_INTERVAL_MS) return;
-  /* Evitamos `for...of` sobre el Map (requiere downlevelIteration en TS).
-     `forEach` es totalmente seguro y tiene el mismo coste. */
-  buckets.forEach((v, k) => {
-    if (v.resetAt <= now) buckets.delete(k);
-  });
-  lastSweep = now;
-}
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 export interface RateLimitOptions {
   /** Clave única por usuario + acción: p.ej. `login:203.0.113.5`. */
@@ -58,20 +39,90 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
-export function enforceRateLimit(opts: RateLimitOptions): RateLimitResult {
+// ─── Upstash setup (lazy, shared) ───────────────────────────────────────────
+let sharedRedis: Redis | null | undefined = undefined;
+function getRedis(): Redis | null {
+  if (sharedRedis !== undefined) return sharedRedis;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    sharedRedis = null;
+    return null;
+  }
+  try {
+    sharedRedis = new Redis({ url, token });
+  } catch {
+    sharedRedis = null;
+  }
+  return sharedRedis;
+}
+
+const limiterCache = new Map<string, Ratelimit>();
+function getLimiter(max: number, windowMs: number): Ratelimit | null {
+  const redis = getRedis();
+  if (!redis) return null;
+  const cacheKey = `${max}:${windowMs}`;
+  const existing = limiterCache.get(cacheKey);
+  if (existing) return existing;
+  const fresh = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(max, `${windowMs} ms`),
+    prefix: 'ratelimit:almudena',
+    analytics: false,
+    timeout: 800, // ms — fail-open si Upstash no responde rápido
+  });
+  limiterCache.set(cacheKey, fresh);
+  return fresh;
+}
+
+// ─── Fallback in-memory (misma semántica que antes) ─────────────────────────
+interface Bucket {
+  count: number;
+  resetAt: number;
+}
+const buckets = new Map<string, Bucket>();
+const SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+let lastSweep = Date.now();
+
+function sweepIfNeeded(): void {
+  const now = Date.now();
+  if (now - lastSweep < SWEEP_INTERVAL_MS) return;
+  buckets.forEach((v, k) => {
+    if (v.resetAt <= now) buckets.delete(k);
+  });
+  lastSweep = now;
+}
+
+function enforceInMemory(opts: RateLimitOptions): RateLimitResult {
   sweepIfNeeded();
   const now = Date.now();
   const bucket = buckets.get(opts.key);
-
   if (!bucket || bucket.resetAt <= now) {
     const fresh: Bucket = { count: 1, resetAt: now + opts.windowMs };
     buckets.set(opts.key, fresh);
     return { ok: true, remaining: opts.max - 1, resetAt: fresh.resetAt };
   }
-
   bucket.count += 1;
   const ok = bucket.count <= opts.max;
   return { ok, remaining: Math.max(0, opts.max - bucket.count), resetAt: bucket.resetAt };
+}
+
+// ─── API pública ────────────────────────────────────────────────────────────
+export async function enforceRateLimit(opts: RateLimitOptions): Promise<RateLimitResult> {
+  const limiter = getLimiter(opts.max, opts.windowMs);
+  if (limiter) {
+    try {
+      const res = await limiter.limit(opts.key);
+      return {
+        ok: res.success,
+        remaining: Math.max(0, res.remaining),
+        resetAt: res.reset,
+      };
+    } catch {
+      /* Si falla Upstash (red, auth), caemos a in-memory para no bloquear tráfico legítimo. */
+    }
+  }
+  return enforceInMemory(opts);
 }
 
 /**
@@ -88,4 +139,12 @@ export function getClientIp(headers: Headers): string {
   const xri = headers.get('x-real-ip');
   if (xri) return xri.trim();
   return 'unknown';
+}
+
+/**
+ * Devuelve true si hay un backend Redis distribuido configurado. Útil para
+ * logs de arranque o para UIs de diagnóstico admin.
+ */
+export function isDistributedRateLimitAvailable(): boolean {
+  return getRedis() !== null;
 }

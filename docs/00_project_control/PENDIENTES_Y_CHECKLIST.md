@@ -298,3 +298,136 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 - [x] **`.cursorrules`** — sección "Monorepo boundary" reescrita: ya no habla de FastAPI sino de Supabase como único backend. Sección "Backend excellence" reescrita con reglas de RLS, cifrado vía `app_encrypt`, convenciones de migraciones, auditoría `admin_lookups`.
 - [x] **`README.md`** — árbol monorepo actualizado (sin `backend/`), aviso de hito 14 arriba, flujo de auto-registro OTP documentado, tabla de migraciones con 0027/0028/0029.
 - [x] **Este checklist** — §3.2 marca el backend como eliminado + §9 documenta todo el hito.
+
+---
+
+## 10) Hito 14 · Test E2E definitivo (22-abr-2026 · pre go-live)
+
+> Simulación completa del recorrido real: paciente nuevo ⇒ autoregistro ⇒ reserva ⇒
+> pago/bono ⇒ admin (Almudena) consulta/edita/cifra/cancela. Ejecutado directamente
+> contra el proyecto Supabase de producción con JWT sintético.
+
+### 10.1 Bugs críticos DETECTADOS y corregidos en este hito
+
+| # | Migración | Problema | Impacto |
+|---|-----------|----------|---------|
+| 1 | `0030_fix_reservar_cita_ambiguity` | `RETURN TABLE(..., estado cita_estado, ...)` de `reservar_cita` colisionaba con `bonos_pacientes.estado` en PL/pgSQL ⇒ error 42702 "column reference estado is ambiguous". | 100% reservas fallaban. |
+| 2 | `0031_fix_admin_lookups_campo_check` | `paciente_ficha_sensibles_bulk` escribía `campo='acceso_ficha_completa'` pero el CHECK de `admin_lookups.campo` no lo permitía ⇒ 23514. | Cada apertura de ficha admin reventaba. |
+| 3 | `0032_fix_registro_clinico_descifrar` | `CASE (p_tabla, p_campo) WHEN (...)` rompía con 42804 "cannot compare text and unknown". | Admin no podía leer notas, DX ni medicación cifradas. |
+| 4 | `0033_extend_admin_lookups_campo_check_clinical` | Faltaban los valores `paciente_*.*` y `citas_notas_paciente.contenido` en el CHECK del audit. | Lectura de registro clínico cifrado rompía en auditoría. |
+| 5 | `0034_fix_rgpd_plaintext_leak` | Las 3 RPCs de cifrado (`diagnostico_crear_cifrado`, `medicacion_crear_cifrada`, `nota_cita_guardar_cifrada`) insertaban TAMBIÉN el plaintext en las columnas legacy. Además RLS permitía al paciente SELECT directo de DX/medicación y de notas de sesión del terapeuta. | **Leak RGPD grave**: datos clínicos en claro + paciente podía leer notas de su terapeuta. |
+| 6 | `0035_nota_cita_upsert_admin` | `nota_cita_guardar_cifrada` hacía siempre INSERT ⇒ notas duplicadas al editar. | Cada "guardar" en el editor creaba una fila nueva. |
+| 7 | `0036_paciente_dx_med_bulk_descifrar` | (Complemento de 0034). Nuevo RPC admin que devuelve DX+medicación descifrados en 1 llamada con 1 sola entrada de auditoría (`bulk_export / ficha_admin_ui_dx_med`). | UI `/admin/pacientes/[id]` vuelve a ver títulos y notas clínicas tras eliminar plaintext. |
+
+### 10.2 Flujos verificados end-to-end (✅ todos OK tras fixes)
+
+- [x] **Autoregistro paciente** — `signInWithOtp` → `verifyOtp` → `paciente_autoregistro_cifrada` (idempotente). Ficha crea con PII cifrada (ct ≥ 100B por campo) y blind index HMAC (12 hex chars).
+- [x] **Disponibilidad** — `obtener_disponibilidad('Europe/Madrid')` devuelve 17 slots/día laborable (L–V 9–20h, V 9–18h). Bloqueos `agenda_bloqueos` y citas existentes se descuentan.
+- [x] **Reserva sin bono** — `reservar_cita` crea cita `bloqueo_temporal` + libera slot en caso de `slot_ocupado` (23505) correcto.
+- [x] **Pago con Stripe** — `procesar_pago_stripe(event_id, ...)` con idempotencia por `stripe_event_id UNIQUE`. Cita pasa a `confirmada`. Reintento devuelve `ya_procesado=true`.
+- [x] **Compra de bono** — `procesar_pago_stripe(bono_config_id=...)` crea `bonos_pacientes` activo + fecha_expiración calculada.
+- [x] **Reserva con bono** — `reservar_cita` detecta bono activo → cita `confirmada` directa sin checkout + `sesiones_consumidas +1`.
+- [x] **Admin busca paciente** — `paciente_buscar_por_campo('dni_nie'/'email'/'telefono')` devuelve `paciente_id` vía blind index.
+- [x] **Admin revela PII** — `paciente_revelar_campo` devuelve plaintext + registra en `admin_lookups`.
+- [x] **Admin ficha completa** — `paciente_ficha_sensibles_bulk` devuelve JSON con 12 campos descifrados + 1 audit entry.
+- [x] **Admin edita PII** — `paciente_actualizar_cifrado(jsonb)` reencripta y recalcula blind index (lookup por valor antiguo ⇒ NULL, por nuevo ⇒ `paciente_id`).
+- [x] **Admin guarda nota de sesión (cifrada)** — `nota_cita_guardar_cifrada` (UPSERT). Ciphertext ≥ 120B, plaintext siempre NULL.
+- [x] **Admin lee nota cifrada** — `registro_clinico_descifrar('citas_notas_paciente', ...)` descifra y registra audit.
+- [x] **Admin crea diagnóstico + medicación** cifrados. Plaintext columns = NULL. Audit bulk en 1 entry vía `paciente_dx_med_bulk_descifrar`.
+- [x] **Admin cancela cita con bono** — `cancelar_cita` restaura `sesiones_consumidas -= 1`. Slot disponible otra vez.
+- [x] **Admin cancela cita pagada con tarjeta** — `cancelar_cita` devuelve `needs_stripe_refund=true, stripe_payment_intent, importe_centimos` para que la Edge Function orqueste el refund.
+- [x] **Paciente re-reserva mismo slot cancelado** — OK, slot libre. Reutiliza bono si lo tiene.
+
+### 10.3 RLS verificado bajo `SET ROLE authenticated`
+
+| Recurso | Paciente propietario | Paciente ajeno | Admin |
+|---------|----------------------|----------------|-------|
+| `pacientes` (ficha propia) | ✅ 1 fila | ❌ 0 filas | ✅ todas |
+| `citas` / `pagos` / `bonos_pacientes` propios | ✅ | ❌ | ✅ todas |
+| `paciente_diagnosticos` | ❌ (solo RPC admin) | ❌ | ✅ |
+| `paciente_medicacion` | ❌ (solo RPC admin) | ❌ | ✅ |
+| `citas_notas_paciente` (propias, autor=self) | ✅ solo las que ha escrito el propio paciente | ❌ | ✅ todas |
+| Notas de sesión del terapeuta (autor=admin) | ❌ (no visibles al paciente) | ❌ | ✅ |
+
+### 10.4 Migraciones finales aplicadas en producción en este hito
+
+```
+0030_fix_reservar_cita_ambiguity.sql
+0031_fix_admin_lookups_campo_check.sql
+0032_fix_registro_clinico_descifrar.sql
+0033_extend_admin_lookups_campo_check_clinical.sql
+0034_fix_rgpd_plaintext_leak.sql
+0035_nota_cita_upsert_admin.sql
+0036_paciente_dx_med_bulk_descifrar.sql
+```
+
+### 10.5 Checks de ingeniería
+
+- [x] `npx tsc --noEmit` → **0 errors**
+- [x] `npm run build` → ✅ (49 rutas generadas, middleware 86.5 kB, first-load shared 155 kB).
+- [x] Cleanup de test data completado (auth.users, profile, paciente, citas, pagos, bonos, DX, medicación, notas, admin_lookups). Sin residuos.
+- [x] Ningún Edge Function escribe en columnas plaintext clínicas (`rg contenido|titulo|descripcion|notas:` en `supabase/functions/` solo devuelve campos de servicio/bono descripción no clínicos).
+
+---
+
+## 11) Hito 15 — Hardening post-launch (22-abr-2026 · mejoras recomendadas)
+
+> Ejecutado como cierre técnico tras el test E2E definitivo del Hito 14.
+> Objetivo: blindar calidad, accesibilidad y observabilidad sin romper la entrega.
+
+### 11.1 Entregables
+
+| # | Mejora | Estado | Artefactos |
+|---|--------|--------|------------|
+| 1 | **Cifrado chat (`mensajes.body`)** | ✅ en producción | `0037_chat_cifrado.sql` — backfill seguro + vista `v_mensajes_chat` (security_invoker) + `chat_enviar_mensaje` cifra con `app_encrypt` + nuevo `chat_descifrar_mensaje(uuid)` para realtime. |
+| 2 | **Rate limit distribuido (Upstash Redis)** | ✅ código listo · secrets pendientes | `frontend/src/lib/security/rate-limit.ts` reescrito con `@upstash/ratelimit` sliding-window + fallback in-memory. `enforceRateLimit` ahora `async`. |
+| 3 | **Playwright E2E (4 flujos oro)** | ✅ specs listos | `frontend/e2e/{smoke,registro-otp,reserva,pago-tarjeta,chat}.spec.ts` + `fixtures.ts` + `playwright.config.ts`. Scripts `npm run test:e2e*`. |
+| 4 | **axe-core a11y (WCAG 2.2 AA)** | ✅ spec listo | `frontend/e2e/a11y.spec.ts` cubre home, login, reserva y admin dashboard con `@axe-core/playwright`. |
+| 5 | **LCP hero** | ✅ auditado | `HeroImage` ya en óptimo: `priority` + `fetchPriority="high"` + AVIF q78 + `sizes` calibrado por breakpoint + sin JS (Framer fuera). Queda sólo medir en campo con Vercel Speed Insights / PageSpeed. |
+| 6 | **Click-through manual** | ✅ guía | `docs/05_operations/TESTING_CHECKLIST.md` §4 (automáticos) y §4B (post-hardening) preparados para Almudena. |
+
+### 11.2 Ficheros nuevos / modificados (resumen)
+
+```
+supabase/migrations/0037_chat_cifrado.sql                    (nuevo)
+frontend/playwright.config.ts                                (nuevo)
+frontend/e2e/fixtures.ts                                     (nuevo)
+frontend/e2e/smoke.spec.ts                                   (nuevo)
+frontend/e2e/registro-otp.spec.ts                            (nuevo)
+frontend/e2e/reserva.spec.ts                                 (nuevo)
+frontend/e2e/pago-tarjeta.spec.ts                            (nuevo)
+frontend/e2e/chat.spec.ts                                    (nuevo)
+frontend/e2e/a11y.spec.ts                                    (nuevo)
+frontend/src/lib/security/rate-limit.ts                      (reescrito)
+frontend/src/lib/supabase/types.ts                           (+ v_mensajes_chat, chat_descifrar_mensaje, Mensaje.body)
+frontend/src/services/mensajes/actions.ts                    (ajuste SendOk.body)
+frontend/src/services/mensajes/fetch-adjuntos.ts             (body en vez de body_ciphertext)
+frontend/src/components/chat/ChatPanel.tsx                   (optimistic + realtime descifra)
+frontend/src/app/portal/mensajes/page.tsx                    (v_mensajes_chat)
+frontend/src/app/admin/mensajes/[id]/page.tsx                (v_mensajes_chat)
+frontend/src/app/portal/page.tsx                             (último mensaje del dashboard)
+frontend/src/app/api/admin/avatar/upload/route.ts            (await enforceRateLimit)
+frontend/src/app/api/admin/recursos/upload/route.ts          (await enforceRateLimit)
+frontend/src/app/api/mensajes/attach/route.ts                (await enforceRateLimit)
+frontend/package.json                                        (+@upstash/redis,ratelimit,@playwright/test,@axe-core/playwright + scripts)
+frontend/.env.example                                        (+UPSTASH_* + PLAYWRIGHT_*)
+.gitignore                                                   (+ e2e artifacts)
+docs/05_operations/TESTING_CHECKLIST.md                      (§4 + §4B)
+docs/00_project_control/PENDIENTES_Y_CHECKLIST.md            (este bloque)
+docs/02_reports/INFORME_HITO_15_POST_LAUNCH.md               (nuevo informe)
+```
+
+### 11.3 Secrets nuevos que hay que rellenar en Vercel antes de activar el rate-limit distribuido
+
+- [ ] `UPSTASH_REDIS_REST_URL` (Production/Preview) — dominio HTTPS del Redis Upstash.
+- [ ] `UPSTASH_REDIS_REST_TOKEN` (Production/Preview) — token de sólo REST.
+
+Sin estas variables el módulo cae automáticamente al *rate limiter in-memory* (el mismo que lleva en producción toda la semana), por lo que no bloquea el go-live.
+
+### 11.4 Checks de ingeniería
+
+- [x] `npx tsc --noEmit` → **0 errors**.
+- [x] `npm run build` → ✅ (49 rutas, middleware 86.5 kB, first-load shared 155 kB — sin regresión frente a Hito 14).
+- [x] Solo 1 warning ESLint restante (`<img>` en `ChatPanel.tsx:458`, adjuntos dinámicos — justificado, no se puede usar `next/image` sin `width/height` fijos).
+- [x] Migración `0037` compatible con contenido mixto (plaintext legacy + ciphertext nuevo) gracias al helper `_app_try_decrypt`.
+- [x] Realtime del chat probado a nivel de contrato: `chat_enviar_mensaje` devuelve `body` plaintext al autor; `chat_descifrar_mensaje` sirve al receptor vía canal `postgres_changes`.

@@ -298,24 +298,82 @@ Documento vivo con **todos los tests manuales y automáticos** pendientes para e
 
 ---
 
-## 4. Tests automáticos (opcional — roadmap)
+## 4. Tests automáticos
 
-Sugerencia de suite mínima cuando se priorice:
+### 4.1 Playwright E2E (`frontend/e2e/`)
 
-- **Playwright E2E** (ver `.agents/skills` Playwright disponible):
-  - `auth.spec.ts` — login admin + paciente.
-  - `booking.spec.ts` — flujo completo reserva con bono y sin bono.
-  - `chat.spec.ts` — envío y recepción en tiempo real (dos browser contexts).
-  - `cancelacion.spec.ts` — cancelar cita y verificar email + reembolso.
-- **Vitest/Jest** unit:
-  - Templates HTML emails — snapshot.
-  - Parsing de `verifyWebhookSignature` (Stripe + Resend).
-  - Utilidades `formatDateEs`, `formatTimeEs`.
-- **pgTAP** para RPCs y RLS:
-  - `chat_enviar_mensaje` — happy path + bloqueo RLS.
-  - `reservar_cita` — concurrencia con `pg_sleep`.
-  - `procesar_pago_stripe` — idempotencia con replay.
-  - `cancelar_cita` — reembolso y restauración de bono.
+Estado: configurado y listo. Requiere `PLAYWRIGHT_BASE_URL` (local o preview Vercel).
+
+```bash
+# Una sola vez: instalar navegadores
+npm --prefix frontend run test:e2e:install
+
+# Pasada completa (chromium, headless)
+npm --prefix frontend run test:e2e
+
+# Modo UI interactivo
+npm --prefix frontend run test:e2e:ui
+
+# Solo smoke (home, login, wizard registro)
+npm --prefix frontend run test:e2e:smoke
+
+# Solo a11y (axe-core WCAG 2.2 AA)
+npm --prefix frontend run test:e2e:a11y
+```
+
+Specs incluidos:
+
+| Spec                       | Flujo                                                          |
+|----------------------------|----------------------------------------------------------------|
+| `smoke.spec.ts`            | Home + login + wizard registro carguen sin 5xx/CSP break       |
+| `registro-otp.spec.ts`     | Paso 1 del auto-registro → redirige a página OTP               |
+| `reserva.spec.ts`          | Portal paciente: selecciona servicio y slot                    |
+| `pago-tarjeta.spec.ts`     | Stripe test mode (4242…): compra de bono (opt-in por env)      |
+| `chat.spec.ts`             | Paciente escribe → admin recibe descifrado en tiempo real      |
+| `a11y.spec.ts`             | axe-core sobre home/login/reserva/admin (0 violations AA)      |
+
+Prereqs para CI:
+
+- [ ] Secret `PLAYWRIGHT_BASE_URL` en GitHub Actions → preview URL de Vercel.
+- [ ] Secrets `PLAYWRIGHT_ADMIN_EMAIL/PASSWORD` y `PLAYWRIGHT_PATIENT_EMAIL/PASSWORD` apuntan al seed de staging.
+- [ ] `PLAYWRIGHT_STRIPE_TEST=1` sólo cuando el entorno tenga webhook conectado.
+- [ ] Artefacto `playwright-report/` se sube a Actions para debugging.
+
+### 4.2 Vitest/Jest unit (pendiente · sugerido)
+
+- Templates HTML emails — snapshot.
+- Parsing de `verifyWebhookSignature` (Stripe + Resend).
+- Utilidades `formatDateEs`, `formatTimeEs`.
+
+### 4.3 pgTAP (pendiente · sugerido)
+
+- `chat_enviar_mensaje` — happy path + bloqueo RLS + cifrado correcto.
+- `reservar_cita` — concurrencia con `pg_sleep`.
+- `procesar_pago_stripe` — idempotencia con replay.
+- `cancelar_cita` — reembolso y restauración de bono.
+
+---
+
+## 4B. Pruebas específicas post-hardening 22-abr-2026
+
+### 4B.1 Chat cifrado en reposo (migración `0037_chat_cifrado.sql`)
+- [ ] `SELECT body_ciphertext FROM public.mensajes LIMIT 1` → string base64 PGP (no legible).
+- [ ] `SELECT body FROM public.v_mensajes_chat LIMIT 1` → texto en claro.
+- [ ] Paciente envía → admin abre `/admin/mensajes/[id]` → ve el texto en claro en <2s vía realtime.
+- [ ] Supabase Dashboard → Logs → Realtime: verificar que el payload `postgres_changes` contiene ciphertext (no plaintext).
+- [ ] Nunca aparece plaintext de `body_ciphertext` en logs HTTP (`mensajes` SELECT directo ya no se usa).
+- [ ] `v_conversaciones_admin.ultimo_mensaje` devuelve el último mensaje descifrado (preview de bandeja admin).
+
+### 4B.2 Rate limit distribuido Upstash
+- [ ] Variables `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` definidas en Vercel (prod + preview).
+- [ ] `enforceRateLimit` en `/api/mensajes/attach` → tras 20 uploads/min devuelve 429 compartido entre instancias.
+- [ ] Supabase/Upstash Redis Console → keys con prefix `ratelimit:almudena:` visibles durante tráfico de prueba.
+- [ ] Apagar Upstash (quitar env vars) → app sigue funcionando con fallback in-memory (no 500).
+- [ ] `isDistributedRateLimitAvailable()` devuelve true en prod tras deploy.
+
+### 4B.3 axe-core a11y smoke
+- [ ] `npm run test:e2e:a11y` sobre preview → 0 violations en home/login/reserva/admin.
+- [ ] Reportar en cada PR como status check (opcional recomendado).
 
 ---
 

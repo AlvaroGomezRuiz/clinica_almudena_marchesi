@@ -303,3 +303,62 @@ Nota: al no ser persistente, cada instancia de Vercel mantiene su contador. Acep
 9. Revision trimestral de accesos a `auditoria` (buscar patrones anomalos).
 10. Test de restore DB cada 6 meses en staging.
 11. Pentest externo antes de 12 meses de operacion.
+
+---
+
+## 14. Adenda · Hardening de 22-abr-2026 (smoke E2E definitivo)
+
+El smoke E2E de "ultima pasada" antes de go-live descubrio un conjunto de
+vulnerabilidades que se han corregido y cerrado en esta misma sesion. Se
+documentan aqui para trazabilidad RGPD.
+
+### 14.1 Fuga de plaintext en columnas legacy (CRITICA · fix 0034)
+- Las RPCs `diagnostico_crear_cifrado`, `medicacion_crear_cifrada` y
+  `nota_cita_guardar_cifrada` insertaban simultaneamente el plaintext en
+  `paciente_diagnosticos.titulo/descripcion`, `paciente_medicacion.notas` y
+  `citas_notas_paciente.contenido`. El ciphertext existia, pero el plaintext
+  era leido por la UI y - peor - accesible via PostgREST + RLS.
+- **Fix aplicado** (`0034_fix_rgpd_plaintext_leak.sql`):
+  - Las 3 RPCs solo insertan en columnas `_ciphertext`.
+  - Plaintext de filas existentes puesto a `NULL` (selectivo para que no
+    se borren notas propias escritas por el paciente).
+  - Dropped: `diag_paciente_ver_propio` y `medic_paciente_ver_propia`. El
+    paciente ya no puede leer sus DX/medicacion por SELECT directo, solo el
+    admin via RPC descifradora con audit.
+  - Recreada `cnp_paciente_read_own` con filtro `autor_user_id = auth.uid()`:
+    el paciente solo ve sus propias notas, nunca las del terapeuta.
+- **Verificacion**: con `SET ROLE authenticated` + JWT del paciente de prueba,
+  SELECT a las 3 tablas devuelve 0 filas clinicas del terapeuta.
+
+### 14.2 Auditoria bulk de lectura clinica (fix 0036)
+- Nuevo RPC admin `paciente_dx_med_bulk_descifrar(p_paciente_id)` devuelve
+  `{diagnosticos[], medicacion[]}` descifrados + registra **una sola**
+  entrada en `admin_lookups` con `campo='bulk_export'`,
+  `justificacion='ficha_admin_ui_dx_med'`. Reduce N entradas de audit a 1
+  y evita N llamadas RPC desde el servidor Next.js.
+
+### 14.3 UPSERT en notas de sesion (fix 0035)
+- `nota_cita_guardar_cifrada` siempre hacia INSERT ⇒ duplicados al editar.
+  Ahora: si existe nota activa del mismo admin (`autor_user_id = auth.uid()`
+  AND `activo = true`) para esa `cita_id`, hace UPDATE del ciphertext +
+  `updated_at`. Si no, INSERT. Sin bug de duplicados.
+
+### 14.4 CHECK de `admin_lookups.campo` ampliado (fix 0031 + 0033)
+- Se permiten los valores usados por la app: `acceso_ficha_completa`,
+  `bulk_export`, `paciente_diagnosticos.titulo|notas`,
+  `paciente_medicacion.notas`, `citas_notas_paciente.contenido`, etc.
+
+### 14.5 Bugs funcionales colaterales corregidos
+- `reservar_cita` con ambiguedad `estado` (OUT vs columna de
+  `bonos_pacientes`) ⇒ 100% reservas fallaban. **Fix 0030**.
+- `registro_clinico_descifrar` usaba `CASE (text, text) WHEN (...)` que
+  PostgreSQL rechazaba con 42804. **Fix 0032** reescribiendolo con
+  `IF/ELSIF`.
+
+### 14.6 Estado final tras el hardening
+- 0 columnas clinicas con plaintext legible por RLS o PostgREST.
+- 100% lecturas admin a DX/medicacion/notas generan entrada en `admin_lookups`.
+- 100% reservas (con o sin bono) funcionan.
+- 100% UPSERTs de nota admin no duplican.
+- RLS paciente: no ve DX, medicacion ni notas del terapeuta (verificado con
+  JWT real bajo `SET ROLE authenticated`).

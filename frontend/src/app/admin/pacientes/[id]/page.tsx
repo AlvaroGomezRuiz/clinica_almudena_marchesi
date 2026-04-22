@@ -126,10 +126,65 @@ export default async function FichaPacientePage({
   if (!paciente) notFound();
 
   const citas = ((citasRes.data as CitaRow[] | null) ?? []).slice();
-  const diagnosticos = (diagRes.data as PacienteDiagnostico[] | null) ?? [];
-  const medicaciones = (medRes.data as PacienteMedicacion[] | null) ?? [];
+  const diagnosticosRows = (diagRes.data as PacienteDiagnostico[] | null) ?? [];
+  const medicacionesRows = (medRes.data as PacienteMedicacion[] | null) ?? [];
   const adjuntos = (adjRes.data as PacienteAdjunto[] | null) ?? [];
   const lookups = (lookupRes.data as AdminLookup[] | null) ?? [];
+
+  // Descifrado bulk de DX + medicación (titulo/notas cifrados en ciphertext).
+  // Genera UNA entrada de auditoría `bulk_export/ficha_admin_ui_dx_med`.
+  type DxMedBulk = {
+    diagnosticos: readonly {
+      id: string;
+      titulo: string | null;
+      notas: string | null;
+      cie_code: string | null;
+      severidad: 'leve' | 'moderado' | 'severo' | null;
+      estado: string | null;
+      fecha_inicio: string | null;
+      fecha_fin: string | null;
+      activo: boolean;
+      created_at: string;
+    }[];
+    medicacion: readonly {
+      id: string;
+      nombre: string;
+      dosis: string | null;
+      frecuencia: string | null;
+      via: string | null;
+      prescrita_por: string | null;
+      notas: string | null;
+      fecha_inicio: string | null;
+      fecha_fin: string | null;
+      activo: boolean;
+      created_at: string;
+    }[];
+  };
+  const { data: dxMedBulk } = await (supabase.rpc as unknown as (
+    fn: 'paciente_dx_med_bulk_descifrar',
+    args: { p_paciente_id: string }
+  ) => Promise<{ data: DxMedBulk | null; error: { message: string } | null }>)(
+    'paciente_dx_med_bulk_descifrar',
+    { p_paciente_id: paciente.id }
+  );
+
+  // Fusiona columnas plaintext (null tras 0034) con los valores descifrados
+  // para mantener compatibilidad con los componentes hijos.
+  const dxDescifradoById = new Map(
+    (dxMedBulk?.diagnosticos ?? []).map((d) => [d.id, d])
+  );
+  const medDescifradoById = new Map(
+    (dxMedBulk?.medicacion ?? []).map((m) => [m.id, m])
+  );
+  const diagnosticos: PacienteDiagnostico[] = diagnosticosRows.map((d) => ({
+    ...d,
+    titulo: dxDescifradoById.get(d.id)?.titulo ?? d.titulo ?? null,
+    descripcion: dxDescifradoById.get(d.id)?.notas ?? d.descripcion ?? null,
+  }));
+  const medicaciones: PacienteMedicacion[] = medicacionesRows.map((m) => ({
+    ...m,
+    notas: medDescifradoById.get(m.id)?.notas ?? m.notas ?? null,
+  }));
 
   // Historia clínica (timeline editorial inspirada en el prototipo).
   const { data: sesionesData } = await supabase

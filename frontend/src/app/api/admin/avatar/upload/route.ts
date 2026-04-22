@@ -35,7 +35,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   /* Rate-limit: 10 cambios de avatar/hora. */
-  const rate = enforceRateLimit({
+  const rate = await enforceRateLimit({
     key: `avatar:${user.id}`,
     max: 10,
     windowMs: 60 * 60_000,

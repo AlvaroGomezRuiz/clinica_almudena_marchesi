@@ -520,6 +520,18 @@ export interface Database {
         }>;
         Relationships: [];
       };
+      v_mensajes_chat: {
+        Row: WithIndexSignature<{
+          id: string;
+          conversation_id: string;
+          sender_user_id: string;
+          body: string | null;
+          encryption_version: string;
+          read_at: string | null;
+          created_at: string;
+        }>;
+        Relationships: [];
+      };
     };
     Functions: {
       is_admin: { Args: Record<string, never>; Returns: boolean };
@@ -538,10 +550,28 @@ export interface Database {
       };
       chat_mi_conversacion: { Args: Record<string, never>; Returns: string };
       chat_enviar_mensaje: {
-        Args: { p_conversacion_id: string; p_body: string };
-        Returns: Array<{ mensaje_id: string }>;
+        Args: { p_conversacion_id: string; p_contenido: string };
+        Returns: Array<{
+          id: string;
+          conversation_id: string;
+          sender_user_id: string;
+          body: string;
+          read_at: string | null;
+          created_at: string;
+        }>;
       };
       chat_marcar_leidos: { Args: { p_conversacion_id: string }; Returns: boolean };
+      chat_descifrar_mensaje: {
+        Args: { p_id: string };
+        Returns: Array<{
+          id: string;
+          conversation_id: string;
+          sender_user_id: string;
+          body: string;
+          read_at: string | null;
+          created_at: string;
+        }>;
+      };
       registrar_consulta_sensible: {
         Args: {
           p_paciente_id: string;
@@ -656,6 +686,36 @@ export interface Database {
           p_justificacion: string | null;
         };
         Returns: string | null;
+      };
+      paciente_dx_med_bulk_descifrar: {
+        Args: { p_paciente_id: string };
+        Returns: {
+          diagnosticos: Array<{
+            id: string;
+            titulo: string | null;
+            notas: string | null;
+            cie_code: string | null;
+            severidad: 'leve' | 'moderado' | 'severo' | null;
+            estado: string | null;
+            fecha_inicio: string | null;
+            fecha_fin: string | null;
+            activo: boolean;
+            created_at: string;
+          }>;
+          medicacion: Array<{
+            id: string;
+            nombre: string;
+            dosis: string | null;
+            frecuencia: string | null;
+            via: string | null;
+            prescrita_por: string | null;
+            notas: string | null;
+            fecha_inicio: string | null;
+            fecha_fin: string | null;
+            activo: boolean;
+            created_at: string;
+          }>;
+        };
       };
     };
     Enums: {
