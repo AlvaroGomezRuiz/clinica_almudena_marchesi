@@ -17,6 +17,7 @@
 import { redirect } from 'next/navigation';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { validateDniNie } from '@/lib/validation/dni';
 
 interface LoginResult {
   ok: true;
@@ -101,29 +102,66 @@ export type SignupResult =
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const NAME_RE = /^[\p{L}\p{M}'´\-\s.]{2,80}$/u;
 
+/**
+ * La contraseña debe cumplir la política de seguridad (OWASP para datos
+ * clínicos): ≥12 chars, 1 mayús, 1 minús, 1 dígito, 1 símbolo.
+ */
+const PW_MIN = 12;
+const PW_RULES = [
+  { re: /[a-z]/, msg: 'al menos 1 minúscula' },
+  { re: /[A-Z]/, msg: 'al menos 1 mayúscula' },
+  { re: /[0-9]/, msg: 'al menos 1 número' },
+  { re: /[!-/:-@[-`{-~]/, msg: 'al menos 1 símbolo' },
+] as const;
+
+function validatePasswordStrength(pw: string): string | null {
+  if (pw.length < PW_MIN) return `La contraseña debe tener al menos ${PW_MIN} caracteres.`;
+  for (const rule of PW_RULES) {
+    if (!rule.re.test(pw)) return `La contraseña debe contener ${rule.msg}.`;
+  }
+  return null;
+}
+
 export async function signupAction(formData: FormData): Promise<SignupResult> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
   const passwordConfirm = String(formData.get('password_confirm') ?? '');
-  const displayName = String(formData.get('display_name') ?? '').trim();
+  const givenName = String(formData.get('given_name') ?? '').trim();
+  const familyName = String(formData.get('family_name') ?? '').trim();
+  // `dni_nie` viene ya normalizado por el cliente; aceptamos `dni_nie_raw` como fallback.
+  const dniRaw =
+    String(formData.get('dni_nie') ?? '').trim() ||
+    String(formData.get('dni_nie_raw') ?? '').trim();
   const rgpd = formData.get('rgpd') === 'on';
   const honeypot = String(formData.get('company') ?? '').trim();
 
   if (honeypot) return { ok: false, message: 'Solicitud no válida.' };
 
-  if (!EMAIL_RE.test(email)) return { ok: false, message: 'Introduce un email válido.' };
-  if (!NAME_RE.test(displayName)) {
-    return { ok: false, message: 'Nombre entre 2 y 80 caracteres, sin símbolos extraños.' };
+  if (!EMAIL_RE.test(email)) {
+    return { ok: false, message: 'Introduce un email válido.' };
   }
-  if (password.length < 12) {
-    return { ok: false, message: 'La contraseña debe tener al menos 12 caracteres.' };
+  if (!NAME_RE.test(givenName) || givenName.length < 2 || givenName.length > 60) {
+    return { ok: false, message: 'Nombre entre 2 y 60 caracteres, sin símbolos extraños.' };
   }
+  if (!NAME_RE.test(familyName) || familyName.length < 2 || familyName.length > 80) {
+    return { ok: false, message: 'Apellidos entre 2 y 80 caracteres, sin símbolos extraños.' };
+  }
+
+  const dniCheck = validateDniNie(dniRaw);
+  if (!dniCheck.ok || !dniCheck.normalized) {
+    return { ok: false, message: dniCheck.error ?? 'DNI/NIE no válido.' };
+  }
+
+  const pwError = validatePasswordStrength(password);
+  if (pwError) return { ok: false, message: pwError };
   if (password !== passwordConfirm) {
     return { ok: false, message: 'Las contraseñas no coinciden.' };
   }
   if (!rgpd) {
     return { ok: false, message: 'Debes aceptar la política de privacidad.' };
   }
+
+  const displayName = `${givenName} ${familyName}`.slice(0, 140);
 
   const supabase = createServerClient();
 
@@ -135,6 +173,12 @@ export async function signupAction(formData: FormData): Promise<SignupResult> {
       emailRedirectTo: `${appUrl}/auth/callback?type=signup`,
       data: {
         display_name: displayName,
+        given_name: givenName,
+        family_name: familyName,
+        // El DNI se elimina del user_metadata en /auth/callback tras crear la ficha
+        // cifrada. No se almacena en texto plano más allá de la ventana de
+        // verificación del email (≤ 24 h).
+        dni_nie_temp: dniCheck.normalized,
         role: 'paciente',
         rgpd_accepted_at: new Date().toISOString(),
         needs_clinical_intake: true,
@@ -143,7 +187,8 @@ export async function signupAction(formData: FormData): Promise<SignupResult> {
   });
 
   if (error) {
-    // Evitamos leak de "email ya existe" (enumeration): mensaje genérico.
+    // Evitamos leak de "email ya existe" (enumeration): respondemos como si fuera OK
+    // y dejamos que el usuario intente verificar o use "olvidé mi contraseña".
     const sensitive =
       /already registered|user already exists|email.*already/i.test(error.message);
     if (sensitive) {

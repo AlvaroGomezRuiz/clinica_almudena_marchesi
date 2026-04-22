@@ -2,23 +2,74 @@
 
 /**
  * Formulario de auto-registro de paciente.
- * - Valida client-side mínima (UX), server-side completa.
- * - Honeypot anti-bot (`company` oculto).
- * - Tras éxito, muestra aviso de verificación.
+ *
+ * Campos (los 5 que realmente identifican legalmente al paciente):
+ *   - Nombre
+ *   - Apellidos
+ *   - Email
+ *   - DNI / NIE (validado con letra de control oficial)
+ *   - Contraseña (≥12 chars + may/min/num/símbolo) + confirmación
+ *   - Consentimiento RGPD
+ *
+ * El resto de información clínica (motivo, medicación, etc.) se rellena
+ * después, desde el portal, una vez verificada la cuenta.
+ *
+ * Flujo post-submit:
+ *   1. signupAction → supabase.auth.signUp con password + user_metadata.
+ *   2. Supabase manda email de verificación con link.
+ *   3. Click → /auth/callback?type=signup → crea ficha cifrada (RPC).
+ *   4. Sesión activa → /portal.
  */
 
 import { useState, useTransition } from 'react';
 
 import { signupAction, type SignupResult } from '@/services/auth/actions';
+import { validateDniNie } from '@/lib/validation/dni';
+import { PasswordInput, isPasswordStrong } from './PasswordInput';
 
 export function SignupForm(): JSX.Element {
   const [result, setResult] = useState<SignupResult | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // Campos controlados (necesario para los componentes de password y feedback DNI).
+  const [givenName, setGivenName] = useState('');
+  const [familyName, setFamilyName] = useState('');
+  const [email, setEmail] = useState('');
+  const [dni, setDni] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+
+  const dniCheck = dni.length >= 5 ? validateDniNie(dni) : null;
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>): void {
     e.preventDefault();
+    setClientError(null);
+
+    if (givenName.trim().length < 2) {
+      setClientError('Introduce tu nombre.');
+      return;
+    }
+    if (familyName.trim().length < 2) {
+      setClientError('Introduce tus apellidos.');
+      return;
+    }
+    const dniResult = validateDniNie(dni);
+    if (!dniResult.ok) {
+      setClientError(dniResult.error ?? 'DNI/NIE no válido.');
+      return;
+    }
+    if (!isPasswordStrong(password)) {
+      setClientError('La contraseña no cumple la política de seguridad.');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setClientError('Las contraseñas no coinciden.');
+      return;
+    }
+
     const fd = new FormData(e.currentTarget);
+    fd.set('dni_nie', dniResult.normalized ?? dni.trim().toUpperCase());
     startTransition(async () => {
       const res = await signupAction(fd);
       setResult(res);
@@ -52,6 +103,11 @@ export function SignupForm(): JSX.Element {
     );
   }
 
+  const inputCls =
+    'w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none disabled:opacity-60';
+  const labelCls =
+    'block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium';
+
   return (
     <form onSubmit={onSubmit} className="space-y-6" noValidate>
       {/* Honeypot — oculto a usuarios, visible a bots */}
@@ -64,32 +120,49 @@ export function SignupForm(): JSX.Element {
         className="hidden"
       />
 
-      <div>
-        <label
-          htmlFor="display_name"
-          className="block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium"
-        >
-          Nombre completo
-        </label>
-        <input
-          id="display_name"
-          name="display_name"
-          type="text"
-          autoComplete="name"
-          required
-          minLength={2}
-          maxLength={80}
-          placeholder="María Pérez García"
-          disabled={pending}
-          className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="given_name" className={labelCls}>
+            Nombre
+          </label>
+          <input
+            id="given_name"
+            name="given_name"
+            type="text"
+            autoComplete="given-name"
+            required
+            minLength={2}
+            maxLength={60}
+            value={givenName}
+            onChange={(e) => setGivenName(e.target.value)}
+            placeholder="María"
+            disabled={pending}
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label htmlFor="family_name" className={labelCls}>
+            Apellidos
+          </label>
+          <input
+            id="family_name"
+            name="family_name"
+            type="text"
+            autoComplete="family-name"
+            required
+            minLength={2}
+            maxLength={80}
+            value={familyName}
+            onChange={(e) => setFamilyName(e.target.value)}
+            placeholder="Pérez García"
+            disabled={pending}
+            className={inputCls}
+          />
+        </div>
       </div>
 
       <div>
-        <label
-          htmlFor="email"
-          className="block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium"
-        >
+        <label htmlFor="email" className={labelCls}>
           Correo electrónico
         </label>
         <input
@@ -98,65 +171,78 @@ export function SignupForm(): JSX.Element {
           type="email"
           autoComplete="email"
           required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="tu@correo.com"
           disabled={pending}
-          className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none"
+          className={inputCls}
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <div>
-          <label
-            htmlFor="password"
-            className="block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium"
-          >
-            Contraseña
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              required
-              minLength={12}
-              placeholder="Mín. 12 caracteres"
-              disabled={pending}
-              className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 pr-12 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none"
-            />
-            <button
-              type="button"
-              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-outline/60 hover:text-on-surface"
-            >
-              <span className="material-symbols-outlined text-xl">
-                {showPassword ? 'visibility_off' : 'visibility'}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="password_confirm"
-            className="block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium"
-          >
-            Repetir contraseña
-          </label>
-          <input
-            id="password_confirm"
-            name="password_confirm"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            required
-            minLength={12}
-            placeholder="Repite la contraseña"
-            disabled={pending}
-            className="w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none"
-          />
-        </div>
+      <div>
+        <label htmlFor="dni_nie" className={labelCls}>
+          DNI / NIE
+        </label>
+        <input
+          id="dni_nie"
+          name="dni_nie_raw"
+          type="text"
+          autoComplete="off"
+          required
+          maxLength={12}
+          value={dni}
+          onChange={(e) => setDni(e.target.value.toUpperCase())}
+          placeholder="12345678Z"
+          aria-invalid={dniCheck ? !dniCheck.ok : undefined}
+          aria-describedby="dni-hint"
+          disabled={pending}
+          className={inputCls}
+        />
+        <p
+          id="dni-hint"
+          className={`mt-2 font-body text-[0.78rem] ${
+            dniCheck?.ok
+              ? 'text-emerald-600'
+              : dniCheck && !dniCheck.ok
+                ? 'text-[#b2675e]'
+                : 'text-ink-muted'
+          }`}
+        >
+          {dniCheck?.ok
+            ? `${dniCheck.kind === 'nie' ? 'NIE' : 'DNI'} válido`
+            : dniCheck?.error
+              ? dniCheck.error
+              : 'Se usa para identificarte en la historia clínica. Formato: 8 dígitos + letra (DNI) o X/Y/Z + 7 dígitos + letra (NIE).'}
+        </p>
       </div>
+
+      <PasswordInput
+        id="password"
+        name="password"
+        value={password}
+        onChange={setPassword}
+        disabled={pending}
+        autoComplete="new-password"
+        label="Contraseña"
+      />
+
+      <PasswordInput
+        id="password_confirm"
+        name="password_confirm"
+        value={passwordConfirm}
+        onChange={setPasswordConfirm}
+        disabled={pending}
+        autoComplete="new-password"
+        label="Repetir contraseña"
+        placeholder="Repite la contraseña"
+        showStrength={false}
+      />
+
+      {passwordConfirm.length > 0 && password !== passwordConfirm ? (
+        <p className="-mt-3 font-body text-[0.8rem] text-[#b2675e]">
+          Las contraseñas no coinciden.
+        </p>
+      ) : null}
 
       <label className="flex items-start gap-3 text-[0.85rem] text-ink-soft">
         <input
@@ -168,12 +254,23 @@ export function SignupForm(): JSX.Element {
         />
         <span className="font-body leading-relaxed">
           Acepto la{' '}
-          <a href="/privacidad" className="text-ink underline underline-offset-4">
+          <a
+            href="/privacidad"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-ink underline underline-offset-4"
+          >
             política de privacidad
           </a>
           {' y el tratamiento de mis datos con fines clínicos, según la LOPDGDD y el RGPD.'}
         </span>
       </label>
+
+      {clientError ? (
+        <p role="alert" className="font-body text-[0.85rem] text-[#b2675e]">
+          {clientError}
+        </p>
+      ) : null}
 
       {result && !result.ok ? (
         <p role="alert" className="font-body text-[0.85rem] text-[#b2675e]">
