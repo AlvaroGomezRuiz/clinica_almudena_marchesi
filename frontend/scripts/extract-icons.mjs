@@ -157,6 +157,22 @@ const SAFE = [
   // Layout / estructura
   'view_week', 'grid_view', 'diversity_3', 'auto_awesome', 'auto_awesome_motion',
   'picture_as_pdf',
+  // Estados on/off (radio, checkbox, toggle) — usados en PasswordInput,
+  // MarcarCompletadoButton, TogglePrefs, etc. Bugfix 22-abr-2026.
+  'radio_button_unchecked', 'radio_button_checked',
+  'check_box', 'check_box_outline_blank', 'indeterminate_check_box',
+  'toggle_on', 'toggle_off',
+  // Reset password / recuperación
+  'mark_email_read', 'mail_lock', 'refresh',
+  // Grabación audio (FASE 4)
+  'mic', 'mic_off', 'graphic_eq', 'play_circle', 'pause_circle', 'stop_circle',
+  'fiber_manual_record',
+  // Modo claro/oscuro
+  'brightness_auto', 'nightlight', 'wb_sunny',
+  // Acciones rápidas admin
+  'add_card', 'euro_symbol', 'currency_exchange', 'hotel_class',
+  // Avatar upload
+  'add_a_photo', 'photo_library', 'image',
 ];
 for (const g of SAFE) icons.add(g);
 

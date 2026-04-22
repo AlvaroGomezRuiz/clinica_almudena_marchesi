@@ -19,6 +19,8 @@ export interface BonoConfigItem {
   readonly precio_centimos: number;
   readonly validez_dias: number | null;
   readonly destacado: boolean;
+  /** Presente cuando el catálogo incluye servicio (agrupar UI individual/pareja). */
+  readonly servicio_id?: string;
 }
 
 interface Props {

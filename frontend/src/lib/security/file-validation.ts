@@ -18,7 +18,11 @@ export type AllowedFileKind =
   | 'heic'
   | 'pdf'
   | 'gif'
-  | 'avif';
+  | 'avif'
+  | 'webm'
+  | 'ogg'
+  | 'mpeg'
+  | 'm4a';
 
 interface Signature {
   kind: AllowedFileKind;
@@ -39,6 +43,12 @@ const SIGNATURES: readonly Signature[] = [
   /* HEIC/HEIF/AVIF usan ISOBMFF: bytes 4-7 son "ftyp", 8-11 indica sub-tipo. */
   { kind: 'heic', offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] },
   { kind: 'avif', offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] },
+  /* WebM / Matroska (EBML) */
+  { kind: 'webm', offset: 0, bytes: [0x1a, 0x45, 0xdf, 0xa3] },
+  /* Ogg (OggS) */
+  { kind: 'ogg', offset: 0, bytes: [0x4f, 0x67, 0x67, 0x53] },
+  /* ISO base media (MP4 / M4A) — requiere comprobación de ftyp (ver detectFileKind) */
+  { kind: 'm4a', offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] },
 ];
 
 function matchesSignature(buf: Uint8Array, sig: Signature): boolean {
@@ -83,9 +93,29 @@ export function detectFileKind(
         if (['avif', 'avis'].includes(sub)) return 'avif';
         continue;
       }
+      if (sig.kind === 'm4a') {
+        const sub = readSubType();
+        /* Candidatos audio/vídeo en contenedor ISOBMFF; aceptamos marcas de audio típicas. */
+        if (['M4A ', 'M4B ', 'mp42'].includes(sub)) {
+          return 'm4a';
+        }
+        continue;
+      }
       return sig.kind;
     }
   }
+
+  /* MPEG-1/2 layer audio (MP3) — sync 0xFF y siguiente byte con bits altos 111xxxxx. */
+  if (allowed.includes('mpeg') && head.length >= 2) {
+    if (head[0] === 0xff && (head[1] & 0xe0) === 0xe0) {
+      return 'mpeg';
+    }
+    /* ID3v2 (metadatos delante de frames MP3) */
+    if (head[0] === 0x49 && head[1] === 0x44 && head[2] === 0x33) {
+      return 'mpeg';
+    }
+  }
+
   return null;
 }
 
@@ -111,6 +141,18 @@ export function kindFromMime(mime: string): AllowedFileKind | null {
       return 'gif';
     case 'application/pdf':
       return 'pdf';
+    case 'audio/webm':
+      return 'webm';
+    case 'audio/ogg':
+    case 'application/ogg':
+      return 'ogg';
+    case 'audio/mpeg':
+    case 'audio/mp3':
+      return 'mpeg';
+    case 'audio/mp4':
+    case 'audio/x-m4a':
+    case 'audio/aac':
+      return 'm4a';
     default:
       return null;
   }

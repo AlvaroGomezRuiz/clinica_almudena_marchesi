@@ -26,6 +26,7 @@ import {
   type KeyboardEvent,
 } from 'react';
 
+import AudioRecorderButton from '@/components/chat/AudioRecorderButton';
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { marcarLeidosAction, sendMensajeAction } from '@/services/mensajes/actions';
@@ -452,7 +453,18 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
           <ul className="mt-2 flex flex-col gap-1.5">
             {adjuntos.map((a) => (
               <li key={a.id}>
-                {a.tipo === 'imagen' && a.signed_url ? (
+                {a.tipo === 'audio' && a.signed_url ? (
+                  <div className="w-full min-w-0 max-w-[min(100%,280px)]">
+                    <audio
+                      controls
+                      preload="metadata"
+                      src={a.signed_url}
+                      className="h-9 w-full"
+                    >
+                      {a.nombre}
+                    </audio>
+                  </div>
+                ) : a.tipo === 'imagen' && a.signed_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <a href={a.signed_url} target="_blank" rel="noreferrer">
                     <img

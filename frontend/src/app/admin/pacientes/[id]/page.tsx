@@ -10,9 +10,10 @@ import {
   SurfaceCard,
   SectionDivider,
 } from '@/components/portal-shell/ui';
-import SensitiveField from '@/components/admin/ficha/SensitiveField';
 import EditableSensitiveField from '@/components/admin/ficha/EditableSensitiveField';
-import NotaSesionAdminEditor from '@/components/admin/ficha/NotaSesionAdminEditor';
+import FichaSectionEditGate from '@/components/admin/ficha/FichaSectionEditGate';
+import HistorialCitasAdminLista from '@/components/admin/ficha/HistorialCitasAdminLista';
+import SensitiveField from '@/components/admin/ficha/SensitiveField';
 import DiagnosticosCard from '@/components/admin/ficha/DiagnosticosCard';
 import MedicacionCard from '@/components/admin/ficha/MedicacionCard';
 import TagsEditor from '@/components/admin/ficha/TagsEditor';
@@ -64,14 +65,6 @@ interface CitaRow {
   inicio: string;
   estado: string;
   servicio_nombre: string;
-}
-
-interface HistorialSesionRow {
-  readonly id: string;
-  readonly cita_id: string | null;
-  readonly estado_emocional: string | null;
-  readonly fecha_registro: string;
-  readonly activo: boolean;
 }
 
 export default async function FichaPacientePage({
@@ -186,16 +179,6 @@ export default async function FichaPacientePage({
     notas: medDescifradoById.get(m.id)?.notas ?? m.notas ?? null,
   }));
 
-  // Historia clínica (timeline editorial inspirada en el prototipo).
-  const { data: sesionesData } = await supabase
-    .from('historial_sesiones')
-    .select('id, cita_id, estado_emocional, fecha_registro, activo')
-    .eq('paciente_id', id)
-    .eq('activo', true)
-    .order('fecha_registro', { ascending: false })
-    .limit(20);
-  const sesiones = (sesionesData as HistorialSesionRow[] | null) ?? [];
-
   // Mapa cita_id → notaId de `citas_notas_paciente`. Solo metadata, sin
   // descifrar. El admin expande una nota y se descifra on-demand
   // (genera 1 entrada `lectura_nota_admin` en admin_lookups).
@@ -207,6 +190,8 @@ export default async function FichaPacientePage({
   for (const n of (notasCitaData as { id: string; cita_id: string }[] | null) ?? []) {
     notaIdByCita.set(n.cita_id, n.id);
   }
+  const notaIdByCitaRecord: Readonly<Record<string, string>> =
+    Object.fromEntries(notaIdByCita.entries());
 
   // Pre-descifrado de la ficha completa (una sola RPC + una sola
   // entrada de auditoría `acceso_ficha_completa` en admin_lookups).
@@ -242,9 +227,6 @@ export default async function FichaPacientePage({
       .join('') || 'P';
 
   const sesionesCompletadas = citas.filter((c) => c.estado === 'completada').length;
-  const proximaCita = citas.find(
-    (c) => new Date(c.inicio).getTime() > Date.now() && c.estado === 'confirmada'
-  );
   const ultimaSesion = citas.find((c) => c.estado === 'completada');
 
   // Edad calculada desde fecha_nacimiento.
@@ -319,8 +301,8 @@ export default async function FichaPacientePage({
         />
       </section>
 
-      {/* ─── Cabecera identidad + métricas rápidas ─── */}
-      <section className="grid gap-6 lg:grid-cols-[auto_1fr_1fr_1fr] mb-6 portal-rise">
+      {/* ─── Identidad (métricas duplicadas eliminadas: ya están en chips de cabecera) ─── */}
+      <section className="mb-6 flex flex-wrap items-center gap-6 portal-rise">
         <div className="flex items-center gap-4">
           <div
             className="flex h-16 w-16 items-center justify-center rounded-2xl font-display text-[1.5rem] text-canvas ring-1 ring-inset ring-ink/10 dark:text-ink dark:ring-white/10"
@@ -351,27 +333,6 @@ export default async function FichaPacientePage({
             </p>
           </div>
         </div>
-
-        <MetricPill
-          icon="event_available"
-          label="Próxima cita"
-          value={
-            proximaCita
-              ? format(new Date(proximaCita.inicio), "d MMM · HH:mm", { locale: es })
-              : 'Sin cita agendada'
-          }
-        />
-        <MetricPill
-          icon="task_alt"
-          label="Sesiones"
-          value={`${sesionesCompletadas} completadas`}
-        />
-        <MetricPill
-          icon="verified_user"
-          label="RGPD"
-          value={paciente.consentimiento_rgpd ? 'Firmado' : 'Pendiente'}
-          tone={paciente.consentimiento_rgpd ? 'positive' : 'warning'}
-        />
       </section>
 
       {/* ─── Grid principal: sensibles + clínico ─── */}
@@ -379,21 +340,17 @@ export default async function FichaPacientePage({
         {/* Col izquierda: datos personales sensibles */}
         <div className="lg:col-span-2 space-y-6">
           <SurfaceCard>
-            <div className="mb-2 flex items-start justify-between">
-              <div>
-                <h2 className="font-display text-[1.25rem] italic text-ink dark:text-white">
-                  Datos personales
-                </h2>
-                <p className="font-body text-[0.72rem] text-ink-muted dark:text-white/55">
-                  Pulsar el ojo registra el acceso en admin_lookups (RGPD art. 30).
-                </p>
+            <FichaSectionEditGate
+              title="Datos personales"
+              description="Pulsar el ojo registra el acceso en admin_lookups (RGPD art. 30). Usa “Editar sección” para mostrar los lápices por campo."
+            >
+              <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+                <Chip tone="info">
+                  {lookups.length} acceso{lookups.length === 1 ? '' : 's'}
+                </Chip>
               </div>
-              <Chip tone="info">
-                {lookups.length} acceso{lookups.length === 1 ? '' : 's'}
-              </Chip>
-            </div>
 
-            <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <EditableSensitiveField
                 label="DNI / NIE"
                 pacienteId={paciente.id}
@@ -454,6 +411,7 @@ export default async function FichaPacientePage({
                 </dd>
               </div>
             </dl>
+            </FichaSectionEditGate>
           </SurfaceCard>
 
           <SurfaceCard>
@@ -481,13 +439,11 @@ export default async function FichaPacientePage({
           </SurfaceCard>
 
           <SurfaceCard>
-            <h2 className="font-display text-[1.15rem] italic text-ink dark:text-white mb-1">
-              Información clínica sensible
-            </h2>
-            <p className="font-body text-[0.72rem] text-ink-muted dark:text-white/55 mb-4">
-              Campos cifrados. Pulsa el ojo (queda auditado) para revelarlos.
-            </p>
-            <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <FichaSectionEditGate
+              title="Información clínica sensible"
+              description="Campos cifrados. Pulsa el ojo (queda auditado) para revelarlos. “Editar sección” activa los lápices por campo."
+            >
+              <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <EditableSensitiveField
                 label="Alergias"
                 pacienteId={paciente.id}
@@ -524,6 +480,7 @@ export default async function FichaPacientePage({
                 </dd>
               </div>
             </dl>
+            </FichaSectionEditGate>
           </SurfaceCard>
         </div>
 
@@ -663,94 +620,15 @@ export default async function FichaPacientePage({
             </p>
           </div>
           <span className="font-body text-[0.7rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
-            {sesiones.length} sesión{sesiones.length === 1 ? '' : 'es'}
+            {citas.length} cita{citas.length === 1 ? '' : 's'}
           </span>
         </div>
 
-        {sesiones.length === 0 && citas.length === 0 ? (
-          <p className="py-8 text-center font-body text-[0.88rem] text-ink-soft dark:text-white/55">
-            Todavía no hay sesiones registradas para este paciente.
-          </p>
-        ) : (
-          <ol className="relative space-y-6 pl-8">
-            <span
-              aria-hidden="true"
-              className="absolute left-[3px] top-2 bottom-2 w-px bg-ink/15 dark:bg-white/15"
-            />
-            {citas.slice(0, 12).map((c, idx) => {
-              const active = idx === 0;
-              const fecha = new Date(c.inicio);
-              const modalidad = c.servicio_nombre ?? 'Sesión clínica';
-              return (
-                <li key={c.id} className="relative">
-                  <span
-                    aria-hidden="true"
-                    className={`absolute -left-[33px] top-3 h-2.5 w-2.5 rounded-full ring-4 ring-canvas dark:ring-[#1a1a1a] ${
-                      active ? 'bg-primary' : 'bg-ink/30 dark:bg-white/30'
-                    }`}
-                  />
-                  <div
-                    className={`rounded-3xl p-6 transition ${
-                      active
-                        ? 'bg-white/80 ring-1 ring-inset ring-ink/10 dark:bg-white/[0.05] dark:ring-white/10'
-                        : 'bg-white/40 dark:bg-white/[0.025]'
-                    }`}
-                  >
-                    <div className="mb-3 flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
-                          {modalidad}
-                        </h3>
-                        <div className="mt-1 flex items-center gap-2 font-body text-[0.7rem] font-bold uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
-                          <span>
-                            {format(fecha, "d MMMM yyyy", { locale: es })}
-                          </span>
-                          <span aria-hidden="true">·</span>
-                          <span>
-                            {format(fecha, 'HH:mm', { locale: es })}
-                          </span>
-                          <span aria-hidden="true">·</span>
-                          <span>{c.estado}</span>
-                        </div>
-                      </div>
-                      <span
-                        className={`font-body text-[0.75rem] font-bold tracking-tight ${
-                          active
-                            ? 'text-primary dark:text-primary-fixed-dim'
-                            : 'text-ink-muted dark:text-white/45'
-                        }`}
-                      >
-                        #{citas.length - idx}
-                      </span>
-                    </div>
-                    {/* Las notas clínicas están cifradas en reposo y solo
-                         se descifran al expandir el editor (una entrada
-                         `lectura_nota_admin` por apertura). */}
-                    {(() => {
-                      const notaId = notaIdByCita.get(c.id) ?? null;
-                      const hasNota = notaId !== null;
-                      return (
-                        <>
-                          <p className="font-body text-[0.82rem] leading-[1.6] text-ink-soft dark:text-white/65">
-                            {hasNota
-                              ? 'Nota clínica cifrada registrada para esta cita.'
-                              : 'Sin nota clínica todavía para esta sesión.'}
-                          </p>
-                          <NotaSesionAdminEditor
-                            citaId={c.id}
-                            pacienteId={paciente.id}
-                            notaId={notaId}
-                            hasNota={hasNota}
-                          />
-                        </>
-                      );
-                    })()}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        <HistorialCitasAdminLista
+          pacienteId={paciente.id}
+          citas={citas}
+          notaIdByCita={notaIdByCitaRecord}
+        />
       </SurfaceCard>
 
       <SectionDivider />
@@ -777,37 +655,3 @@ function HeaderChip({
   );
 }
 
-function MetricPill({
-  icon,
-  label,
-  value,
-  tone = 'neutral',
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  tone?: 'neutral' | 'positive' | 'warning';
-}): JSX.Element {
-  const toneCls =
-    tone === 'positive'
-      ? 'text-primary dark:text-white'
-      : tone === 'warning'
-        ? 'text-[#8a6530] dark:text-[#e9c88a]'
-        : 'text-ink dark:text-white';
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white/50 px-4 py-3 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10">
-      <span
-        className="material-symbols-outlined text-[1.4rem] text-ink-muted dark:text-white/55"
-        aria-hidden="true"
-      >
-        {icon}
-      </span>
-      <div>
-        <p className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
-          {label}
-        </p>
-        <p className={`font-display text-[0.92rem] ${toneCls}`}>{value}</p>
-      </div>
-    </div>
-  );
-}

@@ -174,7 +174,22 @@ export default async function PortalRecursosPage({
             description="Cuando Almudena te comparta material específico, aparecerá aquí."
           />
         ) : (
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="space-y-6">
+            <div
+              className="rounded-3xl border border-ink/5 bg-gradient-to-br from-white/90 to-white/40 p-5 shadow-[0_8px_30px_-18px_rgba(28,28,25,0.25)] dark:border-white/10 dark:from-white/[0.07] dark:to-white/[0.02]"
+              role="region"
+              aria-label="Lectura recomendada"
+            >
+              <p className="font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/50">
+                Asignado para ti
+              </p>
+              <p className="mt-1 font-body text-[0.9rem] leading-relaxed text-ink-soft dark:text-white/70">
+                El material más reciente va primero. Marca &quot;Completado&quot; cuando
+                lo hayas trabajado; puedes abrir o descargar cada recurso con el botón
+                principal.
+              </p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
             {asignaciones
               .filter((a) => a.recurso)
               .map((a) => {
@@ -256,6 +271,7 @@ export default async function PortalRecursosPage({
                   </SurfaceCard>
                 );
               })}
+          </div>
           </div>
         )
       ) : null}

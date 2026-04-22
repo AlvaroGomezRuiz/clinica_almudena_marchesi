@@ -15,7 +15,8 @@ interface Props {
   readonly disabled?: boolean;
 }
 
-const ACCEPT = 'image/png,image/jpeg,image/webp,image/heic,application/pdf';
+const ACCEPT =
+  'image/png,image/jpeg,image/webp,image/heic,application/pdf,audio/webm,audio/ogg,audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a';
 
 export default function ChatAttachButton({
   conversationId,

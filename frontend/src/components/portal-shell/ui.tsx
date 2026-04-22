@@ -271,7 +271,7 @@ export function Button({
         ? 'bg-[#b2675e] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_28px_-10px_rgba(178,103,94,0.45)] hover:bg-[#9e5a53]'
         : variant === 'surface'
           ? 'bg-white/75 text-ink ring-1 ring-inset ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_22px_-10px_rgba(75,100,95,0.18)] hover:bg-white backdrop-blur-md dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:hover:bg-white/[0.1]'
-          : 'text-ink-soft hover:text-ink hover:bg-ink/5 ring-1 ring-inset ring-ink/10 hover:ring-ink/20 dark:text-white/70 dark:hover:text-white dark:hover:bg-white/5 dark:ring-white/10 dark:hover:ring-white/20';
+          : 'text-ink-soft hover:text-ink hover:bg-ink/5 ring-1 ring-inset ring-ink/10 hover:ring-ink/20 dark:bg-white/[0.04] dark:text-white/80 dark:hover:text-white dark:hover:bg-white/[0.08] dark:ring-white/15 dark:hover:ring-white/25';
 
   const iconPillCls =
     variant === 'primary'

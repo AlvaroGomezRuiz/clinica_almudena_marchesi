@@ -5,6 +5,7 @@ import Link from 'next/link';
 import BonoCompraCard, {
   type BonoConfigItem,
 } from '@/components/pagos/BonoCompraCard';
+import SesionSueltaInfoCard from '@/components/pagos/SesionSueltaInfoCard';
 import {
   Chip,
   EmptyState,
@@ -51,6 +52,8 @@ interface PagoRow {
 interface ServicioRef {
   readonly id: string;
   readonly nombre: string;
+  readonly precio_centimos: number;
+  readonly activo: boolean;
 }
 
 function euro(c: number): string {
@@ -163,11 +166,14 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
     supabase
       .from('bonos_config')
       .select(
-        'id, nombre, descripcion, sesiones, precio_centimos, validez_dias, destacado, orden'
+        'id, nombre, descripcion, servicio_id, sesiones, precio_centimos, validez_dias, destacado, orden'
       )
       .eq('activo', true)
       .order('orden', { ascending: true }),
-    supabase.from('servicios').select('id, nombre'),
+    supabase
+      .from('servicios')
+      .select('id, nombre, precio_centimos, activo')
+      .eq('activo', true),
   ]);
 
   const bonos = (bonosRaw as BonoPacienteRow[] | null) ?? [];
@@ -177,6 +183,23 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
 
   const servicioNombre = (id: string): string =>
     servicios.find((s) => s.id === id)?.nombre ?? 'Servicio';
+
+  const servicioIndividual = servicios.find((s) => s.nombre === 'Sesión individual');
+  const servicioPareja = servicios.find((s) => s.nombre === 'Terapia de pareja');
+
+  const bonosConfigTyped = bonosConfig as (BonoConfigItem & { readonly servicio_id?: string })[];
+  const bonosCatalogoIndividual = bonosConfigTyped.filter((b) => {
+    if (servicioIndividual && b.servicio_id) {
+      return b.servicio_id === servicioIndividual.id;
+    }
+    return /Individual/i.test(b.nombre);
+  });
+  const bonosCatalogoPareja = bonosConfigTyped.filter((b) => {
+    if (servicioPareja && b.servicio_id) {
+      return b.servicio_id === servicioPareja.id;
+    }
+    return /Pareja/i.test(b.nombre) && !/Individual/i.test(b.nombre);
+  });
 
   const bonoActivo = bonos.find(
     (b) =>
@@ -221,29 +244,64 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
         />
       </section>
 
-      <SectionDivider label="Comprar sesiones" />
+      <SectionDivider label="Precio de una sesión suelta" />
+      {servicioIndividual && servicioPareja ? (
+        <div className="mb-8 grid gap-5 md:grid-cols-2">
+          <SesionSueltaInfoCard
+            titulo="Sesión individual"
+            descripcion="Una sesión de terapia individual. Al reservar eliges franja; el pago se realiza con la cita (tarjeta, wallets o métodos habilitados en Stripe)."
+            precioCentimos={servicioIndividual.precio_centimos}
+          />
+          <SesionSueltaInfoCard
+            titulo="Terapia de pareja"
+            descripcion="Sesión para dos personas. Reserva y pago vinculados a la cita, con los mismos métodos de pago seguros."
+            precioCentimos={servicioPareja.precio_centimos}
+          />
+        </div>
+      ) : null}
 
+      <SectionDivider label="Bonos (varias sesiones)" />
       {bonosConfig.length === 0 ? (
         <EmptyState
           icon="card_membership"
           title="Catálogo no disponible"
-          description="Contacta con Almudena si necesitas reservar una sesión."
+          description="Contacta con la consulta si necesitas reservar o comprar un bono."
         />
       ) : (
         <>
           <p className="mb-5 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
-            Pagos seguros con Stripe. Admite tarjeta, Apple Pay, Google Pay, y
-            Klarna en 3 plazos sin intereses para importes elegibles.
+            Pago con Stripe (tarjeta, Apple Pay, Google Pay, Klarna u otros
+            métodos que tengas activos). Los bonos aplican a la modalidad indicada
+            (individual o pareja).
           </p>
-          <div className="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {bonosConfig.map((bono) => (
-              <BonoCompraCard key={bono.id} bono={bono} />
-            ))}
-          </div>
+          {bonosCatalogoIndividual.length > 0 ? (
+            <>
+              <h3 className="mb-3 font-display text-[1.05rem] italic text-ink dark:text-white">
+                Psicoterapia individual
+              </h3>
+              <div className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {bonosCatalogoIndividual.map((bono) => (
+                  <BonoCompraCard key={bono.id} bono={bono} />
+                ))}
+              </div>
+            </>
+          ) : null}
+          {bonosCatalogoPareja.length > 0 ? (
+            <>
+              <h3 className="mb-3 font-display text-[1.05rem] italic text-ink dark:text-white">
+                Terapia de pareja
+              </h3>
+              <div className="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {bonosCatalogoPareja.map((bono) => (
+                  <BonoCompraCard key={bono.id} bono={bono} />
+                ))}
+              </div>
+            </>
+          ) : null}
         </>
       )}
 
-      <SectionDivider label="Mis bonos" />
+      <SectionDivider label="Tus bonos activos" />
 
       {bonos.length === 0 ? (
         <EmptyState

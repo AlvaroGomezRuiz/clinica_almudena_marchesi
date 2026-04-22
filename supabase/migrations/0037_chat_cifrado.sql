@@ -93,6 +93,10 @@ grant select on public.v_mensajes_chat to authenticated;
 -- ---------------------------------------------------------------------------
 -- 3) chat_enviar_mensaje: cifra antes del INSERT, devuelve plaintext.
 -- ---------------------------------------------------------------------------
+-- DROP explícito porque la firma anterior devolvía un tipo distinto (sin body)
+-- y Postgres rechaza CREATE OR REPLACE cuando cambia el return type.
+drop function if exists public.chat_enviar_mensaje(uuid, text);
+
 create or replace function public.chat_enviar_mensaje(
   p_conversacion_id uuid,
   p_contenido       text
@@ -173,6 +177,8 @@ grant execute on function public.chat_enviar_mensaje(uuid, text) to authenticate
 -- ---------------------------------------------------------------------------
 -- 4) RPC descifrador puntual para realtime
 -- ---------------------------------------------------------------------------
+drop function if exists public.chat_descifrar_mensaje(uuid);
+
 create or replace function public.chat_descifrar_mensaje(p_id uuid)
 returns table (
   id              uuid,

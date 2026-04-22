@@ -27,6 +27,8 @@ interface PagoRow {
   fecha_pago: string;
   stripe_payment_intent: string | null;
   stripe_session_id: string | null;
+  metodo: string | null;
+  excluir_de_facturacion: boolean;
 }
 
 /**
@@ -80,15 +82,25 @@ export async function GET(req: NextRequest): Promise<Response> {
     return NextResponse.json({ error: 'fechas_invalidas' }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  // Respeta el flag excluir_de_facturacion por defecto. Si ?incluir_regalos=1
+  // se envían todos (útil para auditorías internas).
+  const incluirRegalos = sp.get('incluir_regalos') === '1';
+
+  let query = supabase
     .from('pagos')
     .select(
-      'id, paciente_id, cita_id, bono_id, importe_centimos, moneda, estado, fecha_pago, stripe_payment_intent, stripe_session_id'
+      'id, paciente_id, cita_id, bono_id, importe_centimos, moneda, estado, fecha_pago, stripe_payment_intent, stripe_session_id, metodo, excluir_de_facturacion'
     )
     .gte('fecha_pago', from.toISOString())
     .lte('fecha_pago', to.toISOString())
     .order('fecha_pago', { ascending: true })
     .limit(5000);
+
+  if (!incluirRegalos) {
+    query = query.eq('excluir_de_facturacion', false);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -101,6 +113,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     'importe_eur',
     'moneda',
     'estado',
+    'metodo',
+    'excluir_facturacion',
     'paciente_id',
     'cita_id',
     'bono_id',
@@ -114,6 +128,8 @@ export async function GET(req: NextRequest): Promise<Response> {
       (r.importe_centimos / 100).toFixed(2),
       r.moneda,
       r.estado,
+      r.metodo ?? 'stripe',
+      r.excluir_de_facturacion ? 'si' : 'no',
       r.paciente_id,
       r.cita_id ?? '',
       r.bono_id ?? '',

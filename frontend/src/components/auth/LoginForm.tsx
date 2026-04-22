@@ -79,18 +79,12 @@ export default function LoginForm({ redirectTo }: LoginFormProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 text-[0.85rem]">
+      <div className="flex flex-wrap items-center justify-start gap-3 text-[0.85rem]">
         <a
-          href="/auth/reset"
+          href="/auth/forgot-password"
           className="text-ink-soft hover:text-ink underline-offset-4 hover:underline font-body"
         >
           ¿Olvidaste tu contraseña?
-        </a>
-        <a
-          href="/registro-paciente"
-          className="text-ink-soft hover:text-ink underline-offset-4 hover:underline font-body"
-        >
-          ¿Primera vez? Crear cuenta
         </a>
       </div>
 

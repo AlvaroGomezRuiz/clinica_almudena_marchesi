@@ -323,8 +323,14 @@ export async function requestPasswordResetAction(
   if (!email) return { ok: false, message: 'Email obligatorio.' };
 
   const supabase = createServerClient();
+  // IMPORTANTE: apuntamos al /auth/callback (no a /auth/reset directamente).
+  // El callback hace `exchangeCodeForSession(code)` — indispensable para crear
+  // la cookie de sesión temporal de recuperación — y solo entonces redirige a
+  // /auth/reset. Si apuntáramos directamente a /auth/reset, el page verifica
+  // `auth.getUser()` y, al no existir sesión, rebotaría al forgot-password.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/auth/reset`,
+    redirectTo: `${appUrl}/auth/callback?type=recovery`,
   });
 
   if (error) return { ok: false, message: error.message };

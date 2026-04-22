@@ -11,6 +11,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import AsignarBonoManualButton from '@/components/admin/facturacion/AsignarBonoManualButton';
 import { createServerClient } from '@/lib/supabase/server';
 import type { BonoPaciente } from '@/lib/supabase/types';
 
@@ -25,12 +26,15 @@ interface PagoRow {
   fecha_pago: string;
   stripe_payment_intent: string | null;
   paciente_id: string;
+  metodo: string | null;
+  excluir_de_facturacion: boolean;
 }
 
 interface PagoSumRow {
   readonly importe_centimos: number;
   readonly fecha_pago: string;
   readonly estado: string;
+  readonly excluir_de_facturacion: boolean;
 }
 
 interface BonoRow extends BonoPaciente {
@@ -59,13 +63,14 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
   ] = await Promise.all([
     supabase
       .from('pagos')
-      .select('importe_centimos, fecha_pago, estado')
+      .select('importe_centimos, fecha_pago, estado, excluir_de_facturacion')
       .gte('fecha_pago', earliest.toISOString())
-      .in('estado', ['completado', 'procesando']),
+      .in('estado', ['completado', 'procesando'])
+      .eq('excluir_de_facturacion', false),
     supabase
       .from('pagos')
       .select(
-        'id, paciente_id, importe_centimos, moneda, estado, fecha_pago, stripe_payment_intent'
+        'id, paciente_id, importe_centimos, moneda, estado, fecha_pago, stripe_payment_intent, metodo, excluir_de_facturacion'
       )
       .order('fecha_pago', { ascending: false })
       .limit(30),
@@ -198,11 +203,7 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
               {bonos.length} bono{bonos.length === 1 ? '' : 's'} en curso
             </p>
           </div>
-          <Link href="/admin/pacientes">
-            <Button variant="surface" icon="add">
-              Asignar bono
-            </Button>
-          </Link>
+          <AsignarBonoManualButton />
         </div>
 
         {bonos.length === 0 ? (
@@ -346,9 +347,20 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                       </Link>
                     </td>
                     <td className="px-6 py-4 font-mono text-[0.7rem] text-ink-muted dark:text-white/55">
-                      {p.stripe_payment_intent
-                        ? p.stripe_payment_intent.slice(0, 16) + '…'
-                        : '—'}
+                      {p.stripe_payment_intent ? (
+                        p.stripe_payment_intent.slice(0, 16) + '…'
+                      ) : p.metodo ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="capitalize font-body text-[0.72rem]">
+                            {p.metodo}
+                          </span>
+                          {p.excluir_de_facturacion ? (
+                            <Chip tone="info">regalo</Chip>
+                          ) : null}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </tr>
                 ))}

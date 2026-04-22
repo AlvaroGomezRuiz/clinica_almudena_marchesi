@@ -8,8 +8,7 @@
  * Path convención: `<conversacion_id>/<mensaje_id>/<filename>`.
  *
  * Restricciones:
- *   - Tipos permitidos: png, jpeg, webp, heic, pdf.
- *     (audios / video → fase posterior con MediaRecorder.)
+ *   - Tipos permitidos: imágenes, pdf, audio (webm, ogg, mpeg, m4a).
  *   - Tamaño máx: 25 MB (coincide con límite del bucket).
  */
 
@@ -33,12 +32,32 @@ const ALLOWED = new Set([
   'image/webp',
   'image/heic',
   'application/pdf',
+  'audio/webm',
+  'audio/ogg',
+  'application/ogg',
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
 ]);
-const ALLOWED_KINDS: readonly AllowedFileKind[] = ['png', 'jpeg', 'webp', 'heic', 'pdf'];
+const ALLOWED_KINDS: readonly AllowedFileKind[] = [
+  'png',
+  'jpeg',
+  'webp',
+  'heic',
+  'pdf',
+  'webm',
+  'ogg',
+  'mpeg',
+  'm4a',
+];
 const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
 
-function tipoFromMime(mime: string): 'archivo' | 'imagen' {
+function tipoFromMime(mime: string): 'archivo' | 'imagen' | 'audio' {
   if (mime.startsWith('image/')) return 'imagen';
+  if (mime.startsWith('audio/') || mime === 'application/ogg') return 'audio';
   return 'archivo';
 }
 
@@ -98,7 +117,10 @@ export async function POST(req: NextRequest): Promise<Response> {
       { status: 415 }
     );
   }
-  if (file.size > MAX_BYTES) {
+  const maxForKind = file.type.startsWith('audio/') || file.type === 'application/ogg'
+    ? MAX_AUDIO_BYTES
+    : MAX_BYTES;
+  if (file.size > maxForKind) {
     return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
   }
 

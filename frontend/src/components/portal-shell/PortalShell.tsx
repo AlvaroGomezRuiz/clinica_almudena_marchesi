@@ -132,7 +132,9 @@ export default function PortalShell({
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            <ThemeToggle variant="compact" className="hidden sm:inline-grid" />
+            {/* ThemeToggle siempre visible (también en móvil) para que el
+                paciente pueda alternar claro/oscuro sin abrir el drawer. */}
+            <ThemeToggle variant="compact" />
 
             <div className="hidden text-right sm:block">
               <p className="font-display text-[0.85rem] font-medium text-ink leading-none dark:text-white">

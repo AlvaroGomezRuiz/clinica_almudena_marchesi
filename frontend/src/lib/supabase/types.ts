@@ -717,6 +717,32 @@ export interface Database {
           }>;
         };
       };
+      bono_asignar_manual: {
+        Args: {
+          p_paciente_id: string;
+          p_servicio_id: string;
+          p_sesiones: number;
+          p_metodo: 'efectivo' | 'transferencia' | 'regalo' | 'otro';
+          p_importe_centimos: number;
+          p_validez_dias: number;
+          p_notas: string | null;
+          p_excluir_facturacion: boolean;
+        };
+        Returns: {
+          bono_id: string;
+          pago_id: string;
+        };
+      };
+      append_auditoria: {
+        Args: {
+          p_usuario_id: string;
+          p_accion: string;
+          p_tabla_afectada: string | null;
+          p_registro_id: string | null;
+          p_detalles: Record<string, unknown> | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       user_role: UserRole;

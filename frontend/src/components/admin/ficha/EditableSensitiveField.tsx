@@ -23,6 +23,7 @@ import {
   type CampoEditable,
 } from '@/services/admin/pacientes-actions';
 import type { CampoSensible } from '@/services/admin/ficha-actions';
+import { useFichaSectionEdit } from '@/components/admin/ficha/FichaSectionEditContext';
 import SensitiveField from './SensitiveField';
 
 interface Props {
@@ -52,6 +53,7 @@ export default function EditableSensitiveField({
   placeholder,
   inputType = 'text',
 }: Props): JSX.Element {
+  const { showFieldEditButtons } = useFichaSectionEdit();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>(value ?? '');
@@ -104,20 +106,22 @@ export default function EditableSensitiveField({
             keepShape={keepShape}
           />
         </div>
-        <button
-          type="button"
-          onClick={startEdit}
-          className="mt-5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 opacity-0 transition hover:bg-white/60 hover:text-ink group-hover:opacity-100 focus-visible:opacity-100 dark:text-white/55 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white"
-          aria-label={`Editar ${label}`}
-          title={`Editar ${label}`}
-        >
-          <span
-            className="material-symbols-outlined text-[1rem]"
-            aria-hidden="true"
+        {showFieldEditButtons ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="mt-5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 opacity-0 transition hover:bg-white/60 hover:text-ink group-hover:opacity-100 focus-visible:opacity-100 dark:text-white/55 dark:ring-white/10 dark:hover:bg-white/5 dark:hover:text-white"
+            aria-label={`Editar ${label}`}
+            title={`Editar ${label}`}
           >
-            edit
-          </span>
-        </button>
+            <span
+              className="material-symbols-outlined text-[1rem]"
+              aria-hidden="true"
+            >
+              edit
+            </span>
+          </button>
+        ) : null}
       </div>
     );
   }

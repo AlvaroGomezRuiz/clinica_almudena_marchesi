@@ -4,6 +4,7 @@
 > **Regla**: nada de secretos en claro aquí (solo nombres de variables y pasos).
 
 Última actualización: **2026-04-22** — ronda senior performance + seguridad aplicada:
+- FASE 3·4·6: ficha admin (edición por sección + historial paginado), `/portal/pagos` y `/portal/recursos` alineados al plan, audio en chat (validación magic bytes + límite audio + UI). Verificación: `docs/00_project_control/VERIFICACION_FASE3_4_6_22_ABR_2026.md`. **SEPA en Stripe: aún no activado** en dashboard; la guía operativa sigue en `docs/05_operations/ACTIVAR_SEPA_STRIPE.md` (o equivalente).
 - Migración `0026_performance_indexes` aplicada en producción (8 índices compuestos + ANALYZE).
 - CSP unificada y endurecida (una sola fuente en `next.config.js`); middleware deja de duplicarla.
 - Cookies Supabase endurecidas (`httpOnly`+`secure`+`sameSite`+`path` forzados).

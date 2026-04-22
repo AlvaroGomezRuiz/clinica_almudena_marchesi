@@ -103,6 +103,14 @@ verify_jwt = false
 [functions.stripe-checkout]
 verify_jwt = true
 
+# stripe-payment-intent: invocada por el paciente autenticado para crear un
+# PaymentIntent embebido (Payment Element en drawer). Requiere JWT — validamos
+# user con getUser antes de reservar contexto RPC y llamar a Stripe. Sin esta
+# declaración explícita, el gateway de Supabase Cloud rechaza con 401 antes
+# incluso de ejecutar la función (causa raíz del http_401 reportado).
+[functions.stripe-payment-intent]
+verify_jwt = true
+
 # stripe-webhook: invocado por los servidores de Stripe, que NO envían JWT de
 # Supabase. La autenticación es vía firma HMAC-SHA256 (STRIPE_WEBHOOK_SECRET)
 # verificada dentro de la función sobre el cuerpo raw.
