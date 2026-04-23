@@ -50,7 +50,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
     const skeleton =
       variant === 'compact'
         ? 'h-9 w-9 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8'
-        : 'h-9 w-32 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8';
+        : 'h-9 w-full max-w-[280px] rounded-full bg-white/40 ring-1 ring-inset ring-ink/8';
     return <span aria-hidden="true" className={`${skeleton} ${className}`} />;
   }
 
@@ -59,7 +59,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
       <div
         role="radiogroup"
         aria-label="Tema"
-        className={`inline-flex items-center gap-0.5 rounded-full bg-white/60 p-1 ring-1 ring-inset ring-ink/8 backdrop-blur-md dark:bg-white/5 dark:ring-white/10 ${className}`}
+        className={`flex w-full flex-wrap items-stretch justify-center gap-1 rounded-full bg-white/60 p-1 ring-1 ring-inset ring-ink/8 backdrop-blur-md dark:bg-white/5 dark:ring-white/10 sm:flex-nowrap sm:justify-stretch ${className}`}
       >
         {ORDER.map((mode) => {
           const active = current === mode;
@@ -70,16 +70,16 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
               aria-checked={active}
               type="button"
               onClick={() => setTheme(mode)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-body text-[0.72rem] uppercase tracking-[0.14em] transition-[background-color,color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+              className={`inline-flex min-w-0 flex-1 basis-[30%] items-center justify-center gap-1 rounded-full px-2 py-2 font-body text-[0.62rem] uppercase tracking-[0.1em] transition-[background-color,color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] sm:basis-0 sm:px-3 sm:text-[0.72rem] sm:tracking-[0.14em] ${
                 active
                   ? 'bg-primary/12 text-primary dark:bg-primary/25 dark:text-white'
                   : 'text-ink-soft hover:text-ink dark:text-white/60 dark:hover:text-white'
               }`}
             >
-              <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+              <span className="material-symbols-outlined shrink-0 text-[1rem]" aria-hidden="true">
                 {iconFor(mode)}
               </span>
-              <span>{labelFor(mode)}</span>
+              <span className="truncate">{labelFor(mode)}</span>
             </button>
           );
         })}

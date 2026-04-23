@@ -58,6 +58,10 @@ export default function MobileNavDrawer({
 
   const isPrimaryTone = tone === 'primary';
 
+  const panelShellClass = isPrimaryTone
+    ? 'bg-primary shadow-2xl'
+    : 'bg-canvas/95 shadow-2xl backdrop-blur-[40px] backdrop-saturate-150 dark:bg-[#111111]/92';
+
   // Tokens de color dark-aware.
   // Para tone="light" usamos los tokens del design system (ink-*) que ya se
   // invierten en dark mode vía la clase `.dark` root.
@@ -135,67 +139,69 @@ export default function MobileNavDrawer({
         />
 
         <div
-          className={`absolute left-0 top-0 h-[100dvh] w-80 max-w-[85vw] transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-y-auto shadow-2xl ${
+          className={`absolute left-0 top-0 flex h-[100dvh] w-[min(22rem,88vw)] flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${panelShellClass} ${
             open ? 'translate-x-0' : '-translate-x-full'
           } ${panelClassName}`}
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
         >
-          {/* ── Cabecera ── */}
-          <div className="flex items-start justify-between">
-            <div>
-              <p className={`font-display text-xl italic ${brandTitleClass}`}>
-                {brandTitle}
-              </p>
-              {brandSubtitle ? (
-                <p
-                  className={`text-xs font-medium tracking-wide mt-1 ${brandSubtitleClass}`}
-                >
-                  {brandSubtitle}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-6 pb-4 pt-8">
+            {/* ── Cabecera ── */}
+            <div className="flex shrink-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className={`font-display text-xl italic ${brandTitleClass}`}>
+                  {brandTitle}
                 </p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              className={`rounded-full p-1 transition-colors ${closeButtonClass}`}
-              onClick={() => setOpen(false)}
-              aria-label="Cerrar"
-            >
-              <span
-                className="material-symbols-outlined text-3xl"
-                data-icon="close"
-                aria-hidden="true"
-              >
-                close
-              </span>
-            </button>
-          </div>
-
-          {/* ── Navegación principal ── */}
-          <nav className="mt-8 space-y-1" aria-label="Navegación principal">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
+                {brandSubtitle ? (
+                  <p
+                    className={`mt-1 text-xs font-medium tracking-wide ${brandSubtitleClass}`}
+                  >
+                    {brandSubtitle}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className={`shrink-0 rounded-full p-1 transition-colors ${closeButtonClass}`}
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-4 px-4 py-3 rounded-lg transition-colors ${navLinkClass}`}
+                aria-label="Cerrar"
               >
                 <span
-                  className="material-symbols-outlined text-xl"
-                  data-icon={item.icon}
+                  className="material-symbols-outlined text-3xl"
+                  data-icon="close"
                   aria-hidden="true"
                 >
-                  {item.icon}
+                  close
                 </span>
-                <span className="text-sm font-medium">{item.label}</span>
-              </a>
-            ))}
-          </nav>
+              </button>
+            </div>
 
-          {/* ── Footer: selector tema + enlaces secundarios + logout ── */}
+            {/* ── Navegación principal (scroll interno; pie fijo fuera) ── */}
+            <nav className="mt-8 flex-1 space-y-1 pb-4" aria-label="Navegación principal">
+              {navItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center gap-4 rounded-lg px-4 py-3 transition-colors ${navLinkClass}`}
+                >
+                  <span
+                    className="material-symbols-outlined text-xl"
+                    data-icon={item.icon}
+                    aria-hidden="true"
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          {/* ── Footer fijo: tema + enlaces + logout (siempre visible) ── */}
           <div
-            className={`mt-auto pt-6 border-t space-y-3 ${footerBorderClass}`}
+            className={`shrink-0 space-y-3 border-t px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 ${footerBorderClass}`}
           >
             {/* Selector de tema — en modo "primary" (admin) no incluimos
                 porque el admin ya tiene su propio selector en la topbar

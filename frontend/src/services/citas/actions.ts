@@ -243,10 +243,7 @@ export async function cancelarCitaAction(
     return { ok: false, code: 'unauthorized', message: 'Sesión expirada. Vuelve a iniciar sesión.' };
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    return { ok: false, code: 'unknown', message: 'Configuración del servidor incompleta.' };
-  }
+  const { url: supabaseUrl, anonKey } = getSupabaseEnv();
 
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/cancel-cita`, {
@@ -254,6 +251,7 @@ export async function cancelarCitaAction(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
+        apikey: anonKey,
       },
       body: JSON.stringify({
         cita_id: citaId,
@@ -271,16 +269,22 @@ export async function cancelarCitaAction(
           : res.status === 404 ? 'not_found'
           : res.status === 409 ? 'already_cancelled'
           : 'unknown';
+      const detail =
+        typeof raw.detail === 'string'
+          ? raw.detail
+          : typeof raw.message === 'string'
+            ? raw.message
+            : '';
       const friendly =
         code === 'forbidden'
-          ? 'No puedes cancelar esta cita.'
+          ? detail.includes('cancelacion_fuera_politica') || detail.includes('48 horas')
+            ? 'La cancelación online requiere al menos 48 horas de antelación. Para casos urgentes, escribe a la consulta.'
+            : 'No puedes cancelar esta cita.'
           : code === 'already_cancelled'
             ? 'Esta cita ya estaba cancelada.'
             : code === 'not_found'
               ? 'No encontramos esa cita.'
-              : typeof raw.detail === 'string'
-                ? raw.detail
-                : 'No se pudo cancelar. Intenta más tarde.';
+              : detail || 'No se pudo cancelar. Intenta más tarde.';
       return { ok: false, code, message: friendly };
     }
 

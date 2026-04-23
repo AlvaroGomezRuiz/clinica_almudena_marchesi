@@ -216,6 +216,138 @@ export function SignupForm(): JSX.Element {
         </p>
       </div>
 
+      <div>
+        <label htmlFor="telefono" className={labelCls}>
+          Teléfono
+        </label>
+        <input
+          id="telefono"
+          name="telefono"
+          type="tel"
+          autoComplete="tel"
+          required
+          maxLength={22}
+          disabled={pending}
+          className={inputCls}
+          placeholder="+34 600 000 000"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="direccion" className={labelCls}>
+          Dirección completa
+        </label>
+        <textarea
+          id="direccion"
+          name="direccion"
+          required
+          rows={2}
+          maxLength={400}
+          disabled={pending}
+          className={inputCls}
+          placeholder="Calle, número, piso, código postal, ciudad"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label htmlFor="contacto_emergencia_nombre" className={labelCls}>
+            Contacto emergencia · nombre
+          </label>
+          <input
+            id="contacto_emergencia_nombre"
+            name="contacto_emergencia_nombre"
+            type="text"
+            autoComplete="name"
+            required
+            minLength={2}
+            maxLength={120}
+            disabled={pending}
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label htmlFor="contacto_emergencia_telefono" className={labelCls}>
+            Contacto emergencia · teléfono
+          </label>
+          <input
+            id="contacto_emergencia_telefono"
+            name="contacto_emergencia_telefono"
+            type="tel"
+            autoComplete="tel"
+            required
+            maxLength={22}
+            disabled={pending}
+            className={inputCls}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="fecha_nacimiento" className={labelCls}>
+          Fecha de nacimiento
+        </label>
+        <input
+          id="fecha_nacimiento"
+          name="fecha_nacimiento"
+          type="date"
+          required
+          disabled={pending}
+          className={inputCls}
+        />
+      </div>
+
+      <fieldset className="space-y-3">
+        <legend className={labelCls}>Experiencia previa en terapia</legend>
+        <div className="space-y-2 font-body text-[0.88rem] text-ink-soft">
+          <label className="flex items-center gap-2">
+            <input type="radio" name="experiencia_terapia" value="never" required disabled={pending} />
+            Nunca he ido
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="radio" name="experiencia_terapia" value="long_ago" disabled={pending} />
+            Hace mucho (mín. 1 año sin proceso continuo)
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="radio" name="experiencia_terapia" value="from_clinic" disabled={pending} />
+            Vengo de otra clínica
+          </label>
+        </div>
+      </fieldset>
+
+      <div>
+        <label htmlFor="motivo_consulta_breve" className={labelCls}>
+          Motivo de la consulta (breve)
+        </label>
+        <textarea
+          id="motivo_consulta_breve"
+          name="motivo_consulta_breve"
+          rows={3}
+          maxLength={2000}
+          disabled={pending}
+          className={inputCls}
+          placeholder="Unas líneas bastan. Solo lo verá Almudena para contextualizar la primera sesión."
+        />
+        <p className="mt-2 font-body text-[0.72rem] text-ink-muted">
+          No aparece en tu perfil público; queda en la historia clínica cifrada accesible solo para la psicóloga.
+        </p>
+      </div>
+
+      <div>
+        <label htmlFor="medicacion_psiquiatria" className={labelCls}>
+          Medicación psiquiátrica (opcional)
+        </label>
+        <textarea
+          id="medicacion_psiquiatria"
+          name="medicacion_psiquiatria"
+          rows={2}
+          maxLength={1500}
+          disabled={pending}
+          className={inputCls}
+          placeholder="Si tomas medicación prescrita relacionada con salud mental, indícalo aquí. No uses este campo para alergias."
+        />
+      </div>
+
       <PasswordInput
         id="password"
         name="password"

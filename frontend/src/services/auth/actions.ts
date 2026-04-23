@@ -161,6 +161,38 @@ export async function signupAction(formData: FormData): Promise<SignupResult> {
     return { ok: false, message: 'Debes aceptar la política de privacidad.' };
   }
 
+  const telefono = String(formData.get('telefono') ?? '').trim().replace(/\s+/g, ' ');
+  const direccion = String(formData.get('direccion') ?? '').trim();
+  const contactoEmergenciaNombre = String(formData.get('contacto_emergencia_nombre') ?? '').trim();
+  const contactoEmergenciaTelefono = String(formData.get('contacto_emergencia_telefono') ?? '')
+    .trim()
+    .replace(/\s+/g, '');
+  const fechaNacimiento = String(formData.get('fecha_nacimiento') ?? '').trim();
+  const motivoConsultaBreve = String(formData.get('motivo_consulta_breve') ?? '').trim().slice(0, 2000);
+  const experienciaTerapia = String(formData.get('experiencia_terapia') ?? '').trim();
+  const medicacionPsiquiatria = String(formData.get('medicacion_psiquiatria') ?? '').trim().slice(0, 1500);
+
+  const PHONE_RE = /^[+]?[\d\s]{9,18}$/;
+  if (!PHONE_RE.test(telefono)) {
+    return { ok: false, message: 'Introduce un teléfono de contacto válido (9 dígitos o más).' };
+  }
+  if (direccion.length < 8) {
+    return { ok: false, message: 'Introduce una dirección completa (calle, número, localidad).' };
+  }
+  if (contactoEmergenciaNombre.length < 2) {
+    return { ok: false, message: 'Indica el nombre de una persona de contacto de emergencia.' };
+  }
+  if (!PHONE_RE.test(contactoEmergenciaTelefono)) {
+    return { ok: false, message: 'El teléfono de emergencia no es válido.' };
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaNacimiento)) {
+    return { ok: false, message: 'La fecha de nacimiento debe tener formato AAAA-MM-DD.' };
+  }
+  const expSet = new Set(['never', 'long_ago', 'from_clinic']);
+  if (!expSet.has(experienciaTerapia)) {
+    return { ok: false, message: 'Selecciona tu experiencia previa en terapia.' };
+  }
+
   const displayName = `${givenName} ${familyName}`.slice(0, 140);
 
   const supabase = createServerClient();
@@ -182,6 +214,14 @@ export async function signupAction(formData: FormData): Promise<SignupResult> {
         role: 'paciente',
         rgpd_accepted_at: new Date().toISOString(),
         needs_clinical_intake: true,
+        telefono_temp: telefono,
+        direccion_temp: direccion,
+        contacto_emergencia_nombre_temp: contactoEmergenciaNombre,
+        contacto_emergencia_telefono_temp: contactoEmergenciaTelefono,
+        fecha_nacimiento_temp: fechaNacimiento,
+        motivo_consulta_temp: motivoConsultaBreve || null,
+        experiencia_terapia_temp: experienciaTerapia,
+        medicacion_psiquiatria_temp: medicacionPsiquiatria || null,
       },
     },
   });

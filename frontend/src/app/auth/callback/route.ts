@@ -31,6 +31,27 @@ interface PacienteMetadata {
   readonly dni_nie_temp?: string;
   readonly role?: string;
   readonly needs_clinical_intake?: boolean;
+  readonly telefono_temp?: string;
+  readonly direccion_temp?: string;
+  readonly contacto_emergencia_nombre_temp?: string;
+  readonly contacto_emergencia_telefono_temp?: string;
+  readonly fecha_nacimiento_temp?: string;
+  readonly motivo_consulta_temp?: string | null;
+  readonly experiencia_terapia_temp?: string;
+  readonly medicacion_psiquiatria_temp?: string | null;
+}
+
+function experienciaTerapiaLabel(code: string | undefined): string | null {
+  switch (code) {
+    case 'never':
+      return 'Nunca he ido a terapia';
+    case 'long_ago':
+      return 'Hace más de un año sin terapia continua';
+    case 'from_clinic':
+      return 'Vengo de otra clínica';
+    default:
+      return null;
+  }
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -53,7 +74,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   if (type === 'signup') {
-    await handleSignupMetadata(supabase, data.user.id, data.user.user_metadata ?? {});
+    await handleSignupMetadata(
+      supabase,
+      data.user.id,
+      data.user.user_metadata ?? {},
+      data.user.email ?? ''
+    );
 
     void fireEmail({
       type: 'welcome',
@@ -80,7 +106,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 async function handleSignupMetadata(
   supabase: ReturnType<typeof createServerClient>,
   userId: string,
-  rawMetadata: Record<string, unknown>
+  rawMetadata: Record<string, unknown>,
+  userEmail: string
 ): Promise<void> {
   const meta = rawMetadata as PacienteMetadata;
 
@@ -95,12 +122,24 @@ async function handleSignupMetadata(
     return;
   }
 
+  const fnac = meta.fecha_nacimiento_temp?.trim();
+  const fnacSql = fnac && /^\d{4}-\d{2}-\d{2}$/.test(fnac) ? fnac : null;
+
   const { error: rpcError } = await supabase.rpc('paciente_autoregistro_cifrada', {
     p_nombre_completo: nombreCompleto,
     p_dni_nie: dniNie,
-    p_telefono: null,
-    p_email: null, // el email ya está en auth.users, no lo duplicamos
-    p_fecha_nacimiento: null,
+    p_telefono: meta.telefono_temp?.trim() ?? null,
+    p_email: userEmail.trim() || null,
+    p_fecha_nacimiento: fnacSql,
+    p_direccion: meta.direccion_temp?.trim() ?? null,
+    p_contacto_emergencia_nombre: meta.contacto_emergencia_nombre_temp?.trim() ?? null,
+    p_contacto_emergencia_telefono: meta.contacto_emergencia_telefono_temp?.trim() ?? null,
+    p_alergias: null,
+    p_medicacion_base: meta.medicacion_psiquiatria_temp?.trim() || null,
+    p_objetivos: null,
+    p_motivo_consulta_inicial: meta.motivo_consulta_temp?.trim() || null,
+    p_experiencia_terapia:
+      experienciaTerapiaLabel(meta.experiencia_terapia_temp) ?? 'Sin especificar',
     p_consentimiento_rgpd: true,
   });
 
@@ -114,11 +153,19 @@ async function handleSignupMetadata(
     // No bloqueamos el login porque la cuenta ya está verificada.
   }
 
-  // Borrar el DNI en claro del user_metadata — ya está cifrado en la tabla.
+  // Borrar PII temporal del user_metadata — ya está cifrado en la tabla pacientes.
   const { error: updErr } = await supabase.auth.updateUser({
     data: {
       ...rawMetadata,
       dni_nie_temp: null,
+      telefono_temp: null,
+      direccion_temp: null,
+      contacto_emergencia_nombre_temp: null,
+      contacto_emergencia_telefono_temp: null,
+      fecha_nacimiento_temp: null,
+      motivo_consulta_temp: null,
+      experiencia_terapia_temp: null,
+      medicacion_psiquiatria_temp: null,
       needs_clinical_intake: false,
     },
   });

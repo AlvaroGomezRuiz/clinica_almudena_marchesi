@@ -52,7 +52,8 @@ interface PrefsRow {
 
 const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "Clínica Almudena <onboarding@resend.dev>";
-const REPLY_TO = Deno.env.get("RESEND_REPLY_TO") ?? undefined;
+const REPLY_TO =
+  Deno.env.get("RESEND_REPLY_TO") ?? "clinica.almudena.marchesi@outlook.com";
 
 function json(body: unknown, status: number, corsHeaders: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {

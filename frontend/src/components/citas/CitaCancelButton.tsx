@@ -6,7 +6,7 @@
  *
  * Props:
  *   - citaId:       id de la cita a cancelar
- *   - inicioISO:    ISO timestamp para calcular ventana 24h
+ *   - inicioISO:    ISO timestamp para calcular ventana 48h (política paciente)
  *   - compact:      si true, usa variant="ghost" size="sm" (para listados)
  *   - isAdmin:      muestra toggle "forzar refund" y oculta advertencia 24h
  *   - onCancelled:  callback opcional tras éxito (para optimistic refresh)
@@ -45,8 +45,9 @@ export function CitaCancelButton({
   const dialogDescId = useId();
 
   const inicioDate = new Date(inicioISO);
-  const within24h = inicioDate.getTime() - Date.now() < 24 * 60 * 60 * 1000;
-  const within24hPatient = !isAdmin && within24h;
+  const MS_48H = 48 * 60 * 60 * 1000;
+  const within48h = inicioDate.getTime() - Date.now() < MS_48H;
+  const within48hPatient = !isAdmin && within48h;
 
   function handleSubmit(): void {
     setErr(null);
@@ -66,14 +67,24 @@ export function CitaCancelButton({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size={compact ? 'sm' : 'md'}
-        icon="close"
-        onClick={() => setOpen(true)}
+      <span
+        className="inline-block"
+        title={
+          within48hPatient
+            ? 'La cancelación online requiere 48h de antelación. Escribe a la consulta.'
+            : undefined
+        }
       >
-        Cancelar
-      </Button>
+        <Button
+          variant="ghost"
+          size={compact ? 'sm' : 'md'}
+          icon="close"
+          disabled={within48hPatient}
+          onClick={() => setOpen(true)}
+        >
+          Cancelar
+        </Button>
+      </span>
 
       {open ? (
         <div
@@ -117,18 +128,18 @@ export function CitaCancelButton({
               })}
             </p>
 
-            {within24hPatient ? (
+            {within48hPatient ? (
               <div
                 role="alert"
-                className="mt-5 rounded-2xl bg-[#FFF3E9] p-4 ring-1 ring-[#E7B28F]/40"
+                className="mt-5 rounded-2xl bg-[#FFF3E9] p-4 ring-1 ring-[#E7B28F]/40 dark:bg-[#2a1f1c] dark:ring-[#5c3d32]"
               >
-                <p className="font-display text-[0.9rem] italic text-[#8A5436]">
-                  Menos de 24 horas de antelación
+                <p className="font-display text-[0.9rem] italic text-[#8A5436] dark:text-[#e8c4a8]">
+                  Fuera de la ventana de cancelación online
                 </p>
-                <p className="mt-1 font-body text-[0.8rem] leading-relaxed text-[#6E4530]">
-                  Según la política de la consulta, cancelaciones dentro de las 24h
-                  previas no conllevan reembolso Stripe ni devolución al bono. Puedes
-                  continuar si igualmente necesitas cancelar.
+                <p className="mt-1 font-body text-[0.8rem] leading-relaxed text-[#6E4530] dark:text-[#d4b8a8]">
+                  Solo se admite cancelar desde el portal con al menos 48 horas de
+                  antelación. Para cambios urgentes, escribe a la consulta; el importe
+                  abonado no se reembolsa automáticamente por la web.
                 </p>
               </div>
             ) : null}
@@ -158,7 +169,7 @@ export function CitaCancelButton({
                   disabled={pending}
                   className="size-4 accent-primary"
                 />
-                Forzar reembolso total (override 24h)
+                Forzar reembolso total (override política 48h)
               </label>
             ) : null}
 
@@ -180,7 +191,7 @@ export function CitaCancelButton({
                 variant="destructive"
                 icon={pending ? 'progress_activity' : 'check'}
                 onClick={handleSubmit}
-                disabled={pending}
+                disabled={pending || within48hPatient}
               >
                 {pending ? 'Cancelando…' : 'Confirmar cancelación'}
               </Button>

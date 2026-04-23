@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { uniqueEmail } from './fixtures';
 
 /**
@@ -6,7 +6,7 @@ import { uniqueEmail } from './fixtures';
  *
  * Se ha migrado del flujo OTP antiguo (2 pasos con código numérico) al flujo
  * actual de Supabase Auth:
- *   - 1 paso: nombre + apellidos + email + DNI + contraseña.
+ *   - 1 paso: datos personales + contacto + DNI + contraseña.
  *   - Supabase envía email de verificación con link.
  *   - El link redirige a /auth/callback y crea la ficha cifrada.
  *
@@ -16,6 +16,15 @@ import { uniqueEmail } from './fixtures';
  */
 
 test.describe('Registro paciente — signUp con email verification', () => {
+  async function fillDatosClinicosBase(page: Page): Promise<void> {
+    await page.getByLabel(/^Teléfono$/i).fill('+34 600 000 001');
+    await page.getByLabel(/dirección completa/i).fill('Calle Falsa 123, 28013 Madrid');
+    await page.getByLabel(/contacto emergencia · nombre/i).fill('Contacto Apoyo');
+    await page.getByLabel(/contacto emergencia · teléfono/i).fill('+34 611 222 333');
+    await page.getByLabel(/fecha de nacimiento/i).fill('1990-05-15');
+    await page.getByRole('radio', { name: /nunca he ido/i }).check();
+  }
+
   test('valida DNI/NIE + política de contraseña y muestra aviso de verificación', async ({
     page,
   }) => {
@@ -27,6 +36,7 @@ test.describe('Registro paciente — signUp con email verification', () => {
     await page.getByLabel(/apellidos/i).fill('Pérez García');
     await page.getByLabel(/correo electr[oó]nico/i).fill(email);
     await page.getByLabel(/dni/i).fill('12345678Z');
+    await fillDatosClinicosBase(page);
 
     await page
       .getByLabel('Contraseña', { exact: true })
@@ -52,6 +62,7 @@ test.describe('Registro paciente — signUp con email verification', () => {
     await page.getByLabel(/apellidos/i).fill('García López');
     await page.getByLabel(/correo electr[oó]nico/i).fill(email);
     await page.getByLabel(/dni/i).fill('12345678Z');
+    await fillDatosClinicosBase(page);
 
     await page.getByLabel('Contraseña', { exact: true }).fill('corta');
     await page.getByLabel(/repetir contrase[ñn]a/i).fill('corta');
@@ -72,6 +83,7 @@ test.describe('Registro paciente — signUp con email verification', () => {
     await page.getByLabel(/apellidos/i).fill('Ruiz');
     await page.getByLabel(/correo electr[oó]nico/i).fill(email);
     await page.getByLabel(/dni/i).fill('12345678A'); // letra incorrecta
+    await fillDatosClinicosBase(page);
     await page
       .getByLabel('Contraseña', { exact: true })
       .fill('MiClave.Segura#2026');

@@ -6,7 +6,15 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 
 > **Arquitectura unificada (hito 14 · 22-abr-2026):** se eliminó por completo el legacy FastAPI stand-by. Todo el backend vive ahora en Supabase (Postgres RPCs + Edge Functions Deno). El auto-registro público (`/registro-paciente`) usa flujo OTP nativo de Supabase Auth + RPC cifrada `paciente_autoregistro_cifrada`.
 
-> **SEO / GEO / Legal (23-abr-2026):** dominio canónico de producción **`https://ampsicologia.es`**. Metadata unificada con `buildPublicPageMetadata`, JSON-LD `@graph` (WebSite + LocalBusiness/MedicalBusiness) en la home con coordenadas y dirección postal completas, `WebPage` + `dateModified` en `/aviso-legal`, `/cookies`, `/privacidad`. Contacto público **`contacto@ampsicologia.es`**. Documentación de referencia: `docs/03_engineering/GEO_Y_SEO_ELITE.md`. Las tres páginas legales llevan versión **`2026-04-23-v1`**.
+> **SEO / GEO / Legal (23-abr-2026):** dominio canónico de producción **`https://ampsicologia.es`**. Metadata unificada con `buildPublicPageMetadata`, JSON-LD `@graph` (WebSite + LocalBusiness/MedicalBusiness) en la home con coordenadas y dirección postal completas, `WebPage` + `dateModified` en `/aviso-legal`, `/cookies`, `/privacidad`. Contacto público **`contacto@ampsicologia.es`**. Documentación de referencia: `docs/03_ingenieria/geo-y-seo.md`. Las tres páginas legales llevan versión **`2026-04-23-v1`**.
+>
+> **Migraciones Supabase + CLI (abr-2026):** el remoto tenía versiones con timestamp (`202604…`) y el repo numeradas (`0001`…`0046`). Se alineó el historial con ficheros no-op `supabase/migrations/202604*_remote_reconcile.sql` + `supabase migration repair --status applied` para las versiones locales ya reflejadas en esquema. Tras eso, `npx supabase db push` queda en *Remote database is up to date.* Ver `docs/00_proyecto/cronologia.md` (Hitos 16–17).
+>
+> **Política cancelación paciente:** migración `0046_cancelar_cita_48h_sin_reembolso_paciente.sql` — el paciente solo cancela si la cita es **>48h**; sin reembolso Stripe automático al paciente (gestión manual / política clínica). Admin mantiene flujo con refund cuando aplica.
+>
+> **Auditoría económica (reposición):** `docs/02_informes/valor-reposicion-software.md` (revisión 2: cifras ancladas a LOC del repo y tarifas PYME; banda **~12k–20k €** típica de rehacer el alcance, techo ~24k €).
+>
+> **Toolkit GEO local:** carpeta **`.GEO/`** (PowerShell + Python venv aislado) — `.\.GEO\run-geo-audit.ps1` genera informes HTML/JSON en `.GEO/reports/`. Ver `.GEO/README.md`.
 
 ---
 
@@ -41,11 +49,12 @@ almudena/
 │     ├─ lib/supabase/          # Clientes: server, browser, middleware, env, types
 │     └─ services/              # Server Actions por dominio
 ├─ supabase/
-│  ├─ migrations/               # 0001..0029 ordenadas e idempotentes
-│  ├─ functions/                # Edge Functions (Deno) — send-email, stripe-*, health, rgpd, invoice-pdf
+│  ├─ migrations/               # 0001..0046 + stubs 202604*_remote_reconcile (historial CLI); ver §8
+│  ├─ functions/                # Edge Functions (Deno) — send-email, stripe-*, health, rgpd, invoice-pdf, cancel-cita…
 │  ├─ scripts/                  # bundle_for_deploy.mjs + smoke_test.mjs
 │  └─ BOOTSTRAP.md              # Setup paso a paso
 ├─ docs/                        # Documentacion completa (ver seccion 12)
+├─ .GEO/                        # Auditoria GEO local (Python venv + run-geo-audit.ps1)
 ├─ .gitignore
 └─ README.md                    # este archivo
 ```
@@ -284,6 +293,15 @@ Orden estricto:
 | **0026** | **`performance_indexes`** | **8 índices compuestos + ANALYZE (aplicado 2026-04-22).** |
 | 0027-0028 | `audit_admin_lookups` + `retirar_seed_demo` | Auditoría blind-index + script idempotente de purga demo. |
 | **0029** | **`paciente_autoregistro`** | **RPC cifrada para auto-registro público (paso 2 OTP, hito 14). Reemplaza al flujo legacy FastAPI.** |
+| 0030–0036 | Fixes críticos post-E2E | `reservar_cita` sin ambigüedad; `admin_lookups`; `registro_clinico_descifrar`; cierre fuga RGPD plaintext; UPSERT nota cita; bulk DX/med. |
+| **0037** | **`chat_cifrado`** | Cifrado de `mensajes.body` + vista `v_mensajes_chat`; backfill compatible. |
+| 0038–0040 | RLS/prefs, catálogo pareja/precios, bono manual | Ajustes de políticas y producto. |
+| **0044** | **`sesion_individual_pareja`** | Sesiones individual/pareja en catálogo y flujos donde aplica. |
+| **0045** | **`chat_enviar_variable_conflict`** | `SET plpgsql.variable_conflict = use_column` en `chat_enviar_mensaje` (evita colisión PL/pgSQL). |
+| **0046** | **`cancelar_cita_48h_sin_reembolso_paciente`** | Paciente: cancelación solo **>48h** antes del inicio; sin refund Stripe automático al paciente. |
+| `202604*_remote_reconcile.sql` | *(47 ficheros)* | No-op: alinean nombres de versión remotos con el CLI (`db push` / `migration list`). |
+
+`[db] major_version = 17` en `supabase/config.toml` alineado con el proyecto enlazado. Varias Edge Functions tienen `verify_jwt = false` donde el contrato es API key / secret (p. ej. webhooks, cron); revisar `config.toml` al añadir funciones.
 
 Aplicar todas:
 
@@ -490,7 +508,7 @@ STRIPE_WEBHOOK_SECRET  = whsec_xxx
 # FRONTEND_URL, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya configurados antes
 ```
 
-**Datos del emisor en facturas PDF** (`invoice-pdf`): secrets `FACTURA_EMISOR_*` con nombre, NIF, dirección, CP/ciudad, email de contacto fiscal y colegiación; opcionales teléfono, IBAN y REGCESS (omitir si no aplican). Tabla de valores vigente en **`docs/00_project_control/PENDIENTES_Y_CHECKLIST.md`** (apartado **2.5 Facturas**). Tras editar secrets en el dashboard, redeploy de `invoice-pdf` si tu flujo no los recarga en caliente.
+**Datos del emisor en facturas PDF** (`invoice-pdf`): secrets `FACTURA_EMISOR_*` con nombre, NIF, dirección, CP/ciudad, email de contacto fiscal y colegiación; opcionales teléfono, IBAN y REGCESS (omitir si no aplican). Tabla de valores vigente en **`docs/00_proyecto/estado-y-pendientes.md`** (apartado **2.5 Facturas**). Tras editar secrets en el dashboard, redeploy de `invoice-pdf` si tu flujo no los recarga en caliente.
 
 **4) Aplicar migración y desplegar Edge Functions**
 
@@ -556,50 +574,42 @@ Si `processing_error` no es null → la firma era válida pero algo falló dentr
 
 ## 12. Documentacion tecnica
 
-Todo el material de contexto, auditorias, planes e informes vive en `docs/` con esta estructura:
+Índice maestro y criterios editoriales: **`docs/README.md`**. Árbol actual:
 
 ```
 docs/
-├─ 00_project_control/          # Control del proyecto
-│  ├─ CONTEXTO_HISTORICO.md
-│  └─ PENDIENTES_Y_CHECKLIST.md
-├─ 01_audits/                   # Auditorias tecnicas
-│  ├─ AUDITORIA_ARQUITECTURA.md
-│  ├─ AUDITORIA_BACKEND.md
-│  ├─ AUDITORIA_FRONTEND.md
-│  ├─ AUDITORIA_BASE_DATOS.md
-│  └─ AUDITORIA_SEGURIDAD_RGPD.md
-├─ 02_reports/                  # Informes ejecutivos
-│  ├─ INFORME_EJECUTIVO_CLIENTE.md
-│  └─ REPORTE_EJECUCION.md
-├─ 03_engineering/              # Arquitectura y planificacion
-│  ├─ ARQUITECTURA_TECNICA.md
-│  ├─ GEO_Y_SEO_ELITE.md         # GEO + SEO técnico (canonical, JSON-LD, sitemap)
-│  └─ ROADMAP.md
-├─ 04_design/                   # Sistema visual
-│  └─ SISTEMA_DISENO.md
-└─ 05_operations/               # Operacion y runbooks
-   ├─ SENTRY.md
-   └─ TESTING_CHECKLIST.md
+├─ README.md                    # Mapa, costes directos documentados, criterio imparcial
+├─ 00_proyecto/                 # Cronología, estado/pendientes, planes, verificaciones
+│  ├─ cronologia.md
+│  ├─ estado-y-pendientes.md
+│  ├─ costes-herramientas.md
+│  ├─ plan-remediacion-2026-04-22.md
+│  └─ verificacion-fases-3-4-6.md
+├─ 01_auditorias/               # Revisiones técnicas puntuales (snapshot por dominio)
+├─ 02_informes/                 # Informes ejecutivos, E2E, valoración de reposición
+├─ 03_ingenieria/               # Arquitectura viva, GEO/SEO, roadmap
+├─ 04_diseno/                   # Sistema visual
+└─ 05_operaciones/              # Runbooks: Sentry, testing, Stripe SEPA, alertas
 ```
 
 **Lectura recomendada para onboarding rapido**:
-1. Este README.
-2. `docs/02_reports/INFORME_EJECUTIVO_CLIENTE.md` — vision de producto.
-3. `docs/01_audits/AUDITORIA_ARQUITECTURA.md` — diseno del sistema.
-4. `docs/00_project_control/PENDIENTES_Y_CHECKLIST.md` — estado live.
-5. `docs/01_audits/AUDITORIA_SEGURIDAD_RGPD.md` — compliance.
+1. Este README y `docs/README.md`.
+2. `docs/02_informes/ejecutivo-cliente.md` — vision de producto.
+3. `docs/01_auditorias/arquitectura.md` — diseno del sistema.
+4. `docs/00_proyecto/estado-y-pendientes.md` — estado live.
+5. `docs/01_auditorias/seguridad-rgpd.md` — compliance.
+6. `docs/02_informes/valor-reposicion-software.md` — valor de reposición (metodología explícita, sin marketing).
 
 ---
 
 ## 13. Roadmap corto (post-MVP)
 
-1. **Cancelación de cita** (admin+paciente) con `booking_cancelled` + reembolso parcial Stripe si procede.
-2. **Asignar recurso** desde admin → `nueva_asignacion` email.
-3. **Auto-registro** paciente con verificación Supabase Auth + `welcome`.
-4. **Webhook Resend** (tracking bounce/complaint → auto-desactivar preferencia).
-5. **Cifrado chat end-to-end** (clave por conversación vía Vault).
-6. **Export RGPD** (endpoint JSON firmado con todo el historial).
+1. ~~**Cancelación de cita**~~ — **Hecho** (admin + paciente con reglas; paciente **>48h** sin refund automático Stripe — ver migración `0046`). Pendiente: refinamiento UX/copy si hace falta.
+2. **Asignar recurso** desde admin → email `nueva_asignacion` (Edge `assign-recurso`; verificar despliegue y prefs).
+3. ~~**Auto-registro** paciente~~ — **Hecho** (OTP Supabase + `paciente_autoregistro_cifrada` + email `welcome` según flujo).
+4. **Webhook Resend** (bounce/complaint → auto-desactivar preferencia).
+5. **Cifrado chat “fuerte”** — cifrado en capa app ya aplicado (`0037`); pendiente evolución E2E por conversación si se exige modelo máximo paranoia.
+6. **Export RGPD** — infra `rgpd-request` / exports; completar runbooks y pruebas de operador.
 7. **Agenda admin semanal drag & drop** (FullCalendar sobre `v_citas_expandidas`).
 8. **Notificaciones push PWA** (Web Push API + Service Worker).
 

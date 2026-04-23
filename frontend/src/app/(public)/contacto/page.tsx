@@ -17,8 +17,7 @@ import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/contacto',
   title: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
-  description:
-    'Consulta de psicología en Calle Meléndez Valdés (Moncloa-Chamberí): teléfono, correo contacto@ampsicologia.es, horario y cómo llegar en Madrid.',
+  description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa-Chamberí): teléfono, correo ${CLINIC_CONTACT_EMAIL}, horario y cómo llegar en Madrid.`,
   keywords: [
     'contacto psicóloga Madrid',
     'consulta Meléndez Valdés',

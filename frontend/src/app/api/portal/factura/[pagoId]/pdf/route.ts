@@ -69,6 +69,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
+        apikey: env.anonKey,
       },
       body: JSON.stringify({ pago_id: pagoId }),
       signal: controller.signal,

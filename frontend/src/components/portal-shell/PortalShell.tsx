@@ -121,7 +121,7 @@ export default function PortalShell({
               brandSubtitle={brandSubtitle}
               tone={tone === 'admin' ? 'primary' : 'light'}
               navItems={mobileNavItems}
-              panelClassName="bg-canvas flex flex-col py-8 px-6 h-full"
+              panelClassName=""
               buttonClassName="md:hidden text-ink-soft hover:text-ink transition-colors"
             />
             <div className="md:hidden">

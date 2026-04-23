@@ -12,7 +12,7 @@ UI y composición.
 - `components/ui/`: primitives (shadcn + utilidades).
 - `components/layout/`: header/footer/nav.
 - `components/landing/`, `components/sections/`: piezas de marketing.
-- `components/auth/`, `components/admin/`, `components/payments/`: features.
+- `components/auth/`, `components/admin/`, `components/pagos/`, `components/portal/`, `components/chat/`, etc.: features por dominio.
 
 ## `services/`
 Server Actions agrupadas por dominio (llaman a Supabase RPCs y Edge Functions vía `@supabase/ssr`).

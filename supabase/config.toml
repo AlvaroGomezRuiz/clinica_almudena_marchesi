@@ -17,7 +17,8 @@ max_rows = 1000
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+# Alineado con el proyecto enlazado (Postgres 17 en Supabase Cloud).
+major_version = 17
 
 [db.pooler]
 enabled = true
@@ -64,6 +65,13 @@ enable_confirmations = true
 secure_password_change = true
 max_frequency = "1m"
 
+# Plantilla HTML (Go template) para verificación post-signup. En producción,
+# copiar el HTML al panel Auth de Supabase o mantener este path si despliegas Auth self-hosted.
+[auth.email.template.confirmation]
+subject = "Confirma tu correo · Clínica Almudena Marchesi Fernández"
+# Ruta relativa al cwd del CLI (raíz del repo), no solo a la carpeta supabase/.
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.mfa]
 max_enrolled_factors = 10
 
@@ -102,8 +110,11 @@ verify_jwt = false
 
 # stripe-checkout: invocada por el paciente autenticado para crear una Checkout
 # session. Requiere JWT (validamos user con getUser antes de llamar a Stripe).
+# JWT de sesión (ES256 en proyectos nuevos): el gateway con verify_jwt=true
+# devuelve 401 UNAUTHORIZED_UNSUPPORTED_TOKEN_ALGORITHM. La función ya
+# valida el usuario con supabase.auth.getUser() en Deno.
 [functions.stripe-checkout]
-verify_jwt = true
+verify_jwt = false
 
 # stripe-payment-intent: invocada por el paciente autenticado para crear un
 # PaymentIntent embebido (Payment Element en drawer). Requiere JWT — validamos
@@ -111,7 +122,7 @@ verify_jwt = true
 # declaración explícita, el gateway de Supabase Cloud rechaza con 401 antes
 # incluso de ejecutar la función (causa raíz del http_401 reportado).
 [functions.stripe-payment-intent]
-verify_jwt = true
+verify_jwt = false
 
 # stripe-webhook: invocado por los servidores de Stripe, que NO envían JWT de
 # Supabase. La autenticación es vía firma HMAC-SHA256 (STRIPE_WEBHOOK_SECRET)
@@ -122,12 +133,16 @@ verify_jwt = false
 # cancel-cita: invocada por paciente o admin autenticado para cancelar una
 # cita. La RPC cancelar_cita usa auth.uid() para aplicar permisos granulares.
 [functions.cancel-cita]
-verify_jwt = true
+verify_jwt = false
 
 # assign-recurso: invocada exclusivamente por admin para asignar un recurso
 # a un paciente y disparar el email nueva_asignacion.
 [functions.assign-recurso]
-verify_jwt = true
+verify_jwt = false
+
+# invoice-pdf: JWT de paciente; misma limitación ES256 en el gateway.
+[functions.invoice-pdf]
+verify_jwt = false
 
 # resend-webhook: invocado por Resend con firma Svix (svix-id, svix-timestamp,
 # svix-signature). No usa JWT de Supabase — validamos la firma HMAC-SHA256

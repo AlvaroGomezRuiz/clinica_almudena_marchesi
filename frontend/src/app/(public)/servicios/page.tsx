@@ -14,7 +14,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
   path: '/servicios',
   title: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
   description:
-    'Terapia individual y de pareja, enfoque infanto-juvenil u online cuando proceda. Tarifas transparentes y bonos en consulta Moncloa / Chamberí · Madrid.',
+    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro tipo Meet acordado con la paciente). Tarifas y bonos en consulta Moncloa / Chamberí · Madrid.',
   keywords: [
     'terapia individual Madrid',
     'terapia de pareja Madrid',
@@ -47,21 +47,21 @@ const SERVICES = [
   {
     tag: 'Infancia',
     title: 'Infanto-Juvenil',
-    body: 'Acompañamiento en el desarrollo emocional de niños y adolescentes. Orientación a padres y trabajo terapéutico mediante el juego y la expresión creativa.',
+    body: 'Acompañamiento en el desarrollo emocional de niños y adolescentes. Orientación a padres y trabajo terapéutico mediante el juego y la expresión creativa. La tarifa por sesión es la misma que en terapia individual.',
     price: CLINIC_SESSION_PRICE_LABEL,
     duration: `${CLINIC_SESSION_DURATION_MIN}min`,
     href: '/registro-paciente?plan=individual',
-    cta: 'Pedir información',
+    cta: 'Reservar Cita',
     featured: false,
   },
   {
     tag: 'Online',
     title: 'Terapia Online',
-    body: 'La misma calidad clínica desde la comodidad de tu hogar. Ideal para personas con movilidad reducida o falta de tiempo.',
-    price: CLINIC_SESSION_PRICE_LABEL,
-    duration: 'Plataforma cifrada',
-    href: '/registro-paciente?plan=individual',
-    cta: 'Agendar Online',
+    body: 'Sesión en vídeo con la misma calidad clínica. El enlace (p. ej. Google Meet privado por sesión) lo coordina Almudena por mensaje seguro del portal: no compartes sala con otros pacientes. La tarifa y la logística se acuerdan en cada caso — consulta con la consulta antes de reservar.',
+    price: 'Consultar',
+    duration: 'Videollamada acordada',
+    href: '/contacto',
+    cta: 'Consultar modalidad',
     featured: false,
   },
 ] as const;

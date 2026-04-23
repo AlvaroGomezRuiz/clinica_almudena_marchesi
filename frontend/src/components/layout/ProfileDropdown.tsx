@@ -85,7 +85,7 @@ export default function ProfileDropdown({
 
       {open ? (
         <div
-          className="absolute right-0 mt-3 w-[300px] rounded-2xl overflow-hidden bg-white/95 dark:bg-[#181818] ring-1 ring-ink/10 dark:ring-white/10 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] backdrop-blur-xl"
+          className="absolute right-0 mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] rounded-2xl overflow-hidden bg-white/95 dark:bg-[#181818] ring-1 ring-ink/10 dark:ring-white/10 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] backdrop-blur-xl"
           role="menu"
         >
           {/* ── Cabecera identidad ── */}

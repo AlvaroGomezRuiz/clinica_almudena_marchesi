@@ -53,12 +53,12 @@ export default function AvatarCropDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/70 p-4 backdrop-blur-md dark:bg-black/80"
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/60 p-0 backdrop-blur-xl dark:bg-black/75 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="avatar-crop-title"
     >
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/15 bg-canvas shadow-[0_24px_80px_-24px_rgba(0,0,0,0.45)] dark:border-white/10 dark:bg-[#161514]">
+      <div className="relative max-h-[min(100dvh,640px)] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-t-3xl border border-white/15 bg-canvas shadow-[0_24px_80px_-24px_rgba(0,0,0,0.45)] dark:border-white/10 dark:bg-[#161514] sm:rounded-3xl">
         <div className="border-b border-ink/8 px-5 py-4 dark:border-white/10">
           <h2
             id="avatar-crop-title"

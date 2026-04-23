@@ -158,7 +158,7 @@ export function renderBookingConfirmed(data: BookingConfirmedData): { subject: s
        ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
      </table>
      ${button("Ver mis citas", `${data.app_url}/portal/citas`)}
-     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">¿Necesitas cambiar la fecha? Puedes hacerlo desde el portal con al menos 24h de antelación.</p>`,
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">¿Necesitas cambiar la fecha? Puedes hacerlo desde el portal con al menos 48h de antelación.</p>`,
     { preheader: `${data.servicio} · ${fecha} · ${hora}`, appUrl: data.app_url },
   );
   const text = `Reserva confirmada\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nGestionar citas: ${data.app_url}/portal/citas`;

@@ -7,8 +7,8 @@ export const CLINIC_PUBLIC_SITE_URL: string =
   process.env.NEXT_PUBLIC_APP_URL ??
   'https://ampsicologia.es';
 
-/** Contacto único público (aviso legal, RGPD, pie). Dominio canónico: ampsicologia.es */
-export const CLINIC_CONTACT_EMAIL = 'contacto@ampsicologia.es' as const;
+/** Contacto único clínico (público, RGPD, facturación manual referida). */
+export const CLINIC_CONTACT_EMAIL = 'clinica.almudena.marchesi@outlook.com' as const;
 
 export const CLINIC_SESSION_DURATION_MIN = 50;
 

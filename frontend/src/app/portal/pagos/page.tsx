@@ -330,9 +330,10 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
         <div className="mb-10 grid gap-4 sm:grid-cols-2">
           {bonos.map((b) => {
             const restantes = b.sesiones_totales - b.sesiones_consumidas;
+            // Barra = sesiones disponibles (coherente con "X restantes de Y").
             const pct = Math.min(
               100,
-              Math.round((b.sesiones_consumidas / b.sesiones_totales) * 100)
+              Math.round((restantes / b.sesiones_totales) * 100)
             );
             const activo = b.activo && b.estado === 'activo' && restantes > 0;
             const expiraProximo =
@@ -443,22 +444,22 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
                 {grupo.items.map((p) => (
                   <li
                     key={p.id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+                    className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
                       <span
-                        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15 dark:bg-primary/25 dark:ring-primary/30"
+                        className="grid h-10 w-10 shrink-0 place-items-center self-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15 dark:bg-primary/25 dark:ring-primary/30"
                         aria-hidden="true"
                       >
-                        <span className="material-symbols-outlined text-[1.1rem] text-primary">
+                        <span className="material-symbols-outlined text-[1.15rem] text-primary">
                           {metodoIcon(p.metodo)}
                         </span>
                       </span>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-body text-[0.92rem] text-ink tabular-nums dark:text-white">
                           {euro(p.importe_centimos)}
                         </p>
-                        <p className="mt-0.5 truncate font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                        <p className="mt-0.5 line-clamp-2 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
                           {format(new Date(p.fecha_pago), "d MMM · HH:mm", {
                             locale: es,
                           })}
@@ -467,7 +468,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
                         </p>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:justify-end">
                       <Chip tone={chipToneFromEstado(p.estado)}>
                         {estadoLabel(p.estado)}
                       </Chip>
@@ -476,7 +477,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
                           href={`/api/portal/factura/${p.id}/pdf`}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-body text-[0.74rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-2 font-body text-[0.74rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
                           title="Descargar factura PDF"
                         >
                           <span

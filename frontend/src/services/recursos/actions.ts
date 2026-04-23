@@ -8,6 +8,7 @@
  */
 
 import { createServerClient } from '@/lib/supabase/server';
+import { getSupabaseEnv } from '@/lib/supabase/env';
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
@@ -32,10 +33,7 @@ export async function asignarRecursoAction(
     return { ok: false, code: 'unauthorized', message: 'Sesión expirada.' };
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    return { ok: false, code: 'server_misconfigured', message: 'Configuración incompleta.' };
-  }
+  const { url: supabaseUrl, anonKey } = getSupabaseEnv();
 
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/assign-recurso`, {
@@ -43,6 +41,7 @@ export async function asignarRecursoAction(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
+        apikey: anonKey,
       },
       body: JSON.stringify({ recurso_id: recursoId, paciente_id: pacienteId }),
     });
