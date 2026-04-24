@@ -261,7 +261,7 @@ export default async function PortalInicioPage() {
           </div>
 
           <Link href="/portal/pagos" className="mt-7">
-            <Button variant="surface" icon={bono ? 'autorenew' : 'add_shopping_cart'}>
+            <Button variant="surface" icon={bono ? 'autorenew' : 'shopping_cart'}>
               {bono ? 'Renovar bono' : 'Comprar bono'}
             </Button>
           </Link>

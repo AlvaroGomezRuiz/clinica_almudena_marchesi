@@ -1,0 +1,12 @@
+---
+description: Uso obligatorio de RTK en terminales y cadenas de comando del agente (ahorro de tokens).
+alwaysApply: true
+---
+
+# RTK (obligatorio en este repo)
+
+- **Regla dura:** En **cualquier** comando de terminal que propongas o ejecutes (herramienta Shell, subagente que lance shell, cadenas con `&&` o `;`), la versión final **debe** pasar por **RTK** cuando exista mapeo dedicado en `rtk` (p. ej. `rtk git`, `rtk npm`, `rtk pnpm`, `rtk npx`, `rtk next`, `rtk tsc`, `rtk lint`, `rtk vitest`/`jest`, `rtk playwright`, `rtk docker`, `rtk curl`, `rtk supabase` si aplica, etc.). Consulta `rtk help` cuando dudes.
+- **Cadenas:** Cada tramo reescribible **con** `rtk` (ej. `rtk git status && rtk npm run build`); **no** mezclar tramos sin RTK.
+- **Si no hay filtro específico:** `rtk err <cmd>` o `rtk summary <cmd>`; para silencio total de filtrado **solo si** el usuario o la tarea exigen el output crudo: `rtk proxy` / `rtk run` (último recurso).
+- **Nunca** optimizar a costa de seguridad (secretos, datos clínicos en logs, saltos de validación).
+- El **hook** global de Cursor (`preToolUse` → `rtk --ultra-compact hook cursor`) reescribe muchas invocaciones; aun así **no** propongas comandos en crudo si existe equivalente `rtk` (refuerza la política).

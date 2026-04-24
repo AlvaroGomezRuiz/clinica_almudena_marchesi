@@ -91,18 +91,18 @@ export default function ContactoPage() {
                     href={item.href}
                     target={item.external ? '_blank' : undefined}
                     rel={item.external ? 'noopener noreferrer' : undefined}
-                    className="p-6 flex items-center gap-5 group hover:-translate-y-1 transition-all duration-400 ease-apple h-full"
+                    className="flex h-full items-center gap-5 p-6 transition-all duration-400 ease-apple group hover:-translate-y-1"
                   >
-                    <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
-                      <span className="material-symbols-outlined text-xl text-sage group-hover:text-white transition-colors duration-400">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sage-wash transition-colors duration-400 ease-apple group-hover:bg-sage">
+                      <span className="material-symbols-outlined text-xl text-sage transition-colors duration-400 group-hover:text-white">
                         {item.icon}
                       </span>
                     </div>
-                    <div className="select-text">
-                      <p className="font-mono text-label-sm uppercase text-ink-muted mb-1 select-text">
+                    <div className="min-w-0 flex-1 select-text">
+                      <p className="mb-1 font-mono text-label-sm uppercase text-ink-muted select-text">
                         {item.label}
                       </p>
-                      <p className="font-body text-ink font-medium text-[0.95rem] select-text">
+                      <p className="break-words font-body text-[0.95rem] font-medium text-ink select-text">
                         {item.value}
                       </p>
                     </div>

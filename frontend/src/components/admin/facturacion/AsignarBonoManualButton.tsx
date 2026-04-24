@@ -36,7 +36,7 @@ interface Paciente {
 const METODOS: readonly { value: MetodoPagoManual; label: string; icon: string }[] = [
   { value: 'efectivo',       label: 'Efectivo',       icon: 'payments' },
   { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance' },
-  { value: 'regalo',         label: 'Regalo',         icon: 'card_giftcard' },
+  { value: 'regalo',         label: 'Regalo',         icon: 'redeem' },
   { value: 'otro',           label: 'Otro',           icon: 'more_horiz' },
 ];
 

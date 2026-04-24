@@ -9,14 +9,14 @@ import AnimatedCounter from '@/components/landing/AnimatedCounter';
  */
 export default function StatsRow() {
   return (
-    <div className="flex justify-center gap-10 md:gap-20">
+    <div className="flex max-w-5xl flex-col items-stretch justify-center gap-8 px-2 sm:flex-row sm:items-center sm:gap-10 sm:px-0 md:gap-20">
       <div className="flex flex-col items-center">
         <span className="font-display text-4xl text-sage font-light">3+</span>
         <span className="font-mono text-label-sm uppercase text-ink-muted mt-1 text-center">
           Años de<br />Experiencia
         </span>
       </div>
-      <div className="w-px h-12 bg-line" />
+      <div className="hidden h-12 w-px bg-line sm:block" aria-hidden="true" />
       <div className="flex flex-col items-center">
         <AnimatedCounter
           target={50}
@@ -27,7 +27,7 @@ export default function StatsRow() {
           Pacientes<br />Atendidos
         </span>
       </div>
-      <div className="w-px h-12 bg-line" />
+      <div className="hidden h-12 w-px bg-line sm:block" aria-hidden="true" />
       <div className="flex flex-col items-center">
         <span className="font-display text-4xl text-sage font-light">&#8734;</span>
         <span className="font-mono text-label-sm uppercase text-ink-muted mt-1 text-center">

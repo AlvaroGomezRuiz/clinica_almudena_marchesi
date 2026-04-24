@@ -132,7 +132,7 @@ export default function MobileNavDrawer({
       >
         <button
           type="button"
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm dark:bg-black/60"
+          className="absolute inset-0 bg-canvas/50 backdrop-blur-2xl backdrop-saturate-150 dark:bg-[#050505]/60 dark:backdrop-saturate-100"
           onClick={() => setOpen(false)}
           aria-label="Cerrar menú"
           tabIndex={open ? 0 : -1}
