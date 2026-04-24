@@ -69,7 +69,13 @@ export default function PaymentElementDrawer({
   const [state, setState] = useState<
     | { status: 'idle' }
     | { status: 'loading' }
-    | { status: 'ready'; clientSecret: string; amount: number; currency: string }
+    | {
+        status: 'ready';
+        clientSecret: string;
+        paymentIntentId: string;
+        amount: number;
+        currency: string;
+      }
     | { status: 'error'; message: string }
   >({ status: 'idle' });
 
@@ -97,6 +103,7 @@ export default function PaymentElementDrawer({
       setState({
         status: 'ready',
         clientSecret: res.clientSecret,
+        paymentIntentId: res.paymentIntentId,
         amount: res.amount,
         currency: res.currency,
       });
@@ -174,7 +181,11 @@ export default function PaymentElementDrawer({
             }} />
           ) : options ? (
             <Elements stripe={getStripe()} options={options}>
-              <CheckoutForm onCancel={onClose} />
+              <CheckoutForm
+                onCancel={onClose}
+                clientSecret={state.clientSecret}
+                createdPaymentIntentId={state.paymentIntentId}
+              />
             </Elements>
           ) : null}
         </div>
@@ -186,7 +197,15 @@ export default function PaymentElementDrawer({
 // ───────────────────────────────────────────────────────────────────────────
 // Formulario interno (usa hooks de Elements)
 // ───────────────────────────────────────────────────────────────────────────
-function CheckoutForm({ onCancel }: { onCancel: () => void }): JSX.Element {
+function CheckoutForm({
+  onCancel,
+  clientSecret,
+  createdPaymentIntentId,
+}: {
+  onCancel: () => void;
+  clientSecret: string;
+  createdPaymentIntentId: string;
+}): JSX.Element {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -216,21 +235,55 @@ function CheckoutForm({ onCancel }: { onCancel: () => void }): JSX.Element {
         return;
       }
 
-      // Sin error: o bien el usuario va al return_url (3DS u otro redirect),
-      // o el pago termina in-page (tarjeta sin 3DS) y debemos ir a /success con
-      // ?payment_intent= para que la página resuelva el pago.
-      if (paymentIntent) {
-        const st = paymentIntent.status;
-        if (st === 'succeeded' || st === 'processing' || st === 'requires_capture') {
-          const q = new URLSearchParams({ payment_intent: paymentIntent.id });
-          window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
+      let pi = paymentIntent ?? null;
+      if (!pi) {
+        const retrieved = await stripe.retrievePaymentIntent(clientSecret);
+        if (retrieved.error) {
+          setError(
+            retrieved.error.message ??
+              'No se pudo verificar el estado del pago. Vuelve a intentarlo.'
+          );
+          setSubmitting(false);
           return;
         }
+        pi = retrieved.paymentIntent;
+      }
+
+      const st = pi?.status;
+      if (st === 'requires_payment_method' || st === 'canceled') {
+        setError(
+          st === 'canceled'
+            ? 'Pago cancelado. Prueba con otro método o tarjeta.'
+            : 'El pago no se pudo completar. Revisa el método e inténtalo de nuevo.'
+        );
+        setSubmitting(false);
+        return;
+      }
+      if (st === 'requires_action') {
+        // Con redirect:if_required, lo habitual es ir al return_url; quedarse aquí es raro.
+        setSubmitting(false);
+        return;
+      }
+
+      if (
+        st === 'succeeded' ||
+        st === 'processing' ||
+        st === 'requires_capture' ||
+        (st == null && pi == null)
+      ) {
+        const id = pi?.id ?? createdPaymentIntentId;
+        if (id) {
+          const q = new URLSearchParams({ payment_intent: id });
+          window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
+        } else {
+          setSubmitting(false);
+        }
+        return;
       }
 
       setSubmitting(false);
     },
-    [stripe, elements]
+    [stripe, elements, clientSecret, createdPaymentIntentId]
   );
 
   return (
