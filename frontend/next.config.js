@@ -77,10 +77,9 @@ function buildCsp() {
     `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com ${supabaseHost}`.trim(),
     /* connect-src: self + Supabase (HTTPS REST + WSS Realtime) + Stripe API +
        Vercel Insights + Sentry tunnel propio (evita /monitoring externo). */
-    `connect-src 'self' ${supabaseHost} ${supabaseWss} https://api.stripe.com https://vitals.vercel-insights.com https://vercel.live`.trim(),
-    /* frame-src: solo Stripe (checkout 3DS, hooks). Cualquier otra iframe
-       queda bloqueada. */
-    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    `connect-src 'self' ${supabaseHost} ${supabaseWss} https://api.stripe.com https://r.stripe.com https://q.stripe.com https://errors.stripe.com https://m.stripe.network https://vitals.vercel-insights.com https://vercel.live`.trim(),
+    /* frame-src: Stripe (3DS, hooks) + Vercel Live (feedback en previews, no afecta prod ampsicologia.es). */
+    'frame-src https://js.stripe.com https://hooks.stripe.com https://vercel.live',
     /* worker-src: solo blob (para Service Workers generados por Next). */
     "worker-src 'self' blob:",
     /* manifest-src: propio manifest. */

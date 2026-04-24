@@ -10,6 +10,10 @@
  *      renderiza <PaymentElement> (card, wallets, Klarna, Bizum — lo que
  *      Stripe declare disponible para la cuenta + país del user).
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
+ *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
+ *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge
+ *   stripe-payment-intent) deben ser de la *misma* cuenta y modo (test o live)
+ *   que el PaymentIntent. Si mezclas cuentas o test/live, Elements no carga.
  *   4. El webhook `stripe-webhook` procesa `payment_intent.succeeded` y marca
  *      el pago como `capturado` en BBDD (ya deployado).
  *
@@ -30,6 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/portal-shell/ui';
+import { formatUserFacingError } from '@/lib/formatUserFacingError';
 import {
   crearPaymentIntentBonoAction,
   crearPaymentIntentCitaAction,
@@ -97,7 +102,7 @@ export default function PaymentElementDrawer({
           ? await crearPaymentIntentCitaAction(target.citaId)
           : await crearPaymentIntentBonoAction(target.bonoConfigId);
       if (!res.ok) {
-        setState({ status: 'error', message: res.error });
+        setState({ status: 'error', message: formatUserFacingError(res.error) });
         return;
       }
       setState({
@@ -246,7 +251,9 @@ function CheckoutForm({
         // Si no se llama, `confirmPayment` puede quedarse colgado en algunos flujos.
         const { error: submitErr } = await elements.submit();
         if (submitErr) {
-          setError(submitErr.message ?? 'Revisa los datos del método de pago.');
+          setError(
+            formatUserFacingError(submitErr) || 'Revisa los datos del método de pago.'
+          );
           return;
         }
 
@@ -277,7 +284,9 @@ function CheckoutForm({
         }
 
         if (stripeError) {
-          setError(stripeError.message ?? 'No se pudo completar el pago.');
+          setError(
+            formatUserFacingError(stripeError) || 'No se pudo completar el pago.'
+          );
           return;
         }
 
@@ -300,7 +309,7 @@ function CheckoutForm({
           }
           if (retrieved.error) {
             setError(
-              retrieved.error.message ??
+              formatUserFacingError(retrieved.error) ||
                 'No se pudo verificar el estado del pago. Vuelve a intentarlo.'
             );
             return;
@@ -343,8 +352,9 @@ function CheckoutForm({
 
         setError('Estado de pago imprevisto. Revisa en Bonos y pagos.');
       } catch (u: unknown) {
-        const m = u instanceof Error ? u.message : String(u);
-        setError(m || 'Error inesperado. Inténtalo de nuevo.');
+        setError(
+          formatUserFacingError(u) || 'Error inesperado. Inténtalo de nuevo.'
+        );
       } finally {
         if (!willNavigate) {
           setSubmitting(false);
@@ -408,6 +418,11 @@ function ErrorPay({
     <div className="rounded-xl border border-red-300/50 bg-red-50/80 p-5 dark:border-red-500/30 dark:bg-red-950/30">
       <p className="font-body text-[0.9rem] text-red-900 dark:text-red-200">
         No se ha podido iniciar el pago: <strong>{message}</strong>
+      </p>
+      <p className="mt-2 font-body text-[0.75rem] leading-relaxed text-red-800/90 dark:text-red-300/90">
+        Si no aparece el formulario de tarjeta o ves 401 en consola, revisa que la clave
+        publicable (Vercel) y la secreta (Supabase) sean de la <strong>misma</strong> cuenta
+        de Stripe y el <strong>mismo</strong> modo (pruebas o real).
       </p>
       <button
         type="button"
