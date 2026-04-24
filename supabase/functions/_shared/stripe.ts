@@ -208,6 +208,11 @@ export interface CreatePaymentIntentInput {
   automatic_payment_methods?: boolean;
   /** Si se omite, se usa la moneda por defecto (EUR). */
   receipt_email?: string;
+  /**
+   * false = oculta Stripe Link en el bloque de tarjeta (solo tarjeta + wallets).
+   * Por defecto false en flujos portal.
+   */
+  link_enabled?: boolean;
 }
 
 export interface PaymentIntent {
@@ -244,6 +249,10 @@ export async function createPaymentIntent(
       body["automatic_payment_methods[enabled]"] = "true";
       body["automatic_payment_methods[allow_redirects]"] = "always";
     }
+  }
+
+  if (input.link_enabled === false) {
+    body["payment_method_options[link][enabled]"] = "false";
   }
 
   return await stripeRequest<PaymentIntent>(

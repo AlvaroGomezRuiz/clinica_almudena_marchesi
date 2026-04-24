@@ -121,6 +121,7 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
         },
         payment_method_types: PORTAL_PAYMENT_METHOD_TYPES,
         automatic_payment_methods: false,
+        link_enabled: false,
         idempotency_key: `pi-cita-${ctx.cita_id}-${user.id}`,
       });
 
@@ -161,6 +162,7 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
         },
         payment_method_types: PORTAL_PAYMENT_METHOD_TYPES,
         automatic_payment_methods: false,
+        link_enabled: false,
         idempotency_key: `pi-bono-${ctx.bono_config_id}-${user.id}-${Date.now()}`,
       });
 

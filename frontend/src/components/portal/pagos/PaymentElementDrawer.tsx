@@ -7,8 +7,8 @@
  *   1. Al abrirse pide `client_secret` vía Server Action (`crearPaymentIntentCitaAction`
  *      o `crearPaymentIntentBonoAction`).
  *   2. Monta <Elements> con appearance personalizada (match con portal) y
- *      renderiza <PaymentElement> con los tipos fijados en el PaymentIntent
- *      (ver PORTAL_PAYMENT_METHOD_TYPES en Edge: card, sepa_debit, klarna).
+ *      <PaymentElement layout accordion>: tarjeta (wallets + carta) → SEPA → Klarna
+ *      a la vista; orden vía paymentMethodOrder + PI (PORTAL_PAYMENT_METHOD_TYPES).
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
  *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
  *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge
@@ -368,8 +368,12 @@ function CheckoutForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       <PaymentElement
         options={{
-          layout: { type: 'tabs' },
-          /* Alineado con el PI: tarjeta → banco (SEPA) → Klarna. Apple/Google Pay: wallets bajo `card`. */
+          /* Accordion: los 3 tipos (card, SEPA, Klarna) se listan a la vez; al desplegar «Tarjeta» van primero wallets (Apple/Google) y luego los campos. */
+          layout: {
+            type: 'accordion',
+            spacedAccordionItems: true,
+            defaultCollapsed: false,
+          },
           paymentMethodOrder: ['card', 'sepa_debit', 'klarna'],
           wallets: { applePay: 'auto', googlePay: 'auto' },
         }}
