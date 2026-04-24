@@ -11,7 +11,12 @@ export const metadata = { title: 'Pago realizado | Portal Paciente' };
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  readonly searchParams: Promise<{ session_id?: string }>;
+  readonly searchParams: Promise<{
+    session_id?: string;
+    /** Payment Element: Stripe añade ?payment_intent=… al return_url. */
+    payment_intent?: string;
+    redirect_status?: string;
+  }>;
 }
 
 interface PagoSuccessRow {
@@ -43,6 +48,13 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
       .from('pagos')
       .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago')
       .eq('stripe_session_id', sp.session_id)
+      .maybeSingle<PagoSuccessRow>();
+    pago = data ?? null;
+  } else if (sp.payment_intent) {
+    const { data } = await supabase
+      .from('pagos')
+      .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago')
+      .eq('stripe_payment_intent', sp.payment_intent)
       .maybeSingle<PagoSuccessRow>();
     pago = data ?? null;
   }

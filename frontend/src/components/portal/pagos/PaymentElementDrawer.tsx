@@ -202,19 +202,33 @@ function CheckoutForm({ onCancel }: { onCancel: () => void }): JSX.Element {
 
       const returnBase =
         typeof window !== 'undefined' ? window.location.origin : '';
-      const { error: stripeError } = await stripe.confirmPayment({
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${returnBase}/portal/pagos/success`,
         },
+        redirect: 'if_required',
       });
 
       if (stripeError) {
         setError(stripeError.message ?? 'No se pudo completar el pago.');
         setSubmitting(false);
+        return;
       }
-      // Si el pago es inmediato (ej. tarjeta confirmada sin 3DS), Stripe redirecciona
-      // a return_url automáticamente. No cambiamos el estado aquí.
+
+      // Sin error: o bien el usuario va al return_url (3DS u otro redirect),
+      // o el pago termina in-page (tarjeta sin 3DS) y debemos ir a /success con
+      // ?payment_intent= para que la página resuelva el pago.
+      if (paymentIntent) {
+        const st = paymentIntent.status;
+        if (st === 'succeeded' || st === 'processing' || st === 'requires_capture') {
+          const q = new URLSearchParams({ payment_intent: paymentIntent.id });
+          window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
+          return;
+        }
+      }
+
+      setSubmitting(false);
     },
     [stripe, elements]
   );
