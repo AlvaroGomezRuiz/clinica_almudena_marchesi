@@ -195,6 +195,24 @@ export default function PaymentElementDrawer({
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+/** Evita un await a Stripe colgado indefinidamente (3DS, wallet, red). */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('__stripe_timeout__')), ms);
+    promise
+      .then(
+        (v) => {
+          clearTimeout(t);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(t);
+          reject(e);
+        }
+      );
+  });
+}
+
 // Formulario interno (usa hooks de Elements)
 // ───────────────────────────────────────────────────────────────────────────
 function CheckoutForm({
@@ -221,67 +239,117 @@ function CheckoutForm({
 
       const returnBase =
         typeof window !== 'undefined' ? window.location.origin : '';
-      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${returnBase}/portal/pagos/success`,
-        },
-        redirect: 'if_required',
-      });
+      let willNavigate = false;
 
-      if (stripeError) {
-        setError(stripeError.message ?? 'No se pudo completar el pago.');
-        setSubmitting(false);
-        return;
-      }
-
-      let pi = paymentIntent ?? null;
-      if (!pi) {
-        const retrieved = await stripe.retrievePaymentIntent(clientSecret);
-        if (retrieved.error) {
-          setError(
-            retrieved.error.message ??
-              'No se pudo verificar el estado del pago. Vuelve a intentarlo.'
-          );
-          setSubmitting(false);
+      try {
+        // OBLIGATORIO (Payment Element v2+): validar el formulario antes de confirmar.
+        // Si no se llama, `confirmPayment` puede quedarse colgado en algunos flujos.
+        const { error: submitErr } = await elements.submit();
+        if (submitErr) {
+          setError(submitErr.message ?? 'Revisa los datos del método de pago.');
           return;
         }
-        pi = retrieved.paymentIntent;
-      }
 
-      const st = pi?.status;
-      if (st === 'requires_payment_method' || st === 'canceled') {
-        setError(
-          st === 'canceled'
-            ? 'Pago cancelado. Prueba con otro método o tarjeta.'
-            : 'El pago no se pudo completar. Revisa el método e inténtalo de nuevo.'
-        );
-        setSubmitting(false);
-        return;
-      }
-      if (st === 'requires_action') {
-        // Con redirect:if_required, lo habitual es ir al return_url; quedarse aquí es raro.
-        setSubmitting(false);
-        return;
-      }
+        let paymentIntent: import('@stripe/stripe-js').PaymentIntent | null | undefined;
+        let stripeError: import('@stripe/stripe-js').StripeError | null | undefined;
 
-      if (
-        st === 'succeeded' ||
-        st === 'processing' ||
-        st === 'requires_capture' ||
-        (st == null && pi == null)
-      ) {
-        const id = pi?.id ?? createdPaymentIntentId;
-        if (id) {
-          const q = new URLSearchParams({ payment_intent: id });
-          window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
-        } else {
+        try {
+          const out = await withTimeout(
+            stripe.confirmPayment({
+              elements,
+              confirmParams: {
+                return_url: `${returnBase}/portal/pagos/success`,
+              },
+              redirect: 'if_required',
+            }),
+            150_000
+          );
+          stripeError = out.error;
+          paymentIntent = out.paymentIntent;
+        } catch (te) {
+          if (te instanceof Error && te.message === '__stripe_timeout__') {
+            setError(
+              'La operación tarda demasiado. Revisa en Bonos y pagos, o cierra e inténtalo de nuevo (si se abrió 3D Secure, complétalo en esa ventana).'
+            );
+            return;
+          }
+          throw te;
+        }
+
+        if (stripeError) {
+          setError(stripeError.message ?? 'No se pudo completar el pago.');
+          return;
+        }
+
+        let pi: import('@stripe/stripe-js').PaymentIntent | null = paymentIntent ?? null;
+        if (!pi) {
+          let retrieved: Awaited<ReturnType<typeof stripe.retrievePaymentIntent>>;
+          try {
+            retrieved = await withTimeout(
+              stripe.retrievePaymentIntent(clientSecret),
+              25_000
+            );
+          } catch (re) {
+            if (re instanceof Error && re.message === '__stripe_timeout__') {
+              setError(
+                'No hemos podido comprobar el pago. Revisa conexión o mira en Bonos y pagos en unos segundos.'
+              );
+              return;
+            }
+            throw re;
+          }
+          if (retrieved.error) {
+            setError(
+              retrieved.error.message ??
+                'No se pudo verificar el estado del pago. Vuelve a intentarlo.'
+            );
+            return;
+          }
+          pi = retrieved.paymentIntent;
+        }
+
+        const st = pi?.status;
+        if (st === 'requires_payment_method' || st === 'canceled') {
+          setError(
+            st === 'canceled'
+              ? 'Pago cancelado. Prueba con otro método o tarjeta.'
+              : 'El pago no se pudo completar. Revisa el método e inténtalo de nuevo.'
+          );
+          return;
+        }
+        if (st === 'requires_action') {
+          setError(
+            'Completa la autenticación bancaria (3D Secure) o cierra e inténtalo de nuevo.'
+          );
+          return;
+        }
+
+        if (
+          st === 'succeeded' ||
+          st === 'processing' ||
+          st === 'requires_capture' ||
+          (st == null && pi == null)
+        ) {
+          const id = pi?.id ?? createdPaymentIntentId;
+          if (id) {
+            willNavigate = true;
+            const q = new URLSearchParams({ payment_intent: id });
+            window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
+            return;
+          }
+          setError('No hemos recibido el id del pago. Revisa en Bonos y pagos o contacta.');
+          return;
+        }
+
+        setError('Estado de pago imprevisto. Revisa en Bonos y pagos.');
+      } catch (u: unknown) {
+        const m = u instanceof Error ? u.message : String(u);
+        setError(m || 'Error inesperado. Inténtalo de nuevo.');
+      } finally {
+        if (!willNavigate) {
           setSubmitting(false);
         }
-        return;
       }
-
-      setSubmitting(false);
     },
     [stripe, elements, clientSecret, createdPaymentIntentId]
   );
