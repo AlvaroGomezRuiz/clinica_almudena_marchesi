@@ -12,7 +12,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { createCheckoutSession, StripeApiError } from "../_shared/stripe.ts";
+import { createCheckoutSession, PORTAL_PAYMENT_METHOD_TYPES, StripeApiError } from "../_shared/stripe.ts";
 
 const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
@@ -116,7 +116,8 @@ Deno.serve(async (req) => {
           amount_centimos: ctx.importe_centimos,
           quantity: 1,
         }],
-        automatic_payment_methods: true,
+        payment_method_types: [...PORTAL_PAYMENT_METHOD_TYPES],
+        automatic_payment_methods: false,
         locale: "es",
         idempotency_key: `cita-${ctx.cita_id}-${user.id}`,
       });
@@ -155,7 +156,8 @@ Deno.serve(async (req) => {
           amount_centimos: ctx.importe_centimos,
           quantity: 1,
         }],
-        automatic_payment_methods: true,
+        payment_method_types: [...PORTAL_PAYMENT_METHOD_TYPES],
+        automatic_payment_methods: false,
         locale: "es",
         idempotency_key: idempotencyKey,
       });

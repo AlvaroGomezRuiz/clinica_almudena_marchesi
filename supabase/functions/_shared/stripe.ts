@@ -172,6 +172,24 @@ export async function createCheckoutSession(
 // PaymentIntents (para Payment Element embebido)
 // ---------------------------------------------------------------------------
 
+/**
+ * Métodos del portal (EUR). Orden en el array ≈ pestañas en Payment Element.
+ *
+ * - `card`: tarjeta. Apple Pay / Google Pay no son tipos distintos: se muestran
+ *   como wallets sobre el flujo de tarjeta (ver `wallets` en <PaymentElement>).
+ * - `sepa_debit`: adeudo/IBAN (banco, SEPA). No confundir con "efectivo" en
+ *   tienda; Stripe no expone un PM de "cash" genérico para ES en Element.
+ * - `klarna`: al final (BNPL).
+ *
+ * Con lista explícita se excluyen `mb_way`, `bancontact`, `eps`, `link`, etc.
+ * (lo que `automatic_payment_methods: true` activa en muchas cuentas).
+ */
+export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
+  "card",
+  "sepa_debit",
+  "klarna",
+];
+
 export interface CreatePaymentIntentInput {
   amount_centimos: number;
   currency?: string;                    // 'eur' por defecto
@@ -179,7 +197,14 @@ export interface CreatePaymentIntentInput {
   description?: string;
   metadata: Record<string, string>;
   idempotency_key: string;
-  /** Si true → automatic_payment_methods + allow_redirects=always (Klarna, etc). */
+  /**
+   * Si se pasa (recomendado: PORTAL_PAYMENT_METHOD_TYPES), no se usan
+   * `automatic_payment_methods` (evita MB Way, Bancontact, EPS, etc.).
+   */
+  payment_method_types?: readonly string[];
+  /**
+   * Solo aplica si `payment_method_types` está vacío. Por defecto `true` (comportamiento antiguo).
+   */
   automatic_payment_methods?: boolean;
   /** Si se omite, se usa la moneda por defecto (EUR). */
   receipt_email?: string;
@@ -205,10 +230,20 @@ export async function createPaymentIntent(
     metadata: input.metadata,
   };
 
-  const auto = input.automatic_payment_methods ?? true;
-  if (auto) {
-    body["automatic_payment_methods[enabled]"] = "true";
-    body["automatic_payment_methods[allow_redirects]"] = "always";
+  if (input.payment_method_types && input.payment_method_types.length > 0) {
+    body.payment_method_types = [...input.payment_method_types];
+  } else {
+    if (input.automatic_payment_methods === false) {
+      throw new StripeApiError(
+        500,
+        "Indica payment_method_types o deja automatic_payment_methods activo",
+      );
+    }
+    const useAuto = input.automatic_payment_methods !== false;
+    if (useAuto) {
+      body["automatic_payment_methods[enabled]"] = "true";
+      body["automatic_payment_methods[allow_redirects]"] = "always";
+    }
   }
 
   return await stripeRequest<PaymentIntent>(

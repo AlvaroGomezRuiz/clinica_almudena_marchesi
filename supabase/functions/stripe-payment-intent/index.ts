@@ -18,7 +18,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { createPaymentIntent, StripeApiError } from "../_shared/stripe.ts";
+import {
+  createPaymentIntent,
+  PORTAL_PAYMENT_METHOD_TYPES,
+  StripeApiError,
+} from "../_shared/stripe.ts";
 import { captureEdgeError, wrapEdgeHandler } from "../_shared/sentry.ts";
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -115,7 +119,8 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
           cita_id: ctx.cita_id,
           user_id: user.id,
         },
-        automatic_payment_methods: true,
+        payment_method_types: PORTAL_PAYMENT_METHOD_TYPES,
+        automatic_payment_methods: false,
         idempotency_key: `pi-cita-${ctx.cita_id}-${user.id}`,
       });
 
@@ -154,7 +159,8 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
           bono_config_id: ctx.bono_config_id,
           user_id: user.id,
         },
-        automatic_payment_methods: true,
+        payment_method_types: PORTAL_PAYMENT_METHOD_TYPES,
+        automatic_payment_methods: false,
         idempotency_key: `pi-bono-${ctx.bono_config_id}-${user.id}-${Date.now()}`,
       });
 

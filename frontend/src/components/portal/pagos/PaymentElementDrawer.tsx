@@ -7,8 +7,8 @@
  *   1. Al abrirse pide `client_secret` vía Server Action (`crearPaymentIntentCitaAction`
  *      o `crearPaymentIntentBonoAction`).
  *   2. Monta <Elements> con appearance personalizada (match con portal) y
- *      renderiza <PaymentElement> (card, wallets, Klarna, Bizum — lo que
- *      Stripe declare disponible para la cuenta + país del user).
+ *      renderiza <PaymentElement> con los tipos fijados en el PaymentIntent
+ *      (ver PORTAL_PAYMENT_METHOD_TYPES en Edge: card, sepa_debit, klarna).
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
  *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
  *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge
@@ -366,7 +366,14 @@ function CheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement options={{ layout: 'tabs' }} />
+      <PaymentElement
+        options={{
+          layout: { type: 'tabs' },
+          /* Alineado con el PI: tarjeta → banco (SEPA) → Klarna. Apple/Google Pay: wallets bajo `card`. */
+          paymentMethodOrder: ['card', 'sepa_debit', 'klarna'],
+          wallets: { applePay: 'auto', googlePay: 'auto' },
+        }}
+      />
 
       {error ? (
         <p role="alert" className="font-body text-[0.85rem] text-red-700 dark:text-red-400">
