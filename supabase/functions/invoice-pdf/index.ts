@@ -13,7 +13,7 @@
 // CP_CIUDAD (opcional) se concatena en una segunda línea bajo DIRECCION en el PDF.
 // TELEFONO, IBAN, REGCESS opcionales (omitir secret o vacío).
 //
-// IVA: los servicios de psicología sanitaria están EXENTOS (art. 20.1.3 LIVA).
+// IVA: exención — pie legal (art. 20.1.3 Ley 37/1992) coherente con cuerpo del documento.
 // -----------------------------------------------------------------------------
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -26,6 +26,7 @@ import {
 } from "https://esm.sh/pdf-lib@1.17.1";
 
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { metodoPagoLabel } from "../_shared/metodo-pago.ts";
 import { captureEdgeError } from "../_shared/sentry.ts";
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -145,6 +146,8 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const ctx: DrawCtx = { page, font, bold };
+  /** Columna derecha de importes; separada del bloque de texto (IVA). */
+  const colImporteX = 520;
 
   // Encabezado (eje Y descendente)
   let hy = 790;
@@ -201,7 +204,7 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
   });
   drawText(ctx, "Concepto", 60, tableTop - 15, 9, { bold: true });
   drawText(ctx, "Cantidad", 380, tableTop - 15, 9, { bold: true });
-  drawText(ctx, "Importe", 480, tableTop - 15, 9, { bold: true });
+  drawText(ctx, "Importe", colImporteX, tableTop - 15, 9, { bold: true });
 
   // Línea de concepto
   let concepto = data.descripcion ?? "";
@@ -221,17 +224,17 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
 
   drawText(ctx, concepto.slice(0, 70), 60, tableTop - 42, 10);
   drawText(ctx, "1", 400, tableTop - 42, 10);
-  drawText(ctx, euro(data.importe_centimos, data.moneda), 480, tableTop - 42, 10);
+  drawText(ctx, euro(data.importe_centimos, data.moneda), colImporteX, tableTop - 42, 10);
 
   // Totales
   const totalY = tableTop - 110;
   drawText(ctx, "Base imponible", 380, totalY, 10);
-  drawText(ctx, euro(data.importe_centimos, data.moneda), 480, totalY, 10);
+  drawText(ctx, euro(data.importe_centimos, data.moneda), colImporteX, totalY, 10);
 
-  drawText(ctx, "IVA (0% — exento art. 20.1.3 LIVA)", 380, totalY - 15, 9, {
+  drawText(ctx, "IVA: exención 0%", 380, totalY - 15, 9, {
     color: [110, 110, 110],
   });
-  drawText(ctx, euro(0, data.moneda), 480, totalY - 15, 9, {
+  drawText(ctx, euro(0, data.moneda), colImporteX, totalY - 15, 9, {
     color: [110, 110, 110],
   });
 
@@ -246,7 +249,7 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
   drawText(
     ctx,
     euro(data.importe_centimos, data.moneda),
-    480,
+    colImporteX,
     totalY - 42,
     12,
     { bold: true }
@@ -254,7 +257,13 @@ async function renderPdf(data: FacturaData, emisor: Emisor): Promise<Uint8Array>
 
   // Método de pago
   if (data.metodo) {
-    drawText(ctx, `Forma de pago: ${data.metodo}`, 50, totalY - 80, 9);
+    drawText(
+      ctx,
+      `Forma de pago: ${metodoPagoLabel(data.metodo)}`,
+      50,
+      totalY - 80,
+      9,
+    );
   }
 
   // Pie legal

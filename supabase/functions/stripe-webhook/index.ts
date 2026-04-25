@@ -14,6 +14,7 @@
 // deno-lint-ignore-file no-explicit-any
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { metodoPagoLabel } from "../_shared/metodo-pago.ts";
 import { verifyWebhookSignature } from "../_shared/stripe.ts";
 import { captureEdgeError, captureEdgeMessage } from "../_shared/sentry.ts";
 
@@ -286,13 +287,7 @@ async function triggerBonoCompradoEmail(
 
     if (!pago || !bp) return;
 
-    const m = String(pago.metodo ?? "").toLowerCase();
-    const metodoLabel =
-      m === "card" || m === "amex" || m === "visa" || m === "mastercard" ? "Tarjeta" :
-        m === "link" ? "Stripe Link" :
-        m === "sepa_debit" ? "Domiciliación SEPA" :
-        m === "klarna" ? "Klarna" :
-        pago.metodo ?? "—";
+    const metodoLabel = metodoPagoLabel(pago.metodo);
 
     const imp = ((pago.importe_centimos ?? 0) / 100).toFixed(2).replace(".", ",") + " " +
       String(pago.moneda ?? "EUR");
