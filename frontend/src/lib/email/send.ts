@@ -56,7 +56,6 @@ export async function sendTransactionalEmail(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${env.anonKey}`,
-        apikey: env.anonKey,
       },
       body: JSON.stringify({
         type: input.type,

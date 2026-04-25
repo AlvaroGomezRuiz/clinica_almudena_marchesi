@@ -16,7 +16,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { edgeServiceRoleHeaders } from "../_shared/invoke-edge.ts";
 import { createRefund, StripeApiError } from "../_shared/stripe.ts";
 
 interface CancelRequest {
@@ -161,7 +160,10 @@ async function fireEmail(
 ): Promise<void> {
   await fetch(`${supabaseUrl}/functions/v1/send-email`, {
     method: "POST",
-    headers: edgeServiceRoleHeaders(serviceKey),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceKey}`,
+    },
     body: JSON.stringify(payload),
   });
 }

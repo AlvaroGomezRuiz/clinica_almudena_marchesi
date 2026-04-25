@@ -10,7 +10,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { edgeServiceRoleHeaders } from "../_shared/invoke-edge.ts";
 
 interface AssignRequest {
   recurso_id:  string;
@@ -83,7 +82,10 @@ Deno.serve(async (req) => {
   if (!row.ya_existia && row.paciente_user_id) {
     await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
-      headers: edgeServiceRoleHeaders(serviceKey),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+      },
       body: JSON.stringify({
         type: "nueva_asignacion",
         to_user_id: row.paciente_user_id,

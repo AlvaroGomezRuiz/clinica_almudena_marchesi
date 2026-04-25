@@ -12,11 +12,10 @@ const ROOT = path.resolve(__dirname, '..', 'functions');
 const OUT_ROOT = path.join(ROOT, '.bundled');
 
 const SHARED = {
-  cors:        fs.readFileSync(path.join(ROOT, '_shared', 'cors.ts'), 'utf8'),
-  resend:      fs.readFileSync(path.join(ROOT, '_shared', 'resend.ts'), 'utf8'),
-  templates:   fs.readFileSync(path.join(ROOT, '_shared', 'templates.ts'), 'utf8'),
-  stripe:      fs.readFileSync(path.join(ROOT, '_shared', 'stripe.ts'), 'utf8'),
-  invoke_edge: fs.readFileSync(path.join(ROOT, '_shared', 'invoke-edge.ts'), 'utf8'),
+  cors:      fs.readFileSync(path.join(ROOT, '_shared', 'cors.ts'), 'utf8'),
+  resend:    fs.readFileSync(path.join(ROOT, '_shared', 'resend.ts'), 'utf8'),
+  templates: fs.readFileSync(path.join(ROOT, '_shared', 'templates.ts'), 'utf8'),
+  stripe:    fs.readFileSync(path.join(ROOT, '_shared', 'stripe.ts'), 'utf8'),
 };
 
 // Extrae exports (tanto `export function` como `export const/class/interface`).
@@ -88,9 +87,9 @@ const PLAN = [
   { fn: 'send-email',              shared: ['cors', 'resend', 'templates'] },
   { fn: 'cron-recordatorios-24h',  shared: ['cors', 'resend', 'templates'] },
   { fn: 'stripe-checkout',         shared: ['cors', 'stripe'] },
-  { fn: 'stripe-webhook',          shared: ['cors', 'stripe', 'invoke_edge'] },
-  { fn: 'cancel-cita',             shared: ['cors', 'stripe', 'invoke_edge'] },
-  { fn: 'assign-recurso',          shared: ['cors', 'invoke_edge'] },
+  { fn: 'stripe-webhook',          shared: ['cors', 'stripe'] },
+  { fn: 'cancel-cita',             shared: ['cors', 'stripe'] },
+  { fn: 'assign-recurso',          shared: ['cors'] },
   { fn: 'resend-webhook',          shared: [] },
 ];
 
