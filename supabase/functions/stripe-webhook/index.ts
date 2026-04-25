@@ -16,6 +16,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { metodoPagoLabel } from "../_shared/metodo-pago.ts";
 import { verifyWebhookSignature } from "../_shared/stripe.ts";
+import { edgeServiceRoleHeaders } from "../_shared/invoke-edge.ts";
 import { captureEdgeError, captureEdgeMessage } from "../_shared/sentry.ts";
 
 interface StripeEvent {
@@ -339,10 +340,7 @@ async function triggerBonoCompradoEmail(
 
     const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-      },
+      headers: edgeServiceRoleHeaders(serviceKey),
       body: JSON.stringify({
         type: "bono_comprado",
         to_user_id: userId,
@@ -397,10 +395,7 @@ async function triggerBookingEmail(
 
     const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-      },
+      headers: edgeServiceRoleHeaders(serviceKey),
       body: JSON.stringify({
         type: "booking_confirmed",
         to_user_id: userId,
