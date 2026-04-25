@@ -54,7 +54,9 @@ export default async function AdminAgendaPage({
   ] = await Promise.all([
     supabase
       .from('v_citas_expandidas')
-      .select('id, inicio, fin, estado, servicio_nombre, paciente_user_id')
+      .select(
+        'id, inicio, fin, estado, servicio_nombre, paciente_user_id, paciente_id, duracion_minutos, precio_centimos',
+      )
       .gte('inicio', desde.toISOString())
       .lte('inicio', hasta.toISOString())
       .neq('estado', 'cancelada')

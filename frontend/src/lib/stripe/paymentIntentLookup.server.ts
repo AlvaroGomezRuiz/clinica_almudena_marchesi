@@ -4,6 +4,7 @@
  * datos si metadata.user_id coincide con el paciente.
  */
 
+import { resumenFromCheckoutSessionJson } from '@/lib/stripe/checkoutSessionResumen';
 import {
   resumenFromPaymentIntentJson,
   type StripeResumen,
@@ -38,4 +39,27 @@ export async function fetchPaymentIntentResumenForUser(
   };
 
   return resumenFromPaymentIntentJson(pi, userId);
+}
+
+/** Checkout hosted: lee la sesión en Stripe si aún no hay fila en `pagos` (webhook lento o caído). */
+export async function fetchCheckoutSessionResumenForUser(
+  sessionId: string,
+  userId: string
+): Promise<StripeResumen | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+
+  const res = await fetch(
+    `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' }
+  );
+  if (!res.ok) return null;
+
+  const session = (await res.json()) as {
+    payment_status?: string;
+    amount_total?: number | null;
+    currency?: string;
+    metadata?: Record<string, string | undefined> | null;
+  };
+  return resumenFromCheckoutSessionJson(session, userId);
 }

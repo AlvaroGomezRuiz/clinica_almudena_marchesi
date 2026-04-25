@@ -16,3 +16,11 @@
    paga otra tarjeta de test y comprueba que `stripe_events` y `pagos` se
    rellenan (y el paciente deja de ver “Procesando” indefinidamente en la
    confirmación, porque el borrador depende de ese insert).
+
+4. **JWT en la Edge Function (`verify_jwt`)**  
+   `stripe-webhook` debe ejecutarse **sin** exigir JWT (Stripe solo manda cabecera
+   `Stripe-Signature`). En el repo está fijado en `supabase/config.toml` bajo
+   `[functions.stripe-webhook] verify_jwt = false`. Si al desplegar desde otro
+   entorno se omitiera y el dashboard tuviera “Enforce JWT” activo para esa
+   función, cada entrega devolvería **401** y el síntoma es el mismo: pago OK en
+   Stripe, fila ausente en `pagos`, pantalla de confirmación atascada.

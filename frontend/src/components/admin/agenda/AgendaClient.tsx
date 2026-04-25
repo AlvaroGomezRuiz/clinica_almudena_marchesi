@@ -22,6 +22,8 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 
+import CitaResumenSheet from '@/components/admin/agenda/CitaResumenSheet';
+import type { CitaRow } from '@/components/admin/agenda/types';
 import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
 import {
   aplicarPlantillaAction,
@@ -30,14 +32,7 @@ import {
   eliminarBloqueoAction,
 } from '@/services/admin/agenda-actions';
 
-export interface CitaRow {
-  readonly id: string;
-  readonly inicio: string;
-  readonly fin: string;
-  readonly estado: string;
-  readonly servicio_nombre: string;
-  readonly paciente_user_id: string | null;
-}
+export type { CitaRow } from '@/components/admin/agenda/types';
 export interface BloqueoRow {
   readonly id: string;
   readonly inicio: string;
@@ -88,6 +83,7 @@ export default function AgendaClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [citaDetalle, setCitaDetalle] = useState<CitaRow | null>(null);
 
   const fechaAncla = useMemo(
     () => parse(fechaISO, 'yyyy-MM-dd', new Date()),
@@ -206,12 +202,29 @@ export default function AgendaClient({
 
       {/* ─── Vista dinámica ─── */}
       {vista === 'dia' ? (
-        <DayView fecha={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} />
+        <DayView
+          fecha={fechaAncla}
+          citas={citas}
+          bloqueos={bloqueos}
+          aplicaciones={aplicaciones}
+          plantillas={plantillas}
+          onSelectCita={setCitaDetalle}
+        />
       ) : vista === 'semana' ? (
-        <WeekGrid fechaAncla={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} onSelectDay={(d) => pushParams(d, 'dia')} />
+        <WeekGrid
+          fechaAncla={fechaAncla}
+          citas={citas}
+          bloqueos={bloqueos}
+          aplicaciones={aplicaciones}
+          plantillas={plantillas}
+          onSelectDay={(d) => pushParams(d, 'dia')}
+          onSelectCita={setCitaDetalle}
+        />
       ) : (
         <MonthOverview fechaAncla={fechaAncla} citas={citas} bloqueos={bloqueos} aplicaciones={aplicaciones} plantillas={plantillas} onSelectDay={(d) => pushParams(d, 'dia')} />
       )}
+
+      <CitaResumenSheet cita={citaDetalle} onClose={() => setCitaDetalle(null)} />
     </>
   );
 }
@@ -462,12 +475,14 @@ function DayView({
   bloqueos,
   aplicaciones,
   plantillas,
+  onSelectCita,
 }: {
   readonly fecha: Date;
   readonly citas: readonly CitaRow[];
   readonly bloqueos: readonly BloqueoRow[];
   readonly aplicaciones: readonly AplicacionRow[];
   readonly plantillas: readonly PlantillaRow[];
+  readonly onSelectCita: (c: CitaRow) => void;
 }): JSX.Element {
   const estado = computeDiaEstado(fecha, citas, bloqueos, aplicaciones, plantillas);
   const [isPending, startTransition] = useTransition();
@@ -555,35 +570,51 @@ function DayView({
         <ul className="divide-y divide-ink/5 dark:divide-white/5">
           {items.map((it) => (
             <li key={`${it.kind}-${it.item.id}`} className="flex items-center gap-4 py-3">
-              <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
-                {format(new Date(it.item.inicio), 'HH:mm')}
-              </span>
-              <span className="h-10 w-px bg-ink/10 dark:bg-white/10" aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <p className="font-body text-[0.92rem] text-ink dark:text-white">
-                  {it.kind === 'bloqueo'
-                    ? (it.item.motivo ?? 'Bloqueo')
-                    : it.item.servicio_nombre}
-                </p>
-                <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
-                  Hasta {format(new Date(it.item.fin), 'HH:mm')}
-                  {it.kind === 'cita' ? ` · ${it.item.estado}` : it.item.dia_completo ? ' · día completo' : ''}
-                </p>
-              </div>
-              <Chip tone={it.kind === 'bloqueo' ? 'warning' : 'positive'}>
-                {it.kind === 'bloqueo' ? 'Bloqueo' : it.item.estado}
-              </Chip>
-              {it.kind === 'bloqueo' ? (
+              {it.kind === 'cita' ? (
                 <button
                   type="button"
-                  onClick={() => eliminarBloqueo(it.item.id)}
-                  disabled={isPending}
-                  aria-label="Eliminar bloqueo"
-                  className="grid h-8 w-8 place-items-center rounded-full text-ink-muted hover:text-[#8c4d44] hover:bg-[#8c4d44]/10 transition-colors dark:text-white/60 dark:hover:text-[#f3b3aa] dark:hover:bg-[#f3b3aa]/10"
+                  onClick={() => onSelectCita(it.item)}
+                  className="flex min-w-0 flex-1 items-center gap-4 text-left outline-none ring-primary/40 focus-visible:ring-2"
                 >
-                  <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">close</span>
+                  <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
+                    {format(new Date(it.item.inicio), 'HH:mm')}
+                  </span>
+                  <span className="h-10 w-px bg-ink/10 dark:bg-white/10" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body text-[0.92rem] text-ink dark:text-white">{it.item.servicio_nombre}</p>
+                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                      Hasta {format(new Date(it.item.fin), 'HH:mm')} · {it.item.estado}
+                    </p>
+                  </div>
+                  <Chip tone="positive">{it.item.estado}</Chip>
                 </button>
-              ) : null}
+              ) : (
+                <>
+                  <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
+                    {format(new Date(it.item.inicio), 'HH:mm')}
+                  </span>
+                  <span className="h-10 w-px bg-ink/10 dark:bg-white/10" aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-body text-[0.92rem] text-ink dark:text-white">
+                      {it.item.motivo ?? 'Bloqueo'}
+                    </p>
+                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                      Hasta {format(new Date(it.item.fin), 'HH:mm')}
+                      {it.item.dia_completo ? ' · día completo' : ''}
+                    </p>
+                  </div>
+                  <Chip tone="warning">Bloqueo</Chip>
+                  <button
+                    type="button"
+                    onClick={() => eliminarBloqueo(it.item.id)}
+                    disabled={isPending}
+                    aria-label="Eliminar bloqueo"
+                    className="grid h-8 w-8 place-items-center rounded-full text-ink-muted hover:text-[#8c4d44] hover:bg-[#8c4d44]/10 transition-colors dark:text-white/60 dark:hover:text-[#f3b3aa] dark:hover:bg-[#f3b3aa]/10"
+                  >
+                    <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">close</span>
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -602,6 +633,7 @@ function WeekGrid({
   aplicaciones,
   plantillas,
   onSelectDay,
+  onSelectCita,
 }: {
   readonly fechaAncla: Date;
   readonly citas: readonly CitaRow[];
@@ -609,6 +641,7 @@ function WeekGrid({
   readonly aplicaciones: readonly AplicacionRow[];
   readonly plantillas: readonly PlantillaRow[];
   readonly onSelectDay: (d: Date) => void;
+  readonly onSelectCita: (c: CitaRow) => void;
 }): JSX.Element {
   const inicioSemana = startOfWeek(fechaAncla, { weekStartsOn: 1 });
   const dias = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
@@ -701,6 +734,7 @@ function WeekGrid({
                   tone="cita"
                   title={c.servicio_nombre}
                   subtitle={c.estado}
+                  onActivate={() => onSelectCita(c)}
                 />
               ))}
               {estado.bloqueosDia.map((b) => (
@@ -729,6 +763,7 @@ function EventoBlock({
   tone,
   title,
   subtitle,
+  onActivate,
 }: {
   readonly inicio: Date;
   readonly fin: Date;
@@ -736,6 +771,7 @@ function EventoBlock({
   readonly tone: 'cita' | 'bloqueo';
   readonly title: string;
   readonly subtitle?: string;
+  readonly onActivate?: () => void;
 }): JSX.Element | null {
   const minutosDesdeInicio =
     (inicio.getHours() - hourStart) * 60 + inicio.getMinutes();
@@ -753,18 +789,38 @@ function EventoBlock({
       ? 'bg-primary/12 ring-1 ring-inset ring-primary/25 text-primary-dim dark:bg-primary/30 dark:ring-primary-fixed/35 dark:text-white'
       : 'bg-[#c89b5a]/15 ring-1 ring-inset ring-[#c89b5a]/30 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:ring-[#c89b5a]/35 dark:text-[#e9c88a]';
 
-  return (
-    <div
-      className={`absolute left-1 right-1 rounded-lg px-1.5 py-1 overflow-hidden ${cls}`}
-      style={{ top: `${top}px`, height: `${height}px`, minHeight: '20px' }}
-      title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}
-    >
+  const inner = (
+    <>
       <p className="font-body text-[0.68rem] font-semibold leading-tight tabular-nums">
         {format(inicio, 'HH:mm')}
       </p>
       <p className="font-body text-[0.7rem] leading-tight truncate">
         {title}
       </p>
+    </>
+  );
+
+  const style = { top: `${top}px`, height: `${height}px`, minHeight: '20px' } as const;
+  const box = `absolute left-1 right-1 rounded-lg px-1.5 py-1 overflow-hidden text-left ${cls}`;
+
+  if (tone === 'cita' && onActivate) {
+    return (
+      <button
+        type="button"
+        className={`${box} w-auto cursor-pointer outline-none ring-primary/40 transition hover:brightness-[1.02] focus-visible:ring-2 dark:hover:brightness-110`}
+        style={style}
+        title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}
+        onClick={onActivate}
+        aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}`}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <div className={box} style={style} title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}>
+      {inner}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+
 export const dynamic = 'force-static';
 
 function text(body: string): NextResponse {
@@ -12,27 +14,32 @@ function text(body: string): NextResponse {
 }
 
 export async function GET(): Promise<NextResponse> {
+  const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
+
   return text(
     [
       '# llms.txt — Superficie de descubrimiento para motores generativos',
-      '# Sitio: Almudena Marchesi (Psicología Clínica)',
+      '# Sitio: Almudena Marchesi (Psicología Clínica) · Madrid (Moncloa / Chamberí)',
       '',
       '## Canonical',
-      '/',
+      `${base}/`,
+      '',
+      '## Resumen estructurado (JSON)',
+      `${base}/ai/summary.json`,
       '',
       '## Sitemap',
-      '/sitemap.xml',
+      `${base}/sitemap.xml`,
       '',
       '## Páginas clave',
-      '/sobre-mi',
-      '/enfoque',
-      '/servicios',
-      '/contacto',
+      `${base}/sobre-mi`,
+      `${base}/enfoque`,
+      `${base}/servicios`,
+      `${base}/contacto`,
       '',
       '## Legal',
-      '/privacidad',
-      '/cookies',
-      '/aviso-legal',
+      `${base}/privacidad`,
+      `${base}/cookies`,
+      `${base}/aviso-legal`,
       '',
     ].join('\n')
   );

@@ -342,6 +342,7 @@ async function triggerBonoCompradoEmail(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
       },
       body: JSON.stringify({
         type: "bono_comprado",
@@ -400,6 +401,7 @@ async function triggerBookingEmail(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
       },
       body: JSON.stringify({
         type: "booking_confirmed",

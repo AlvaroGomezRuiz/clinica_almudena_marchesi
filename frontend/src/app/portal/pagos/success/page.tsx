@@ -1,7 +1,10 @@
 import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/portal-shell/ui';
-import { fetchPaymentIntentResumenForUser } from '@/lib/stripe/paymentIntentLookup.server';
+import {
+  fetchCheckoutSessionResumenForUser,
+  fetchPaymentIntentResumenForUser,
+} from '@/lib/stripe/paymentIntentLookup.server';
 import { createServerClient } from '@/lib/supabase/server';
 
 import PagoSuccessPanel, {
@@ -78,6 +81,8 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
   let stripeResumen: StripeResumen | null = null;
   if (!pago && sp.payment_intent) {
     stripeResumen = await fetchPaymentIntentResumenForUser(sp.payment_intent, user.id);
+  } else if (!pago && sp.session_id) {
+    stripeResumen = await fetchCheckoutSessionResumenForUser(sp.session_id, user.id);
   }
 
   return (
