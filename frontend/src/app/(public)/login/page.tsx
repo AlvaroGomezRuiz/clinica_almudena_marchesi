@@ -22,7 +22,13 @@ export default function LoginPage({
 }: {
   searchParams: { redirect_to?: string; next?: string; error?: string; reason?: string };
 }) {
-  const errorMsg = searchParams.error ?? (searchParams.reason === 'no_session' ? 'Debes iniciar sesión.' : null);
+  const errorMsg =
+    searchParams.error ??
+    (searchParams.reason === 'no_session'
+      ? 'Debes iniciar sesión.'
+      : searchParams.reason === 'mfa_no_session'
+        ? 'Sesión incompleta. Vuelve a identificarte y, si tienes MFA, introduce el código de 6 dígitos.'
+        : null);
   const nextPath = searchParams.redirect_to ?? searchParams.next;
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 md:p-12">

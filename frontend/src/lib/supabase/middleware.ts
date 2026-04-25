@@ -25,6 +25,11 @@ export interface SupabaseSessionResult {
     email: string;
     profile: Pick<Profile, 'role' | 'display_name' | 'avatar_url'> | null;
   } | null;
+  /**
+   * true = sesión a AAL1 con factor TOTP en cuenta y falta el código (MFA).
+   * Usada en el middleware para bloquear /admin y /portal hasta /login/mfa.
+   */
+  readonly needsMfa: boolean;
 }
 
 /* Prefijo claro para headers internos — nunca deben llegar al cliente. */
@@ -94,8 +99,12 @@ export async function updateSupabaseSession(
   } = await supabase.auth.getUser();
 
   if (!user || !user.email) {
-    return { response, user: null };
+    return { response, user: null, needsMfa: false };
   }
+
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  const needsMfa =
+    aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2';
 
   // Cargar perfil con rol (una sola query extra gracias a la RLS profiles_self_select).
   const { data: profile } = await supabase
@@ -129,6 +138,7 @@ export async function updateSupabaseSession(
       email: user.email,
       profile,
     },
+    needsMfa,
   };
 }
 

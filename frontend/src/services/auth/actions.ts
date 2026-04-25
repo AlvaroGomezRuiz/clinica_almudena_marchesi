@@ -48,6 +48,13 @@ function redirectLoginError(message: string, nextPath: string | null): never {
   redirect(`/login?${params.toString()}`);
 }
 
+function redirectMfaError(message: string, nextPath: string | null): never {
+  const params = new URLSearchParams();
+  params.set('error', message);
+  if (nextPath) params.set('next', nextPath);
+  redirect(`/login/mfa?${params.toString()}`);
+}
+
 // ---------------------------------------------------------------------------
 // LOGIN — email + password (+ opcional MFA en flujo posterior)
 // ---------------------------------------------------------------------------
@@ -85,7 +92,10 @@ export async function loginAction(formData: FormData): Promise<never> {
   const role = profile?.role ?? 'paciente';
 
   if (requiresMfa) {
-    redirect('/login/mfa' + (nextPath ? `?next=${encodeURIComponent(nextPath)}` : ''));
+    const q = new URLSearchParams();
+    if (nextPath) q.set('next', nextPath);
+    const s = q.toString();
+    redirect(s ? `/login/mfa?${s}` : '/login/mfa');
   }
 
   redirect(nextPath ?? (role === 'admin' ? '/admin' : '/portal'));
@@ -254,7 +264,65 @@ export async function logoutAction(): Promise<never> {
 }
 
 // ---------------------------------------------------------------------------
-// MFA — reto y verificación TOTP
+// MFA — completar inicio de sesión (TOTP) y redirigir al destino
+// ---------------------------------------------------------------------------
+export async function completeMfaLoginAction(formData: FormData): Promise<never> {
+  const code = String(formData.get('code') ?? '').trim().replace(/\s+/g, '');
+  const nextPath = safeNextPath(String(formData.get('next') ?? '').trim() || null);
+
+  if (!/^\d{6}$/.test(code)) {
+    redirectMfaError('Código inválido (6 dígitos).', nextPath);
+  }
+
+  const supabase = createServerClient();
+
+  const { data: factorsData, error: factorsErr } = await supabase.auth.mfa.listFactors();
+  if (factorsErr) {
+    redirectMfaError(factorsErr.message, nextPath);
+  }
+
+  const totp = factorsData.totp.find((f) => f.status === 'verified');
+  if (!totp) {
+    redirectMfaError('No hay autenticación en dos pasos activa. Vuelve a iniciar sesión.', nextPath);
+  }
+
+  const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({
+    factorId: totp.id,
+  });
+  if (chErr || !challenge) {
+    redirectMfaError(
+      chErr?.message ?? 'Error al verificar. Inténtalo otra vez.',
+      nextPath
+    );
+  }
+
+  const { error: verifyErr } = await supabase.auth.mfa.verify({
+    factorId: totp.id,
+    challengeId: challenge.id,
+    code,
+  });
+  if (verifyErr) {
+    redirectMfaError('Código incorrecto. Revisa la app de autenticación.', nextPath);
+  }
+
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !userData.user) {
+    redirectMfaError('Sesión no válida. Vuelve a iniciar sesión.', null);
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userData.user.id)
+    .maybeSingle<{ role: 'admin' | 'paciente' }>();
+
+  const role = profile?.role ?? 'paciente';
+  const target = nextPath ?? (role === 'admin' ? '/admin' : '/portal');
+  redirect(target);
+}
+
+// ---------------------------------------------------------------------------
+// MFA — reto (para uso no redirect; tests / futuras ampliaciones)
 // ---------------------------------------------------------------------------
 export async function verifyMfaAction(formData: FormData): Promise<ActionResult<LoginResult>> {
   const code = String(formData.get('code') ?? '').trim().replace(/\s+/g, '');
@@ -265,7 +333,6 @@ export async function verifyMfaAction(formData: FormData): Promise<ActionResult<
 
   const supabase = createServerClient();
 
-  // Elegir el primer factor TOTP verificado del usuario.
   const { data: factorsData, error: factorsErr } = await supabase.auth.mfa.listFactors();
   if (factorsErr) return { ok: false, message: factorsErr.message };
 
@@ -289,10 +356,16 @@ export async function verifyMfaAction(formData: FormData): Promise<ActionResult<
     return { ok: false, message: 'Código incorrecto.' };
   }
 
-  const { data: profileData } = await supabase.auth.getUser();
-  const role: 'admin' | 'paciente' =
-    (profileData.user?.user_metadata?.role as 'admin' | 'paciente' | undefined) ?? 'paciente';
+  const { data: u2 } = await supabase.auth.getUser();
+  if (!u2.user) return { ok: false, message: 'Sesión no válida.' };
 
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', u2.user.id)
+    .maybeSingle<{ role: 'admin' | 'paciente' }>();
+
+  const role = prof?.role ?? 'paciente';
   return { ok: true, requiresMfa: false, role };
 }
 

@@ -9,7 +9,10 @@
  *        - /admin/*  → solo profiles.role = 'admin'
  *        - /portal/* → solo profiles.role = 'paciente'
  *        - paciente sin pago → /pagos (payment-gate)
- *   5. Usuario ya autenticado en /login → redirige a su home según rol.
+ *   5. Usuario ya autenticado en /login: si falta MFA (AAL1→2) → /login/mfa;
+ *      si ya completó → home según rol.
+ *   6. Sin sesión en /login/mfa → vuelve a /login; con sesión plena (sin MFA
+ *      pendiente) en /login/mfa → home (no debe atascarse en la pantalla).
  *
  * Principios de defensa:
  *   - NUNCA confiamos en cookie parseada client-side: siempre getUser() (valida JWT).
@@ -57,10 +60,16 @@ function applyRuntimeHeaders(response: NextResponse): NextResponse {
 function redirectTo(request: NextRequest, path: string, reason?: string): NextResponse {
   const url = new URL(path, request.url);
   if (reason) url.searchParams.set('reason', reason);
-  if (path === '/login') {
+  if (path === '/login' || path === '/login/mfa') {
     url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
   }
   return NextResponse.redirect(url);
+}
+
+function redirectToLoginMfaNoSession(request: NextRequest): NextResponse {
+  const u = new URL('/login', request.url);
+  u.searchParams.set('reason', 'mfa_no_session');
+  return NextResponse.redirect(u);
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
@@ -70,21 +79,46 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const isPortalZone  = pathname.startsWith('/portal');
   const isPagosZone   = pathname.startsWith('/pagos');
   const isLoginPage   = pathname === '/login';
+  const isMfaPage     = pathname === '/login/mfa';
   const isProtected   = isAdminZone || isPortalZone;
 
-  // Rutas completamente públicas: no tocar sesión (perf).
-  if (!isProtected && !isLoginPage && !isPagosZone && isPublicPath(pathname)) {
+  // Público sin tocar Supabase, salvo bajo /login/... (MFA: cookies + AAL).
+  if (
+    !isProtected &&
+    !isLoginPage &&
+    !isPagosZone &&
+    isPublicPath(pathname) &&
+    !pathname.startsWith('/login/')
+  ) {
     return applyRuntimeHeaders(NextResponse.next());
   }
 
-  const { response, user } = await updateSupabaseSession(request);
+  const { response, user, needsMfa } = await updateSupabaseSession(request);
 
-  // ─── Zona protegida sin sesión → expulsar a /login ───
+  // Pantalla de código: sin cookies de sesión → al login (sin next= /login/mfa)
+  if (isMfaPage && !user) {
+    return applyRuntimeHeaders(redirectToLoginMfaNoSession(request));
+  }
+  // Ya con MFA hecho (o sin MFA) no debe quedar en /login/mfa
+  if (isMfaPage && user && !needsMfa) {
+    if (user.profile) {
+      const t = user.profile.role === 'admin' ? '/admin' : '/portal';
+      return applyRuntimeHeaders(NextResponse.redirect(new URL(t, request.url)));
+    }
+    return applyRuntimeHeaders(NextResponse.redirect(new URL('/portal', request.url)));
+  }
+
+  // Zona /admin|/portal con sesión a medias (falta TOTP) → pantalla MFA
+  if (isProtected && user && needsMfa) {
+    return applyRuntimeHeaders(redirectTo(request, '/login/mfa'));
+  }
+
+  // Zona protegida sin sesión
   if (isProtected && !user) {
     return applyRuntimeHeaders(redirectTo(request, '/login', 'no_session'));
   }
 
-  // ─── RBAC: rol no coincide con zona ───
+  // RBAC: rol no coincide
   if (user && user.profile) {
     const role = user.profile.role;
 
@@ -96,10 +130,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // ─── Usuario autenticado intenta ver /login → home según rol ───
   if (user && user.profile && isLoginPage) {
+    if (needsMfa) {
+      const mfa = new URL('/login/mfa', request.url);
+      mfa.search = request.nextUrl.search;
+      return applyRuntimeHeaders(NextResponse.redirect(mfa));
+    }
     const target = user.profile.role === 'admin' ? '/admin' : '/portal';
-    return applyRuntimeHeaders(redirectTo(request, target));
+    return applyRuntimeHeaders(NextResponse.redirect(new URL(target, request.url)));
   }
 
   return applyRuntimeHeaders(response);
