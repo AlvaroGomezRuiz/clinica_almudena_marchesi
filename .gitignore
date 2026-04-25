@@ -106,9 +106,9 @@ desktop.ini
 # HERRAMIENTAS INTERNAS / PROTOTIPOS / ARTEFACTOS PRIVADOS
 # -----------------------------------------------------------------------------
 # Cursor: ignorar casi todo bajo .cursor, pero versionar .cursor/rules/
-.cursor/*
-!.cursor/rules/
-!.cursor/rules/**
+.cursor/
+.cursor/rules
+.cursor/rules/**/*.mdc
 .cursorignore
 .cursorrules
 .prototipo/

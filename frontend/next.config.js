@@ -90,7 +90,11 @@ function buildCsp() {
     /* upgrade-insecure-requests: cualquier http:// se auto-reescribe a https://. */
     'upgrade-insecure-requests',
   ];
-  return directives.join('; ').replace(/\s+;/g, ';').replace(/\s{2,}/g, ' ').trim();
+  return directives
+    .join('; ')
+    .replace(/\s+;/g, ';')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
 }
 
 const supabaseImageHost = getSupabaseHostname();
@@ -112,7 +116,11 @@ const nextConfig = {
     /* Forzar CSP en las propias imágenes optimizadas (defense-in-depth). */
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
-      { protocol: 'https', hostname: 'lh3.googleusercontent.com', pathname: '/**' },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
       { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' },
       { protocol: 'https', hostname: 'upload.wikimedia.org', pathname: '/**' },
       ...(supabaseImageHost
@@ -188,15 +196,27 @@ const nextConfig = {
       {
         source: '/portal/:path*',
         headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet' },
-          { key: 'Cache-Control', value: 'private, no-store, max-age=0, must-revalidate' },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, max-age=0, must-revalidate',
+          },
         ],
       },
       {
         source: '/admin/:path*',
         headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet' },
-          { key: 'Cache-Control', value: 'private, no-store, max-age=0, must-revalidate' },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow, noarchive, nosnippet',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, max-age=0, must-revalidate',
+          },
         ],
       },
     ];
@@ -204,7 +224,11 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: '/register', destination: '/registro-paciente', permanent: true },
+      {
+        source: '/register',
+        destination: '/registro-paciente',
+        permanent: true,
+      },
     ];
   },
 };

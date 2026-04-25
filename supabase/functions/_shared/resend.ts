@@ -2,6 +2,12 @@
 // No usamos el SDK oficial porque añade 80kB innecesarios; la API REST
 // es trivial (un único POST /emails).
 
+interface ResendAttachment {
+  filename: string;
+  /** Base64 del archivo (API Resend). */
+  content: string;
+}
+
 interface ResendPayload {
   from: string;
   to: string | string[];
@@ -10,6 +16,7 @@ interface ResendPayload {
   text?: string;
   reply_to?: string;
   tags?: Array<{ name: string; value: string }>;
+  attachments?: ResendAttachment[];
 }
 
 interface ResendOkResponse { id: string }

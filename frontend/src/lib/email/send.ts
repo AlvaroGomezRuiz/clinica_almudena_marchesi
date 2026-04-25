@@ -26,6 +26,8 @@ interface SendEmailInput {
   readonly toUserId?: string;
   readonly toEmail?: string;
   readonly citaId?: string;
+  /** Si existe (p. ej. pago Stripe), `send-email` puede adjuntar factura PDF. */
+  readonly pagoId?: string;
   readonly data?: Readonly<Record<string, unknown>>;
 }
 
@@ -60,6 +62,7 @@ export async function sendTransactionalEmail(
         to_user_id: input.toUserId,
         to_email: input.toEmail,
         cita_id: input.citaId,
+        pago_id: input.pagoId,
         data: input.data,
       }),
       signal: controller.signal,

@@ -25,6 +25,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { useRouter } from 'next/navigation';
 
 import AudioRecorderButton from '@/components/chat/AudioRecorderButton';
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
@@ -101,6 +102,7 @@ export default function ChatPanel({
   otherLabel,
   otherSubtitle,
 }: ChatPanelProps) {
+  const router = useRouter();
   const [mensajes, setMensajes] = useState<readonly ChatMensaje[]>(initialMensajes);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -269,10 +271,11 @@ export default function ChatPanel({
           });
 
           if (!res.ok) setError(res.message);
+          else router.refresh();
         });
       });
     },
-    [conversacionId, currentUserId]
+    [conversacionId, currentUserId, router]
   );
 
   const onSubmit = useCallback(

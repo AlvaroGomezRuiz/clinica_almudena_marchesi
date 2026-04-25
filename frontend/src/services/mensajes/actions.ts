@@ -3,18 +3,13 @@
 /**
  * Server Actions del chat (admin ↔ paciente).
  *
- * Todo pasa por RPCs definidas en la migración 0006_chat.sql:
- *   * chat_mi_conversacion()          → devuelve/crea la conversación del paciente
- *   * chat_enviar_mensaje(id, texto)  → inserta mensaje + actualiza unread
- *   * chat_marcar_leidos(id)          → resetea unread del invocador
- *
- * Validación defensiva en servidor (length, trim) además del check SQL.
+ * Las RPC se invocan vía `createServerClient().rpc()` para que el cliente SSR
+ * refresque cookies y no dependa de un fetch manual con token desfasado.
  */
 
 import { revalidatePath } from 'next/cache';
 
 import { createServerClient } from '@/lib/supabase/server';
-import { getSupabaseEnv } from '@/lib/supabase/env';
 
 interface SendOk {
   readonly ok: true;
@@ -55,29 +50,36 @@ export async function sendMensajeAction(
   }
 
   const supabase = createServerClient();
-  let data: unknown;
-  try {
-    data = await rpcPost(supabase, 'chat_enviar_mensaje', {
-      p_conversacion_id: conversacionId,
-      p_contenido: trimmed,
-    });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    return { ok: false, code: 'unknown', message: msg };
+
+  const { data: rows, error } = await supabase.rpc('chat_enviar_mensaje', {
+    p_conversacion_id: conversacionId,
+    p_contenido: trimmed,
+  });
+
+  if (error) {
+    const code =
+      error.code === '42501' || /forbidden|not_authenticated/i.test(error.message)
+        ? 'forbidden'
+        : 'unknown';
+    return { ok: false, code, message: error.message };
   }
 
-  const row = Array.isArray(data) ? data[0] : data;
+  const row = rows?.[0];
   if (!row) return { ok: false, code: 'unknown', message: 'Sin respuesta del servidor.' };
+
+  revalidatePath('/admin/mensajes');
+  revalidatePath('/portal/mensajes');
+  revalidatePath('/portal');
 
   return {
     ok: true,
     mensaje: {
-      id: String(row.id),
-      conversation_id: String(row.conversation_id),
-      sender_user_id: String(row.sender_user_id),
-      body: String(row.body),
-      read_at: row.read_at ? String(row.read_at) : null,
-      created_at: String(row.created_at),
+      id: row.id,
+      conversation_id: row.conversation_id,
+      sender_user_id: row.sender_user_id,
+      body: row.body,
+      read_at: row.read_at,
+      created_at: row.created_at,
     },
   };
 }
@@ -89,7 +91,7 @@ export async function marcarLeidosAction(conversacionId: string): Promise<void> 
   if (!/^[0-9a-f-]{36}$/i.test(conversacionId)) return;
 
   const supabase = createServerClient();
-  await rpcPost(supabase, 'chat_marcar_leidos', { p_conversacion_id: conversacionId });
+  await supabase.rpc('chat_marcar_leidos', { p_conversacion_id: conversacionId });
 
   revalidatePath('/admin/mensajes');
   revalidatePath('/portal/mensajes');
@@ -100,44 +102,7 @@ export async function marcarLeidosAction(conversacionId: string): Promise<void> 
 // ---------------------------------------------------------------------------
 export async function getMiConversacionId(): Promise<string | null> {
   const supabase = createServerClient();
-  try {
-    const data = await rpcPost(supabase, 'chat_mi_conversacion', {});
-    if (!data) return null;
-    return String(data);
-  } catch {
-    return null;
-  }
-}
-
-async function rpcPost<T>(
-  supabase: ReturnType<typeof createServerClient>,
-  fn: string,
-  args: Record<string, unknown>
-): Promise<T> {
-  const { url, anonKey } = getSupabaseEnv();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error || !session?.access_token) {
-    throw new Error('No hay sesión válida para ejecutar la RPC.');
-  }
-
-  const res = await fetch(`${url}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(args),
-  });
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new Error(`RPC ${fn} falló (${res.status}): ${detail}`);
-  }
-
-  return (await res.json()) as T;
+  const { data, error } = await supabase.rpc('chat_mi_conversacion');
+  if (error || data == null) return null;
+  return String(data);
 }

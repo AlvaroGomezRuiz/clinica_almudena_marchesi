@@ -1,9 +1,6 @@
 ---
-description: ZENITH LEVEL - Frontend Engineering Standards for Next.js 15+, React 19, Tailwind CSS 4+, and Strict TypeScript.
-globs: ["**/FRONTEND/**/*.{ts,tsx}", "**/src/components/**/*.{ts,tsx}", "**/src/app/**/*.{ts,tsx}", "**/src/hooks/**/*.{ts,tsx}"]
-alwaysApply: false
+alwaysApply: true
 ---
-
 # 🏆 ZENITH FRONTEND ENGINEERING STANDARD (LEVEL GOD)
 
 You are the Principal Frontend Architect. Your mission is to produce code with **Zero Technical Debt**, **Pinnacle Performance (Core Web Vitals 2.0)**, and **Mathematical Type Integrity**.

@@ -175,7 +175,7 @@ async function handleCheckoutCompleted(
 
   // Disparar email de confirmación (fire-and-forget, no bloqueamos el webhook)
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
-    await triggerBookingEmail(userId, metadata.cita_id);
+    await triggerBookingEmail(userId, metadata.cita_id, result.pago_id);
   }
   if (kind === "bono" && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
@@ -220,7 +220,7 @@ async function handlePaymentIntentSucceeded(
     ) {
       // Solo re-disparo si el pago nació del Payment Element (sin Session): evita
       // duplicar el mail que ya manda `checkout.session.completed`.
-      await triggerBookingEmail(userId, metadata.cita_id);
+      await triggerBookingEmail(userId, metadata.cita_id, pagoExistente.id);
     }
     return;
   }
@@ -270,14 +270,14 @@ async function handlePaymentIntentSucceeded(
         metadata.cita_id &&
         (row.stripe_session_id == null || row.stripe_session_id === "")
       ) {
-        await triggerBookingEmail(userId, metadata.cita_id);
+        await triggerBookingEmail(userId, metadata.cita_id, row.id);
       }
     }
     return;
   }
 
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
-    await triggerBookingEmail(userId, metadata.cita_id);
+    await triggerBookingEmail(userId, metadata.cita_id, result.pago_id);
   }
   if (kind === "bono" && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
@@ -374,7 +374,11 @@ async function triggerBonoCompradoEmail(
   }
 }
 
-async function triggerBookingEmail(userId: string, citaId: string): Promise<void> {
+async function triggerBookingEmail(
+  userId: string,
+  citaId: string,
+  pagoId?: string | null,
+): Promise<void> {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -401,6 +405,7 @@ async function triggerBookingEmail(userId: string, citaId: string): Promise<void
         type: "booking_confirmed",
         to_user_id: userId,
         cita_id: citaId,
+        pago_id: pagoId ?? undefined,
         data: {
           servicio: servicio.nombre,
           inicio: (data as any).inicio,

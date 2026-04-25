@@ -192,10 +192,20 @@ async function dispatchBookingConfirmedEmail(
     user_id: paciente.user_id,
   };
 
+  const { data: pagoRow } = await supabase
+    .from('pagos')
+    .select('id')
+    .eq('cita_id', citaId)
+    .eq('estado', 'completado')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   await fireEmail({
     type: 'booking_confirmed',
     toUserId: ctx.user_id,
     citaId,
+    pagoId: pagoRow?.id,
     data: {
       servicio: ctx.servicio_nombre,
       inicio: ctx.inicio,

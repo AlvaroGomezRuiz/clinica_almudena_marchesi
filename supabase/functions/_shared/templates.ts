@@ -158,10 +158,11 @@ export function renderBookingConfirmed(data: BookingConfirmedData): { subject: s
        ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
      </table>
      ${button("Ver mis citas", `${data.app_url}/portal/citas`)}
-     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">¿Necesitas cambiar la fecha? Puedes hacerlo desde el portal con al menos 48h de antelación.</p>`,
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si hay un pago completado asociado a esta reserva, encontrarás la factura en PDF como adjunto.</p>
+     <p style="margin:8px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">¿Necesitas cambiar la fecha? Puedes hacerlo desde el portal con al menos 48h de antelación.</p>`,
     { preheader: `${data.servicio} · ${fecha} · ${hora}`, appUrl: data.app_url },
   );
-  const text = `Reserva confirmada\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nGestionar citas: ${data.app_url}/portal/citas`;
+  const text = `Reserva confirmada\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nSi aplica, la factura PDF va adjunta a este correo.\n\nGestionar citas: ${data.app_url}/portal/citas`;
   return { subject: `Confirmación: ${data.servicio} · ${fecha}`, html, text };
 }
 
@@ -266,7 +267,7 @@ export function renderBonoComprado(
     `${eyebrow("Pago registrado")}
      ${h1(name ? `Todo listo, ${name}` : "Gracias, tu pago está registrado")}
      <p style="margin:0 0 18px 0;">${apertura}</p>
-     <p style="margin:0 0 20px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${COLORS.inkSoft};">Resumen del pedido. La factura en PDF la puedes abrir en el portal (Bonos y pagos) en cuanto tenga asignado número de factura.</p>
+     <p style="margin:0 0 20px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${COLORS.inkSoft};">Resumen del pedido. La factura en PDF va adjunta a este correo cuando el emisor fiscal está configurado en el servidor.</p>
      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
        ${detailRow("Compra", data.producto)}
        ${detailRow("Sesiones incluidas", String(data.sesiones))}

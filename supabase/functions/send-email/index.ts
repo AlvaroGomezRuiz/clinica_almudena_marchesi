@@ -12,6 +12,12 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import {
+  type FacturaData,
+  invoicePdfBytesToBase64,
+  readInvoiceEmisor,
+  renderInvoicePdfBytes,
+} from "../_shared/invoice-pdf-render.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import {
   renderWelcome,
@@ -35,7 +41,7 @@ interface SendEmailRequest {
   to_user_id?: string;    // preferente — resuelve email desde profiles
   to_email?: string;      // fallback si to_user_id no disponible
   cita_id?: string;
-  /** Para `bono_comprado`: deduplicar un envío por pago. */
+  /** `bono_comprado`: dedupe; `booking_confirmed`: adjuntar factura PDF al correo. */
   pago_id?: string;
   data?: Record<string, unknown>;
 }
@@ -71,6 +77,36 @@ function supabaseAdmin(): SupabaseClient {
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY no configurados");
   return createClient(url, key, { auth: { persistSession: false } });
+}
+
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
+/** Factura PDF para Resend; falla en silencio si emisor o RPC no están listos. */
+async function buildInvoiceAttachments(
+  admin: SupabaseClient,
+  pagoId: string,
+): Promise<Array<{ filename: string; content: string }> | undefined> {
+  if (!UUID_RE.test(pagoId)) return undefined;
+  const emisor = readInvoiceEmisor();
+  if (!emisor) return undefined;
+
+  const { data, error } = await admin.rpc("datos_factura_service_mail", {
+    p_pago_id: pagoId,
+  });
+  if (error || data == null) return undefined;
+
+  const fila = (Array.isArray(data) ? data[0] : data) as FacturaData | undefined;
+  if (!fila?.numero_factura) return undefined;
+
+  try {
+    const bytes = await renderInvoicePdfBytes(fila, emisor);
+    return [{
+      filename: `factura-${fila.numero_factura}.pdf`,
+      content: invoicePdfBytesToBase64(bytes),
+    }];
+  } catch {
+    return undefined;
+  }
 }
 
 function prefsOptInForType(prefs: PrefsRow | null, type: EmailType): boolean {
@@ -199,6 +235,11 @@ Deno.serve(async (req) => {
   }
 
   // Insert pending (UNIQUE(dedupe_key) impide duplicados)
+  const pagoLogId =
+    payload.type === "bono_comprado" || payload.type === "booking_confirmed"
+      ? (payload.pago_id ?? null)
+      : null;
+
   const { data: logRow, error: insertErr } = await admin
     .from("emails_log")
     .insert({
@@ -206,7 +247,7 @@ Deno.serve(async (req) => {
       to_email:   toEmail,
       to_user_id: toUserId,
       cita_id:    payload.cita_id ?? null,
-      pago_id:    payload.type === "bono_comprado" ? (payload.pago_id ?? null) : null,
+      pago_id:    pagoLogId,
       status:     "pending",
       attempts:   0,
     })
@@ -224,6 +265,13 @@ Deno.serve(async (req) => {
   const rendered = renderFor(payload.type, payload.data ?? {}, profile);
   if (!rendered) return json({ error: "unknown_type" }, 400, corsHeaders);
 
+  let attachments: Array<{ filename: string; content: string }> | undefined;
+  if (payload.type === "bono_comprado" && payload.pago_id) {
+    attachments = await buildInvoiceAttachments(admin, payload.pago_id);
+  } else if (payload.type === "booking_confirmed" && payload.pago_id) {
+    attachments = await buildInvoiceAttachments(admin, payload.pago_id);
+  }
+
   const result = await sendViaResend({
     from:      FROM_EMAIL,
     to:        toEmail,
@@ -232,6 +280,7 @@ Deno.serve(async (req) => {
     text:      rendered.text,
     reply_to:  REPLY_TO,
     tags:      [{ name: "type", value: payload.type }],
+    attachments,
   });
 
   await admin

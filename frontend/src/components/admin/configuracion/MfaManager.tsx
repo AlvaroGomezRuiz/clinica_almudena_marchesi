@@ -77,9 +77,10 @@ export default function MfaManager({
     }
     setError(null);
     startTransition(async () => {
-      const { data: challenge, error: chErr } = await supabase.auth.mfa.challenge({
-        factorId,
-      });
+      const { data: challenge, error: chErr } =
+        await supabase.auth.mfa.challenge({
+          factorId,
+        });
       if (chErr || !challenge) {
         setError(chErr?.message ?? 'No se pudo generar el desafío.');
         return;
@@ -116,7 +117,8 @@ export default function MfaManager({
   };
 
   const unenroll = (id: string): void => {
-    if (!window.confirm('¿Desactivar este factor TOTP? Perderás el 2FA.')) return;
+    if (!window.confirm('¿Desactivar este factor TOTP? Perderás el 2FA.'))
+      return;
     startTransition(async () => {
       const { error: err } = await supabase.auth.mfa.unenroll({ factorId: id });
       if (err) {
@@ -141,8 +143,10 @@ export default function MfaManager({
                   {f.friendly_name ?? 'TOTP'}
                 </p>
                 <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                  {f.status === 'verified' ? 'Verificado' : 'Pendiente de verificar'} ·{' '}
-                  {new Date(f.created_at).toLocaleDateString('es-ES')}
+                  {f.status === 'verified'
+                    ? 'Verificado'
+                    : 'Pendiente de verificar'}{' '}
+                  · {new Date(f.created_at).toLocaleDateString('es-ES')}
                 </p>
               </div>
               <button
@@ -165,8 +169,9 @@ export default function MfaManager({
       {!enrollMode ? (
         hasVerified ? (
           <p className="font-body text-[0.85rem] text-ink-soft dark:text-white/60">
-            Segundo factor <strong>activo</strong>. Puedes desactivarlo arriba si cambias
-            de dispositivo. Para añadir un <strong>segundo dispositivo de reserva</strong>
+            Segundo factor <strong>activo</strong>. Puedes desactivarlo arriba
+            si cambias de dispositivo. Para añadir un{' '}
+            <strong>segundo dispositivo de reserva</strong>
             ponte en contacto o usa Desactivar y vuelve a activar.
           </p>
         ) : (
@@ -176,7 +181,10 @@ export default function MfaManager({
             disabled={isPending}
             className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-body text-[0.82rem] text-on-primary hover:bg-primary-dim disabled:opacity-40 dark:bg-primary dark:text-white"
           >
-            <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+            <span
+              className="material-symbols-outlined text-[1rem]"
+              aria-hidden="true"
+            >
               key
             </span>
             Activar MFA ahora
@@ -252,12 +260,17 @@ export default function MfaManager({
       )}
 
       {error ? (
-        <p role="alert" className="font-body text-[0.8rem] text-red-600 dark:text-red-400">
+        <p
+          role="alert"
+          className="font-body text-[0.8rem] text-red-600 dark:text-red-400"
+        >
           Error: {error}
         </p>
       ) : null}
       {info ? (
-        <p className="font-body text-[0.8rem] text-primary dark:text-primary/80">{info}</p>
+        <p className="font-body text-[0.8rem] text-primary dark:text-primary/80">
+          {info}
+        </p>
       ) : null}
     </div>
   );
