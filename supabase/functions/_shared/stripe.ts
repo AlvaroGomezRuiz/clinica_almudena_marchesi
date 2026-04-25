@@ -173,20 +173,19 @@ export async function createCheckoutSession(
 // ---------------------------------------------------------------------------
 
 /**
- * Métodos del portal (EUR). Mismo orden que `paymentMethodOrder` en el Payment
- * Element: tarjeta (incl. Apple/Google) → Link → SEPA → Klarna.
+ * Métodos del portal (EUR). El orden visual en Payment Element se controla con
+ * `paymentMethodOrder` (front): tarjeta → apple_pay → google_pay → SEPA → Klarna → link.
+ * Aquí: mismos `payment_method_types` en el PaymentIntent; el orden de este array
+ * no define la UI, pero lo alineamos (link al final) para predecibilidad.
  *
- * - `card`: manual + monederos (Apple Pay, Google Pay) en el mismo tramo.
- * - `link`: pago con email; activar en Dashboard.
- * - `sepa_debit` / `klarna`: a continuación.
- *
- * Lista explícita: sin mb_way, bancontact, eps, etc.
+ * - `card` + wallets (Apple Pay / Google Pay) en el elemento de pago.
+ * - `link` / `sepa_debit` / `klarna` según dashboard.
  */
 export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
   "card",
-  "link",
   "sepa_debit",
   "klarna",
+  "link",
 ];
 
 export interface CreatePaymentIntentInput {

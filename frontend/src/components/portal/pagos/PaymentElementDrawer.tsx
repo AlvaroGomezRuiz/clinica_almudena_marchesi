@@ -6,9 +6,10 @@
  * Sustituye la redirección a Stripe Checkout hosted por un flow in-page:
  *   1. Al abrirse pide `client_secret` vía Server Action (`crearPaymentIntentCitaAction`
  *      o `crearPaymentIntentBonoAction`).
- *   2. Monta <Elements> con appearance y <PaymentElement> con orden: tarjeta
- *      (línea manual + monederos Apple/Google en esa sección) → Link → SEPA → Klarna.
- *      `paymentMethodOrder` + `PORTAL_PAYMENT_METHOD_TYPES` (servidor) alineados.
+ *   2. Monta <Elements> con appearance y <PaymentElement> con orden fijo (Stripe):
+ *      tarjeta → Apple Pay / Google Pay (tras la tarjeta) → SEPA → Klarna → Link.
+ *      `paymentMethodOrder` incluye `apple_pay` y `google_pay` como criterio de UI.
+ *      Mismo orden lógico que `PORTAL_PAYMENT_METHOD_TYPES` (servidor).
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
  *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
  *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge
@@ -405,13 +406,20 @@ function CheckoutForm({
         <div className="space-y-4">
           <PaymentElement
             options={{
-              /* Orden: tarjeta (↔ + Apple + Google) → Link → SEPA → Klarna. Wallets: auto en el mismo tramo "Tarjeta". */
+              /* Orden: tarjeta → Apple Pay / Google Pay (Stripe los lista como tipos de orden) → SEPA → Klarna → Link al final. */
               layout: {
                 type: 'accordion',
                 spacedAccordionItems: true,
                 defaultCollapsed: false,
               },
-              paymentMethodOrder: ['card', 'link', 'sepa_debit', 'klarna'],
+              paymentMethodOrder: [
+                'card',
+                'apple_pay',
+                'google_pay',
+                'sepa_debit',
+                'klarna',
+                'link',
+              ],
               wallets: { applePay: 'auto', googlePay: 'auto' },
             }}
           />

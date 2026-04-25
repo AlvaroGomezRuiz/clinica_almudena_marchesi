@@ -202,13 +202,28 @@ async function handlePaymentIntentSucceeded(
     return;
   }
 
-  // Anti-doble-procesado: si ya existe un pago con este PI, salimos.
-  const { data: existing } = await admin
+  // Si el PI ya se contabilizó (p. ej. `checkout.session.completed` antes, o
+  // reintento del webhook tras 500), re-disparamos el email: `send-email` deduplica
+  // por `pago_id` y no duplica envíos reales.
+  const { data: pagoExistente } = await admin
     .from("pagos")
-    .select("id")
+    .select("id, bono_id, stripe_session_id")
     .eq("stripe_payment_intent", pi.id)
     .maybeSingle();
-  if (existing) return;
+  if (pagoExistente) {
+    if (kind === "bono" && pagoExistente.bono_id) {
+      await triggerBonoCompradoEmail(userId, pagoExistente.id, pagoExistente.bono_id);
+    } else if (
+      kind === "cita" &&
+      metadata.cita_id &&
+      (pagoExistente.stripe_session_id == null || pagoExistente.stripe_session_id === "")
+    ) {
+      // Solo re-disparo si el pago nació del Payment Element (sin Session): evita
+      // duplicar el mail que ya manda `checkout.session.completed`.
+      await triggerBookingEmail(userId, metadata.cita_id);
+    }
+    return;
+  }
 
   const metodo: string | null =
     pi.charges?.data?.[0]?.payment_method_details?.type ??
@@ -239,7 +254,27 @@ async function handlePaymentIntentSucceeded(
     ya_procesado: boolean;
   } | null;
 
-  if (!result || result.ya_procesado) return;
+  if (!result) return;
+
+  if (result.ya_procesado) {
+    const { data: row } = await admin
+      .from("pagos")
+      .select("id, bono_id, stripe_session_id")
+      .eq("stripe_payment_intent", pi.id)
+      .maybeSingle();
+    if (row?.id) {
+      if (kind === "bono" && row.bono_id) {
+        await triggerBonoCompradoEmail(userId, row.id, row.bono_id);
+      } else if (
+        kind === "cita" &&
+        metadata.cita_id &&
+        (row.stripe_session_id == null || row.stripe_session_id === "")
+      ) {
+        await triggerBookingEmail(userId, metadata.cita_id);
+      }
+    }
+    return;
+  }
 
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
     await triggerBookingEmail(userId, metadata.cita_id);
@@ -302,7 +337,7 @@ async function triggerBonoCompradoEmail(
 
     const appUrl = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
-    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -322,8 +357,20 @@ async function triggerBonoCompradoEmail(
         },
       }),
     });
-  } catch {
-    // Mejor esfuerzo: el pago y el bono ya constan.
+    if (!res.ok) {
+      const t = await res.text();
+      captureEdgeMessage(
+        `send-email bono_comprado HTTP ${res.status} ${t.slice(0, 400)}`,
+        { area: "stripe-webhook", entity_id: pagoId, fingerprint: ["bonoCompradoEmail", "http"] },
+        "warning",
+      );
+    }
+  } catch (e) {
+    captureEdgeError(e, {
+      area: "stripe-webhook",
+      entity_id: pagoId,
+      fingerprint: ["bonoCompradoEmail", "exception"],
+    });
   }
 }
 
