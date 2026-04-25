@@ -208,11 +208,6 @@ export interface CreatePaymentIntentInput {
   automatic_payment_methods?: boolean;
   /** Si se omite, se usa la moneda por defecto (EUR). */
   receipt_email?: string;
-  /**
-   * false = oculta Stripe Link en el bloque de tarjeta (solo tarjeta + wallets).
-   * Por defecto false en flujos portal.
-   */
-  link_enabled?: boolean;
 }
 
 export interface PaymentIntent {
@@ -251,9 +246,8 @@ export async function createPaymentIntent(
     }
   }
 
-  if (input.link_enabled === false) {
-    body["payment_method_options[link][enabled]"] = "false";
-  }
+  /* No usar payment_method_options[link] aquí: distintas versiones de API lo rechazan
+   * como "unknown parameter". Link se desactiva en Dashboard → Payment methods. */
 
   return await stripeRequest<PaymentIntent>(
     "/payment_intents",
