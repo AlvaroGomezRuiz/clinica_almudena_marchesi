@@ -173,18 +173,18 @@ export async function createCheckoutSession(
 // ---------------------------------------------------------------------------
 
 /**
- * Métodos del portal (EUR). Orden en el array ≈ secciones en Payment Element.
+ * Métodos del portal (EUR). Mismo orden que `paymentMethodOrder` en el Payment
+ * Element: tarjeta (incl. Apple/Google) → Link → SEPA → Klarna.
  *
- * - `link`: pago rápido con email (Stripe Link); activar también en Dashboard.
- * - `card`: tarjeta; Apple/Google Pay = wallets en este flujo.
- * - `sepa_debit`: adeudo SEPA.
- * - `klarna`: BNPL al final.
+ * - `card`: manual + monederos (Apple Pay, Google Pay) en el mismo tramo.
+ * - `link`: pago con email; activar en Dashboard.
+ * - `sepa_debit` / `klarna`: a continuación.
  *
- * Lista explícita: sin mb_way, bancontact, eps, etc. (sí se incluye `link` a petición).
+ * Lista explícita: sin mb_way, bancontact, eps, etc.
  */
 export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
-  "link",
   "card",
+  "link",
   "sepa_debit",
   "klarna",
 ];

@@ -6,9 +6,9 @@
  * Sustituye la redirección a Stripe Checkout hosted por un flow in-page:
  *   1. Al abrirse pide `client_secret` vía Server Action (`crearPaymentIntentCitaAction`
  *      o `crearPaymentIntentBonoAction`).
- *   2. Monta <Elements> con appearance personalizada (match con portal) y
- *      <PaymentElement layout accordion>: tarjeta (wallets + carta) → SEPA → Klarna
- *      a la vista; orden vía paymentMethodOrder + PI (PORTAL_PAYMENT_METHOD_TYPES).
+ *   2. Monta <Elements> con appearance y <PaymentElement> con orden: tarjeta
+ *      (línea manual + monederos Apple/Google en esa sección) → Link → SEPA → Klarna.
+ *      `paymentMethodOrder` + `PORTAL_PAYMENT_METHOD_TYPES` (servidor) alineados.
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
  *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
  *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge
@@ -21,8 +21,9 @@
  *   - El `client_secret` se pide lazy (al abrir), NO en el server render, para
  *     evitar PIs huérfanos si el usuario nunca abre el drawer.
  *   - Appearance usa variables Tailwind del tema para respetar dark/light mode.
- *   - El modal limita altura; solo el bloque del PaymentElement hace scroll; los
- *     botones quedan en un pie fijo (evita solaparse con chips/cards de la página).
+ *   - El modal se renderiza con createPortal(..., document.body) para no quedar
+ *     atrapado por backdrop-blur/transform de ancestros (p. ej. SurfaceCard) — sin
+ *     esto, fixed pegaba a la tarjeta y en escritorio no se podía pulsar Pagar.
  *   - Apple Pay / Google Pay: en Stripe, el **dominio** del checkout debe constar
  *     como *payment method domain* verificado (no basta con «método habilitado»).
  *     Añade `https://tudominio` y `https://www.tudominio` si usas ambos. Tras
@@ -37,6 +38,7 @@ import {
   type StripeElementsOptions,
 } from '@stripe/stripe-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/portal-shell/ui';
@@ -94,6 +96,15 @@ export default function PaymentElementDrawer({
   const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open) {
       fetchedRef.current = false;
       setState({ status: 'idle' });
@@ -139,10 +150,11 @@ export default function PaymentElementDrawer({
   }, [state, resolvedTheme]);
 
   if (!open) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-drawer-title"
@@ -150,7 +162,7 @@ export default function PaymentElementDrawer({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* max-h + flex: el scroll solo afecta al bloque de Stripe; botones fijos al pie (evita superposición con la página de detrás). */}
+      {/* max-h + flex: scroll en Stripe; pie fijo. Portal a body: fixed no afectado por SurfaceCard. */}
       <div className="flex max-h-[min(90vh,840px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-[#f5efe4] shadow-2xl dark:bg-[#1b1b18] sm:max-h-[min(88vh,800px)] sm:rounded-3xl">
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-ink/5 px-6 py-5 dark:border-white/5">
           <div>
@@ -208,7 +220,8 @@ export default function PaymentElementDrawer({
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -386,13 +399,13 @@ function CheckoutForm({
         <div className="space-y-4">
           <PaymentElement
             options={{
-              /* Accordion: Link, tarjeta (wallets), SEPA, Klarna. Wallets: dominio verificado en Dashboard Stripe. */
+              /* Orden: tarjeta (↔ + Apple + Google) → Link → SEPA → Klarna. Wallets: auto en el mismo tramo "Tarjeta". */
               layout: {
                 type: 'accordion',
                 spacedAccordionItems: true,
                 defaultCollapsed: false,
               },
-              paymentMethodOrder: ['link', 'card', 'sepa_debit', 'klarna'],
+              paymentMethodOrder: ['card', 'link', 'sepa_debit', 'klarna'],
               wallets: { applePay: 'auto', googlePay: 'auto' },
             }}
           />
