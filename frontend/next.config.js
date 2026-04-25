@@ -61,7 +61,8 @@ function buildCsp() {
        navegadores modernos (Firefox >80, Chrome >52): los navegadores que lo
        entienden ignoran `'unsafe-inline'` y solo ejecutan scripts cargados por
        scripts firmados. En legacy browsers, `'unsafe-inline'` actúa de fallback. */
-    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com",
+    /* Stripe.js: subdominios de js.stripe.com (iframes internos) + iconos wallets; ver https://docs.stripe.com/security/guide#content-security-policy */
+    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com https://*.js.stripe.com",
     /* style-src: `'unsafe-inline'` necesario por Tailwind arbitrary values y
        next-themes (seteo inline del atributo style en <html>). Ya NO se
        permite fonts.googleapis.com porque todas las fuentes están
@@ -74,12 +75,12 @@ function buildCsp() {
     "font-src 'self' data:",
     /* img-src: self + data-uri + blob (para Avatar Uploader) + avatares Google
        + Supabase Storage. */
-    `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com ${supabaseHost}`.trim(),
+    `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com https://*.stripe.com ${supabaseHost}`.trim(),
     /* connect-src: self + Supabase (HTTPS REST + WSS Realtime) + Stripe API +
        Vercel Insights + Sentry tunnel propio (evita /monitoring externo). */
     `connect-src 'self' ${supabaseHost} ${supabaseWss} https://api.stripe.com https://r.stripe.com https://q.stripe.com https://errors.stripe.com https://m.stripe.network https://vitals.vercel-insights.com https://vercel.live`.trim(),
-    /* frame-src: Stripe (3DS, hooks) + Vercel Live (feedback en previews, no afecta prod ampsicologia.es). */
-    'frame-src https://js.stripe.com https://hooks.stripe.com https://vercel.live',
+    /* frame-src: Stripe 3DS, hooks, iframes internos Stripe.js (wallets / PR API) + Vercel Live. */
+    'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://m.stripe.network https://vercel.live',
     /* worker-src: solo blob (para Service Workers generados por Next). */
     "worker-src 'self' blob:",
     /* manifest-src: propio manifest. */

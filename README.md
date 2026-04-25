@@ -85,9 +85,9 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | all | Pública; cada request va con RLS del usuario. |
 | `SUPABASE_SERVICE_ROLE_KEY` | server only | **NUNCA** expongas esto al cliente. Solo webhooks. |
 | `NEXT_PUBLIC_APP_URL` | all | Ej. `https://ampsicologia.es` (dominio definitivo; preview Vercel hasta DNS). |
-| `STRIPE_SECRET_KEY` | server | `sk_live_...` |
-| `STRIPE_WEBHOOK_SECRET` | server | `whsec_...` |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | all | `pk_live_...` |
+| `STRIPE_SECRET_KEY` | server (p. ej. secret Supabase Edge) | `sk_test_...` en pruebas, `sk_live_...` solo al cobrar de verdad. |
+| `STRIPE_WEBHOOK_SECRET` | server | `whsec_...` del **mismo** modo: endpoint creado en Test mode vs Live. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | all (Vercel) | `pk_test_...` o `pk_live_...`; debe coincidir con `STRIPE_SECRET_KEY`. |
 
 > **Rotación:** si cualquier secret se pega en un chat, un PR, un screenshot o un log, **rótalo inmediatamente** en Supabase/Stripe. Es 1 click.
 

@@ -21,7 +21,13 @@
  *   - El `client_secret` se pide lazy (al abrir), NO en el server render, para
  *     evitar PIs huérfanos si el usuario nunca abre el drawer.
  *   - Appearance usa variables Tailwind del tema para respetar dark/light mode.
- *   - El container respeta la clase `max-h-[85vh]` + scroll para móviles.
+ *   - El modal limita altura; solo el bloque del PaymentElement hace scroll; los
+ *     botones quedan en un pie fijo (evita solaparse con chips/cards de la página).
+ *   - Apple Pay / Google Pay: en Stripe, el **dominio** del checkout debe constar
+ *     como *payment method domain* verificado (no basta con «método habilitado»).
+ *     Añade `https://tudominio` y `https://www.tudominio` si usas ambos. Tras
+ *     desplegar el fichero `.well-known/...`, el estado en Dashboard debe quedar
+ *     *active* para Apple Pay. En iPhone, “Chrome” usa WebKit como Safari.
  */
 
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
@@ -136,7 +142,7 @@ export default function PaymentElementDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-drawer-title"
@@ -144,8 +150,9 @@ export default function PaymentElementDrawer({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg rounded-t-3xl bg-[#f5efe4] shadow-2xl dark:bg-[#1b1b18] sm:rounded-3xl">
-        <header className="flex items-start justify-between gap-4 px-6 py-5">
+      {/* max-h + flex: el scroll solo afecta al bloque de Stripe; botones fijos al pie (evita superposición con la página de detrás). */}
+      <div className="flex max-h-[min(90vh,840px)] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-[#f5efe4] shadow-2xl dark:bg-[#1b1b18] sm:max-h-[min(88vh,800px)] sm:rounded-3xl">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-ink/5 px-6 py-5 dark:border-white/5">
           <div>
             <h2
               id="payment-drawer-title"
@@ -175,23 +182,29 @@ export default function PaymentElementDrawer({
           </button>
         </header>
 
-        <div className="max-h-[75vh] overflow-y-auto px-6 pb-6">
+        <div className="flex min-h-0 flex-1 flex-col px-0">
           {state.status === 'loading' || state.status === 'idle' ? (
-            <SkeletonPay />
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+              <SkeletonPay />
+            </div>
           ) : state.status === 'error' ? (
-            <ErrorPay message={state.message} onRetry={() => {
-              fetchedRef.current = false;
-              setState({ status: 'idle' });
-              onClose();
-            }} />
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+              <ErrorPay message={state.message} onRetry={() => {
+                fetchedRef.current = false;
+                setState({ status: 'idle' });
+                onClose();
+              }} />
+            </div>
           ) : options ? (
-            <Elements stripe={getStripe()} options={options}>
-              <CheckoutForm
-                onCancel={onClose}
-                clientSecret={state.clientSecret}
-                createdPaymentIntentId={state.paymentIntentId}
-              />
-            </Elements>
+            <div className="flex min-h-0 flex-1 flex-col">
+              <Elements stripe={getStripe()} options={options}>
+                <CheckoutForm
+                  onCancel={onClose}
+                  clientSecret={state.clientSecret}
+                  createdPaymentIntentId={state.paymentIntentId}
+                />
+              </Elements>
+            </div>
           ) : null}
         </div>
       </div>
@@ -365,44 +378,55 @@ function CheckoutForm({
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement
-        options={{
-          /* Accordion: Link, tarjeta (wallets), SEPA, Klarna visibles a la vez. */
-          layout: {
-            type: 'accordion',
-            spacedAccordionItems: true,
-            defaultCollapsed: false,
-          },
-          paymentMethodOrder: ['link', 'card', 'sepa_debit', 'klarna'],
-          wallets: { applePay: 'auto', googlePay: 'auto' },
-        }}
-      />
+    <form
+      onSubmit={handleSubmit}
+      className="flex min-h-0 flex-1 flex-col"
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-6 pb-3 [scrollbar-gutter:stable]">
+        <div className="space-y-4">
+          <PaymentElement
+            options={{
+              /* Accordion: Link, tarjeta (wallets), SEPA, Klarna. Wallets: dominio verificado en Dashboard Stripe. */
+              layout: {
+                type: 'accordion',
+                spacedAccordionItems: true,
+                defaultCollapsed: false,
+              },
+              paymentMethodOrder: ['link', 'card', 'sepa_debit', 'klarna'],
+              wallets: { applePay: 'auto', googlePay: 'auto' },
+            }}
+          />
 
-      {error ? (
-        <p role="alert" className="font-body text-[0.85rem] text-red-700 dark:text-red-400">
-          {error}
-        </p>
-      ) : null}
-
-      <div className="flex items-center justify-end gap-3">
-        <Button variant="ghost" type="button" onClick={onCancel} disabled={submitting}>
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          type="submit"
-          icon="lock"
-          disabled={!stripe || !elements || submitting}
-        >
-          {submitting ? 'Procesando…' : 'Pagar'}
-        </Button>
+          {error ? (
+            <p role="alert" className="font-body text-[0.85rem] text-red-700 dark:text-red-400">
+              {error}
+            </p>
+          ) : null}
+        </div>
       </div>
 
-      <p className="font-body text-[0.72rem] leading-relaxed text-ink-muted dark:text-white/50">
-        Pago procesado por Stripe. Tus datos de tarjeta nunca pasan por nuestros
-        servidores. Al confirmar aceptas los términos del servicio.
-      </p>
+      <div
+        className="shrink-0 space-y-2 border-t border-ink/10 bg-[#f5efe4] px-6 pb-4 pt-3 dark:border-white/10 dark:bg-[#1b1b18]"
+      >
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="ghost" type="button" onClick={onCancel} disabled={submitting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            type="submit"
+            icon="lock"
+            disabled={!stripe || !elements || submitting}
+          >
+            {submitting ? 'Procesando…' : 'Pagar'}
+          </Button>
+        </div>
+
+        <p className="font-body text-[0.72rem] leading-relaxed text-ink-muted dark:text-white/50">
+          Pago procesado por Stripe. Tus datos de tarjeta nunca pasan por nuestros
+          servidores. Al confirmar aceptas los términos del servicio.
+        </p>
+      </div>
     </form>
   );
 }
