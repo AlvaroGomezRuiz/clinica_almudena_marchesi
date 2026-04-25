@@ -19,6 +19,7 @@ import {
   renderReminder24h,
   renderBookingCancelled,
   renderNuevaAsignacion,
+  renderBonoComprado,
 } from "../_shared/templates.ts";
 
 type EmailType =
@@ -26,13 +27,16 @@ type EmailType =
   | "booking_confirmed"
   | "reminder_24h"
   | "booking_cancelled"
-  | "nueva_asignacion";
+  | "nueva_asignacion"
+  | "bono_comprado";
 
 interface SendEmailRequest {
   type: EmailType;
   to_user_id?: string;    // preferente — resuelve email desde profiles
   to_email?: string;      // fallback si to_user_id no disponible
   cita_id?: string;
+  /** Para `bono_comprado`: deduplicar un envío por pago. */
+  pago_id?: string;
   data?: Record<string, unknown>;
 }
 
@@ -70,8 +74,14 @@ function supabaseAdmin(): SupabaseClient {
 }
 
 function prefsOptInForType(prefs: PrefsRow | null, type: EmailType): boolean {
+  if (type === "bono_comprado") return true; /* comprobante de pago: siempre */
   if (!prefs) return true;
-  return Boolean(prefs[type]);
+  if (type === "welcome") return prefs.welcome;
+  if (type === "booking_confirmed") return prefs.booking_confirmed;
+  if (type === "booking_cancelled") return prefs.booking_cancelled;
+  if (type === "reminder_24h") return prefs.reminder_24h;
+  if (type === "nueva_asignacion") return prefs.nueva_asignacion;
+  return true;
 }
 
 function renderFor(type: EmailType, data: Record<string, unknown>, profile: ProfileRow | null) {
@@ -104,6 +114,16 @@ function renderFor(type: EmailType, data: Record<string, unknown>, profile: Prof
         ...base,
         titulo_recurso: String(data.titulo_recurso ?? ""),
         tipo_recurso:   String(data.tipo_recurso ?? "recurso"),
+      });
+    case "bono_comprado":
+      return renderBonoComprado({
+        ...base,
+        producto:      String(data.producto ?? "Bono"),
+        sesiones:      Number(data.sesiones ?? 0),
+        importe_label: String(data.importe_label ?? ""),
+        metodo_label:  String(data.metodo_label ?? "—"),
+        validez_label: String(data.validez_label ?? "—"),
+        app_url:       String(data.app_url ?? APP_URL),
       });
   }
 }
@@ -186,6 +206,7 @@ Deno.serve(async (req) => {
       to_email:   toEmail,
       to_user_id: toUserId,
       cita_id:    payload.cita_id ?? null,
+      pago_id:    payload.type === "bono_comprado" ? (payload.pago_id ?? null) : null,
       status:     "pending",
       attempts:   0,
     })

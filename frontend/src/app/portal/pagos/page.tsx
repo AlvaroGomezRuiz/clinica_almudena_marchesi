@@ -204,15 +204,17 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
     return /Pareja/i.test(b.nombre) && !/Individual/i.test(b.nombre);
   });
 
-  const bonoActivo = bonos.find(
+  const bonosConSaldo = bonos.filter(
     (b) =>
       b.activo &&
       b.estado === 'activo' &&
       b.sesiones_consumidas < b.sesiones_totales
   );
-  const sesionesDisponibles = bonoActivo
-    ? bonoActivo.sesiones_totales - bonoActivo.sesiones_consumidas
-    : 0;
+  const sesionesDisponibles = bonosConSaldo.reduce(
+    (sum, b) => sum + (b.sesiones_totales - b.sesiones_consumidas),
+    0
+  );
+  const bonoActivo = bonosConSaldo[0];
 
   const totalGastado = pagos
     .filter((p) => p.estado === 'completado')
@@ -234,8 +236,12 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
           value={sesionesDisponibles}
           icon="account_balance_wallet"
           footnote={
-            bonoActivo
-              ? `${bonoActivo.sesiones_totales} totales · ${servicioNombre(bonoActivo.servicio_id)}`
+            bonosConSaldo.length > 0
+              ? `${bonosConSaldo.length} bono(s) con saldo · ${sesionesDisponibles} sesión(es) en total${
+                  bonoActivo
+                    ? ` (principal: ${servicioNombre(bonoActivo.servicio_id)})`
+                    : ''
+                }`
               : 'Sin bono activo'
           }
         />

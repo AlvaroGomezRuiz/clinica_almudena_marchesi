@@ -4,7 +4,32 @@ import { PageHeader } from '@/components/portal-shell/ui';
 import { fetchPaymentIntentResumenForUser } from '@/lib/stripe/paymentIntentLookup.server';
 import { createServerClient } from '@/lib/supabase/server';
 
-import PagoSuccessPanel, { type PagoSuccessRow, type StripeResumen } from './PagoSuccessPanel';
+import PagoSuccessPanel, {
+  type PagoSuccessBonoResumen,
+  type PagoSuccessRow,
+  type StripeResumen,
+} from './PagoSuccessPanel';
+
+type PagoBase = Omit<PagoSuccessRow, 'bono_resumen'>;
+
+async function withBonoResumen(
+  supabase: ReturnType<typeof createServerClient>,
+  row: PagoBase
+): Promise<PagoSuccessRow> {
+  if (!row.bono_id) {
+    return { ...row, bono_resumen: null, descripcion: row.descripcion ?? null };
+  }
+  const { data: b } = await supabase
+    .from('bonos_pacientes')
+    .select('sesiones_totales, fecha_expiracion')
+    .eq('id', row.bono_id)
+    .maybeSingle<PagoSuccessBonoResumen>();
+  return {
+    ...row,
+    descripcion: row.descripcion ?? null,
+    bono_resumen: b ?? null,
+  };
+}
 
 export const metadata = { title: 'Pago realizado | Portal Paciente' };
 export const dynamic = 'force-dynamic';
@@ -30,21 +55,24 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
     redirect('/login?reason=no_session');
   }
 
+  const baseSelect =
+    'id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago, descripcion';
+
   let pago: PagoSuccessRow | null = null;
   if (sp.session_id) {
-    const { data } = await supabase
+    const { data: row } = await supabase
       .from('pagos')
-      .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago')
+      .select(baseSelect)
       .eq('stripe_session_id', sp.session_id)
-      .maybeSingle<PagoSuccessRow>();
-    pago = data ?? null;
+      .maybeSingle<PagoBase>();
+    pago = row ? await withBonoResumen(supabase, row) : null;
   } else if (sp.payment_intent) {
-    const { data } = await supabase
+    const { data: row } = await supabase
       .from('pagos')
-      .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago')
+      .select(baseSelect)
       .eq('stripe_payment_intent', sp.payment_intent)
-      .maybeSingle<PagoSuccessRow>();
-    pago = data ?? null;
+      .maybeSingle<PagoBase>();
+    pago = row ? await withBonoResumen(supabase, row) : null;
   }
 
   let stripeResumen: StripeResumen | null = null;

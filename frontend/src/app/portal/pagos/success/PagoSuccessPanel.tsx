@@ -12,6 +12,11 @@ import {
 
 export type { StripeResumen } from '@/lib/stripe/paymentIntentResumen';
 
+export interface PagoSuccessBonoResumen {
+  readonly sesiones_totales: number;
+  readonly fecha_expiracion: string | null;
+}
+
 export interface PagoSuccessRow {
   id: string;
   importe_centimos: number;
@@ -20,6 +25,21 @@ export interface PagoSuccessRow {
   cita_id: string | null;
   bono_id: string | null;
   fecha_pago: string;
+  descripcion: string | null;
+  bono_resumen: PagoSuccessBonoResumen | null;
+}
+
+/** Texto en portal para el código de método que guarda Stripe en `pagos.metodo`. */
+export function labelMetodoPago(m: string | null | undefined): string {
+  if (!m) return '—';
+  const x = m.toLowerCase();
+  if (x === 'card') {
+    return 'Tarjeta (puede incluir Apple Pay / Google Pay con tarjeta guardada)';
+  }
+  if (x === 'link') return 'Stripe Link (pago con email)';
+  if (x === 'sepa_debit') return 'Domiciliación SEPA';
+  if (x === 'klarna') return 'Klarna';
+  return m;
 }
 
 function euro(c: number, currency = 'EUR'): string {
@@ -76,15 +96,31 @@ export default function PagoSuccessPanel({
     const supabase = createBrowserClient();
     let request = supabase
       .from('pagos')
-      .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago');
+      .select('id, importe_centimos, moneda, metodo, cita_id, bono_id, fecha_pago, descripcion');
     if (sessionId) {
       request = request.eq('stripe_session_id', sessionId);
     } else {
       request = request.eq('stripe_payment_intent', paymentIntentId as string);
     }
-    const { data, error } = await request.maybeSingle<PagoSuccessRow>();
+    const { data: row, error } = await request.maybeSingle<
+      Omit<PagoSuccessRow, 'bono_resumen'>
+    >();
     if (error) return;
-    if (data) setPago(data);
+    if (!row) return;
+    if (!row.bono_id) {
+      setPago({ ...row, bono_resumen: null, descripcion: row.descripcion ?? null });
+      return;
+    }
+    const { data: b } = await supabase
+      .from('bonos_pacientes')
+      .select('sesiones_totales, fecha_expiracion')
+      .eq('id', row.bono_id)
+      .maybeSingle<PagoSuccessBonoResumen>();
+    setPago({
+      ...row,
+      descripcion: row.descripcion ?? null,
+      bono_resumen: b ?? null,
+    });
   }, [sessionId, paymentIntentId]);
 
   useEffect(() => {
@@ -199,8 +235,31 @@ export default function PagoSuccessPanel({
                   {stripeResumen.descripcion} · {stripeResumen.kind === 'cita' ? 'Cita' : 'Bono de sesiones'}
                 </p>
               ) : null}
+              {pago?.descripcion ? (
+                <p className="mt-2 max-w-lg font-body text-[0.9rem] leading-relaxed text-ink">
+                  {pago.descripcion}
+                </p>
+              ) : null}
+              {pago?.bono_resumen ? (
+                <p className="mt-1 font-body text-[0.85rem] text-ink-soft">
+                  {pago.bono_resumen.sesiones_totales} sesión
+                  {pago.bono_resumen.sesiones_totales === 1 ? '' : 'es'} en este bono
+                  {pago.bono_resumen.fecha_expiracion
+                    ? ` · vencen según bono: ${new Date(
+                        pago.bono_resumen.fecha_expiracion
+                      ).toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        timeZone: 'Europe/Madrid',
+                      })}`
+                    : null}
+                </p>
+              ) : null}
               {pago?.metodo ? (
-                <p className="mt-1 font-body text-[0.82rem] text-ink-soft">Vía {pago.metodo}</p>
+                <p className="mt-1 font-body text-[0.82rem] text-ink-soft">
+                  Pago: {labelMetodoPago(pago.metodo)}
+                </p>
               ) : null}
             </>
           ) : (

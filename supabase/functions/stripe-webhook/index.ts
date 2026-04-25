@@ -176,6 +176,9 @@ async function handleCheckoutCompleted(
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
     await triggerBookingEmail(userId, metadata.cita_id);
   }
+  if (kind === "bono" && result.bono_creado && result.bono_id) {
+    await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
+  }
 }
 
 async function handlePaymentIntentSucceeded(
@@ -240,6 +243,9 @@ async function handlePaymentIntentSucceeded(
   if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
     await triggerBookingEmail(userId, metadata.cita_id);
   }
+  if (kind === "bono" && result.bono_creado && result.bono_id) {
+    await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
+  }
 }
 
 async function handlePaymentFailed(
@@ -254,6 +260,76 @@ async function handlePaymentFailed(
     .from("pagos")
     .update({ estado: "fallido", updated_at: new Date().toISOString() })
     .eq("stripe_payment_intent", piId);
+}
+
+async function triggerBonoCompradoEmail(
+  userId: string,
+  pagoId: string,
+  bonoId: string,
+): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+    const { data: pago } = await admin
+      .from("pagos")
+      .select("descripcion, importe_centimos, moneda, metodo")
+      .eq("id", pagoId)
+      .maybeSingle();
+
+    const { data: bp } = await admin
+      .from("bonos_pacientes")
+      .select("sesiones_totales, fecha_expiracion")
+      .eq("id", bonoId)
+      .maybeSingle();
+
+    if (!pago || !bp) return;
+
+    const m = String(pago.metodo ?? "").toLowerCase();
+    const metodoLabel =
+      m === "card" || m === "amex" || m === "visa" || m === "mastercard" ? "Tarjeta" :
+        m === "link" ? "Stripe Link" :
+        m === "sepa_debit" ? "Domiciliación SEPA" :
+        m === "klarna" ? "Klarna" :
+        pago.metodo ?? "—";
+
+    const imp = ((pago.importe_centimos ?? 0) / 100).toFixed(2).replace(".", ",") + " " +
+      String(pago.moneda ?? "EUR");
+    const validez = bp.fecha_expiracion
+      ? new Date(String(bp.fecha_expiracion)).toLocaleDateString("es-ES", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Madrid",
+      })
+      : "Usa las sesiones según el plazo indicado en el portal (sin cierre fijo)";
+
+    const appUrl = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
+
+    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        type: "bono_comprado",
+        to_user_id: userId,
+        pago_id: pagoId,
+        data: {
+          producto: pago.descripcion ?? `Bono (${bp.sesiones_totales} sesiones)`,
+          sesiones: bp.sesiones_totales,
+          importe_label: imp,
+          metodo_label: metodoLabel,
+          validez_label: validez,
+          app_url: appUrl,
+        },
+      }),
+    });
+  } catch {
+    // Mejor esfuerzo: el pago y el bono ya constan.
+  }
 }
 
 async function triggerBookingEmail(userId: string, citaId: string): Promise<void> {

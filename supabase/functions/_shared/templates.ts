@@ -242,6 +242,42 @@ export function renderNuevaAsignacion(data: NuevaAsignacionData): { subject: str
   return { subject: `Nuevo recurso: ${data.titulo_recurso}`, html, text };
 }
 
+export interface BonoCompradoData {
+  display_name?: string | null;
+  /** Título o línea de producto p. ej. bono. */
+  producto: string;
+  sesiones: number;
+  /** Ya formateado, p. ej. 510,00 eur. */
+  importe_label: string;
+  metodo_label: string;
+  validez_label: string;
+  app_url: string;
+}
+
+export function renderBonoComprado(
+  data: BonoCompradoData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const subj = `Hemos recibido tu pago: ${data.producto}`;
+  const html = shell(
+    `${eyebrow("Pago registrado")}
+     ${h1(name ? `Gracias, ${name}` : "Gracias por tu compra")}
+     <p style="margin:0 0 20px 0;">Hemos registrado el pago de tu bono. Algunos datos fiscales podrán descargarse en PDF una vez haya asignado número de factura.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Compra", data.producto)}
+       ${detailRow("Sesiones incluidas", String(data.sesiones))}
+       ${detailRow("Importe", data.importe_label)}
+       ${detailRow("Forma de pago", data.metodo_label)}
+       ${detailRow("Vencimiento del bono (uso)", data.validez_label)}
+     </table>
+     ${button("Ver bonos y descargar factura", `${data.app_url}/portal/pagos`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">La factura en PDF está disponible en <strong>Bonos y pagos</strong> cuando el pago figure como completado. Si usaste tarjeta, Apple o Google Pay, se mostrará como pago con tarjeta; Link aparece si elegiste pago con email (Stripe Link).</p>`,
+    { preheader: `Pago: ${data.importe_label} · ${data.sesiones} sesiones`, appUrl: data.app_url },
+  );
+  const text = `Pago registrado\n\n${data.producto}\nSesiones: ${data.sesiones}\nImporte: ${data.importe_label}\nPago: ${data.metodo_label}\nBono (uso) hasta: ${data.validez_label}\n\nPortal: ${data.app_url}/portal/pagos`;
+  return { subject: subj, html, text };
+}
+
 // ---------------------------------------------------------------------------
 // RGPD — acuse de recibo + exportación lista
 // ---------------------------------------------------------------------------
