@@ -25,12 +25,15 @@ export async function asignarRecursoAction(
   }
 
   const supabase = createServerClient();
+  const { data: userData, error: userErr } = await supabase.auth.getUser();
+  if (userErr || !userData.user) {
+    return { ok: false, code: 'unauthorized', message: 'Sesión expirada. Vuelve a iniciar sesión.' };
+  }
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
   if (!session) {
-    return { ok: false, code: 'unauthorized', message: 'Sesión expirada.' };
+    return { ok: false, code: 'unauthorized', message: 'No hay token de acceso. Recarga o vuelve a entrar.' };
   }
 
   const { url: supabaseUrl, anonKey } = getSupabaseEnv();
@@ -54,12 +57,18 @@ export async function asignarRecursoAction(
           : res.status === 404 ? 'not_found'
           : res.status === 401 ? 'unauthorized'
           : 'unknown';
+      const detailStr =
+        typeof raw.detail === 'string'
+          ? raw.detail
+          : typeof (raw as { error?: { message?: string } }).error?.message === 'string'
+            ? (raw as { error: { message: string } }).error.message
+            : null;
       const msg =
         code === 'forbidden'
-          ? 'Solo admin puede asignar recursos.'
+          ? 'Solo la administración puede asignar recursos.'
           : code === 'not_found'
-            ? 'Recurso o paciente no encontrado.'
-            : typeof raw.detail === 'string' ? raw.detail : 'Error al asignar.';
+            ? 'Recurso o paciente no encontrado, o el RPC no devolvió fila.'
+            : (detailStr ?? (typeof raw.message === 'string' ? (raw.message as string) : null) ?? 'Error al asignar (revisa despliegue de assign-recurso y RPC asignar_recurso_admin).');
       return { ok: false, code, message: msg };
     }
 

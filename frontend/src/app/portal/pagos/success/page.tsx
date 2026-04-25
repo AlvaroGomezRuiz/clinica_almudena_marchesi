@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/portal-shell/ui';
+import { fetchPaymentIntentResumenForUser } from '@/lib/stripe/paymentIntentLookup.server';
 import { createServerClient } from '@/lib/supabase/server';
 
-import PagoSuccessPanel, { type PagoSuccessRow } from './PagoSuccessPanel';
+import PagoSuccessPanel, { type PagoSuccessRow, type StripeResumen } from './PagoSuccessPanel';
 
 export const metadata = { title: 'Pago realizado | Portal Paciente' };
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,11 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
     pago = data ?? null;
   }
 
+  let stripeResumen: StripeResumen | null = null;
+  if (!pago && sp.payment_intent) {
+    stripeResumen = await fetchPaymentIntentResumenForUser(sp.payment_intent, user.id);
+  }
+
   return (
     <>
       <PageHeader
@@ -54,6 +60,7 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
 
       <PagoSuccessPanel
         initialPago={pago}
+        initialStripeResumen={stripeResumen}
         sessionId={sp.session_id}
         paymentIntentId={sp.payment_intent}
       />

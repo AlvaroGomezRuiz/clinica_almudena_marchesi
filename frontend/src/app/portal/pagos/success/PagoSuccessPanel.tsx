@@ -16,12 +16,26 @@ export interface PagoSuccessRow {
   fecha_pago: string;
 }
 
-function euro(c: number): string {
-  return (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+/** Resumen desde API Stripe (servidor) si aún no hay fila en `pagos` (webhook retrasado). */
+export type StripeResumen = {
+  readonly importeCentimos: number;
+  readonly moneda: string;
+  readonly descripcion: string;
+  readonly kind: 'cita' | 'bono';
+  readonly estadosStripe: string;
+};
+
+function euro(c: number, currency = 'EUR'): string {
+  return (c / 100).toLocaleString('es-ES', {
+    style: 'currency',
+    currency: currency.length === 3 ? currency : 'EUR',
+  });
 }
 
 interface Props {
   readonly initialPago: PagoSuccessRow | null;
+  /** Si el webhook aún no insertó en `pagos`, el servidor rellena desde Stripe (misma sk). */
+  readonly initialStripeResumen: StripeResumen | null;
   readonly sessionId: string | undefined;
   readonly paymentIntentId: string | undefined;
 }
@@ -35,6 +49,7 @@ const MAX_POLLS = 32;
  */
 export default function PagoSuccessPanel({
   initialPago,
+  initialStripeResumen,
   sessionId,
   paymentIntentId,
 }: Props): JSX.Element {
@@ -43,6 +58,15 @@ export default function PagoSuccessPanel({
 
   const hasQueryKey = Boolean(sessionId) || Boolean(paymentIntentId);
   const canPoll = !pago && hasQueryKey && !gaveUp;
+  const stripeResumen = initialStripeResumen;
+  const showConfirmado =
+    Boolean(pago) ||
+    Boolean(
+      stripeResumen &&
+        (stripeResumen.estadosStripe === 'succeeded' ||
+          stripeResumen.estadosStripe === 'processing' ||
+          stripeResumen.estadosStripe === 'requires_capture')
+    );
 
   const fetchPago = useCallback(async () => {
     if (!sessionId && !paymentIntentId) return;
@@ -75,8 +99,40 @@ export default function PagoSuccessPanel({
     return () => clearInterval(t);
   }, [canPoll, fetchPago]);
 
+  const importeCents = pago
+    ? pago.importe_centimos
+    : stripeResumen
+      ? stripeResumen.importeCentimos
+      : 0;
+  const monedaU = pago ? pago.moneda : stripeResumen ? stripeResumen.moneda : 'eur';
+
   return (
     <SurfaceCard variant="hero" bezel glow="sage">
+      {pago
+        ? null
+        : stripeResumen && !gaveUp
+          ? (
+        <p
+          className="mb-4 rounded-xl border border-amber-200/50 bg-amber-50/80 px-3 py-2 font-body text-[0.78rem] text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200/90"
+          role="status"
+        >
+          Pago aceptado. La clínica lo registra cuando el webhook (Stripe → Supabase)
+          responde bien. Si la URL del webhook en el panel de Stripe no termina en
+          <code className="rounded bg-white/20 px-1">stripe-webhook</code> (carpeta
+          entera, sin cortar), las entregas fallan: corrígela y repite el pago o reenvía
+          el evento desde el panel.
+        </p>
+            )
+          : null}
+      {!pago && !stripeResumen && hasQueryKey && !gaveUp 
+        ? process.env.NODE_ENV === 'development' ? (
+        <p className="mb-4 rounded-xl border border-line bg-white/40 px-3 py-2 font-body text-[0.75rem] text-ink-soft dark:border-white/10 dark:bg-white/5">
+          (Dev) Define <code>STRIPE_SECRET_KEY</code> en <code>.env.local</code> (mismo
+          <code>sk_</code> que en Supabase) para ver importe mientras se depura el webhook.
+        </p>
+          ) : null
+        : null}
+
       <div className="grid gap-4 md:grid-cols-[auto,1fr] md:items-center">
         <span
           aria-hidden="true"
@@ -85,15 +141,22 @@ export default function PagoSuccessPanel({
           <span className="material-symbols-outlined text-[2rem] text-sage-dark">task_alt</span>
         </span>
         <div className="text-center md:text-left">
-          {pago ? (
+          {showConfirmado ? (
             <>
               <p className="font-body text-[0.72rem] uppercase tracking-[0.18em] text-ink-muted">
-                Importe cobrado
+                {pago
+                  ? 'Pago confirmado e registrado'
+                  : 'Pago confirmado (banco)'}
               </p>
               <p className="mt-1 font-display text-[2.4rem] italic text-ink tabular-nums tracking-[-0.01em]">
-                {euro(pago.importe_centimos)}
+                {euro(importeCents, monedaU)}
               </p>
-              {pago.metodo ? (
+              {stripeResumen && !pago ? (
+                <p className="mt-1 font-body text-[0.88rem] text-ink-soft">
+                  {stripeResumen.descripcion} · {stripeResumen.kind === 'cita' ? 'Cita' : 'Bono de sesiones'}
+                </p>
+              ) : null}
+              {pago?.metodo ? (
                 <p className="mt-1 font-body text-[0.82rem] text-ink-soft">Vía {pago.metodo}</p>
               ) : null}
             </>
@@ -103,8 +166,8 @@ export default function PagoSuccessPanel({
               <p className="mt-1 font-body text-[0.85rem] text-ink-soft">
                 {hasQueryKey
                   ? gaveUp
-                    ? 'El pago puede tardar un minuto. Revisa en Bonos y pagos o actualiza la página.'
-                    : 'Conectando con el registro de tu pago…'
+                    ? 'No hemos localizado aún el registro. Revisa en Bonos y pagos o contacta. Si usas pago con tarjeta, comprueba en Stripe el webhook a Supabase (URL entera).'
+                    : 'Conectando con el registro de tu pago en la clínica…'
                   : 'Entra a esta pantalla desde el enlace al finalizar el pago, o consulta el historial en Bonos y pagos.'}
               </p>
             </>
@@ -126,6 +189,13 @@ export default function PagoSuccessPanel({
               Ver mi bono
             </Button>
           </Link>
+        ) : null}
+        {pago ? (
+          <a href={`/api/portal/factura/${pago.id}/pdf`} target="_blank" rel="noopener noreferrer">
+            <Button variant="surface" icon="description">
+              Ver factura (PDF)
+            </Button>
+          </a>
         ) : null}
         <Link href="/portal">
           <Button variant="surface" icon="home">

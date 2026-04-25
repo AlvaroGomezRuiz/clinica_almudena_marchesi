@@ -27,8 +27,8 @@ export default function LoginMfaPage({
   const nextPath = searchParams.next;
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 md:p-12">
-      <div className="max-w-screen-xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center">
+    <div className="min-h-[100dvh] bg-canvas flex flex-col items-center justify-center px-4 py-8 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:p-6 md:p-12">
+      <div className="max-w-screen-xl w-full grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-24 items-center">
         <div className="hidden md:block">
           <div className="relative aspect-[4/5] rounded-apple overflow-hidden shadow-apple-lg">
             <Image

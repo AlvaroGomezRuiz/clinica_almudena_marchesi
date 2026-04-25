@@ -163,17 +163,25 @@ export default function MfaManager({
       )}
 
       {!enrollMode ? (
-        <button
-          type="button"
-          onClick={startEnroll}
-          disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-body text-[0.82rem] text-on-primary hover:bg-primary-dim disabled:opacity-40 dark:bg-primary dark:text-white"
-        >
-          <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
-            key
-          </span>
-          {hasVerified ? 'Añadir otro factor' : 'Activar MFA ahora'}
-        </button>
+        hasVerified ? (
+          <p className="font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+            Segundo factor <strong>activo</strong>. Puedes desactivarlo arriba si cambias
+            de dispositivo. Para añadir un <strong>segundo dispositivo de reserva</strong>
+            ponte en contacto o usa Desactivar y vuelve a activar.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={startEnroll}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 font-body text-[0.82rem] text-on-primary hover:bg-primary-dim disabled:opacity-40 dark:bg-primary dark:text-white"
+          >
+            <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
+              key
+            </span>
+            Activar MFA ahora
+          </button>
+        )
       ) : (
         <div className="rounded-2xl bg-white/60 p-5 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10">
           <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
