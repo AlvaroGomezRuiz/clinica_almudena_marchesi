@@ -173,18 +173,17 @@ export async function createCheckoutSession(
 // ---------------------------------------------------------------------------
 
 /**
- * Métodos del portal (EUR). Orden en el array ≈ pestañas en Payment Element.
+ * Métodos del portal (EUR). Orden en el array ≈ secciones en Payment Element.
  *
- * - `card`: tarjeta. Apple Pay / Google Pay no son tipos distintos: se muestran
- *   como wallets sobre el flujo de tarjeta (ver `wallets` en <PaymentElement>).
- * - `sepa_debit`: adeudo/IBAN (banco, SEPA). No confundir con "efectivo" en
- *   tienda; Stripe no expone un PM de "cash" genérico para ES en Element.
- * - `klarna`: al final (BNPL).
+ * - `link`: pago rápido con email (Stripe Link); activar también en Dashboard.
+ * - `card`: tarjeta; Apple/Google Pay = wallets en este flujo.
+ * - `sepa_debit`: adeudo SEPA.
+ * - `klarna`: BNPL al final.
  *
- * Con lista explícita se excluyen `mb_way`, `bancontact`, `eps`, `link`, etc.
- * (lo que `automatic_payment_methods: true` activa en muchas cuentas).
+ * Lista explícita: sin mb_way, bancontact, eps, etc. (sí se incluye `link` a petición).
  */
 export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
+  "link",
   "card",
   "sepa_debit",
   "klarna",
@@ -246,8 +245,8 @@ export async function createPaymentIntent(
     }
   }
 
-  /* No usar payment_method_options[link] aquí: distintas versiones de API lo rechazan
-   * como "unknown parameter". Link se desactiva en Dashboard → Payment methods. */
+  /* Link se habilita incluyendo el tipo `link` en `payment_method_types` (arriba) y
+   * en Stripe Dashboard → Payment methods → Link. */
 
   return await stripeRequest<PaymentIntent>(
     "/payment_intents",

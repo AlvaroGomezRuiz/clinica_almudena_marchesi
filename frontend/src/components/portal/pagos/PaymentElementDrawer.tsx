@@ -368,13 +368,13 @@ function CheckoutForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       <PaymentElement
         options={{
-          /* Accordion: los 3 tipos (card, SEPA, Klarna) se listan a la vez; al desplegar «Tarjeta» van primero wallets (Apple/Google) y luego los campos. */
+          /* Accordion: Link, tarjeta (wallets), SEPA, Klarna visibles a la vez. */
           layout: {
             type: 'accordion',
             spacedAccordionItems: true,
             defaultCollapsed: false,
           },
-          paymentMethodOrder: ['card', 'sepa_debit', 'klarna'],
+          paymentMethodOrder: ['link', 'card', 'sepa_debit', 'klarna'],
           wallets: { applePay: 'auto', googlePay: 'auto' },
         }}
       />
