@@ -395,7 +395,7 @@ async function triggerBookingEmail(
     const servicio = Array.isArray((data as any).servicio) ? (data as any).servicio[0] : (data as any).servicio;
     if (!servicio) return;
 
-    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -413,6 +413,14 @@ async function triggerBookingEmail(
         },
       }),
     });
+    if (!res.ok) {
+      const t = await res.text();
+      captureEdgeMessage(
+        `send-email booking_confirmed HTTP ${res.status} ${t.slice(0, 400)}`,
+        { area: "stripe-webhook", entity_id: citaId, fingerprint: ["bookingConfirmedEmail", "http"] },
+        "warning",
+      );
+    }
   } catch {
     // Mejor-esfuerzo. El pago ya quedó registrado.
   }

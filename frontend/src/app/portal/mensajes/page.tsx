@@ -50,12 +50,31 @@ export default async function PortalMensajesPage() {
 
   const conversacionId = String(convId);
 
-  const { data: mensajesRaw } = await supabase
+  const { data: mensajesRaw, error: mensajesErr } = await supabase
     .from('v_mensajes_chat')
     .select('id, conversation_id, sender_user_id, body, read_at, created_at')
     .eq('conversation_id', conversacionId)
     .order('created_at', { ascending: true })
     .limit(200);
+
+  if (mensajesErr) {
+    return (
+      <>
+        <PageHeader
+          eyebrow="Mensajes"
+          title="Conversación con Almudena"
+          description="Canal seguro y privado. TLS en tránsito, RLS en reposo."
+        />
+        <SurfaceCard>
+          <EmptyState
+            icon="chat"
+            title="No se pudieron cargar los mensajes"
+            description="Vuelve a intentar en unos segundos. Si el problema continúa, puede faltar aplicar la migración de base de datos más reciente en Supabase."
+          />
+        </SurfaceCard>
+      </>
+    );
+  }
 
   const normalizados = ((mensajesRaw as MensajeRow[] | null) ?? []).map((m) => ({
     ...m,

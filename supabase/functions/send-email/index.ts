@@ -109,8 +109,14 @@ async function buildInvoiceAttachments(
   }
 }
 
-function prefsOptInForType(prefs: PrefsRow | null, type: EmailType): boolean {
+function prefsOptInForType(
+  prefs: PrefsRow | null,
+  type: EmailType,
+  opts?: { readonly pagoId?: string | null },
+): boolean {
   if (type === "bono_comprado") return true; /* comprobante de pago: siempre */
+  /* Reserva pagada en Stripe: comprobante operativo; no silenciar por preferencias. */
+  if (type === "booking_confirmed" && opts?.pagoId) return true;
   if (!prefs) return true;
   if (type === "welcome") return prefs.welcome;
   if (type === "booking_confirmed") return prefs.booking_confirmed;
@@ -221,7 +227,7 @@ Deno.serve(async (req) => {
       .eq("user_id", toUserId)
       .maybeSingle<PrefsRow>();
 
-    if (!prefsOptInForType(prefs, payload.type)) {
+    if (!prefsOptInForType(prefs, payload.type, { pagoId: payload.pago_id })) {
       await admin.from("emails_log").insert({
         email_type: payload.type,
         to_email:   toEmail,
