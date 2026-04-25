@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import RefreshOnVisibility from '@/components/layout/RefreshOnVisibility';
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
 import { SSH_KEYS } from '@/lib/supabase/middleware';
@@ -80,20 +81,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <PortalShell
-      tone="admin"
-      brandTitle="Almudena Marchesi"
-      brandSubtitle="Panel de gestión"
-      navItems={ADMIN_NAV}
-      user={{
-        id: profile.id,
-        email: profile.email,
-        displayName: profile.display_name ?? profile.email.split('@')[0],
-        avatarUrl: profile.avatar_url,
-        role: 'admin',
-      }}
-    >
-      {children}
-    </PortalShell>
+    <>
+      <PortalShell
+        tone="admin"
+        brandTitle="Almudena Marchesi"
+        brandSubtitle="Panel de gestión"
+        navItems={ADMIN_NAV}
+        user={{
+          id: profile.id,
+          email: profile.email,
+          displayName: profile.display_name ?? profile.email.split('@')[0],
+          avatarUrl: profile.avatar_url,
+          role: 'admin',
+        }}
+      >
+        {children}
+      </PortalShell>
+      <RefreshOnVisibility />
+    </>
   );
 }

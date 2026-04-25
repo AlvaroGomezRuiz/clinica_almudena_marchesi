@@ -35,7 +35,7 @@ export default function PublicMobileDrawer({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[60] md:hidden"
+          className="fixed inset-0 z-[200] md:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -52,14 +52,14 @@ export default function PublicMobileDrawer({
           />
 
           <div className="relative z-[70] flex flex-col h-full px-8 py-6">
-            <div className="flex items-center justify-between">
+            <div className="relative flex items-center justify-center py-2">
               <Link
                 href="/"
-                className="flex flex-col leading-none flex-1 py-4 pr-12 -my-4 -ml-2 active:opacity-50 transition-opacity"
+                className="flex flex-col items-center leading-none py-3 text-center active:opacity-50 transition-opacity"
                 onClick={onClose}
                 aria-label="Ir a Inicio"
               >
-                <span className="font-display text-[1.05rem] text-ink font-medium">
+                <span className="font-display text-[1.05rem] text-ink font-medium tracking-normal">
                   Almudena Marchesi
                 </span>
                 <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-muted">
@@ -69,7 +69,7 @@ export default function PublicMobileDrawer({
 
               <button
                 type="button"
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-black/5 dark:bg-white/10 transition-all duration-300"
+                className="absolute right-0 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 transition-all duration-300"
                 style={{
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
@@ -103,15 +103,15 @@ export default function PublicMobileDrawer({
                 >
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-4 px-4 py-4 rounded-apple transition-colors ${
+                    className={`flex flex-col items-center gap-2 px-4 py-4 text-center rounded-apple transition-colors ${
                       isActive(item.href)
                         ? 'bg-sage/8 text-sage'
                         : 'text-ink hover:bg-ink/[0.03]'
                     }`}
                     onClick={onClose}
                   >
-                    <span className="material-symbols-outlined text-xl opacity-40">{item.icon}</span>
-                    <span className="font-display text-2xl font-light">{item.label}</span>
+                    <span className="material-symbols-outlined text-2xl opacity-50">{item.icon}</span>
+                    <span className="font-display text-2xl font-light tracking-normal">{item.label}</span>
                   </Link>
                 </motion.div>
               ))}

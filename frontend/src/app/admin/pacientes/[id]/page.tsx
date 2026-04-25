@@ -119,6 +119,8 @@ export default async function FichaPacientePage({
   if (!paciente) notFound();
 
   const citas = ((citasRes.data as CitaRow[] | null) ?? []).slice();
+  /** Reservas sin pago (bloqueo_temporal) no entran en timeline / historia clínica. */
+  const citasSinBloqueoTemporal = citas.filter((c) => c.estado !== 'bloqueo_temporal');
   const diagnosticosRows = (diagRes.data as PacienteDiagnostico[] | null) ?? [];
   const medicacionesRows = (medRes.data as PacienteMedicacion[] | null) ?? [];
   const adjuntos = (adjRes.data as PacienteAdjunto[] | null) ?? [];
@@ -490,13 +492,13 @@ export default async function FichaPacientePage({
             <h2 className="font-display text-[1.15rem] italic text-ink dark:text-white mb-3">
               Timeline
             </h2>
-            {citas.length === 0 ? (
+            {citasSinBloqueoTemporal.length === 0 ? (
               <p className="py-4 text-center font-body text-[0.85rem] text-ink-soft dark:text-white/45">
-                Sin citas registradas.
+                Sin citas confirmadas en el historial.
               </p>
             ) : (
               <ol className="relative border-l border-ink/10 pl-4 dark:border-white/10">
-                {citas.slice(0, 10).map((c) => (
+                {citasSinBloqueoTemporal.slice(0, 10).map((c) => (
                   <li key={c.id} className="mb-4 last:mb-0">
                     <span
                       className="absolute -left-1.5 flex h-3 w-3 items-center justify-center rounded-full ring-4 ring-canvas dark:ring-[#1a1a1a]"
@@ -608,6 +610,7 @@ export default async function FichaPacientePage({
 
       <SectionDivider label="Historia clínica" />
 
+      <div id="historia-clinica">
       <SurfaceCard>
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
@@ -620,16 +623,17 @@ export default async function FichaPacientePage({
             </p>
           </div>
           <span className="font-body text-[0.7rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
-            {citas.length} cita{citas.length === 1 ? '' : 's'}
+            {citasSinBloqueoTemporal.length} cita{citasSinBloqueoTemporal.length === 1 ? '' : 's'}
           </span>
         </div>
 
         <HistorialCitasAdminLista
           pacienteId={paciente.id}
-          citas={citas}
+          citas={citasSinBloqueoTemporal}
           notaIdByCita={notaIdByCitaRecord}
         />
       </SurfaceCard>
+      </div>
 
       <SectionDivider />
     </>

@@ -118,6 +118,15 @@ export default function CitaResumenSheet({
               </div>
               <div>
                 <dt className="text-[0.62rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/50">
+                  Paciente
+                </dt>
+                <dd className="mt-0.5 text-ink dark:text-white">
+                  {cita.paciente_display_name?.trim() ||
+                    (cita.paciente_user_id ? 'Cuenta portal (sin nombre público)' : 'Solo ficha clínica')}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.62rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/50">
                   Portal paciente
                 </dt>
                 <dd className="mt-0.5 text-ink dark:text-white">
@@ -127,9 +136,20 @@ export default function CitaResumenSheet({
             </dl>
           </div>
 
-          <footer className="flex flex-col gap-2 border-t border-ink/8 px-5 py-4 dark:border-white/10 sm:flex-row sm:justify-end">
+          <footer className="flex flex-col gap-2 border-t border-ink/8 px-5 py-4 dark:border-white/10 sm:flex-row sm:flex-wrap sm:justify-end">
             <Button variant="ghost" size="sm" onClick={handleClose}>
               Cerrar
+            </Button>
+            <Button
+              variant="surface"
+              size="sm"
+              icon="history_edu"
+              onClick={() => {
+                handleClose();
+                router.push(`/admin/pacientes/${cita.paciente_id}#historia-clinica`);
+              }}
+            >
+              Historia clínica
             </Button>
             <Button
               variant="primary"

@@ -301,7 +301,7 @@ export default function ChatPanel({
 
   return (
     <section
-      className="relative flex h-[calc(100vh-220px)] min-h-[480px] flex-col overflow-hidden rounded-[1.625rem] bg-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_20px_48px_-24px_rgba(75,100,95,0.14)] backdrop-blur-xl dark:bg-[#161616]/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_48px_-24px_rgba(0,0,0,0.6)]"
+      className="relative flex h-[min(78dvh,calc(100dvh-150px))] min-h-[360px] max-h-[820px] flex-col overflow-hidden rounded-[1.625rem] bg-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_20px_48px_-24px_rgba(75,100,95,0.14)] backdrop-blur-xl dark:bg-[#161616]/80 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_20px_48px_-24px_rgba(0,0,0,0.6)] md:h-[calc(100vh-220px)] md:max-h-none md:min-h-[480px]"
       aria-label="Conversación de chat"
     >
       {/* Cabecera */}
@@ -313,7 +313,7 @@ export default function ChatPanel({
             </span>
           </span>
           <div className="min-w-0">
-            <p className="font-display text-[1.05rem] italic text-ink leading-tight tracking-[-0.01em] truncate dark:text-white">
+            <p className="truncate font-body text-[1.02rem] font-semibold leading-snug tracking-normal text-ink dark:text-white">
               {otherLabel}
             </p>
             {otherSubtitle ? (
@@ -399,6 +399,7 @@ export default function ChatPanel({
             conversationId={conversacionId}
             disabled={isPending}
           />
+          <AudioRecorderButton conversacionId={conversacionId} disabled={isPending} />
           <textarea
             name="mensaje"
             rows={1}

@@ -99,6 +99,8 @@
     @apply font-body text-ink antialiased bg-canvas overflow-x-hidden select-none;
     font-weight: 300;
     line-height: 1.65;
+    font-feature-settings: "kern" 1, "liga" 1;
+    text-rendering: optimizeLegibility;
   }
 
   /* Reactivar selección para campos de formulario para no romper el UX */

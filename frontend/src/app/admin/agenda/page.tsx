@@ -55,7 +55,7 @@ export default async function AdminAgendaPage({
     supabase
       .from('v_citas_expandidas')
       .select(
-        'id, inicio, fin, estado, servicio_nombre, paciente_user_id, paciente_id, duracion_minutos, precio_centimos',
+        'id, inicio, fin, estado, servicio_nombre, paciente_user_id, paciente_id, paciente_display_name, duracion_minutos, precio_centimos',
       )
       .gte('inicio', desde.toISOString())
       .lte('inicio', hasta.toISOString())

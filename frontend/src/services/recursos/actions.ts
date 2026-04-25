@@ -129,3 +129,43 @@ export async function listarPacientesParaAsignarAction(): Promise<readonly Pacie
     };
   });
 }
+
+export type AsignarRecursoTodosResult =
+  | { readonly ok: true; readonly creados: number; readonly yaExistian: number; readonly fallos: number }
+  | { readonly ok: false; readonly message: string };
+
+/** Asigna el recurso a todos los pacientes activos de la lista (hasta 200). */
+export async function asignarRecursoATodosPacientesAction(
+  recursoId: string
+): Promise<AsignarRecursoTodosResult> {
+  if (!UUID_RE.test(recursoId)) {
+    return { ok: false, message: 'Identificador de recurso inválido.' };
+  }
+
+  const supabase = createServerClient();
+  const { data: u, error: uErr } = await supabase.auth.getUser();
+  if (uErr || !u.user) {
+    return { ok: false, message: 'Sesión expirada. Vuelve a iniciar sesión.' };
+  }
+  const { data: prof } = await supabase.from('profiles').select('role').eq('id', u.user.id).maybeSingle();
+  if ((prof as { role?: string } | null)?.role !== 'admin') {
+    return { ok: false, message: 'Solo la administración puede asignar recursos.' };
+  }
+
+  const pacientes = await listarPacientesParaAsignarAction();
+  let creados = 0;
+  let yaExistian = 0;
+  let fallos = 0;
+
+  for (const p of pacientes) {
+    const res = await asignarRecursoAction(recursoId, p.id);
+    if (!res.ok) {
+      fallos += 1;
+      continue;
+    }
+    if (res.yaExistia) yaExistian += 1;
+    else creados += 1;
+  }
+
+  return { ok: true, creados, yaExistian, fallos };
+}

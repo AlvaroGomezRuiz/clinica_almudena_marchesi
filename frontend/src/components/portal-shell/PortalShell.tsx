@@ -115,18 +115,20 @@ export default function PortalShell({
       {/* ──────────── TOPBAR ──────────── */}
       <header className="portal-topbar fixed left-0 right-0 top-0 z-30 md:left-[280px]">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 md:px-10">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <MobileNavDrawer
               brandTitle={brandTitle}
               brandSubtitle={brandSubtitle}
-              tone={tone === 'admin' ? 'primary' : 'light'}
               navItems={mobileNavItems}
               panelClassName=""
-              buttonClassName="md:hidden text-ink-soft hover:text-ink transition-colors"
+              buttonClassName=""
             />
-            <div className="md:hidden">
-              <p className="font-display text-[1rem] italic text-primary leading-none dark:text-primary-fixed-dim">
-                {brandTitle.split(' ')[0]}
+            <div className="min-w-0 flex-1 md:hidden">
+              <p className="truncate font-body text-[0.92rem] font-semibold leading-snug tracking-normal text-ink dark:text-white">
+                {user.displayName}
+              </p>
+              <p className="mt-0.5 truncate font-body text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/55">
+                {tone === 'admin' ? 'Panel de gestión' : brandSubtitle}
               </p>
             </div>
           </div>
@@ -137,7 +139,7 @@ export default function PortalShell({
             <ThemeToggle variant="compact" />
 
             <div className="hidden text-right sm:block">
-              <p className="font-display text-[0.85rem] font-medium text-ink leading-none dark:text-white">
+              <p className="font-body text-[0.88rem] font-semibold tracking-normal text-ink leading-snug dark:text-white">
                 {user.displayName}
               </p>
               <p className="mt-1 font-body text-[0.65rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">

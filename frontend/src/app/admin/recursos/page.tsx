@@ -8,6 +8,7 @@ import {
   PageHeader,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import { RecursoAssignAllButton } from '@/components/recursos/RecursoAssignAllButton';
 import { RecursoAssignButton } from '@/components/recursos/RecursoAssignButton';
 import UploadRecursoButton from '@/components/admin/recursos/UploadRecursoButton';
 import { createServerClient } from '@/lib/supabase/server';
@@ -223,11 +224,14 @@ export default async function AdminRecursosPage({
                   </p>
                 ) : null}
 
-                <footer className="mt-4 flex items-center justify-between">
+                <footer className="mt-4 flex flex-wrap items-center justify-between gap-2">
                   <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
                     {format(new Date(r.created_at), 'd MMM yyyy', { locale: es })}
                   </p>
-                  <RecursoAssignButton recursoId={r.id} recursoTitulo={r.titulo} />
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <RecursoAssignAllButton recursoId={r.id} recursoTitulo={r.titulo} />
+                    <RecursoAssignButton recursoId={r.id} recursoTitulo={r.titulo} />
+                  </div>
                 </footer>
               </SurfaceCard>
             );

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import RefreshOnVisibility from '@/components/layout/RefreshOnVisibility';
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
 import { SSH_KEYS } from '@/lib/supabase/middleware';
@@ -89,21 +90,24 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   );
 
   return (
-    <PortalShell
-      tone="patient"
-      brandTitle="Almudena Marchesi"
-      brandSubtitle="Tu espacio de calma"
-      navItems={PATIENT_NAV}
-      footerSlot={footerCta}
-      user={{
-        id: profile.id,
-        email: profile.email,
-        displayName: profile.display_name ?? profile.email.split('@')[0],
-        avatarUrl: profile.avatar_url,
-        role: 'paciente',
-      }}
-    >
-      {children}
-    </PortalShell>
+    <>
+      <PortalShell
+        tone="patient"
+        brandTitle="Almudena Marchesi"
+        brandSubtitle="Tu espacio de calma"
+        navItems={PATIENT_NAV}
+        footerSlot={footerCta}
+        user={{
+          id: profile.id,
+          email: profile.email,
+          displayName: profile.display_name ?? profile.email.split('@')[0],
+          avatarUrl: profile.avatar_url,
+          role: 'paciente',
+        }}
+      >
+        {children}
+      </PortalShell>
+      <RefreshOnVisibility />
+    </>
   );
 }

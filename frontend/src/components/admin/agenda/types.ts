@@ -9,6 +9,8 @@ export interface AgendaCitaRow {
   readonly servicio_nombre: string;
   readonly paciente_user_id: string | null;
   readonly paciente_id: string;
+  /** `profiles.display_name` del paciente (tras migración 0054). */
+  readonly paciente_display_name?: string | null;
   readonly duracion_minutos: number | null;
   readonly precio_centimos: number | null;
 }

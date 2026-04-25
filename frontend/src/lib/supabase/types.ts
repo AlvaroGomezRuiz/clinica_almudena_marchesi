@@ -313,6 +313,8 @@ export interface MensajeAdjunto {
   tipo: MensajeAdjuntoTipo;
   duracion_ms: number | null;
   transcripcion_ciphertext: string | null;
+  /** Reservado: cifrado en reposo (migración 0054). */
+  encryption_scheme?: string | null;
   created_at: string;
 }
 
@@ -474,6 +476,7 @@ export interface Database {
           duracion_minutos: number;
           precio_centimos: number;
           paciente_user_id: string | null;
+          paciente_display_name: string | null;
         }>;
         Relationships: [];
       };

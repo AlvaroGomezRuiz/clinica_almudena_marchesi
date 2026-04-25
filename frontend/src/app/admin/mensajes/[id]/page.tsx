@@ -121,16 +121,18 @@ export default async function AdminConversacionPage({
         description={convTyped.paciente_email ?? 'Paciente verificado con correo.'}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <ChatPanel
-          conversacionId={convTyped.id}
-          currentUserId={user.id}
-          initialMensajes={mensajes}
-          otherLabel={display}
-          otherSubtitle={convTyped.paciente_email ?? undefined}
-        />
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-8">
+        <div className="min-h-0 w-full lg:min-w-0">
+          <ChatPanel
+            conversacionId={convTyped.id}
+            currentUserId={user.id}
+            initialMensajes={mensajes}
+            otherLabel={display}
+            otherSubtitle={convTyped.paciente_email ?? undefined}
+          />
+        </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <aside className="w-full space-y-4 lg:sticky lg:top-6 lg:w-auto lg:self-start">
           <SurfaceCard>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-display text-[1.05rem] italic text-ink dark:text-white">

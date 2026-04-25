@@ -15,7 +15,7 @@
  * o importe = 0, se marca como `excluir_de_facturacion` automáticamente.
  */
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/portal-shell/ui';
@@ -33,10 +33,15 @@ interface Paciente {
   readonly email: string;
 }
 
-const METODOS: readonly { value: MetodoPagoManual; label: string; icon: string }[] = [
+const METODOS: readonly {
+  value: MetodoPagoManual;
+  label: string;
+  icon: string;
+  iconIsGift?: boolean;
+}[] = [
   { value: 'efectivo',       label: 'Efectivo',       icon: 'payments' },
   { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance' },
-  { value: 'regalo',         label: 'Regalo',         icon: 'redeem' },
+  { value: 'regalo',         label: 'Regalo',         icon: 'card_giftcard', iconIsGift: true },
   { value: 'otro',           label: 'Otro',           icon: 'more_horiz' },
 ];
 
@@ -53,7 +58,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
   // Paso 2: detalles
   const [servicios, setServicios] = useState<readonly ServicioCatalogo[]>([]);
   const [servicioId, setServicioId] = useState<string>('');
-  const [sesiones, setSesiones] = useState<number>(3);
+  const [sesionesStr, setSesionesStr] = useState<string>('3');
   const [importeEuros, setImporteEuros] = useState<string>('');
   const [metodo, setMetodo] = useState<MetodoPagoManual>('efectivo');
   const [validezDias, setValidezDias] = useState<number>(180);
@@ -74,7 +79,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
       setResultados([]);
       setPaciente(null);
       setServicioId('');
-      setSesiones(3);
+      setSesionesStr('3');
       setImporteEuros('');
       setMetodo('efectivo');
       setValidezDias(180);
@@ -115,6 +120,13 @@ export default function AsignarBonoManualButton(): JSX.Element {
       }
     });
   }, [step, servicios.length, servicioId]);
+
+  const sesiones = useMemo(() => {
+    const raw = sesionesStr.trim();
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return Math.min(50, n);
+  }, [sesionesStr]);
 
   // Auto-calcular importe cuando cambia servicio × sesiones (si el admin
   // no ha tocado el campo manualmente).
@@ -280,11 +292,20 @@ export default function AsignarBonoManualButton(): JSX.Element {
                 <div className="grid grid-cols-2 gap-3">
                   <Campo label="Nº sesiones">
                     <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={sesiones}
-                      onChange={(e) => setSesiones(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      value={sesionesStr}
+                      onChange={(e) => setSesionesStr(e.target.value.replace(/[^\d]/g, ''))}
+                      onBlur={() => {
+                        const n = Number.parseInt(sesionesStr, 10);
+                        if (!Number.isFinite(n) || n < 1) {
+                          setSesionesStr('1');
+                        } else {
+                          setSesionesStr(String(Math.min(50, n)));
+                        }
+                      }}
                       className="w-full rounded-lg border border-ink/10 bg-white px-3 py-2.5 font-body text-[0.9rem] text-ink outline-none tabular-nums focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/15 dark:bg-white/5 dark:text-white"
                     />
                   </Campo>
@@ -321,7 +342,15 @@ export default function AsignarBonoManualButton(): JSX.Element {
                               : 'border-ink/10 text-ink-muted hover:border-ink/20 dark:border-white/15 dark:text-white/60',
                           ].join(' ')}
                         >
-                          <span className="material-symbols-outlined text-[1.2rem]">{m.icon}</span>
+                          {m.iconIsGift ? (
+                            <span className="text-[1.25rem] leading-none" aria-hidden>
+                              🎁
+                            </span>
+                          ) : (
+                            <span className="material-symbols-outlined text-[1.2rem]" aria-hidden>
+                              {m.icon}
+                            </span>
+                          )}
                           {m.label}
                         </button>
                       );
