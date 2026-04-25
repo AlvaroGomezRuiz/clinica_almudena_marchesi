@@ -5,6 +5,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Button, SurfaceCard } from '@/components/portal-shell/ui';
 import { createBrowserClient } from '@/lib/supabase/client';
+import {
+  resumenFromPaymentIntentJson,
+  type StripeResumen,
+} from '@/lib/stripe/paymentIntentResumen';
+
+export type { StripeResumen } from '@/lib/stripe/paymentIntentResumen';
 
 export interface PagoSuccessRow {
   id: string;
@@ -15,15 +21,6 @@ export interface PagoSuccessRow {
   bono_id: string | null;
   fecha_pago: string;
 }
-
-/** Resumen desde API Stripe (servidor) si aún no hay fila en `pagos` (webhook retrasado). */
-export type StripeResumen = {
-  readonly importeCentimos: number;
-  readonly moneda: string;
-  readonly descripcion: string;
-  readonly kind: 'cita' | 'bono';
-  readonly estadosStripe: string;
-};
 
 function euro(c: number, currency = 'EUR'): string {
   return (c / 100).toLocaleString('es-ES', {
@@ -38,6 +35,9 @@ interface Props {
   readonly initialStripeResumen: StripeResumen | null;
   readonly sessionId: string | undefined;
   readonly paymentIntentId: string | undefined;
+  /** Query añadida al redirigir desde el drawer; permite `retrievePaymentIntent` en cliente sin `STRIPE_SECRET` en Vercel. */
+  readonly paymentIntentClientSecret: string | undefined;
+  readonly userId: string;
 }
 
 const POLL_MS = 1600;
@@ -52,13 +52,16 @@ export default function PagoSuccessPanel({
   initialStripeResumen,
   sessionId,
   paymentIntentId,
+  paymentIntentClientSecret,
+  userId,
 }: Props): JSX.Element {
   const [pago, setPago] = useState<PagoSuccessRow | null>(initialPago);
   const [gaveUp, setGaveUp] = useState(false);
+  const [clientResumen, setClientResumen] = useState<StripeResumen | null>(null);
 
   const hasQueryKey = Boolean(sessionId) || Boolean(paymentIntentId);
   const canPoll = !pago && hasQueryKey && !gaveUp;
-  const stripeResumen = initialStripeResumen;
+  const stripeResumen = initialStripeResumen ?? clientResumen;
   const showConfirmado =
     Boolean(pago) ||
     Boolean(
@@ -99,6 +102,45 @@ export default function PagoSuccessPanel({
     return () => clearInterval(t);
   }, [canPoll, fetchPago]);
 
+  useEffect(() => {
+    if (initialPago) return;
+    if (initialStripeResumen) return;
+    if (!paymentIntentId || !paymentIntentClientSecret) return;
+
+    let cancelled = false;
+    (async () => {
+      const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+      if (!pk) return;
+      const { loadStripe } = await import('@stripe/stripe-js');
+      const stripe = await loadStripe(pk);
+      if (!stripe || cancelled) return;
+      const { paymentIntent, error } = await stripe.retrievePaymentIntent(
+        paymentIntentClientSecret
+      );
+      if (cancelled) return;
+      if (error || !paymentIntent) return;
+      // Tipos mínimos de @stripe/stripe-js no siempre incluyen `metadata` en el tipo.
+      const pi = paymentIntent as {
+        status?: string;
+        amount?: number;
+        currency?: string;
+        description?: string | null;
+        metadata?: Record<string, string | undefined> | null;
+      };
+      const r = resumenFromPaymentIntentJson(pi, userId);
+      if (r) setClientResumen(r);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    initialPago,
+    initialStripeResumen,
+    paymentIntentId,
+    paymentIntentClientSecret,
+    userId,
+  ]);
+
   const importeCents = pago
     ? pago.importe_centimos
     : stripeResumen
@@ -124,11 +166,12 @@ export default function PagoSuccessPanel({
         </p>
             )
           : null}
-      {!pago && !stripeResumen && hasQueryKey && !gaveUp 
+      {!pago && !stripeResumen && hasQueryKey && !gaveUp && !paymentIntentClientSecret
         ? process.env.NODE_ENV === 'development' ? (
         <p className="mb-4 rounded-xl border border-line bg-white/40 px-3 py-2 font-body text-[0.75rem] text-ink-soft dark:border-white/10 dark:bg-white/5">
-          (Dev) Define <code>STRIPE_SECRET_KEY</code> en <code>.env.local</code> (mismo
-          <code>sk_</code> que en Supabase) para ver importe mientras se depura el webhook.
+          (Dev) Define <code>STRIPE_SECRET_KEY</code> en <code>.env.local</code> o vuelve
+          con <code>payment_intent_client_secret</code> en la URL; así el importe se
+          rellena sin <code>sk_</code> en el servidor.
         </p>
           ) : null
         : null}

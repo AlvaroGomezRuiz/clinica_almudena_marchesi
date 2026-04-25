@@ -4,19 +4,17 @@
  * datos si metadata.user_id coincide con el paciente.
  */
 
-export type StripePagoResumen = {
-  readonly importeCentimos: number;
-  readonly moneda: string;
-  readonly descripcion: string;
-  readonly kind: 'cita' | 'bono';
-  /** Éxito para UI: pago en Stripe (el registro clínico puede ser asíncrono). */
-  readonly estadosStripe: string;
-};
+import {
+  resumenFromPaymentIntentJson,
+  type StripeResumen,
+} from '@/lib/stripe/paymentIntentResumen';
+
+export type { StripeResumen as StripePagoResumen };
 
 export async function fetchPaymentIntentResumenForUser(
   paymentIntentId: string,
   userId: string
-): Promise<StripePagoResumen | null> {
+): Promise<StripeResumen | null> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return null;
 
@@ -39,25 +37,5 @@ export async function fetchPaymentIntentResumenForUser(
     metadata?: Record<string, string | undefined>;
   };
 
-  const status = String(pi.status ?? '');
-  if (status !== 'succeeded' && status !== 'processing' && status !== 'requires_capture') {
-    return null;
-  }
-
-  const mid = (pi.metadata ?? {}) as { user_id?: string; kind?: string };
-  if (mid.user_id !== userId) return null;
-  if (mid.kind !== 'cita' && mid.kind !== 'bono') return null;
-
-  const amount = typeof pi.amount === 'number' ? pi.amount : 0;
-  const moneda = (pi.currency ?? 'eur').toUpperCase();
-  const descripcion = (pi.description && pi.description.length > 0) ? pi.description
-    : mid.kind === 'cita' ? 'Cita' : 'Bono';
-
-  return {
-    importeCentimos: amount,
-    moneda,
-    descripcion,
-    kind: mid.kind,
-    estadosStripe: status,
-  };
+  return resumenFromPaymentIntentJson(pi, userId);
 }

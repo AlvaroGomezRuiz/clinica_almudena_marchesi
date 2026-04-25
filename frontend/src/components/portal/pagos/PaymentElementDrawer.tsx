@@ -368,8 +368,14 @@ function CheckoutForm({
           const id = pi?.id ?? createdPaymentIntentId;
           if (id) {
             willNavigate = true;
-            const q = new URLSearchParams({ payment_intent: id });
-            window.location.assign(`${returnBase}/portal/pagos/success?${q.toString()}`);
+            // Stripe añade client_secret a return_url en redirects 3DS; en SPA hace falta
+            // anexarlo aquí para que /success pueda leer el importe con pk_ sin STRIPE_SECRET en Vercel.
+            const q = new URLSearchParams();
+            q.set('payment_intent', id);
+            q.set('payment_intent_client_secret', clientSecret);
+            window.location.assign(
+              `${returnBase}/portal/pagos/success?${q.toString()}`
+            );
             return;
           }
           setError('No hemos recibido el id del pago. Revisa en Bonos y pagos o contacta.');

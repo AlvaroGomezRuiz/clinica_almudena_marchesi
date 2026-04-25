@@ -14,6 +14,8 @@ interface Props {
     session_id?: string;
     /** Payment Element: Stripe añade ?payment_intent=… al return_url. */
     payment_intent?: string;
+    /** Añadida por PaymentElementDrawer para retrieve en cliente (misma lógica que 3DS). */
+    payment_intent_client_secret?: string;
     redirect_status?: string;
   }>;
 }
@@ -63,6 +65,8 @@ export default async function PagoSuccessPage({ searchParams }: Props) {
         initialStripeResumen={stripeResumen}
         sessionId={sp.session_id}
         paymentIntentId={sp.payment_intent}
+        paymentIntentClientSecret={sp.payment_intent_client_secret}
+        userId={user.id}
       />
     </>
   );
