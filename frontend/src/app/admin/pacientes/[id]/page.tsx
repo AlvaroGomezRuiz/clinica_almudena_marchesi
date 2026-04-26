@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import {
-  Button,
   Chip,
   PageHeader,
   SurfaceCard,
@@ -17,6 +16,10 @@ import SensitiveField from '@/components/admin/ficha/SensitiveField';
 import DiagnosticosCard from '@/components/admin/ficha/DiagnosticosCard';
 import MedicacionCard from '@/components/admin/ficha/MedicacionCard';
 import TagsEditor from '@/components/admin/ficha/TagsEditor';
+import { labelAdminLookupCampo } from '@/components/admin/ficha/admin-lookup-campo-label';
+import FichaPacienteHeaderActions from '@/components/admin/ficha/FichaPacienteHeaderActions';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type { FichaSensiblesBulk } from '@/services/admin/ficha-actions';
 import type {
@@ -65,6 +68,8 @@ interface CitaRow {
   inicio: string;
   estado: string;
   servicio_nombre: string;
+  precio_centimos: number;
+  duracion_minutos: number;
 }
 
 export default async function FichaPacientePage({
@@ -76,7 +81,7 @@ export default async function FichaPacientePage({
   const supabase = createServerClient();
 
   // Carga paralela de todo lo necesario
-  const [pacienteRes, citasRes, diagRes, medRes, adjRes, lookupRes] =
+  const [pacienteRes, citasRes, diagRes, medRes, adjRes, lookupRes, serviciosRes] =
     await Promise.all([
       supabase
         .from('pacientes')
@@ -87,7 +92,7 @@ export default async function FichaPacientePage({
         .maybeSingle(),
       supabase
         .from('v_citas_expandidas')
-        .select('id, inicio, estado, servicio_nombre')
+        .select('id, inicio, estado, servicio_nombre, precio_centimos, duracion_minutos')
         .eq('paciente_id', id)
         .order('inicio', { ascending: false })
         .limit(20),
@@ -113,10 +118,19 @@ export default async function FichaPacientePage({
         .eq('paciente_id', id)
         .order('created_at', { ascending: false })
         .limit(10),
+      supabase
+        .from('servicios')
+        .select('id, nombre, duracion_minutos')
+        .eq('activo', true)
+        .order('nombre', { ascending: true }),
     ]);
 
   const paciente = pacienteRes.data as PacienteFichaRow | null;
   if (!paciente) notFound();
+
+  const serviciosParaCita =
+    (serviciosRes.data as { id: string; nombre: string; duracion_minutos: number }[] | null) ??
+    [];
 
   const citas = ((citasRes.data as CitaRow[] | null) ?? []).slice();
   /** Reservas sin pago (bloqueo_temporal) no entran en timeline / historia clínica. */
@@ -248,6 +262,22 @@ export default async function FichaPacientePage({
 
   return (
     <>
+      <RealtimeRefresh
+        channelName={`admin-ficha-${paciente.id}`}
+        tables={[
+          'paciente_diagnosticos',
+          'paciente_medicacion',
+          'citas',
+          'paciente_adjuntos',
+          'citas_notas_paciente',
+        ]}
+        filter={`paciente_id=eq.${paciente.id}`}
+      />
+      <RealtimeRefresh
+        channelName={`admin-ficha-paciente-${paciente.id}`}
+        tables={['pacientes']}
+        filter={`id=eq.${paciente.id}`}
+      />
       <PageHeader
         eyebrow={
           <Link
@@ -266,15 +296,12 @@ export default async function FichaPacientePage({
         title={displayName}
         description={`Alta ${format(new Date(paciente.fecha_alta), "d 'de' MMMM yyyy", { locale: es })} · ${sesionesCompletadas} sesiones completadas`}
         actions={
-          <>
-            <Button variant="surface" icon="download">Exportar PDF</Button>
-            <Button variant="primary" icon="event">Nueva cita</Button>
-          </>
+          <FichaPacienteHeaderActions pacienteId={paciente.id} servicios={serviciosParaCita} />
         }
       />
 
       {/* ─── Chips editoriales de resumen (inspirado prototipo) ─── */}
-      <section className="mb-8 flex flex-wrap gap-x-10 gap-y-4 text-ink-soft dark:text-white/70 portal-rise">
+      <section className="mb-6 flex flex-col gap-3 text-ink-soft sm:mb-8 sm:flex-row sm:flex-wrap sm:gap-x-10 sm:gap-y-4 dark:text-white/70 portal-rise">
         <HeaderChip
           label="Edad"
           value={edadAnios !== null ? `${edadAnios} años` : '—'}
@@ -304,7 +331,7 @@ export default async function FichaPacientePage({
       </section>
 
       {/* ─── Identidad (métricas duplicadas eliminadas: ya están en chips de cabecera) ─── */}
-      <section className="mb-6 flex flex-wrap items-center gap-6 portal-rise">
+      <section className="mb-5 flex flex-wrap items-center gap-4 sm:mb-6 sm:gap-6 portal-rise">
         <div className="flex items-center gap-4">
           <div
             className="flex h-16 w-16 items-center justify-center rounded-2xl font-display text-[1.5rem] text-canvas ring-1 ring-inset ring-ink/10 dark:text-ink dark:ring-white/10"
@@ -338,9 +365,9 @@ export default async function FichaPacientePage({
       </section>
 
       {/* ─── Grid principal: sensibles + clínico ─── */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Col izquierda: datos personales sensibles */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="min-w-0 space-y-4 sm:space-y-6 lg:col-span-2">
           <SurfaceCard>
             <FichaSectionEditGate
               title="Datos personales"
@@ -370,7 +397,7 @@ export default async function FichaPacientePage({
                 value={sensibles?.telefono ?? null}
                 keepShape
                 inputType="tel"
-                placeholder="+34 600 00 00 00"
+                placeholder={`Ej. ${CLINIC_PUBLIC_PHONE_DISPLAY}`}
               />
               <EditableSensitiveField
                 label="Email"
@@ -398,7 +425,7 @@ export default async function FichaPacientePage({
                 value={sensibles?.contacto_emergencia_telefono ?? null}
                 keepShape
                 inputType="tel"
-                placeholder="+34 600 00 00 00"
+                placeholder={`Ej. ${CLINIC_PUBLIC_PHONE_DISPLAY}`}
               />
               <div>
                 <dt className="font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
@@ -426,19 +453,47 @@ export default async function FichaPacientePage({
             <TagsEditor pacienteId={paciente.id} initialTags={paciente.tags} />
           </SurfaceCard>
 
-          <SurfaceCard>
-            <DiagnosticosCard
-              pacienteId={paciente.id}
-              diagnosticos={diagnosticos}
-            />
-          </SurfaceCard>
+          <SectionDivider label="Historia clínica" />
 
-          <SurfaceCard>
-            <MedicacionCard
-              pacienteId={paciente.id}
-              medicaciones={medicaciones}
-            />
-          </SurfaceCard>
+          <div id="historia-clinica" className="scroll-mt-28 portal-rise">
+            <SurfaceCard>
+              <div className="mb-8 flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-[1.5rem] italic text-ink dark:text-white">
+                    Sesiones registradas
+                  </h2>
+                  <p className="mt-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+                    Línea temporal editorial. Las notas clínicas están cifradas (ver auditoría lateral).
+                  </p>
+                </div>
+                <span className="font-body text-[0.7rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
+                  {citasSinBloqueoTemporal.length} cita{citasSinBloqueoTemporal.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              <HistorialCitasAdminLista
+                pacienteId={paciente.id}
+                citas={citasSinBloqueoTemporal}
+                notaIdByCita={notaIdByCitaRecord}
+              />
+            </SurfaceCard>
+          </div>
+
+          {/* Diagnóstico + medicación en fila (md+) para lectura clínica rápida en tablet. */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <SurfaceCard>
+              <DiagnosticosCard
+                pacienteId={paciente.id}
+                diagnosticos={diagnosticos}
+              />
+            </SurfaceCard>
+            <SurfaceCard>
+              <MedicacionCard
+                pacienteId={paciente.id}
+                medicaciones={medicaciones}
+              />
+            </SurfaceCard>
+          </div>
 
           <SurfaceCard>
             <FichaSectionEditGate
@@ -486,47 +541,8 @@ export default async function FichaPacientePage({
           </SurfaceCard>
         </div>
 
-        {/* Col derecha: timeline + adjuntos + lookups */}
-        <aside className="space-y-6">
-          <SurfaceCard>
-            <h2 className="font-display text-[1.15rem] italic text-ink dark:text-white mb-3">
-              Timeline
-            </h2>
-            {citasSinBloqueoTemporal.length === 0 ? (
-              <p className="py-4 text-center font-body text-[0.85rem] text-ink-soft dark:text-white/45">
-                Sin citas confirmadas en el historial.
-              </p>
-            ) : (
-              <ol className="relative border-l border-ink/10 pl-4 dark:border-white/10">
-                {citasSinBloqueoTemporal.slice(0, 10).map((c) => (
-                  <li key={c.id} className="mb-4 last:mb-0">
-                    <span
-                      className="absolute -left-1.5 flex h-3 w-3 items-center justify-center rounded-full ring-4 ring-canvas dark:ring-[#1a1a1a]"
-                      style={{
-                        background:
-                          c.estado === 'completada'
-                            ? 'var(--color-primary)'
-                            : c.estado === 'cancelada'
-                              ? '#c14c4c'
-                              : 'var(--color-primary-dark)',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <p className="font-body text-[0.82rem] text-ink dark:text-white">
-                      {c.servicio_nombre}
-                    </p>
-                    <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                      {format(new Date(c.inicio), "d MMM yyyy · HH:mm", {
-                        locale: es,
-                      })}{' '}
-                      · {c.estado}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </SurfaceCard>
-
+        {/* Col derecha: adjuntos + auditoría (timeline de citas arriba, en Historia clínica) */}
+        <aside className="space-y-4 sm:space-y-6 lg:sticky lg:top-4 lg:self-start">
           <SurfaceCard>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-display text-[1.15rem] italic text-ink dark:text-white">
@@ -534,12 +550,18 @@ export default async function FichaPacientePage({
               </h2>
               <Chip tone="neutral">{adjuntos.length}</Chip>
             </div>
+            <p className="mb-4 font-body text-[0.72rem] leading-relaxed text-ink-muted dark:text-white/55">
+              Informes externos, consentimientos firmados o documentación que no forman parte del chat.
+              Solo personal autorizado; las descargas quedan acotadas al contexto clínico. No subas
+              contraseñas ni datos de terceros sin base legal.
+            </p>
             {adjuntos.length === 0 ? (
               <p className="py-4 text-center font-body text-[0.85rem] text-ink-soft dark:text-white/45">
-                Sin adjuntos.
+                Sin archivos todavía.
                 <br />
-                <span className="text-[0.72rem]">
-                  La subida se habilita en F5 (storage: paciente-adjuntos).
+                <span className="text-[0.7rem] text-ink-muted dark:text-white/45">
+                  Si falta la subida en tu entorno, revisa el bucket privado y políticas RLS de
+                  almacenamiento.
                 </span>
               </p>
             ) : (
@@ -587,7 +609,7 @@ export default async function FichaPacientePage({
                 {lookups.map((l) => (
                   <li key={l.id} className="text-[0.72rem] font-body">
                     <p className="text-ink dark:text-white">
-                      <span className="font-medium">{l.campo}</span>
+                      <span className="font-medium">{labelAdminLookupCampo(l.campo)}</span>
                       {l.justificacion ? (
                         <span className="text-ink-muted dark:text-white/55">
                           {' '}
@@ -606,33 +628,6 @@ export default async function FichaPacientePage({
             )}
           </SurfaceCard>
         </aside>
-      </div>
-
-      <SectionDivider label="Historia clínica" />
-
-      <div id="historia-clinica">
-      <SurfaceCard>
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="font-display text-[1.5rem] italic text-ink dark:text-white">
-              Sesiones registradas
-            </h2>
-            <p className="mt-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
-              Línea temporal editorial. Las notas clínicas están cifradas
-              (ver auditoría lateral).
-            </p>
-          </div>
-          <span className="font-body text-[0.7rem] uppercase tracking-[0.22em] font-bold text-ink-muted dark:text-white/55">
-            {citasSinBloqueoTemporal.length} cita{citasSinBloqueoTemporal.length === 1 ? '' : 's'}
-          </span>
-        </div>
-
-        <HistorialCitasAdminLista
-          pacienteId={paciente.id}
-          citas={citasSinBloqueoTemporal}
-          notaIdByCita={notaIdByCitaRecord}
-        />
-      </SurfaceCard>
       </div>
 
       <SectionDivider />

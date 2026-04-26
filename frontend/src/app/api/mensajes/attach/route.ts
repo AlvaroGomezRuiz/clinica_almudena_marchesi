@@ -19,7 +19,7 @@ import {
   kindFromMime,
   type AllowedFileKind,
 } from '@/lib/security/file-validation';
-import { enforceRateLimit, getClientIp } from '@/lib/security/rate-limit';
+import { enforceRateLimit, getClientIp, rateLimitJsonResponse } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { sendMensajeAction } from '@/services/mensajes/actions';
 
@@ -83,15 +83,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     windowMs: 60_000,
   });
   if (!rate.ok) {
-    return NextResponse.json(
-      { error: 'rate_limited' },
-      {
-        status: 429,
-        headers: {
-          'Retry-After': Math.ceil((rate.resetAt - Date.now()) / 1000).toString(),
-        },
-      }
-    );
+    return rateLimitJsonResponse(rate);
   }
 
   let form: FormData;

@@ -1,131 +1,104 @@
-# Auditoria de Arquitectura Global
+# Auditoría de arquitectura global (estado al código)
 
-> **Alcance**: revision end-to-end del monorepo clinica-almudena.
-> **Fecha**: 2026-04-21. **Nota 2026-04-23**: arquitectura unificada en Supabase; sin `backend/` en repo. Ver `docs/00_proyecto/cronologia.md` (hitos 14–17).
-> **Metodologia**: inspeccion estatica de codigo, migraciones, Edge Functions, RLS, Sentry y flujos Stripe; contraste con estado real desplegado (Vercel + Supabase `koxsikkobjlycqqfstye`).
-> **Resultado**: **VERDE** (listo para pre-produccion tras rotacion de credenciales + alta de dominio).
+> **Fecha de revisión:** 2026-04-26 · **Repositorio:** monorepo `almudena` (sin carpeta `backend/` en la ruta de producto).  
+> **Metodología:** lectura de `frontend/`, `supabase/`, `middleware`, Edge Functions, migraciones y tipos `Database` en `frontend/src/lib/supabase/types.ts`.  
+> **Resultado:** arquitectura unificada **Vercel (Next.js) + Supabase (Postgres, Auth, Storage, Realtime, Edge, Vault)**.
 
 ---
 
-## 1. Mapa del sistema
+## 1. Visión de conjunto
 
+| Nivel            | Tecnología principal | Dónde está en el repo |
+|------------------|----------------------|------------------------|
+| Interfaz         | Next.js **14.2.x** App Router, RSC, React 18, Tailwind | `frontend/src/app/`, `frontend/src/components/` |
+| Orquestación BFF | Server Actions, route handlers, middleware | `frontend/src/services/`, `frontend/src/app/api/**/route.ts`, `frontend/src/middleware.ts` |
+| Identidad        | Supabase Auth (sesión por cookies) | `frontend/src/lib/supabase/`, `frontend/src/middleware.ts` |
+| Datos y reglas   | PostgreSQL, RLS, RPC, triggers, extensiones pgcrypto/vault | `supabase/migrations/*.sql` |
+| Integraciones    | Edge Functions (Deno 2) | `supabase/functions/*/` |
+| Archivos         | Supabase Storage (buckets) | Políticas en migraciones, uploads en `app/api/.../upload` |
+| Tiempo real      | Supabase Realtime | Tablas y vistas publicadas; chat y adjuntos (`0055`+) |
+| Pagos            | Stripe (Payment Element, Checkout, webhooks) | Cliente: `components/portal/pagos/`, `lib/stripe/`; servidor: Edge `stripe-*` |
+| Email            | Resend | Edge `send-email`, webhooks `resend-webhook` |
+| Errores          | Sentry (`@sentry/nextjs` + edge helpers) | `frontend/src/lib/sentry.ts`, `_shared` en functions |
+
+**Flujo lógico:** el navegador nunca recibe claves de servicio ni secretos de Stripe/Resend; las mutaciones pasan por acciones de servidor o rutas que validan sesión, límites de tasa (Upstash o memoria) y, cuando aplica, comprobación de bytes en adjuntos.
+
+---
+
+## 2. Mapa lógico (alto nivel)
+
+```text
+                    ┌──────────────────────────────────────────┐
+  HTTPS             │  Vercel (Frankfurt)                       │
+  (TLS 1.3)  ──────▶│  Next.js: pages, RSC, Server Actions    │
+                    │  Middleware: Supabase session + RBAC     │
+                    │  API routes: rate limit, firmas, CSV     │
+                    └──────┬───────────────────────┬───────────┘
+                           │                      │
+                           │  JWT (anon) + RLS   │  service role solo servidor
+                           ▼                      ▼
+                    ┌──────────────────────────────────────────┐
+                    │  Supabase (eu-central)                   │
+                    │  Postgres 17 · RLS · RPC · pgcrypto    │
+                    │  Storage · Realtime · Auth · Vault        │
+                    └──────┬───────────────────────┬──────────┘
+                           │                      │
+              Webhooks     │  pg_cron / actions    │  Signed URLs
+                  ┌────────┴────────┐     ┌──────┴──────┐
+                  ▼                 ▼     ▼             ▼
+            Stripe            Resend   Emails     Edge Functions
+            (HMAC verify)     (HMAC)   (SMTP API)  (Deno, Sentry)
 ```
-   Navegador  ──HTTPS──▶  Vercel (Next.js 14 SSR+RSC)  ──RLS+RPC──▶  Supabase Postgres
-       │                         │                                          │
-       │                         └── Server Actions ──▶ Edge Functions ─────┤
-       │                                                    │               │
-       ▼                                                    ▼               ▼
-   Stripe Checkout                                     Resend (email)   supabase_vault
-     + Payment                                         Sentry (obs.)    (clave AES-256)
-      Element
 
-   ~~FastAPI `backend/`~~ retirado del repo (hito 14); lock-in mitigado por Postgres
-   estandar + Edge exportables.
-```
+**Backend “de aplicación”** no vive en un repositorio Python separado: está en **SQL + Edge**. Cualquier referencia histórica a FastAPI en documentación antigua queda invalidada: el tronco del repo refleja solo **Supabase**.
 
-## 2. Stack canonico
+---
 
-| Capa               | Tecnologia                                  | Estado     |
-|--------------------|---------------------------------------------|------------|
-| UI                 | Next.js 14 App Router + React 18 + Tailwind | produccion |
-| Auth               | Supabase Auth (cookies httpOnly via `@supabase/ssr`) | produccion |
-| Datos              | Supabase Postgres + RLS + pgcrypto + vault  | produccion |
-| Realtime           | Supabase Realtime (WebSocket)               | produccion |
-| Storage            | Supabase Storage (bucket firmas, recursos)  | produccion |
-| Pagos              | Stripe Payment Element (embebido) + webhook | produccion (test) |
-| Email              | Resend + Edge Function `send-email`         | produccion |
-| Errores            | Sentry (frontend + edge) sin PII            | produccion |
-| Backend opcional   | FastAPI 0.115 + SQLAlchemy 2.0 + Alembic    | stand-by   |
+## 3. Principios que el código refleja
 
-## 3. Principios arquitectonicos respetados
+| Principio | Evidencia concreta |
+|----------|---------------------|
+| Separación de portales | Prefijos de ruta `/` (público), `/admin` (rol admin), `/portal` (paciente) + `middleware` |
+| No confianza en el cliente | Rol efectivo vía `profiles` y RLS; no se acepta `role` desde query |
+| Cifrado de PII clínica | `0022`–`0024`, columnas cifradas, búsqueda con blind index (`paciente_buscar_por_campo`) |
+| Chat cifrado en almacenamiento | `0037` + `v_mensajes_chat` + `chat_descifrar_mensaje` |
+| Idempotencia en pagos | `stripe_events`, deduplicación en webhooks, RPC de procesado |
+| Observabilidad sin PII en logs | `beforeSend` Sentry, helpers Edge sin volcar cuerpos sensibles |
+| Límites de abuso | `enforceRateLimit` + `UPSTASH_*` opcional, Auth rate limits en Supabase |
 
-1. **Separacion estricta** publico / admin / portal paciente (rutas, middleware, RLS).
-2. **Cero negocio en UI**: toda logica escribe via Server Action → RPC o Edge Function.
-3. **Fail-fast**: variables criticas validadas al arranque (`getSupabaseEnv`, `_app_encryption_key`).
-4. **Idempotencia bulletproof**: `pagos.stripe_event_id UNIQUE`, RPC `procesar_pago_stripe` detecta dup.
-5. **Zero Trust**: no existe ruta que confie en un rol enviado por el cliente; `is_admin()` resuelve desde `profiles.role` con `SECURITY DEFINER`.
-6. **Defense in depth**: 4 capas (Transport → Headers → Auth → RLS → Cifrado columna).
+---
 
-## 4. Analisis de decisiones clave
+## 4. Decisiones de arquitectura (con trade-offs)
 
-| Decision                                               | Justificacion                                          | Trade-off aceptado                                   |
-|--------------------------------------------------------|--------------------------------------------------------|------------------------------------------------------|
-| Supabase en lugar de FastAPI desplegado                | RLS + Realtime + Auth + Edge en una sola plataforma, 0 ops | Vendor lock-in parcial mitigado por SQL estandar    |
-| `pgcrypto + vault` en vez de `pgsodium`                | `pgsodium` oficialmente en deprecacion por Supabase    | Menor throughput que libsodium (no critico a esta escala) |
-| Payment Element embebido vs Checkout hosted            | UX premium, no redirect, mantiene contexto de reserva   | Mas codigo cliente (Stripe Elements + iframe)       |
-| Blind index HMAC-SHA256 en vez de hash simple          | Permite busqueda exacta sin desanonimizar             | Determinista ⇒ vulnerable a enumeracion si se filtra el HMAC key |
-| Sentry via HTTP envelope (no SDK en Edge)              | `@sentry/deno` no estable en runtime Supabase         | Sin breadcrumbs automaticos; tags manuales           |
-| Next.js 14 (no 15/16)                                  | Estabilidad, soporte amplio, Cache Components no requerido | Sin PPR ni `'use cache'`; migrable en Q2 2026 |
-| Stripe `automatic_payment_methods=true`                | Activa wallets (Apple/Google Pay, Bizum, Klarna) sin config | Pequenos cambios en UI (Payment Element ajusta altura) |
+| Decisión | Ventaja aceptada | Coste o riesgo mitigado |
+|----------|------------------|-------------------------|
+| Monolito front + BFF en Vercel | Despliegue y DX simples, tipos compartidos | Escala vertical del bundle; mitigado con RSC y code-splitting |
+| Supabase como ecosistema | Auth+DB+Storage+EF en un producto | Lock-in de plataforma; SQL estándar y `pg_dump` alivian portabilidad |
+| Payment Element + PI | Flujo en contexto, métodos (Apple/Google/Klarna/SEPA) | Más lógica cliente que un Checkout redirigido |
+| pgcrypto + vault | Compatible con ruta de migración y soporte Supabase | No libsodium; rendimiento aceptable a la escala clínica |
+| Realtime de Supabase en chat y citas | UX inmediata | Complejidad de descifrado y vistas (`0053`–`0055`) |
 
-## 5. Capas y responsabilidades
+---
 
-### 5.1 Cliente (navegador)
-- Solo lee endpoints `NEXT_PUBLIC_*` (URL + anon key Supabase).
-- No tiene acceso a `SERVICE_ROLE_KEY`, `STRIPE_SECRET`, `RESEND_API_KEY`.
-- Todas las mutaciones pasan por Server Actions (serializadas, validables, cacheables).
+## 5. Seguridad perimetral (referencia)
 
-### 5.2 Vercel (Server)
-- Middleware Next.js: refresh de sesion Supabase + RBAC por prefijo de ruta.
-- Server Actions: puente autenticado cliente → RPC/EF.
-- Sentry con `beforeSend` scrubbing PII (email, DNI, telefono, IBAN).
+- **CSP, HSTS, COOP/ CORP, Permissions-Policy:** `frontend/next.config.js` (fuente única, sin duplicar en middleware salvo acuerdos explícitos).
+- **CORS** en Edge: listas de orígenes en `_shared` (Vercel previews, dominio de producción).
+- **Geo (opcional):** `GEO_ENFORCE` y `lib/security/geo-gate` para restringir jurisdicción de uso si se activa.
+- **Detalle de cumplimiento legal:** `docs/01_auditorias/seguridad-rgpd.md`.
 
-### 5.3 Supabase
-- **Postgres**: schema `public` + RLS, `extensions` con pgcrypto, `vault` con master key.
-- **Auth**: email/password + MFA TOTP opcional; validacion passphrase >= 12 chars client-side.
-- **Edge Functions**: Deno runtime. 10 funciones. Todas con `wrapEdgeHandler` → Sentry.
-- **Realtime**: publication `supabase_realtime` con replica identity full en `citas`, `mensajes`, `pagos`.
-- **Storage**: buckets `recursos` (signed URL 5 min), `firmas-rgpd` (private), `avatares` (public).
+---
 
-### 5.4 Stripe
-- Cuenta de la clinica (`clinica.almudena.marchesi@outlook.com`).
-- Webhook: 4 eventos activos (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `payment_intent.succeeded`, `payment_intent.payment_failed`).
-- Modo test confirmado; pendiente rotacion a live tras go-live.
+## 6. Documentos relacionados
 
-## 6. Telemetria y observabilidad
+| Documento | Contenido |
+|-----------|-----------|
+| `docs/01_auditorias/backend.md` | Edge Functions, webhooks, patrones Deno |
+| `docs/01_auditorias/frontend.md` | Rutas, acciones, componentes, tests E2E |
+| `docs/01_auditorias/base-de-datos.md` | Migraciones, RLS, tablas y RPC |
+| `docs/03_ingenieria/arquitectura-tecnica.md` | Cómo está cableado hoy (referencia viva) |
+| `docs/03_ingenieria/arquitectura-visual.md` | Diagramas Mermaid |
 
-| Evento                     | Captura                      | Destino       |
-|----------------------------|------------------------------|---------------|
-| Error en Server Action     | `captureClinicalError`       | Sentry (frontend) |
-| Error en Edge Function     | `wrapEdgeHandler` + rethrow  | Sentry (edge) |
-| Pago confirmado            | `INSERT public.pagos`        | Postgres      |
-| Email enviado              | `INSERT public.emails_log`   | Postgres      |
-| Consulta PII descifrada    | `INSERT public.auditoria` con hash-chain | Postgres |
-| Rate limit hit             | middleware / Supabase Auth   | Sentry (warning) |
+---
 
-## 7. Riesgos residuales y mitigaciones
-
-| Riesgo                                  | Probabilidad | Impacto | Mitigacion actual                                                | Pendiente              |
-|-----------------------------------------|--------------|---------|------------------------------------------------------------------|------------------------|
-| Credenciales demo (`Almudena2026!`)     | alta         | alta    | Documentado en `docs/00_proyecto/estado-y-pendientes.md` como pre-producción  | rotar antes de go-live |
-| Dominio `resend.dev`                    | media        | media   | Funcional en test; deliverability baja en prod                   | esperar dominio clinica |
-| Password leak check (HIBP)              | baja         | media   | Plan Pro Supabase requerido; complejidad 12+ chars mitiga       | aceptado               |
-| Migracion 0025 (drop plaintext)         | baja         | media   | Triggers auto-encrypt cubren escrituras nuevas                   | aplicar tras QA cliente |
-| Backup Postgres                         | media        | alta    | Supabase plan Free = 7 dias retention, sin PITR                 | evaluar Pro en Q2      |
-| Rate limit email Resend                 | baja         | media   | 3.000 mails/mes plan Free; alerta cuando >80%                    | pendiente alert        |
-
-## 8. Top 5 wins arquitectonicos
-
-1. **Cifrado de columna con vault**: clave maestra nunca en `.env`, solo en `supabase_vault` cifrado.
-2. **Hash-chain de auditoria**: tabla `auditoria` con `hash_integridad` = SHA-256 encadenado ⇒ tamper-evident.
-3. **Triggers auto-encrypt**: escritura plaintext → ciphertext automatico en `paciente_diagnosticos`, `paciente_medicacion`, `citas_notas_paciente`. Imposible olvidarse.
-4. **Idempotencia de webhook**: `UNIQUE (stripe_event_id)` + `procesar_pago_stripe` devuelve `ya_procesado:true` → Stripe puede reintentar 72h sin generar duplicados.
-5. **Fingerprint determinista en Sentry**: eventos agrupados por `[area, event_type, entity_id]` ⇒ alertas accionables, no ruido.
-
-## 9. Deuda tecnica catalogada
-
-| Item                                                    | Severidad | Ubicacion                                           |
-|---------------------------------------------------------|-----------|-----------------------------------------------------|
-| ~~Carpeta `backend/` sin despliegue~~                   | —         | **Eliminada** (hito 14); riesgo cerrado.           |
-| `0008_seed_demo.sql` con usuarios demo                  | media     | `supabase/migrations/0008_seed_demo.sql`           |
-| `stripe-checkout` redundante tras migracion a Payment Element | baja      | `supabase/functions/stripe-checkout/`              |
-| Falta integration tests E2E (Playwright)                | media     | `frontend/` (sin suite)                            |
-| Rotacion vault `app_encryption_key` no automatizada     | media     | procedimiento manual (documentar en runbook)       |
-
-## 10. Veredicto
-
-Arquitectura **production-ready**. El codigo sigue principios SOLID, KISS, defensa en profundidad y GDPR-by-default. Los bloqueadores restantes son **operacionales** (dominio, NIF, rotacion credenciales), no tecnicos.
-
-No se detecta anti-patron estructural ni codigo muerto critico. La separacion frontend ⇄ backend esta limpia. El cifrado en reposo cumple Articulo 32 RGPD ("medidas apropiadas"). La auditoria hash-chain cumple Ley 41/2002 Articulo 17 (integridad historia clinica).
-
-**Recomendacion**: proceder a go-live tras ejecutar el checklist de rotacion documentado en `docs/00_proyecto/estado-y-pendientes.md` seccion 6.
+*Cualquier número de “páginas” o despliegue exacto: derivar de `next build` y de Vercel, no fijar aquí cifras de bundle que envejecen en días.*

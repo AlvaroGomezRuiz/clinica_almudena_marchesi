@@ -6,7 +6,10 @@ import type { ReactNode } from 'react';
 import RefreshOnVisibility from '@/components/layout/RefreshOnVisibility';
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
+import { unpackDisplayNameFromRequestHeader } from '@/lib/supabase/header-display-name';
 import { SSH_KEYS } from '@/lib/supabase/middleware';
+import { isPortalGateBypassPath } from '@/lib/portal-gate';
+import { resolveProfileDisplayNameForShell } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
 
@@ -18,6 +21,8 @@ type ProfileLite = Pick<Profile, 'id' | 'role' | 'display_name' | 'avatar_url' |
  * Seguridad:
  *   - Valida sesión Supabase (getUser).
  *   - Exige role='paciente'.
+ *   - Payment-gate: headers `x-ss-portal-path` / `x-ss-portal-unlocked` los
+ *     fija solo el middleware (tras purgar spoofing), nunca el navegador.
  *   - RLS Postgres como última línea si algo falla.
  *
  * Performance:
@@ -43,6 +48,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const hRole = h.get(SSH_KEYS.role);
 
   let profile: ProfileLite | null = null;
+  let authMetadataFullName: string | undefined;
 
   if (hId && hEmail && hRole) {
     if (hRole !== 'paciente') {
@@ -52,7 +58,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       id: hId,
       email: hEmail,
       role: hRole as 'paciente',
-      display_name: h.get(SSH_KEYS.name),
+      display_name: unpackDisplayNameFromRequestHeader(h.get(SSH_KEYS.name)),
       avatar_url: h.get(SSH_KEYS.avatar),
     };
   } else {
@@ -65,6 +71,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       redirect('/login?reason=no_session');
     }
 
+    const metaFn = user.user_metadata?.full_name;
+    authMetadataFullName = typeof metaFn === 'string' ? metaFn : undefined;
+
     const { data: fetched } = await supabase
       .from('profiles')
       .select('id, role, display_name, avatar_url, email')
@@ -75,6 +84,31 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       redirect(fetched?.role === 'admin' ? '/admin' : '/login?reason=role_mismatch');
     }
     profile = fetched;
+  }
+
+  const shellDisplayName = resolveProfileDisplayNameForShell(
+    profile.display_name,
+    authMetadataFullName,
+    profile.email
+  );
+
+  const portalPath = h.get('x-ss-portal-path') ?? '';
+  const portalUnlocked = h.get('x-ss-portal-unlocked') === '1';
+  if (portalPath && !portalUnlocked && !isPortalGateBypassPath(portalPath)) {
+    redirect('/portal/bienvenida');
+  }
+
+  const supabase = createServerClient();
+  const { data: convIdRaw } = await supabase.rpc('chat_mi_conversacion');
+  const conversationId = typeof convIdRaw === 'string' ? convIdRaw : null;
+  let mensajesUnread = 0;
+  if (conversationId) {
+    const { data: convRow } = await supabase
+      .from('conversaciones')
+      .select('unread_paciente')
+      .eq('id', conversationId)
+      .maybeSingle<{ unread_paciente: number }>();
+    mensajesUnread = convRow?.unread_paciente ?? 0;
   }
 
   const footerCta = (
@@ -96,11 +130,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         brandTitle="Almudena Marchesi"
         brandSubtitle="Tu espacio de calma"
         navItems={PATIENT_NAV}
+        mensajesUnread={mensajesUnread}
         footerSlot={footerCta}
         user={{
           id: profile.id,
           email: profile.email,
-          displayName: profile.display_name ?? profile.email.split('@')[0],
+          displayName: shellDisplayName,
           avatarUrl: profile.avatar_url,
           role: 'paciente',
         }}

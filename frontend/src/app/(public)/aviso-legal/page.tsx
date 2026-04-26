@@ -20,6 +20,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'ampsicologia.es',
   ],
   ogType: 'article',
+  includeGeoHints: false,
 });
 
 const webPageJsonLd = buildLegalWebPageJsonLd({

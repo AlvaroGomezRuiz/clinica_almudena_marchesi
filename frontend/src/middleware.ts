@@ -2,13 +2,16 @@
  * Middleware Next.js — Autenticación Supabase + RBAC por zona.
  *
  * Responsabilidades (en orden de ejecución):
+ *   0. Si GEO_ENFORCE=1: permitir solo ES/PT/AD (rastreadores y E2E con token exentos); 403 con noindex.
  *   1. Refrescar la sesión Supabase (cookies httpOnly rotating refresh token).
- *   2. Cabeceras de seguridad (CSP, HSTS, X-Frame-Options, etc.).
+ *   2. Cabeceras de runtime (Vary: cookie; con geo, también por país en edge).
  *   3. Expulsar a /login cualquier request a zona protegida sin sesión válida.
  *   4. RBAC:
  *        - /admin/*  → solo profiles.role = 'admin'
  *        - /portal/* → solo profiles.role = 'paciente'
- *        - paciente sin pago → /pagos (payment-gate)
+ *   4b. Payment-gate (headers internos x-ss-portal-*):
+ *        - Sin pago/bono/cita confirmada → layout redirige a /portal/bienvenida
+ *          salvo rutas operativas (pagos, citas, bienvenida).
  *   5. Usuario ya autenticado en /login: si falta MFA (AAL1→2) → /login/mfa;
  *      si ya completó → home según rol.
  *   6. Sin sesión en /login/mfa → vuelve a /login; con sesión plena (sin MFA
@@ -21,6 +24,11 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 
+import {
+  buildGeoDeniedHtml,
+  evaluateGeoGate,
+  isGeoEnforcementEnabled,
+} from '@/lib/security/geo-gate';
 import { updateSupabaseSession } from '@/lib/supabase/middleware';
 
 const PUBLIC_PATHS = [
@@ -43,17 +51,14 @@ function isPublicPath(pathname: string): boolean {
 }
 
 /**
- * Las cabeceras de seguridad (CSP, HSTS, X-Frame, COOP, etc.) se configuran
- * como **única fuente de verdad** en `next.config.js` → `async headers()`.
- * Evitamos duplicarlas aquí para no generar divergencias entre rutas
- * estáticas (que no pasan por middleware) y dinámicas (que sí).
- *
- * El middleware solo añade cabeceras específicas de SESIÓN autenticada.
+ * Cabeceras de runtime: `Vary` para caché correcta; resto (CSP, HSTS, etc.) en
+ * `next.config.js`. Con geo activo, el `Vary` incluye cabecera de país en edge.
  */
 function applyRuntimeHeaders(response: NextResponse): NextResponse {
-  /* Vary: garantiza que la cache de Vercel no sirva la misma respuesta a
-     usuarios con distintas cookies (evita fuga de sesiones entre usuarios). */
-  response.headers.set('Vary', 'Cookie, Accept-Encoding');
+  const base = isGeoEnforcementEnabled()
+    ? 'Cookie, Accept-Encoding, X-Vercel-IP-Country, CF-IPCountry'
+    : 'Cookie, Accept-Encoding';
+  response.headers.set('Vary', base);
   return response;
 }
 
@@ -75,6 +80,21 @@ function redirectToLoginMfaNoSession(request: NextRequest): NextResponse {
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
+  const geo = evaluateGeoGate(request);
+  if (geo.kind === 'deny') {
+    const res = new NextResponse(buildGeoDeniedHtml(geo.country), {
+      status: 403,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Robots-Tag': 'noindex, nofollow',
+        'Cache-Control': 'no-store, max-age=0',
+        'Referrer-Policy': 'no-referrer',
+      },
+    });
+    return applyRuntimeHeaders(res);
+  }
+
   const isAdminZone   = pathname.startsWith('/admin');
   const isPortalZone  = pathname.startsWith('/portal');
   const isPagosZone   = pathname.startsWith('/pagos');
@@ -93,7 +113,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return applyRuntimeHeaders(NextResponse.next());
   }
 
-  const { response, user, needsMfa } = await updateSupabaseSession(request);
+  const { response, user, needsMfa } = await updateSupabaseSession(request, pathname);
 
   // Pantalla de código: sin cookies de sesión → al login (sin next= /login/mfa)
   if (isMfaPage && !user) {

@@ -12,6 +12,8 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import AsignarBonoManualButton from '@/components/admin/facturacion/AsignarBonoManualButton';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { getMetodoFacturacionPantalla } from '@/lib/admin/facturacion-metodo-display';
 import { createServerClient } from '@/lib/supabase/server';
 import type { BonoPaciente } from '@/lib/supabase/types';
 
@@ -129,18 +131,34 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
   // CSV URL (rango: últimos 12 meses)
   const csvFrom = format(earliest, 'yyyy-MM-dd');
   const csvTo = format(endOfMonth(now), 'yyyy-MM-dd');
-  const csvHref = `/api/admin/facturacion/export?from=${csvFrom}&to=${csvTo}`;
+  const csvBase = `/api/admin/facturacion/export?from=${csvFrom}&to=${csvTo}`;
+  const csvHref = csvBase;
+  const csvHrefInclRegalos = `${csvBase}&incluir_regalos=1`;
 
   return (
     <>
+      <RealtimeRefresh
+        channelName="admin-facturacion"
+        tables={['pagos', 'bonos_pacientes']}
+      />
       <PageHeader
         eyebrow={format(now, "LLLL yyyy", { locale: es })}
         title="Facturación"
-        description="Ingresos, pagos Stripe, bonos activos y reportes para gestoría."
+        description="Ingresos, pagos Stripe, bonos activos y reportes para gestoría. El CSV respeta el filtro de regalos; usa la variante con regalos solo para auditoría interna."
         actions={
-          <a href={csvHref} download>
-            <Button variant="primary" icon="download">Exportar CSV</Button>
-          </a>
+          <div className="flex w-full flex-col gap-2 min-[480px]:w-auto min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center min-[480px]:justify-end">
+            <a href={csvHref} download>
+              <Button variant="primary" icon="download">
+                Exportar CSV
+              </Button>
+            </a>
+            <a href={csvHrefInclRegalos} download>
+              <Button variant="surface" icon="redeem">
+                CSV con regalos
+              </Button>
+            </a>
+            <AsignarBonoManualButton />
+          </div>
         }
       />
 
@@ -203,7 +221,6 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
               {bonos.length} bono{bonos.length === 1 ? '' : 's'} en curso
             </p>
           </div>
-          <AsignarBonoManualButton />
         </div>
 
         {bonos.length === 0 ? (
@@ -213,8 +230,11 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
             description="Los bonos se crean al confirmar el pago desde la ficha del paciente."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="-mx-1 overflow-x-auto rounded-md sm:mx-0">
+            <table className="w-full min-w-[34rem] text-left">
+              <caption className="sr-only">
+                Bonos activos: progreso de sesiones y fechas de compra o caducidad
+              </caption>
               <thead>
                 <tr className="border-b border-ink/5 dark:border-white/10">
                   <Th>Paciente</Th>
@@ -225,7 +245,7 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                 </tr>
               </thead>
               <tbody>
-                {bonos.map((b) => {
+                {bonos.map((b, idx) => {
                   const restantes = Math.max(
                     0,
                     b.sesiones_totales - b.sesiones_consumidas
@@ -234,43 +254,47 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                     (b.sesiones_consumidas / b.sesiones_totales) * 100
                   );
                   const low = restantes <= 2;
+                  const zebra =
+                    idx % 2 === 1
+                      ? 'bg-ink/[0.035] dark:bg-white/[0.045]'
+                      : 'bg-transparent';
                   return (
                     <tr
                       key={b.id}
-                      className="border-b border-ink/5 hover:bg-white/40 dark:border-white/5 dark:hover:bg-white/5"
+                      className={`border-b border-ink/5 transition-colors dark:border-white/5 ${zebra} hover:bg-primary/[0.06] dark:hover:bg-white/[0.08]`}
                     >
-                      <td className="px-4 py-3">
+                      <th scope="row" className="px-2 py-2 text-left sm:px-4 sm:py-3">
                         <Link
                           href={`/admin/pacientes/${b.paciente_id}`}
-                          className="font-body text-[0.85rem] text-ink hover:underline dark:text-white"
+                          className="font-body text-[0.78rem] text-ink hover:underline sm:text-[0.85rem] dark:text-white"
                         >
                           #{b.paciente_id.slice(0, 8)}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-24 overflow-hidden rounded-full bg-ink/10 dark:bg-white/10">
+                      </th>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                          <div className="h-2 w-20 shrink-0 overflow-hidden rounded-full bg-ink/10 sm:w-24 dark:bg-white/10">
                             <div
                               className={`h-full ${low ? 'bg-amber-600' : 'bg-primary'}`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
                           <span
-                            className={`font-body text-[0.75rem] tabular-nums ${low ? 'text-amber-700 dark:text-amber-300' : 'text-ink-muted dark:text-white/55'}`}
+                            className={`font-body text-[0.7rem] tabular-nums sm:text-[0.75rem] ${low ? 'text-amber-700 dark:text-amber-300' : 'text-ink-muted dark:text-white/55'}`}
                           >
                             {b.sesiones_consumidas}/{b.sesiones_totales}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-body text-[0.82rem] text-ink dark:text-white tabular-nums">
+                      <td className="px-2 py-2 font-body text-[0.76rem] tabular-nums text-ink sm:px-4 sm:py-3 sm:text-[0.82rem] dark:text-white">
                         {b.sesiones_totales}
                       </td>
-                      <td className="px-4 py-3 font-body text-[0.8rem] text-ink-muted dark:text-white/55">
+                      <td className="px-2 py-2 font-body text-[0.74rem] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.8rem] dark:text-white/55">
                         {b.fecha_expiracion
                           ? format(new Date(b.fecha_expiracion), "d MMM yyyy", { locale: es })
                           : '—'}
                       </td>
-                      <td className="px-4 py-3 font-body text-[0.8rem] text-ink-muted dark:text-white/55">
+                      <td className="px-2 py-2 font-body text-[0.74rem] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.8rem] dark:text-white/55">
                         {format(new Date(b.fecha_compra), 'd MMM yyyy', { locale: es })}
                       </td>
                     </tr>
@@ -286,84 +310,106 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
 
       {/* ─── Últimos pagos ─── */}
       <SurfaceCard className="p-0 overflow-hidden">
-        <header className="border-b border-ink/5 p-6 dark:border-white/10">
-          <h2 className="font-display text-[1.25rem] italic text-ink dark:text-white">
+        <header className="border-b border-ink/5 p-4 sm:p-6 dark:border-white/10">
+          <h2 className="font-display text-[1.15rem] italic text-ink sm:text-[1.25rem] dark:text-white">
             Últimos pagos
           </h2>
-          <p className="mt-1 font-body text-[0.8rem] text-ink-muted dark:text-white/55">
+          <p className="mt-1 font-body text-[0.75rem] text-ink-muted sm:text-[0.8rem] dark:text-white/55">
             Ordenados por fecha
           </p>
         </header>
 
         {ultimos.length === 0 ? (
-          <div className="p-12">
+          <div className="p-8 sm:p-12">
             <EmptyState icon="receipt" title="Sin pagos registrados" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
+          <div className="-mx-1 overflow-x-auto px-0 sm:mx-0">
+            <table className="w-full min-w-[42rem] text-left">
+              <caption className="sr-only">
+                Últimos pagos del sistema, del más reciente al más antiguo
+              </caption>
               <thead>
                 <tr className="border-b border-ink/5 dark:border-white/10">
                   <Th>Fecha</Th>
                   <Th>Importe</Th>
+                  <Th>Medio</Th>
                   <Th>Estado</Th>
                   <Th>Paciente</Th>
-                  <Th>Stripe PI</Th>
+                  <Th>Ref. pago</Th>
                 </tr>
               </thead>
               <tbody>
-                {ultimos.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-ink/5 hover:bg-white/40 dark:border-white/5 dark:hover:bg-white/5"
-                  >
-                    <td className="px-6 py-4 font-body text-[0.85rem] text-ink-soft dark:text-white/70">
-                      {format(new Date(p.fecha_pago), "d MMM yyyy · HH:mm", {
-                        locale: es,
-                      })}
-                    </td>
-                    <td className="px-6 py-4 font-display text-[0.95rem] text-ink tabular-nums dark:text-white">
-                      {euro(p.importe_centimos)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Chip
-                        tone={
-                          p.estado === 'completado'
-                            ? 'positive'
-                            : p.estado === 'fallido'
-                              ? 'critical'
-                              : 'warning'
-                        }
+                {ultimos.map((p, idx) => {
+                  const med = getMetodoFacturacionPantalla({
+                    metodo: p.metodo,
+                    stripePaymentIntent: p.stripe_payment_intent,
+                  });
+                  const zebra =
+                    idx % 2 === 1
+                      ? 'bg-ink/[0.035] dark:bg-white/[0.045]'
+                      : 'bg-transparent';
+                  return (
+                    <tr
+                      key={p.id}
+                      className={`border-b border-ink/5 transition-colors dark:border-white/5 ${zebra} hover:bg-primary/[0.06] dark:hover:bg-white/[0.08]`}
+                    >
+                      <th
+                        scope="row"
+                        className="px-2 py-2 text-left font-body text-[0.74rem] font-normal text-ink-soft sm:px-4 sm:py-3 sm:text-[0.85rem] dark:text-white/70"
                       >
-                        {p.estado}
-                      </Chip>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/admin/pacientes/${p.paciente_id}`}
-                        className="font-body text-[0.8rem] text-ink hover:underline dark:text-white"
-                      >
-                        #{p.paciente_id.slice(0, 8)}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-[0.7rem] text-ink-muted dark:text-white/55">
-                      {p.stripe_payment_intent ? (
-                        p.stripe_payment_intent.slice(0, 16) + '…'
-                      ) : p.metodo ? (
-                        <span className="inline-flex items-center gap-1">
-                          <span className="capitalize font-body text-[0.72rem]">
-                            {p.metodo}
+                        {format(new Date(p.fecha_pago), "d MMM yyyy · HH:mm", {
+                          locale: es,
+                        })}
+                      </th>
+                      <td className="px-2 py-2 font-display text-[0.82rem] tabular-nums text-ink sm:px-4 sm:py-3 sm:text-[0.95rem] dark:text-white">
+                        {euro(p.importe_centimos)}
+                      </td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        <div className="inline-flex min-w-0 max-w-[14rem] flex-col items-start gap-1 sm:max-w-none sm:flex-row sm:items-center sm:gap-2">
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <span
+                              className="material-symbols-outlined shrink-0 text-[1rem] text-ink-muted dark:text-white/50"
+                              aria-hidden="true"
+                            >
+                              {med.icon}
+                            </span>
+                            <span className="min-w-0 break-words font-body text-[0.7rem] text-ink sm:text-[0.75rem] dark:text-white">
+                              {med.shortLabel}
+                            </span>
                           </span>
-                          {p.excluir_de_facturacion ? (
-                            <Chip tone="info">regalo</Chip>
-                          ) : null}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {p.excluir_de_facturacion ? <Chip tone="info">regalo</Chip> : null}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Chip
+                          tone={
+                            p.estado === 'completado'
+                              ? 'positive'
+                              : p.estado === 'fallido'
+                                ? 'critical'
+                                : 'warning'
+                          }
+                        >
+                          {p.estado}
+                        </Chip>
+                      </td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        <Link
+                          href={`/admin/pacientes/${p.paciente_id}`}
+                          className="font-body text-[0.74rem] text-ink hover:underline sm:text-[0.8rem] dark:text-white"
+                        >
+                          #{p.paciente_id.slice(0, 8)}
+                        </Link>
+                      </td>
+                      <td className="px-2 py-2 font-mono text-[0.62rem] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.7rem] dark:text-white/55">
+                        {p.stripe_payment_intent
+                          ? `${p.stripe_payment_intent.slice(0, 16)}…`
+                          : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -375,7 +421,10 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
 
 function Th({ children }: { children: React.ReactNode }): JSX.Element {
   return (
-    <th className="px-4 py-3 font-body text-[0.7rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
+    <th
+      scope="col"
+      className="whitespace-nowrap px-2 py-2 font-body text-[0.62rem] uppercase tracking-[0.12em] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.7rem] sm:tracking-[0.15em] dark:text-white/55"
+    >
       {children}
     </th>
   );

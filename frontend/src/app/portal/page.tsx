@@ -13,6 +13,8 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { primerNombre, saludoDiurnoEs } from '@/lib/greeting-es';
+import { getPreferredProfileFullName } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Inicio | Portal Paciente' };
@@ -58,6 +60,7 @@ export default async function PortalInicioPage() {
     { data: bonoActivoRaw },
     { data: recursosRaw },
     { data: conversacionIdData },
+    { data: profileNombre },
   ] = await Promise.all([
     supabase
       .from('v_citas_expandidas')
@@ -83,6 +86,11 @@ export default async function PortalInicioPage() {
       .order('assigned_at', { ascending: false })
       .limit(3),
     supabase.rpc('chat_mi_conversacion'),
+    supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .maybeSingle<{ display_name: string | null }>(),
   ]);
 
   const conversacionId =
@@ -124,10 +132,20 @@ export default async function PortalInicioPage() {
     : 0;
   const recursos = (recursosRaw as unknown as RecursoAsignado[] | null) ?? [];
 
-  const displayName =
-    user.user_metadata?.full_name?.split(' ')[0] ??
-    user.email?.split('@')[0] ??
-    '';
+  const metaFn = user.user_metadata?.full_name;
+  const metaNombre =
+    typeof metaFn === 'string' && metaFn.trim().length > 0 ? metaFn : undefined;
+  const preferredFull = getPreferredProfileFullName(
+    profileNombre?.display_name,
+    metaNombre
+  );
+  const hasGivenName = preferredFull.length > 0;
+  const firstFromPreferred = hasGivenName
+    ? primerNombre(preferredFull, preferredFull)
+    : '';
+  const tituloPortal = hasGivenName
+    ? `${saludoDiurnoEs(now)}, ${firstFromPreferred}.`
+    : `${saludoDiurnoEs(now)}.`;
 
   return (
     <>
@@ -138,7 +156,7 @@ export default async function PortalInicioPage() {
       <div className="portal-rise">
         <PageHeader
           eyebrow={format(now, "EEEE d 'de' MMMM", { locale: es })}
-          title={`Hola, ${displayName}.`}
+          title={tituloPortal}
           description="Tu espacio seguro. Sesiones, bonos y conversaciones, todo al alcance."
         />
       </div>
@@ -191,7 +209,7 @@ export default async function PortalInicioPage() {
                 Sin citas en tu horizonte.
               </h2>
               <p className="mt-4 max-w-[38ch] font-body text-[0.95rem] leading-[1.65] text-ink-soft">
-                Cuando estés list{displayName === '' ? 'o' : 'a'}, reserva tu próxima sesión con Almudena.
+                Cuando estés list{!hasGivenName ? 'o' : 'a'}, reserva tu próxima sesión con Almudena.
               </p>
             </div>
             <Link href="/portal/citas/reservar" className="mt-8 self-start">
@@ -308,7 +326,7 @@ export default async function PortalInicioPage() {
             </Link>
           }
         />
-        {ultimoMensajePreview ? (
+        {ultimoMensaje && ultimoMensajePreview ? (
           <Link href="/portal/mensajes" className="block">
             <SurfaceCard interactive glow="sage" className="flex items-start gap-4">
               <span
@@ -326,9 +344,9 @@ export default async function PortalInicioPage() {
                   </p>
                   <time
                     className="font-body text-[0.7rem] text-ink-muted tabular-nums dark:text-white/55"
-                    dateTime={ultimoMensaje!.created_at}
+                    dateTime={ultimoMensaje.created_at}
                   >
-                    {formatDistanceToNow(new Date(ultimoMensaje!.created_at), {
+                    {formatDistanceToNow(new Date(ultimoMensaje.created_at), {
                       locale: es,
                       addSuffix: true,
                     })}
@@ -387,22 +405,37 @@ export default async function PortalInicioPage() {
           <div className="grid gap-5 md:grid-cols-3">
             {recursos.map((r) =>
               r.recurso ? (
-                <SurfaceCard key={r.id} interactive glow="warm">
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15">
-                      <span className="material-symbols-outlined text-[1.05rem] text-primary" aria-hidden="true">
-                        {r.recurso.tipo.startsWith('audio') ? 'graphic_eq' : r.recurso.tipo.startsWith('video') ? 'play_circle' : 'description'}
+                <Link
+                  key={r.id}
+                  href={`/portal/recursos/ver/${r.recurso.id}`}
+                  className="group block h-full"
+                  aria-label={`Abrir en el visor: ${r.recurso.titulo}`}
+                >
+                  <SurfaceCard interactive glow="warm" className="h-full transition group-hover:ring-2 group-hover:ring-primary/20">
+                    <div className="mb-4 flex items-center gap-2.5">
+                      <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15">
+                        <span className="material-symbols-outlined text-[1.05rem] text-primary" aria-hidden="true">
+                          {r.recurso.tipo.startsWith('audio') ? 'graphic_eq' : r.recurso.tipo.startsWith('video') ? 'play_circle' : 'description'}
+                        </span>
                       </span>
-                    </span>
-                    <Chip tone="info">{r.recurso.tipo}</Chip>
-                  </div>
-                  <h3 className="font-display text-[1.1rem] italic text-ink leading-[1.2] tracking-[-0.01em] text-balance">
-                    {r.recurso.titulo}
-                  </h3>
-                  <p className="mt-4 font-body text-[0.7rem] text-ink-muted tracking-tight">
-                    Asignado {formatDistanceToNow(new Date(r.assigned_at), { locale: es, addSuffix: true })}
-                  </p>
-                </SurfaceCard>
+                      <Chip tone="info">{r.recurso.tipo}</Chip>
+                    </div>
+                    <h3 className="font-display text-[1.1rem] italic text-ink leading-[1.2] tracking-[-0.01em] text-balance">
+                      {r.recurso.titulo}
+                    </h3>
+                    <p className="mt-4 font-body text-[0.7rem] text-ink-muted tracking-tight">
+                      Asignado {formatDistanceToNow(new Date(r.assigned_at), { locale: es, addSuffix: true })}
+                    </p>
+                    <p className="mt-3 font-body text-[0.7rem] text-primary dark:text-primary-fixed-dim">
+                      <span className="inline-flex items-center gap-0.5">
+                        Ver en la app
+                        <span className="material-symbols-outlined text-[0.95rem] transition-transform [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5" aria-hidden="true">
+                          visibility
+                        </span>
+                      </span>
+                    </p>
+                  </SurfaceCard>
+                </Link>
               ) : null
             )}
           </div>

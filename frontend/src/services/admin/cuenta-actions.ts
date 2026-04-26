@@ -100,6 +100,7 @@ export interface PreferenciasPatch {
   readonly booking_confirmed?: boolean;
   readonly booking_cancelled?: boolean;
   readonly reminder_24h?: boolean;
+  readonly reminder_48h?: boolean;
   readonly nueva_asignacion?: boolean;
 }
 

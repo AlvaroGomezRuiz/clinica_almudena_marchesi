@@ -2,7 +2,7 @@
 
 /**
  * AsignarBonoManualButton — modal administrativo para crear bonos fuera
- * de Stripe (efectivo, transferencia, regalo).
+ * de Stripe (tarjeta, transferencia, regalo, Klarna).
  *
  * Flujo:
  *   1. Admin busca paciente (reusa listarPacientesQuickAction).
@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/portal-shell/ui';
+import { METODOS_ASIGNAR_BONO } from '@/lib/admin/facturacion-metodo-display';
 import {
   listarPacientesQuickAction,
   listarServiciosCatalogoAction,
@@ -32,18 +33,6 @@ interface Paciente {
   readonly display_name: string;
   readonly email: string;
 }
-
-const METODOS: readonly {
-  value: MetodoPagoManual;
-  label: string;
-  icon: string;
-  iconIsGift?: boolean;
-}[] = [
-  { value: 'efectivo',       label: 'Efectivo',       icon: 'payments' },
-  { value: 'transferencia',  label: 'Transferencia',  icon: 'account_balance' },
-  { value: 'regalo',         label: 'Regalo',         icon: 'card_giftcard', iconIsGift: true },
-  { value: 'otro',           label: 'Otro',           icon: 'more_horiz' },
-];
 
 export default function AsignarBonoManualButton(): JSX.Element {
   const router = useRouter();
@@ -60,7 +49,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
   const [servicioId, setServicioId] = useState<string>('');
   const [sesionesStr, setSesionesStr] = useState<string>('3');
   const [importeEuros, setImporteEuros] = useState<string>('');
-  const [metodo, setMetodo] = useState<MetodoPagoManual>('efectivo');
+  const [metodo, setMetodo] = useState<MetodoPagoManual>('tarjeta');
   const [validezDias, setValidezDias] = useState<number>(180);
   const [notas, setNotas] = useState<string>('');
   const [excluirFacturacion, setExcluirFacturacion] = useState<boolean>(false);
@@ -81,7 +70,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
       setServicioId('');
       setSesionesStr('3');
       setImporteEuros('');
-      setMetodo('efectivo');
+      setMetodo('tarjeta');
       setValidezDias(180);
       setNotas('');
       setExcluirFacturacion(false);
@@ -198,7 +187,14 @@ export default function AsignarBonoManualButton(): JSX.Element {
           <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-canvas shadow-2xl dark:bg-[#1a1a1a]">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-ink/10 px-6 py-4 dark:border-white/10">
-              <div>
+              <div className="flex min-w-0 items-start gap-3">
+                <span
+                  className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary dark:bg-primary/25 dark:text-white"
+                  aria-hidden="true"
+                >
+                  <span className="material-symbols-outlined text-[1.2rem]">card_membership</span>
+                </span>
+                <div>
                 <h2 className="font-display text-[1.1rem] italic text-ink dark:text-white">
                   {step === 'paciente' ? 'Asignar bono · Paciente' : 'Asignar bono · Detalles'}
                 </h2>
@@ -207,6 +203,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
                     ? 'Selecciona el paciente al que asignar el bono'
                     : `Paciente: ${paciente?.display_name}`}
                 </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -326,8 +323,8 @@ export default function AsignarBonoManualButton(): JSX.Element {
 
                 {/* Método */}
                 <Campo label="Método de pago">
-                  <div className="grid grid-cols-4 gap-2">
-                    {METODOS.map((m) => {
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {METODOS_ASIGNAR_BONO.map((m) => {
                       const selected = metodo === m.value;
                       return (
                         <button
@@ -336,22 +333,16 @@ export default function AsignarBonoManualButton(): JSX.Element {
                           onClick={() => setMetodo(m.value)}
                           aria-pressed={selected}
                           className={[
-                            'flex flex-col items-center gap-1 rounded-lg border px-2 py-3 font-body text-[0.75rem] transition',
+                            'flex min-h-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2.5 font-body text-[0.72rem] leading-tight transition sm:min-h-0 sm:py-3',
                             selected
                               ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20'
                               : 'border-ink/10 text-ink-muted hover:border-ink/20 dark:border-white/15 dark:text-white/60',
                           ].join(' ')}
                         >
-                          {m.iconIsGift ? (
-                            <span className="text-[1.25rem] leading-none" aria-hidden>
-                              🎁
-                            </span>
-                          ) : (
-                            <span className="material-symbols-outlined text-[1.2rem]" aria-hidden>
-                              {m.icon}
-                            </span>
-                          )}
-                          {m.label}
+                          <span className="material-symbols-outlined text-[1.2rem]" aria-hidden>
+                            {m.icon}
+                          </span>
+                          <span className="text-center font-medium">{m.label}</span>
                         </button>
                       );
                     })}

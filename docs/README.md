@@ -1,49 +1,47 @@
 # Documentación del repositorio
 
-## Propósito de esta carpeta
+Todo el material en **Markdown** vive bajo `docs/` en la **raíz del monorepo** (no bajo `frontend/`). Código: `frontend/`; Supabase: `supabase/`; guía de arranque: `supabase/BOOTSTRAP.md`.
 
-Centralizar **contexto de proyecto**, **auditorías puntuales**, **informes**, **diseño**, **ingeniería** y **operación**. No es un blog de marketing: los informes mezclan estado “snapshot” (fecha en el propio archivo) con referencias al código.
+## Propósito
 
-## Criterio editorial (imparcial)
+Reunir **estado de proyecto**, **auditorías técnicas**, **informes de negocio**, **ingeniería**, **diseño** y **operación** (Sentry, Stripe, checklists). No es marketing: hechos, fechas y límites conocidos.
 
-- Se describe **qué hay**, **qué falló** y **qué quedó pendiente** sin vender la idea de que “es la mejor app del mundo”.
-- Tampoco se minimiza el trabajo: hay **RLS**, **cifrado**, **pagos** y **salud**; eso implica rigor y deuda técnica normal.
-- Si un documento contradice al código, **manda el código**; abrir issue o PR para alinear el markdown.
+## Cómo leerlo (orden práctico)
 
-## Fechas de referencia
+| # | Ruta | Qué aporta |
+|---|------|------------|
+| 1 | `00_proyecto/linea-base-producto.md` | Qué entrega el producto hoy |
+| 2 | `00_proyecto/estado-y-pendientes.md` | Bloqueos, dominio, variables, checklist operativo |
+| 3 | `00_proyecto/cronologia.md` | Hitos técnicos |
+| 4 | `03_ingenieria/arquitectura-tecnica.md` | Cómo está cableado el sistema hoy |
+| 5 | `01_auditorias/arquitectura.md` | Mapa, stack y decisiones (auditoría) |
+| 6 | `01_auditorias/backend.md` | Postgres, RPC, Edge Functions |
+| 7 | `01_auditorias/frontend.md` | Next.js, rutas, servicios, E2E |
+| 8 | `01_auditorias/base-de-datos.md` | Migraciones y tablas (catálogo) |
+| 9 | `01_auditorias/seguridad-rgpd.md` | Cumplimiento y riesgos |
+| 10 | `02_informes/ejecutivo-cliente.md` | Informe de negocio (clínica) |
+| 11 | `02_informes/valor-reposicion-software.md` | Valor de reposición (ingeniería) |
+| 12 | `05_operaciones/checklist-produccion.md` | **Un solo checklist:** operación, QA staging, E2E, go-live |
+| 13 | `03_ingenieria/geo-y-seo.md` | SEO/GEO. Auditoría local: carpeta **`.GEO/`** (si está en el clon); ver `cronologia` Hito 16. |
 
-- **7 de abril de 2026:** inicio registrado del **ciclo de entrega actual** en este repositorio (ver `00_proyecto/cronologia.md`, Hito 0).
-- Los archivos de auditoría con fecha **2026-04-21** u otras son **fotos** de ese día; no implican que todo siga igual sin revisar.
+## Mapa de carpetas
 
-## Gastos directos anotados (no son el “valor” del software)
+| Carpeta        | Contenido principal |
+|----------------|----------------------|
+| `00_proyecto/` | Línea base, estado, cronología, costes (sin duplicar informes) |
+| `01_auditorias/` | `arquitectura`, `backend`, `frontend`, `base-de-datos`, `seguridad-rgpd` |
+| `02_informes/`   | `ejecutivo-cliente`, `valor-reposicion-software` |
+| `03_ingenieria/` | Técnica, diagramas, SEO, roadmap, estructura `src/` |
+| `04_diseno/`     | Sistema visual |
+| `05_operaciones/`| Sentry, Stripe, alertas, SEPA, **checklist unificado** |
 
-Tabla viva en **`00_proyecto/costes-herramientas.md`** (Cursor Pro **21,41 €**, dominio **ampsicologia.es** **8,41 €**, total **29,82 €** en la versión actual de la tabla).
+## Criterio editorial
 
-## Mapa de carpetas (después de la reorganización de abril 2026)
-
-| Carpeta | Contenido |
-|---------|-----------|
-| **`00_proyecto/`** | Cronología, estado y pendientes, costes, plan de remediación QA, verificación por fases. |
-| **`01_auditorias/`** | Revisiones por dominio (arquitectura, backend, frontend, base de datos, seguridad/RGPD). Lectura longitudinal: empezar por `arquitectura.md` si llegas nuevo. |
-| **`02_informes/`** | Textos para cliente u operación (ejecutivo, E2E, hito 15, reporte de ejecución, valor de reposición del código). |
-| **`03_ingenieria/`** | Arquitectura técnica viva, diagramas, GEO/SEO, roadmap. |
-| **`04_diseno/`** | Sistema visual. |
-| **`05_operaciones/`** | Sentry, testing, alertas, Stripe SEPA. |
-
-## Lectura sugerida (orden práctico)
-
-1. `00_proyecto/estado-y-pendientes.md` — fuente viva de bloqueos y checklist.
-2. `03_ingenieria/arquitectura-tecnica.md` — cómo está montado el sistema hoy.
-3. `02_informes/ejecutivo-cliente.md` — resumen para negocio (no técnico profundo).
-4. `01_auditorias/seguridad-rgpd.md` — riesgos y cumplimiento.
-5. `05_operaciones/testing-checklist.md` — verificación manual/automática antes de cambios sensibles.
-
-## Convención de nombres
-
-- Carpetas: prefijo numérico + nombre en **español** (`00_proyecto`, `01_auditorias`, …).
-- Ficheros: **kebab-case** en español (ej. `estado-y-pendientes.md`), salvo que el nombre histórico sea cita obligada en un contrato.
+- Si algo **contradice** al **código** o a **Supabase**, gana el repositorio y se abre **issue/PR** para bajar el doc.
+- **Tablas y listas:** alineación visual; una sola “fuente de verdad” por concepto.
+- **Gastos** (Cursor, dominio): `00_proyecto/costes-herramientas.md`.
+- Nombres de fichero: **kebab-case** en español.
 
 ## Mantenimiento
 
-- Tras cada hito relevante: actualizar **`estado-y-pendientes.md`** y una línea en **`cronologia.md`** si cambia la línea de tiempo.
-- Tras mover o renombrar archivos: actualizar enlaces en **`README.md`** (raíz del repo) y en este índice.
+Tras un cambio de producto: `estado-y-pendientes.md` y, si aplica, línea en `cronologia.md`. Tras reordenar `docs/`: actualizar este fichero y `README.md` de la raíz.

@@ -30,9 +30,17 @@ test.describe('Reserva de sesión', () => {
     await expect(primerSlot).toBeVisible({ timeout: 15_000 });
     await primerSlot.click();
 
-    // Debe aparecer el drawer/resumen de reserva.
-    await expect(
-      page.getByRole('button', { name: /confirmar|reservar|pagar/i }).first()
-    ).toBeVisible({ timeout: 10_000 });
+    // Paso explícito: «Confirmar hora» abre el modal de política 48h.
+    await page.getByRole('button', { name: /^Confirmar hora$/i }).first().click();
+    await expect(page.getByRole('heading', { name: /ventana de 48 horas/i })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Confirmación final dentro del diálogo (misma etiqueta; scope al modal).
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: /^Confirmar hora$/i }).click();
+
+    // El modal se cierra al terminar la acción (éxito o error manejado).
+    await expect(dialog).toBeHidden({ timeout: 25_000 });
   });
 });

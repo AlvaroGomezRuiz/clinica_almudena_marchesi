@@ -20,10 +20,8 @@ interface Props {
   readonly prefs: NotificacionesPrefs;
   /**
    * Rol del usuario actual. Define qué toggles son visibles:
-   *   - paciente (default): toggles orientados al paciente (bienvenida,
-   *     recordatorio 24h, recursos asignados, privacidad, marketing).
-   *   - admin: toggles operativos (reserva recibida, cancelación, recordatorio
-   *     de agenda, privacidad, notificaciones desktop).
+   *   - paciente (default): bienvenida, recordatorios ~48h y ~24h, recursos, etc.
+   *   - admin: reserva, cancelación, recordatorios, privacidad, desktop.
    */
   readonly role?: Role;
 }
@@ -54,9 +52,14 @@ const EMAIL_TOGGLES: readonly ToggleDef[] = [
     description: 'Aviso si una sesión queda cancelada.',
   },
   {
+    key: 'reminder_48h',
+    label: 'Recordatorio ~48h antes',
+    description: 'Email en la franja 47h–49h antes del inicio (en ~2 días).',
+  },
+  {
     key: 'reminder_24h',
-    label: 'Recordatorio 24h',
-    description: 'Resumen de la agenda el día previo.',
+    label: 'Recordatorio ~24h antes',
+    description: 'Email en la franja 23h–25h antes del inicio (mañana). La cancelación online sigue requiriendo 48h.',
   },
   {
     key: 'nueva_asignacion',

@@ -80,7 +80,7 @@ export function RecursoAssignButton({ recursoId, recursoTitulo }: Props): JSX.El
       <Button
         variant="ghost"
         size="sm"
-        icon="group_add"
+        icon="person_add"
         onClick={() => setOpen(true)}
       >
         Asignar

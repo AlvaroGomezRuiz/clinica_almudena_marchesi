@@ -176,7 +176,7 @@ sequenceDiagram
 
 ---
 
-## 5. Flujo: cron recordatorios 24h
+## 5. Flujo: cron recordatorios (ventana ≈48h)
 
 ```mermaid
 sequenceDiagram
@@ -189,12 +189,12 @@ sequenceDiagram
     Note over PGCRON: cada hora al minuto 5
     PGCRON->>EF: POST /functions/v1/cron-recordatorios-24h<br/>Authorization: Bearer CRON_SECRET
     EF->>EF: valida header CRON_SECRET === env
-    EF->>D: RPC citas_pendientes_recordatorio_24h()
-    D-->>EF: citas[] + datos paciente (desde RPC cifrada)
+    EF->>D: RPC citas_pendientes_recordatorio_48h()<br/>+ citas_pendientes_recordatorio_24h()
+    D-->>EF: citas[] + datos paciente
     loop por cada cita
         EF->>L: insert emails_log (dedupe_key UNIQUE)
         alt opt-in del paciente
-            EF->>R: POST /emails (template reminder_24h)<br/>retry exponencial x3
+            EF->>R: Resend (template reminder_48h o reminder_24h)<br/>retry exponencial x3
             R-->>EF: message_id
             EF->>L: update estado='sent' + resend_id
         else opt-out
@@ -278,7 +278,7 @@ graph TD
 | Webhook Stripe (verify firma + idempotencia) | | | **✔ stripe-webhook** | Stripe |
 | Webhook Resend (bounce/complaint) | | | **✔ resend-webhook** | Resend |
 | Envío email transaccional | | | **✔ send-email** | Resend |
-| Cron recordatorios 24h | | pg_cron trigger | **✔ cron-recordatorios-24h** | |
+| Cron recordatorios (~48h + ~24h) | | pg_cron trigger | **✔ cron-recordatorios-24h** (migr. **0060+0061**) | |
 | PDF facturas | | metadatos | **✔ invoice-pdf** | |
 | Export RGPD | | firma | **✔ rgpd-request** | |
 | Healthcheck externo | | | **✔ health** (verify_jwt=false) | UptimeRobot |

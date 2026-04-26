@@ -71,7 +71,7 @@ export default async function AdminConversacionPage({
   const convTyped = conv as unknown as ConversacionAdminRow | null;
   if (!convTyped) notFound();
 
-  const [mensajesRes, fichaRes] = await Promise.all([
+  const [mensajesRes, fichaRes, selfProfRes] = await Promise.all([
     supabase
       .from('v_mensajes_chat')
       .select('id, conversation_id, sender_user_id, body, read_at, created_at')
@@ -85,6 +85,11 @@ export default async function AdminConversacionPage({
       )
       .eq('id', convTyped.paciente_id)
       .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .maybeSingle<{ avatar_url: string | null }>(),
   ]);
 
   const normalizados = ((mensajesRes.data as MensajeRow[] | null) ?? []).map((m) => ({
@@ -94,6 +99,7 @@ export default async function AdminConversacionPage({
 
   const mensajes = await enrichMensajesWithAdjuntos(normalizados);
   const ficha = fichaRes.data as unknown as FichaRow | null;
+  const selfAvatarUrl = (selfProfRes.data as { avatar_url: string | null } | null)?.avatar_url ?? null;
 
   const display =
     convTyped.paciente_display_name?.trim() ||
@@ -129,6 +135,8 @@ export default async function AdminConversacionPage({
             initialMensajes={mensajes}
             otherLabel={display}
             otherSubtitle={convTyped.paciente_email ?? undefined}
+            selfAvatarUrl={selfAvatarUrl}
+            otherAvatarUrl={ficha?.avatar_url ?? null}
           />
         </div>
 

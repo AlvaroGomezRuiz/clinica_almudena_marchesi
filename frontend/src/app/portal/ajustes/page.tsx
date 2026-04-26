@@ -28,6 +28,7 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { resolveProfileDisplayNameForShell } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   NotificacionesPrefs,
@@ -116,6 +117,7 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
     booking_confirmed: true,
     booking_cancelled: true,
     reminder_24h: true,
+    reminder_48h: true,
     nueva_asignacion: true,
     tema: 'system',
     privacy_mode_default: false,
@@ -138,8 +140,11 @@ export default async function PortalAjustesPage(): Promise<JSX.Element | null> {
 
   const solicitudes = (rgpdRaw as unknown as readonly RgpdRequest[] | null) ?? [];
 
-  const displayName =
-    profile?.display_name ?? profile?.email?.split('@')[0] ?? 'Paciente';
+  const displayName = resolveProfileDisplayNameForShell(
+    profile?.display_name,
+    typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : undefined,
+    profile?.email ?? user.email ?? undefined
+  );
 
   return (
     <>

@@ -2,6 +2,17 @@
 // Paleta alineada con "Serenity Moncloa" de la web pública.
 // Tipografía: system stack (Georgia/serif + Helvetica/sans) — máxima compatibilidad.
 
+import {
+  CLINIC_EMAIL_CONTACT_ADDRESS,
+  CLINIC_EMAIL_DOC_TITLE,
+  CLINIC_EMAIL_FOOTER_ADDRESS,
+  CLINIC_EMAIL_FOOTER_LEGAL,
+  CLINIC_EMAIL_HEADER_LINE1,
+  CLINIC_EMAIL_HEADER_LINE2,
+  CLINIC_PUBLIC_PHONE_DISPLAY,
+  CLINIC_PUBLIC_PHONE_TEL,
+} from './clinic-brand.ts';
+
 const COLORS = {
   parchment: "#F3E9DD",
   ink:       "#1E1B18",
@@ -11,6 +22,27 @@ const COLORS = {
   warm:      "#C99463",
   hairline:  "rgba(30,27,24,0.12)",
 } as const;
+
+/**
+ * Pie fijo (solo texto) alineado al bloque HTML de `shell` (legal, NAP, contacto, ajustes).
+ * Todo envío transaccional debe añadirlo a la parte `text` vía `appendPlainTextEmailFooter`.
+ */
+function formatPlainTextEmailFooter(appUrl: string): string {
+  const base = appUrl.replace(/\/$/, '');
+  return [
+    '—',
+    CLINIC_EMAIL_FOOTER_LEGAL,
+    `${CLINIC_EMAIL_FOOTER_ADDRESS} · ${CLINIC_PUBLIC_PHONE_DISPLAY}`,
+    CLINIC_EMAIL_CONTACT_ADDRESS,
+    `Gestionar notificaciones: ${base}/portal/ajustes`,
+  ].join('\n');
+}
+
+function appendPlainTextEmailFooter(mainBody: string, appUrl: string): string {
+  const t = mainBody.trim();
+  if (t.length === 0) return formatPlainTextEmailFooter(appUrl);
+  return `${t}\n\n${formatPlainTextEmailFooter(appUrl)}`;
+}
 
 function escapeHtml(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return "";
@@ -48,6 +80,7 @@ interface ShellOptions {
 }
 
 function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
+  const baseUrl = appUrl.replace(/\/$/, '');
   const safePreheader = escapeHtml(preheader);
   return `<!DOCTYPE html>
 <html lang="es">
@@ -56,7 +89,7 @@ function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="light" />
 <meta name="supported-color-schemes" content="light" />
-<title>Clínica Almudena Marchesi</title>
+<title>${escapeHtml(CLINIC_EMAIL_DOC_TITLE)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:${COLORS.parchment};font-family:Georgia,'Times New Roman',serif;color:${COLORS.ink};-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${safePreheader}</div>
@@ -68,7 +101,10 @@ function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
             <tr>
               <td style="vertical-align:middle;">
                 <span style="display:inline-block;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,${COLORS.sage} 0%,${COLORS.sageDark} 100%);vertical-align:middle;"></span>
-                <span style="display:inline-block;margin-left:12px;vertical-align:middle;font-family:Georgia,serif;font-size:18px;letter-spacing:0.02em;color:${COLORS.ink};">Almudena Marchesi Fernández</span>
+                <span style="display:inline-block;margin-left:12px;vertical-align:middle;">
+                  <span style="display:block;font-family:Georgia,serif;font-size:18px;letter-spacing:0.02em;color:${COLORS.ink};">${escapeHtml(CLINIC_EMAIL_HEADER_LINE1)}</span>
+                  <span style="display:block;margin-top:4px;font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${COLORS.inkSoft};">${escapeHtml(CLINIC_EMAIL_HEADER_LINE2)}</span>
+                </span>
               </td>
             </tr>
           </table>
@@ -77,12 +113,13 @@ function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
           ${inner}
         </td></tr>
         <tr><td style="padding:24px 40px 32px 40px;border-top:1px solid ${COLORS.hairline};font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:${COLORS.inkSoft};">
-          <p style="margin:0 0 6px 0;">Clínica Almudena Marchesi Fernández · Colegiada nº M-30815</p>
-          <p style="margin:0 0 6px 0;">Calle de Moncloa, Madrid · <a href="tel:+34600000000" style="color:${COLORS.inkSoft};text-decoration:none;">+34 600 000 000</a></p>
-          <p style="margin:0;">Has recibido este correo porque eres paciente de la consulta. <a href="${appUrl}/portal/ajustes" style="color:${COLORS.sageDark};">Gestionar notificaciones</a></p>
+          <p style="margin:0 0 6px 0;">${escapeHtml(CLINIC_EMAIL_FOOTER_LEGAL)}</p>
+          <p style="margin:0 0 6px 0;">${escapeHtml(CLINIC_EMAIL_FOOTER_ADDRESS)} · <a href="tel:${escapeHtml(CLINIC_PUBLIC_PHONE_TEL)}" style="color:${COLORS.inkSoft};text-decoration:none;">${escapeHtml(CLINIC_PUBLIC_PHONE_DISPLAY)}</a></p>
+          <p style="margin:0 0 6px 0;"><a href="mailto:${escapeHtml(CLINIC_EMAIL_CONTACT_ADDRESS)}" style="color:${COLORS.sageDark};text-decoration:none;">${escapeHtml(CLINIC_EMAIL_CONTACT_ADDRESS)}</a></p>
+          <p style="margin:0;">Has recibido este correo porque eres paciente de la consulta. <a href="${baseUrl}/portal/ajustes" style="color:${COLORS.sageDark};">Gestionar notificaciones</a></p>
         </td></tr>
       </table>
-      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${COLORS.inkSoft};">© ${new Date().getFullYear()} Clínica Almudena Marchesi Fernández</p>
+      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${COLORS.inkSoft};">© ${new Date().getFullYear()} ${escapeHtml(CLINIC_EMAIL_DOC_TITLE)}</p>
     </td></tr>
   </table>
 </body>
@@ -132,7 +169,10 @@ export function renderWelcome(data: WelcomeData): { subject: string; html: strin
      <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si no esperabas este correo, puedes ignorarlo sin problema.</p>`,
     { preheader: "Tu portal de paciente está listo.", appUrl: data.app_url },
   );
-  const text = `${greeting}\n\nTu cuenta en la Clínica Almudena Marchesi Fernández está activa.\nAccede al portal: ${data.app_url}/portal\n\nSi no esperabas este correo, ignóralo.`;
+  const text = appendPlainTextEmailFooter(
+    `${greeting}\n\nTu cuenta en la Clínica Almudena Marchesi Fernández está activa.\nAccede al portal: ${data.app_url}/portal\n\nSi no esperabas este correo, ignóralo.`,
+    data.app_url
+  );
   return { subject: "Bienvenida a tu portal", html, text };
 }
 
@@ -162,7 +202,10 @@ export function renderBookingConfirmed(data: BookingConfirmedData): { subject: s
      <p style="margin:8px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">¿Necesitas cambiar la fecha? Puedes hacerlo desde el portal con al menos 48h de antelación.</p>`,
     { preheader: `${data.servicio} · ${fecha} · ${hora}`, appUrl: data.app_url },
   );
-  const text = `Reserva confirmada\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nSi aplica, la factura PDF va adjunta a este correo.\n\nGestionar citas: ${data.app_url}/portal/citas`;
+  const text = appendPlainTextEmailFooter(
+    `Reserva confirmada\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nSi aplica, la factura PDF va adjunta a este correo.\n\nGestionar citas: ${data.app_url}/portal/citas`,
+    data.app_url
+  );
   return { subject: `Confirmación: ${data.servicio} · ${fecha}`, html, text };
 }
 
@@ -179,9 +222,9 @@ export function renderReminder24h(data: Reminder24hData): { subject: string; htm
   const fecha = formatDateEs(data.inicio);
   const hora  = formatTimeEs(data.inicio);
   const html = shell(
-    `${eyebrow("Recordatorio 24 horas")}
+    `${eyebrow("Recordatorio (24 horas antes)")}
      ${h1(name ? `Te espero mañana, ${name}` : "Tu sesión es mañana")}
-     <p style="margin:0 0 20px 0;">Te escribo para recordarte tu sesión de mañana. Si necesitas reprogramarla, avísame lo antes posible.</p>
+     <p style="margin:0 0 20px 0;">Te escribo para recordarte la cita (aprox. 24h antes). Para cambios o cancelación <strong>online</strong>, la política es con al menos 48 horas de antelación; para lo demás, escribe a la consulta.</p>
      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
        ${detailRow("Servicio", data.servicio)}
        ${detailRow("Fecha", fecha)}
@@ -191,8 +234,38 @@ export function renderReminder24h(data: Reminder24hData): { subject: string; htm
      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Recuerda llegar unos minutos antes. Un fuerte abrazo.</p>`,
     { preheader: `Mañana a las ${hora} · ${data.servicio}`, appUrl: data.app_url },
   );
-  const text = `Recordatorio: mañana tienes sesión.\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nVer detalle: ${data.app_url}/portal/citas`;
-  return { subject: `Recordatorio: tu sesión de mañana a las ${hora}`, html, text };
+  const text = appendPlainTextEmailFooter(
+    `Recordatorio (≈24h antes, sesión mañana).\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nDetalle: ${data.app_url}/portal/citas`,
+    data.app_url
+  );
+  return { subject: `Recordatorio: mañana · ${data.servicio} · ${hora}`, html, text };
+}
+
+export type Reminder48hData = Reminder24hData;
+
+/** Recordatorio informativo ~48h antes (en ~2 días). Política de cancelación online: 48h. */
+export function renderReminder48h(data: Reminder48hData): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const fecha = formatDateEs(data.inicio);
+  const hora  = formatTimeEs(data.inicio);
+  const html = shell(
+    `${eyebrow("Recordatorio (48 horas antes)")}
+     ${h1(name ? `Hola, ${name} — en dos días tienes sesión` : "En dos días tienes sesión")}
+     <p style="margin:0 0 20px 0;">Te aviso con ~48h de margen. Puedes gestionar o cancelar la cita <strong>online</strong> con al menos 48 horas de antelación; si hace falta, escribe a la consulta.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Servicio", data.servicio)}
+       ${detailRow("Fecha", fecha)}
+       ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
+     </table>
+     ${button("Ver detalle en el portal", `${data.app_url}/portal/citas`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Recuerda llegar unos minutos antes. Un fuerte abrazo.</p>`,
+    { preheader: `En 2 días a las ${hora} · ${data.servicio}`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `Recordatorio (≈48h antes): en dos días tienes sesión.\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nVer detalle: ${data.app_url}/portal/citas`,
+    data.app_url
+  );
+  return { subject: `Recordatorio: en 2 días · ${data.servicio} · ${hora}`, html, text };
 }
 
 export interface BookingCancelledData {
@@ -218,7 +291,10 @@ export function renderBookingCancelled(data: BookingCancelledData): { subject: s
      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si la cancelación es un error, contacta con la consulta cuanto antes.</p>`,
     { preheader: `Cancelación ${fecha} · ${hora}`, appUrl: data.app_url },
   );
-  const text = `Cita cancelada.\n\n${data.servicio}\n${fecha} a las ${hora}\n\nReservar de nuevo: ${data.app_url}/portal/citas/reservar`;
+  const text = appendPlainTextEmailFooter(
+    `Cita cancelada.\n\n${data.servicio}\n${fecha} a las ${hora}\n\nReservar de nuevo: ${data.app_url}/portal/citas/reservar`,
+    data.app_url
+  );
   return { subject: `Cancelación: ${data.servicio} · ${fecha}`, html, text };
 }
 
@@ -239,7 +315,10 @@ export function renderNuevaAsignacion(data: NuevaAsignacionData): { subject: str
      ${button("Ver en el portal", `${data.app_url}/portal/recursos`)}`,
     { preheader: `Nuevo recurso: ${data.titulo_recurso}`, appUrl: data.app_url },
   );
-  const text = `Nuevo recurso asignado: ${data.titulo_recurso} (${data.tipo_recurso})\n\nVer en el portal: ${data.app_url}/portal/recursos`;
+  const text = appendPlainTextEmailFooter(
+    `Nuevo recurso asignado: ${data.titulo_recurso} (${data.tipo_recurso})\n\nVer en el portal: ${data.app_url}/portal/recursos`,
+    data.app_url
+  );
   return { subject: `Nuevo recurso: ${data.titulo_recurso}`, html, text };
 }
 
@@ -279,9 +358,12 @@ export function renderBonoComprado(
      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Cualquier duda sobre el cobro, responde a este correo. Tarjeta, Apple/Google Pay o Stripe Link figuran con la etiqueta que viste al pagar.</p>`,
     { preheader: `Pago: ${data.importe_label} · ${data.sesiones} sesiones`, appUrl: data.app_url },
   );
-  const text = name
-    ? `Hola ${name}, pago recibido.\n\n${data.producto} · ${data.sesiones} sesiones\nImporte: ${data.importe_label} (${data.metodo_label})\nBono (uso) hasta: ${data.validez_label}\n\nResumen: ${data.app_url}/portal/pagos`
-    : `Pago registrado\n\n${data.producto}\nSesiones: ${data.sesiones}\nImporte: ${data.importe_label}\nPago: ${data.metodo_label}\nBono (uso) hasta: ${data.validez_label}\n\n${data.app_url}/portal/pagos`;
+  const text = appendPlainTextEmailFooter(
+    name
+      ? `Hola ${name}, pago recibido.\n\n${data.producto} · ${data.sesiones} sesiones\nImporte: ${data.importe_label} (${data.metodo_label})\nBono (uso) hasta: ${data.validez_label}\n\nResumen: ${data.app_url}/portal/pagos`
+      : `Pago registrado\n\n${data.producto}\nSesiones: ${data.sesiones}\nImporte: ${data.importe_label}\nPago: ${data.metodo_label}\nBono (uso) hasta: ${data.validez_label}\n\n${data.app_url}/portal/pagos`,
+    data.app_url
+  );
   return { subject: subj, html, text };
 }
 
@@ -320,7 +402,10 @@ export function renderRgpdAck(data: RgpdAckData): { subject: string; html: strin
      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si la solicitud fue un error, contacta con nosotros respondiendo a este correo.</p>`,
     { preheader: `Solicitud de ${tipoLabel} registrada`, appUrl: data.app_url },
   );
-  const text = `Solicitud RGPD recibida: ${tipoLabel}\nPlazo de respuesta: ${plazo}\n\nVer estado: ${data.app_url}/portal/ajustes`;
+  const text = appendPlainTextEmailFooter(
+    `Solicitud RGPD recibida: ${tipoLabel}\nPlazo de respuesta: ${plazo}\n\nVer estado: ${data.app_url}/portal/ajustes`,
+    data.app_url
+  );
   return { subject: `Tu solicitud RGPD de ${tipoLabel}`, html, text };
 }
 
@@ -344,6 +429,9 @@ export function renderRgpdExportReady(
      <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si el enlace caduca, puedes solicitar una nueva exportación desde tu portal en cualquier momento.</p>`,
     { preheader: "Tu exportación RGPD está lista.", appUrl: data.app_url },
   );
-  const text = `Tu copia de datos está lista.\nEnlace (caduca ${expira}): ${data.signed_url}\n\nSi caduca, puedes solicitar otra desde ${data.app_url}/portal/ajustes`;
+  const text = appendPlainTextEmailFooter(
+    `Tu copia de datos está lista.\nEnlace (caduca ${expira}): ${data.signed_url}\n\nSi caduca, puedes solicitar otra desde ${data.app_url}/portal/ajustes`,
+    data.app_url
+  );
   return { subject: "Tu copia de datos RGPD está lista", html, text };
 }

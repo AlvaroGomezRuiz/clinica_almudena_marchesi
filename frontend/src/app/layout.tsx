@@ -1,7 +1,8 @@
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
+import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
 import { ThemeProvider } from 'next-themes';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
@@ -72,8 +73,9 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  viewportFit: 'cover',
+  /* Sin maximumScale / userScalable:false: Lighthouse Accessibility exige
+     poder ampliar (WCAG 1.4.4); además mejora lectura en móvil/tablet. */
 };
 
 export const metadata: Metadata = {
@@ -81,39 +83,48 @@ export const metadata: Metadata = {
   applicationName: 'Clínica Almudena Marchesi',
   title: {
     template: '%s | Almudena Marchesi',
-    default: 'Almudena Marchesi | Psicología Clínica Madrid · Moncloa',
+    default: 'Almudena Marchesi | Clínica de psicología clínica en Moncloa, Madrid',
   },
-  description: 'Acompañamiento profesional en el corazón de Moncloa, Madrid. Psicología clínica basada en evidencia. Primera sesión exploratoria disponible.',
+  description:
+    'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Acompañamiento con rigor. Consulta cerca de Meléndez Valdés, Madrid.',
   keywords: [
+    ...clinicPrimaryKeywordsList(),
+    'Almudena Marchesi',
     'Psicóloga Madrid',
-    'Psicología clínica Moncloa',
     'Terapia Chamberí',
     'Psicólogo Madrid centro',
-    'consulta Meléndez Valdés',
-    'Ansiedad',
-    'Depresión',
-    'Almudena Marchesi',
   ],
   authors: [{ name: 'Almudena Marchesi Fernández', url: CLINIC_PUBLIC_SITE_URL }],
   creator: 'Almudena Marchesi Fernández',
   icons: {
-    icon: '/favicon.ico',
+    icon: [{ url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }],
+    /* PWA / iOS: hasta tener PNG 180×180 dedicado, reutilizamos favicon. */
+    apple: '/favicon.ico',
   },
   manifest: '/manifest.webmanifest',
   openGraph: {
-    title: 'Almudena Marchesi — Psicología Clínica',
-    description: 'Acompañamiento profesional en el corazón de Moncloa, Madrid. Rigor clínico y calidez humana.',
+    title: 'Almudena Marchesi — Psicología clínica Moncloa, Madrid',
+    description:
+      'Clínica de psicología en Moncloa y Chamberí, Madrid. Terapia individual, de pareja e infanto-juvenil. Consulta: Meléndez Valdés.',
     url: CLINIC_PUBLIC_SITE_URL,
     siteName: 'Clínica Almudena Marchesi',
     locale: 'es_ES',
     type: 'website',
+    images: [
+      {
+        url: getClinicAbsoluteImageUrl('/images/almudena-profile.avif'),
+        width: 1200,
+        height: 630,
+        alt: 'Clínica de psicología clínica en Moncloa (Madrid) — Almudena Marchesi',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Almudena Marchesi | Psicología Clínica Madrid',
+    title: 'Almudena Marchesi | Psicología clínica Moncloa, Madrid',
     description:
-      'Acompañamiento profesional en el corazón de Moncloa, Madrid. Psicología clínica basada en evidencia.',
-    images: ['/images/almudena-profile.avif'],
+      'Clínica de psicología en Moncloa y Chamberí, Madrid. Terapia y acompañamiento con rigor. Consulta: Meléndez Valdés.',
+    images: [getClinicAbsoluteImageUrl('/images/almudena-profile.avif')],
   },
   robots: {
     index: true,

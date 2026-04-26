@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_GEO_LAT, CLINIC_GEO_LNG, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 
 export interface BuildPublicPageMetadataParams {
   /** Ruta absoluta desde la raíz del sitio, p. ej. `/contacto` */
@@ -10,6 +10,11 @@ export interface BuildPublicPageMetadataParams {
   keywords?: string[];
   /** Open Graph: páginas legales usan `article`; el resto `website`. */
   ogType?: 'website' | 'article';
+  /**
+   * Meta `geo.*` + ICBM para señales GEO clásicas (Bing, directorios).
+   * Desactivar en páginas no locales si alguna vez se reutiliza el helper.
+   */
+  includeGeoHints?: boolean;
 }
 
 /**
@@ -22,6 +27,15 @@ export function buildPublicPageMetadata(
   const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
   const path = params.path.startsWith('/') ? params.path : `/${params.path}`;
   const url = `${base}${path}`;
+  /** Imagen social por defecto (misma que layout raíz); mejora previews en OG/Twitter. */
+  const defaultSocialImage = `${base}/images/almudena-profile.avif`;
+  const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+  const ogImage = {
+    url: defaultSocialImage,
+    width: 1200,
+    height: 630,
+    alt: 'Almudena Marchesi — clínica de psicología en Moncloa, Madrid',
+  } as const;
 
   return {
     /* Evita duplicar el sufijo del layout padre (`%s | Almudena Marchesi`). */
@@ -41,11 +55,13 @@ export function buildPublicPageMetadata(
       siteName: 'Clínica Almudena Marchesi',
       locale: 'es_ES',
       type: params.ogType ?? 'website',
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: params.title,
       description: params.description,
+      images: [ogImage],
     },
     robots: {
       index: true,
@@ -58,5 +74,16 @@ export function buildPublicPageMetadata(
         'max-snippet': -1,
       },
     },
+    category: 'health',
+    ...(googleVerification ? { verification: { google: googleVerification } } : {}),
+    ...(params.includeGeoHints !== false
+      ? {
+          other: {
+            'geo.region': 'ES-MD',
+            'geo.placename': 'Madrid, Moncloa–Chamberí',
+            ICBM: `${CLINIC_GEO_LAT}, ${CLINIC_GEO_LNG}`,
+          },
+        }
+      : {}),
   };
 }

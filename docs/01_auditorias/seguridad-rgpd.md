@@ -156,7 +156,7 @@ Writer: `RPC registrar_consulta_sensible` llamado desde:
 - `registro_clinico_descifrar` (decrypt ficha completa).
 - Edge Function `rgpd-request` (exports/derecho acceso).
 
-Query de verificacion disponible en `docs/05_operaciones/testing-checklist.md`.
+Query de verificacion disponible en `docs/05_operaciones/checklist-produccion.md` (Parte B, comprobaciones de cifrado y almacenamiento en secciones B.2 y B.4B).
 
 ## 8. Cumplimiento RGPD
 

@@ -258,6 +258,7 @@ export interface NotificacionesPrefs {
   booking_confirmed: boolean;
   booking_cancelled: boolean;
   reminder_24h: boolean;
+  reminder_48h: boolean;
   nueva_asignacion: boolean;
   tema: PreferenciaTema;
   privacy_mode_default: boolean;
@@ -725,7 +726,7 @@ export interface Database {
           p_paciente_id: string;
           p_servicio_id: string;
           p_sesiones: number;
-          p_metodo: 'efectivo' | 'transferencia' | 'regalo' | 'otro';
+          p_metodo: 'tarjeta' | 'transferencia' | 'regalo' | 'klarna';
           p_importe_centimos: number;
           p_validez_dias: number;
           p_notas: string | null;

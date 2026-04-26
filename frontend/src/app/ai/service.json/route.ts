@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 
+import {
+  CLINIC_POSTAL_CODE,
+  CLINIC_PUBLIC_PHONE_E164,
+  CLINIC_PUBLIC_SITE_URL,
+} from '@/lib/clinic';
+
 export const dynamic = 'force-static';
 
-function getBaseUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.SITE_URL ??
-    'http://localhost:3000';
-  return raw.replace(/\/+$/, '');
-}
-
 export async function GET(): Promise<NextResponse> {
-  const baseUrl = getBaseUrl();
+  const baseUrl = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
 
   return NextResponse.json(
     {
@@ -20,13 +18,13 @@ export async function GET(): Promise<NextResponse> {
       name: 'Clínica Almudena Marchesi',
       url: baseUrl,
       image: `${baseUrl}/images/almudena-profile.avif`,
-      telephone: '+34646445991',
+      telephone: CLINIC_PUBLIC_PHONE_E164,
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'Calle de Meléndez Valdés 22, 1D',
         addressLocality: 'Madrid',
         addressRegion: 'Madrid',
-        postalCode: '28015',
+        postalCode: CLINIC_POSTAL_CODE,
         addressCountry: 'ES',
       },
       areaServed: 'Madrid',

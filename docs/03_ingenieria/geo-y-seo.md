@@ -59,6 +59,7 @@ Instrucciones: `.GEO/README.md`.
 1. **Google Search Console**: propiedad de dominio o prefijo URL `https://ampsicologia.es`.
 2. **Informe de experiencia en páginas** + Core Web Vitals ya monitorizados vía Vercel Analytics / Speed Insights.
 3. Enlaces externos de calidad (directorios colegiales, salud reputables) — fuera del alcance del repositorio.
+4. **Auditoría local reproducible:** si en el repositorio existe la carpeta **`.GEO/`** (script PowerShell, venv Python), genera informes bajo `.GEO/reports/`. Línea temporal: `docs/00_proyecto/cronologia.md` (Hito 16), no el código de la app.
 
 ---
 

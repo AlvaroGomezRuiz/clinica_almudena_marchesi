@@ -2,18 +2,18 @@
 
 > Este documento reemplaza "lo que quedó en el chat". Se actualiza en cada hito.
 > **Regla**: nada de secretos en claro aquí (solo nombres de variables y pasos).
-> **Estructura `docs/`** (carpetas en español, ficheros kebab-case, índice maestro): ver `docs/README.md` y `cronologia.md` (Hito 18).
+> **Estructura `docs/`** (raíz del repo, carpetas numeradas, índice `docs/README.md`):
 
 Última actualización: **2026-04-23** — además del bloque del 22-abr:
 - **Dominio canónico en código/metadata de producción:** `https://ampsicologia.es` y contacto `contacto@ampsicologia.es` (SEO/GEO: `docs/03_ingenieria/geo-y-seo.md`). Si el dominio comercial final difiere del nombre reservado en checklist histórico (`amclinicapsicologia.es`), **reconciliar** DNS, Vercel, Supabase Auth redirects, `FRONTEND_URL` y Resend en una sola pasada.
 - **Migraciones CLI:** historial remoto (`202604…`) alineado con repo mediante stubs `202604*_remote_reconcile.sql` + `migration repair --status applied` para `0001`…`0046`; `npx supabase db push` → *Remote database is up to date.* Detalle: `docs/00_proyecto/cronologia.md` (Hito 17).
-- **Producto:** `0045_chat_enviar_variable_conflict.sql`, `0046_cancelar_cita_48h_sin_reembolso_paciente.sql` (paciente cancela solo **>48h**; sin refund Stripe automático al paciente).
-- **Valoración ingeniería (reposición):** `docs/02_informes/valor-reposicion-software.md` (revisión 2: banda realista ~12k–20k € reposición, no 30k+).
+- **Producto:** `0045_chat_enviar_variable_conflict.sql`, `0046_cancelar_cita_48h_sin_reembolso_paciente.sql` (paciente cancela solo **>48h**; sin refund Stripe automático al paciente). `0060` + `0061` — recordatorios **~48h** (`reminder_48h`, 47h–49h) y **~24h** (`reminder_24h`, 23h–25h), independiente de la política de cancelación 48h.
+- **Valoración ingeniería (reposición):** `docs/02_informes/valor-reposicion-software.md` (secciones 2–3; banda ancla ~12k–24k €, techo razonable ~32k).
 - **Toolkit GEO local:** `.GEO/README.md`.
 - **Gastos directos (Cursor + dominio):** `docs/00_proyecto/costes-herramientas.md`.
 
 Última actualización detallada 2026-04-22 — ronda senior performance + seguridad aplicada:
-- FASE 3·4·6: ficha admin (edición por sección + historial paginado), `/portal/pagos` y `/portal/recursos` alineados al plan, audio en chat (validación magic bytes + límite audio + UI). Verificación: `docs/00_proyecto/verificacion-fases-3-4-6.md`. **SEPA en Stripe: aún no activado** en dashboard; la guía operativa sigue en `docs/05_operaciones/activar-sepa-stripe.md` (o equivalente).
+- Entrega acumulada (ficha admin con edición por sección, `/portal/pagos`, `/portal/recursos`, audio en chat con validación de bytes y límites). Resumen de verificación de build: `docs/00_proyecto/cronologia.md` (sección *Verificación de build*). **SEPA en Stripe:** aún no activado en dashboard; guía en `docs/05_operaciones/activar-sepa-stripe.md`.
 - Migración `0026_performance_indexes` aplicada en producción (8 índices compuestos + ANALYZE).
 - CSP unificada y endurecida (una sola fuente en `next.config.js`); middleware deja de duplicarla.
 - Cookies Supabase endurecidas (`httpOnly`+`secure`+`sameSite`+`path` forzados).
@@ -412,7 +412,7 @@ Estrategia aplicada: `pgcrypto` (`pgp_sym_encrypt` AES-256) + `supabase_vault` (
 | 3 | **Playwright E2E (4 flujos oro)** | ✅ specs listos | `frontend/e2e/{smoke,registro-otp,reserva,pago-tarjeta,chat}.spec.ts` + `fixtures.ts` + `playwright.config.ts`. Scripts `npm run test:e2e*`. |
 | 4 | **axe-core a11y (WCAG 2.2 AA)** | ✅ spec listo | `frontend/e2e/a11y.spec.ts` cubre home, login, reserva y admin dashboard con `@axe-core/playwright`. |
 | 5 | **LCP hero** | ✅ auditado | `HeroImage` ya en óptimo: `priority` + `fetchPriority="high"` + AVIF q78 + `sizes` calibrado por breakpoint + sin JS (Framer fuera). Queda sólo medir en campo con Vercel Speed Insights / PageSpeed. |
-| 6 | **Click-through manual** | ✅ guía | `docs/05_operaciones/testing-checklist.md` §4 (automáticos) y §4B (post-hardening) preparados para Almudena. |
+| 6 | **Click-through manual** | ✅ guía | `docs/05_operaciones/checklist-produccion.md` (Parte B, secciones B.4 y B.4B) |
 
 ### 11.2 Ficheros nuevos / modificados (resumen)
 
@@ -440,9 +440,9 @@ frontend/src/app/api/mensajes/attach/route.ts                (await enforceRateL
 frontend/package.json                                        (+@upstash/redis,ratelimit,@playwright/test,@axe-core/playwright + scripts)
 frontend/.env.example                                        (+UPSTASH_* + PLAYWRIGHT_*)
 .gitignore                                                   (+ e2e artifacts)
-docs/05_operaciones/testing-checklist.md                      (§4 + §4B)
+docs/05_operaciones/checklist-produccion.md                 (operación + QA: Parte B, B.4, B.4B, Parte C)
 docs/00_proyecto/estado-y-pendientes.md            (este bloque)
-docs/02_informes/hito-15-post-launch.md               (nuevo informe)
+docs/02_informes/valor-reposicion-software.md         (banda de reposición actualizada)
 ```
 
 ### 11.3 Secrets nuevos que hay que rellenar en Vercel antes de activar el rate-limit distribuido

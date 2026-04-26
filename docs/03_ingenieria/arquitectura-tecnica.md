@@ -2,7 +2,7 @@
 
 > Documento operativo. Explica **como** esta construido el sistema hoy, no **que hay que hacer**.
 > Para tareas pendientes ver `docs/00_proyecto/estado-y-pendientes.md`.
-> Para auditorias profundas ver `docs/01_auditorias/`.
+> Para arquitectura y dominios: `docs/01_auditorias/arquitectura.md`, `backend.md`, `frontend.md`, `base-de-datos.md`; cumplimiento: `seguridad-rgpd.md`.
 
 ---
 
@@ -154,7 +154,7 @@ almudena/
 2. EF valida JWT + opt-in + dedupe key.
 3. Llama Resend API con retry exponencial (3 intentos).
 4. Inserta fila en `emails_log` con estado `sent|failed`.
-5. `pg_cron` job horario dispara `cron-recordatorios-24h` con `CRON_SECRET`.
+5. `pg_cron` job horario dispara `cron-recordatorios-24h` con `CRON_SECRET` (RPCs 48h y 24h; migr. `0060` + `0061`).
 
 ## 5. Contratos y convenciones
 

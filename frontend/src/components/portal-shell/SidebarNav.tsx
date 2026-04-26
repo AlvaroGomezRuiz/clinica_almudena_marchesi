@@ -68,7 +68,7 @@ export default function SidebarNav({ items }: SidebarNavProps) {
             {item.label}
           </span>
           {typeof item.badge === 'number' && item.badge > 0 ? (
-            <span className="ml-auto rounded-full bg-primary/12 text-primary text-[0.68rem] font-medium tabular-nums px-2 py-0.5 ring-1 ring-inset ring-primary/15">
+            <span className="ml-auto rounded-full bg-[#c94c4c] px-2 py-0.5 font-body text-[0.68rem] font-semibold tabular-nums text-white ring-1 ring-inset ring-[#c94c4c]/40">
               {item.badge > 99 ? '99+' : item.badge}
             </span>
           ) : null}

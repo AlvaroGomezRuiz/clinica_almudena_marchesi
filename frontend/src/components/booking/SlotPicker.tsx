@@ -6,9 +6,12 @@
  * Arquitectura:
  *   - Servicio y fecha se controlan client-side (useState)
  *   - Al cambiar cualquiera, consulta disponibilidad vía Server Action
- *   - Click en slot → reservarCitaAction. Si ok y confirmada (bono) → toast+redirect
- *     a /portal/citas. Si ok y pre-reserva sin bono → redirect /pagos?cita=id.
- *   - Si slot_ocupado → refresca disponibilidad sin perder scroll.
+ *   - Click en slot → solo selecciona el hueco. «Confirmar hora» abre el diálogo
+ *     de política 48h; desde ahí se llama a `reservarCitaAction`.
+ *   - Bono: cada fila de `bonos_pacientes` apunta a un `servicio_id`; solo en esas
+ *     modalidades se oculta el precio (bono con sesión disponible). El resto paga.
+ *   - Sin bono: tras confirmar → pre-reserva + drawer de pago Stripe.
+ *   - Si slot_ocupado → refresca disponibilidad y limpia la selección.
  */
 
 import { addDays, format, startOfDay } from 'date-fns';
@@ -17,8 +20,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 import MonthCalendar from '@/components/booking/MonthCalendar';
-import { Chip, SurfaceCard } from '@/components/portal-shell/ui';
+import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
 import PaymentElementDrawer from '@/components/portal/pagos/PaymentElementDrawer';
+import { inferModalidadServicio } from '@/lib/booking/servicio-modalidad';
+import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
 import {
   getDisponibilidadAction,
   reservarCitaAction,
@@ -35,7 +40,8 @@ export interface ServicioOption {
 
 interface SlotPickerProps {
   readonly servicios: readonly ServicioOption[];
-  readonly tieneBono: boolean;
+  /** Ids de `servicios` con bono activo y al menos una sesión libre (cada bono del paciente cuelga de un servicio). */
+  readonly servicioIdsCubiertoBono: readonly string[];
   readonly preseleccionadoId?: string;
 }
 
@@ -47,7 +53,7 @@ function euro(c: number): string {
 
 export default function SlotPicker({
   servicios,
-  tieneBono,
+  servicioIdsCubiertoBono,
   preseleccionadoId,
 }: SlotPickerProps) {
   const router = useRouter();
@@ -64,6 +70,8 @@ export default function SlotPicker({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reservando, startReserva] = useTransition();
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const policyDialogRef = useRef<HTMLDialogElement>(null);
   const [pendingPayment, setPendingPayment] = useState<{
     citaId: string;
     amount: number;
@@ -72,6 +80,30 @@ export default function SlotPicker({
   const abortRef = useRef<AbortController | null>(null);
 
   const servicio = servicios.find((s) => s.id === servicioId) ?? null;
+  const modalidadServicio = useMemo(
+    () => (servicio ? inferModalidadServicio(servicio) : 'individual'),
+    [servicio]
+  );
+
+  const idsBonoCubreServicio = useMemo(
+    () => new Set(servicioIdsCubiertoBono),
+    [servicioIdsCubiertoBono]
+  );
+
+  const servicioSeleccionCubiertoBono =
+    servicio !== null && idsBonoCubreServicio.has(servicio.id);
+
+  const ofertaMixtaBonoCobertura = useMemo(() => {
+    if (servicios.length === 0) return false;
+    const cubreAlguno = servicios.some((s) => idsBonoCubreServicio.has(s.id));
+    const cubreTodo = servicios.every((s) => idsBonoCubreServicio.has(s.id));
+    return cubreAlguno && !cubreTodo;
+  }, [servicios, idsBonoCubreServicio]);
+
+  const alMenosUnServicioCubiertoEnListado = useMemo(
+    () => servicios.some((s) => idsBonoCubreServicio.has(s.id)),
+    [servicios, idsBonoCubreServicio]
+  );
 
   // Cargar slots cuando cambia servicio o fecha
   useEffect(() => {
@@ -105,19 +137,31 @@ export default function SlotPicker({
     };
   }, [servicioId, fecha]);
 
-  const handleReservar = (slot: Slot) => {
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [servicioId, fecha]);
+
+  const closePolicyDialog = () => {
+    policyDialogRef.current?.close();
+  };
+
+  const ejecutarReserva = (slot: Slot) => {
     if (!servicioId) return;
     setError(null);
 
     startReserva(async () => {
       const res = await reservarCitaAction(servicioId, slot.slot_inicio);
       if (!res.ok) {
+        closePolicyDialog();
         setError(res.message);
         if (res.code === 'slot_ocupado') {
           getDisponibilidadAction(format(fecha, 'yyyy-MM-dd'), servicioId).then(setSlots);
+          setSelectedSlot(null);
         }
         return;
       }
+
+      closePolicyDialog();
 
       if (res.confirmada) {
         router.push(`/portal/citas?reserva=ok&id=${res.citaId}`);
@@ -150,12 +194,34 @@ export default function SlotPicker({
             <h2 className="mt-1 font-display text-[1.25rem] italic tracking-[-0.01em] text-ink dark:text-white">
               Elige el tipo de sesión
             </h2>
+            {servicio ? (
+              <p className="mt-2 max-w-2xl text-pretty font-body text-[0.78rem] leading-relaxed text-ink-soft dark:text-white/62">
+                {modalidadServicio === 'pareja' ? (
+                  <>
+                    Has elegido un servicio de <strong className="font-medium text-ink dark:text-white/90">pareja</strong>
+                    : la franja en agenda suele ser más larga (p. ej. 75 min). El precio mostrado es el del servicio en
+                    catálogo, no la tarifa individual.
+                  </>
+                ) : (
+                  <>
+                    Servicio en formato habitual de{' '}
+                    <strong className="font-medium text-ink dark:text-white/90">sesión individual</strong> u otros
+                    formatos breves: la duración mostrada es la publicada en agenda para ese código (típicamente 50 min).
+                  </>
+                )}
+              </p>
+            ) : (
+              <p className="mt-2 font-body text-[0.78rem] text-ink-muted dark:text-white/55">
+                Selecciona un servicio para ver duración, precio o cobertura con bono.
+              </p>
+            )}
           </div>
         </header>
 
         <ul className="grid gap-3 md:grid-cols-2">
           {servicios.map((s) => {
             const selected = s.id === servicioId;
+            const cubiertoBonoFila = idsBonoCubreServicio.has(s.id);
             return (
               <li key={s.id}>
                 <button
@@ -170,9 +236,15 @@ export default function SlotPicker({
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <Chip tone={selected ? 'positive' : 'info'}>{s.duracion_minutos} min</Chip>
-                    <p className="font-display text-[1.25rem] italic text-primary tabular-nums tracking-[-0.01em] dark:text-primary-fixed-dim">
-                      {euro(s.precio_centimos)}
-                    </p>
+                    {cubiertoBonoFila ? (
+                      <p className="max-w-[55%] text-right font-display text-[0.95rem] italic leading-snug text-primary sm:text-[1.05rem] dark:text-primary-fixed-dim">
+                        Incluido en tu bono
+                      </p>
+                    ) : (
+                      <p className="font-display text-[1.25rem] italic text-primary tabular-nums tracking-[-0.01em] dark:text-primary-fixed-dim">
+                        {euro(s.precio_centimos)}
+                      </p>
+                    )}
                   </div>
                   <h3
                     className={`mt-3 font-display text-[1.1rem] italic leading-tight tracking-[-0.01em] ${
@@ -195,6 +267,30 @@ export default function SlotPicker({
             );
           })}
         </ul>
+        <p className="mt-4 font-body text-[0.72rem] leading-relaxed text-ink-muted dark:text-white/55">
+          {!alMenosUnServicioCubiertoEnListado ? (
+            <>
+              Los importes son los del servicio en agenda (referencia pública{' '}
+              <span className="whitespace-nowrap">{CLINIC_TARIFAS_SESION_RESUMEN}</span>). Tras
+              aceptar la política de cancelación, el hueco se bloquea unos minutos para completar el
+              pago con tarjeta o wallet.
+            </>
+          ) : ofertaMixtaBonoCobertura ? (
+            <>
+              En las modalidades con sesión disponible en bono, no verás importe. En el resto, el
+              precio es el del servicio en agenda (referencia pública{' '}
+              <span className="whitespace-nowrap">{CLINIC_TARIFAS_SESION_RESUMEN}</span>). Con bono, al
+              confirmar se descuenta <strong className="font-medium text-ink dark:text-white/90">1 sesión</strong> y
+              la cita queda confirmada; con pago, se bloquea el hueco unos minutos para el cobro.
+            </>
+          ) : (
+            <>
+              Con bono en estas modalidades no verás importe: al confirmar la hora se descuenta{' '}
+              <strong className="font-medium text-ink dark:text-white/90">una sesión</strong> de tu
+              bono y la cita queda confirmada.
+            </>
+          )}
+        </p>
       </SurfaceCard>
 
       {/* ── Paso 2: día (calendario mensual) ── */}
@@ -235,8 +331,13 @@ export default function SlotPicker({
               {format(fecha, "EEEE d 'de' MMMM", { locale: es })}
               {servicio ? ` · ${servicio.nombre}` : ''}
             </p>
+            <p className="mt-2 font-body text-[0.74rem] text-ink-muted dark:text-white/55">
+              {servicioSeleccionCubiertoBono
+                ? 'Elige una hora y pulsa «Confirmar hora» para reservar con tu bono (sin pago online).'
+                : 'Elige una hora y pulsa «Confirmar hora»: se aplicará la política de cancelación antes de bloquear el hueco o iniciar el pago.'}
+            </p>
           </div>
-          {tieneBono ? (
+          {servicioSeleccionCubiertoBono ? (
             <Chip tone="positive">Sin pago · bono activo</Chip>
           ) : (
             <Chip tone="info">Requiere pago previo</Chip>
@@ -273,20 +374,32 @@ export default function SlotPicker({
         ) : (
           <div
             className="grid gap-2 grid-cols-3 sm:grid-cols-4 md:grid-cols-6"
-            role="radiogroup"
+            role="group"
             aria-label="Horas disponibles"
           >
-            {slots.map((s) => (
-              <button
-                key={s.slot_inicio}
-                type="button"
-                disabled={reservando}
-                onClick={() => handleReservar(s)}
-                className="group h-11 rounded-xl bg-white/60 font-body text-[0.88rem] tabular-nums text-ink ring-1 ring-inset ring-white/50 transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-primary hover:text-on-primary hover:-translate-y-[2px] hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary"
-              >
-                {format(new Date(s.slot_inicio), 'HH:mm')}
-              </button>
-            ))}
+            {slots.map((s) => {
+              const picked = selectedSlot?.slot_inicio === s.slot_inicio;
+              return (
+                <button
+                  key={s.slot_inicio}
+                  type="button"
+                  disabled={reservando}
+                  aria-pressed={picked}
+                  onClick={() =>
+                    setSelectedSlot((prev) =>
+                      prev?.slot_inicio === s.slot_inicio ? null : s
+                    )
+                  }
+                  className={`group h-11 rounded-xl font-body text-[0.88rem] tabular-nums ring-1 ring-inset transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 ${
+                    picked
+                      ? 'bg-primary text-on-primary shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] ring-primary/50 dark:bg-primary dark:text-on-primary'
+                      : 'bg-white/60 text-ink ring-white/50 hover:-translate-y-[2px] hover:bg-primary hover:text-on-primary hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary'
+                  }`}
+                >
+                  {format(new Date(s.slot_inicio), 'HH:mm')}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -310,7 +423,116 @@ export default function SlotPicker({
             Reservando…
           </p>
         ) : null}
+
+        {selectedSlot && servicio ? (
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl bg-white/50 p-4 ring-1 ring-inset ring-white/55 sm:flex-row sm:items-center sm:justify-between dark:bg-white/[0.06] dark:ring-white/12">
+            <div className="min-w-0">
+              <p className="font-body text-[0.62rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+                Hora seleccionada
+              </p>
+              <p className="mt-1 font-display text-[1.05rem] italic text-ink tabular-nums dark:text-white">
+                {format(new Date(selectedSlot.slot_inicio), "EEEE d MMM · HH:mm", { locale: es })}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              icon="event_available"
+              className="w-full shrink-0 sm:w-auto"
+              disabled={reservando}
+              onClick={() => {
+                if (!selectedSlot) return;
+                policyDialogRef.current?.showModal();
+              }}
+            >
+              Confirmar hora
+            </Button>
+          </div>
+        ) : null}
       </SurfaceCard>
+
+      <dialog
+        ref={policyDialogRef}
+        className="max-w-lg w-[calc(100%-1.5rem)] rounded-2xl border-0 bg-canvas p-0 text-ink shadow-2xl ring-1 ring-ink/10 backdrop:bg-ink/45 open:flex sm:w-full dark:bg-[#1a1a1a] dark:text-white dark:ring-white/10"
+        aria-labelledby="policy-48h-title"
+        aria-describedby="policy-48h-desc"
+      >
+        <div className="flex max-h-[85vh] w-full flex-col overflow-hidden">
+          <header className="flex items-start justify-between gap-3 border-b border-ink/8 px-4 py-3 sm:px-5 sm:py-4 dark:border-white/10">
+            <div className="min-w-0">
+              <p className="font-body text-[0.58rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+                Política de cancelación
+              </p>
+              <h2
+                id="policy-48h-title"
+                className="mt-1 font-display text-[1.1rem] italic leading-tight tracking-[-0.02em] text-ink sm:text-[1.25rem] dark:text-white"
+              >
+                Ventana de 48 horas
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={closePolicyDialog}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
+                close
+              </span>
+            </button>
+          </header>
+          <div
+            id="policy-48h-desc"
+            className="overflow-y-auto px-4 py-3 sm:px-5 sm:py-4"
+          >
+            <div className="space-y-3 font-body text-[0.84rem] leading-relaxed text-ink-soft sm:text-[0.88rem] dark:text-white/78">
+              <p className="text-pretty">
+                <strong className="font-medium text-ink dark:text-white">
+                  La cancelación online desde el portal solo está disponible si quedan más de 48 horas
+                </strong>{' '}
+                hasta el inicio de la cita. Si necesitas anular o cambiar con menos margen, escribe a la
+                consulta por el mensaje seguro.
+              </p>
+              <p className="text-pretty">
+                {servicioSeleccionCubiertoBono
+                  ? 'Al confirmar, la cita quedará fijada y se descontará una sesión de tu bono activo para esta modalidad.'
+                  : modalidadServicio === 'pareja'
+                    ? 'Al confirmar, el hueco se reserva unos minutos para que completes el pago con tarjeta o wallet. El importe corresponde al servicio de pareja en agenda. Si no pagas a tiempo, el hueco se libera automáticamente.'
+                    : 'Al confirmar, el hueco se reserva unos minutos para que completes el pago con tarjeta o wallet. Si no pagas a tiempo, el hueco se libera automáticamente.'}
+              </p>
+            </div>
+            {selectedSlot && servicio ? (
+              <p className="mt-4 rounded-xl bg-ink/[0.04] px-3 py-2 font-body text-[0.8rem] text-ink dark:bg-white/[0.06] dark:text-white/85">
+                <span className="text-ink-muted dark:text-white/55">Reserva: </span>
+                {servicio.nombre}
+                <span className="mx-1 text-ink-muted dark:text-white/45">·</span>
+                <span className="tabular-nums">
+                  {format(new Date(selectedSlot.slot_inicio), "EEEE d MMM yyyy · HH:mm", {
+                    locale: es,
+                  })}
+                </span>
+              </p>
+            ) : null}
+          </div>
+          <footer className="flex flex-col-reverse gap-2 border-t border-ink/8 p-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-5 sm:py-4 dark:border-white/10">
+            <Button type="button" variant="ghost" onClick={closePolicyDialog} disabled={reservando}>
+              Volver
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              icon="check_circle"
+              disabled={reservando || !selectedSlot}
+              onClick={() => {
+                if (!selectedSlot) return;
+                ejecutarReserva(selectedSlot);
+              }}
+            >
+              Confirmar hora
+            </Button>
+          </footer>
+        </div>
+      </dialog>
 
       {/* ── Resumen de la reserva ── */}
       {servicio ? (
@@ -337,23 +559,34 @@ export default function SlotPicker({
             </div>
             <div>
               <dt className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
-                Día elegido
+                Día y hora
               </dt>
               <dd className="mt-1 font-display text-[0.95rem] italic text-ink dark:text-white">
                 {format(fecha, "EEEE d 'de' MMMM", { locale: es })}
               </dd>
+              {selectedSlot ? (
+                <p className="mt-1 font-body text-[0.8rem] tabular-nums text-ink-soft dark:text-white/65">
+                  Hora: {format(new Date(selectedSlot.slot_inicio), 'HH:mm')}
+                </p>
+              ) : (
+                <p className="mt-1 font-body text-[0.75rem] text-ink-muted dark:text-white/45">
+                  Selecciona un hueco en el paso 3.
+                </p>
+              )}
             </div>
             <div>
               <dt className="font-body text-[0.68rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/55">
                 Importe
               </dt>
               <dd className="mt-1 font-display text-[1.1rem] italic tabular-nums text-primary">
-                {tieneBono ? 'Cubierto por tu bono' : euro(servicio.precio_centimos)}
+                {servicioSeleccionCubiertoBono ? 'Cubierto por tu bono' : euro(servicio.precio_centimos)}
               </dd>
               <p className="font-body text-[0.72rem] text-ink-soft dark:text-white/65">
-                {tieneBono
+                {servicioSeleccionCubiertoBono
                   ? 'Se descontará 1 sesión al confirmar.'
-                  : 'Se reservará el hueco 15 min mientras pagas con tarjeta o wallet.'}
+                  : modalidadServicio === 'pareja'
+                    ? 'Importe del servicio de pareja en catálogo. El hueco queda bloqueado ~15 min para completar el pago.'
+                    : 'Se reservará el hueco unos minutos mientras pagas con tarjeta o wallet.'}
               </p>
             </div>
           </dl>

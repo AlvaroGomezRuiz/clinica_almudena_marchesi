@@ -14,6 +14,8 @@ import {
   StatCard,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Bonos y pagos | Portal Paciente' };
@@ -224,6 +226,13 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
 
   return (
     <>
+      {paciente ? (
+        <RealtimeRefresh
+          channelName={`portal-pagos-${paciente.id}`}
+          tables={['pagos', 'bonos_pacientes']}
+          filter={`paciente_id=eq.${paciente.id}`}
+        />
+      ) : null}
       <PageHeader
         eyebrow="Bonos y pagos"
         title="Tu cuenta"
@@ -254,6 +263,10 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
       </section>
 
       <SectionDivider label="Precio de una sesión suelta" />
+      <p className="mb-5 font-body text-[0.82rem] leading-relaxed text-ink-soft text-pretty dark:text-white/65">
+        Tarifas vigentes: <strong className="text-ink dark:text-white">{CLINIC_TARIFAS_SESION_RESUMEN}</strong>.
+        El importe cobrado coincide con el servicio que elijas al reservar o comprar el bono.
+      </p>
       {servicioIndividual || servicioPareja || servicioIndividualPareja ? (
         <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {servicioIndividual ? (

@@ -8,7 +8,7 @@
 //   5. Dispara email `booking_cancelled` (fire-and-forget).
 //
 // El cliente puede invocar esta Fn tanto desde portal paciente como desde admin.
-// La diferenciación (override 24h, cancelar citas de terceros) la decide la RPC
+// La diferenciación (override ventana 48h, cancelar citas de terceros) la decide la RPC
 // en base al rol del usuario autenticado.
 // -----------------------------------------------------------------------------
 

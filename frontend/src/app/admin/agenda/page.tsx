@@ -8,6 +8,7 @@ import AgendaClient, {
   type PlantillaRow,
 } from '@/components/admin/agenda/AgendaClient';
 import { PageHeader } from '@/components/portal-shell/ui';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Agenda | Panel Almudena' };
@@ -89,6 +90,10 @@ export default async function AdminAgendaPage({
 
   return (
     <>
+      <RealtimeRefresh
+        channelName="admin-agenda"
+        tables={['citas', 'agenda_bloqueos', 'agenda_plantilla_aplicaciones']}
+      />
       <PageHeader
         eyebrow={format(fechaAncla, "EEEE d 'de' MMMM yyyy", { locale: es })}
         title="Agenda"

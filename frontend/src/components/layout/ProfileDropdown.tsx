@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
 import ThemeToggle from '@/components/layout/ThemeToggle';
+import { normalizeDisplayNameText } from '@/lib/profile-display-name';
 import { logoutAction } from '@/services/auth/actions';
 
 import type { ShellTone } from '@/components/portal-shell/types';
@@ -46,6 +47,14 @@ export default function ProfileDropdown({
   const [open, setOpen] = useState(false);
   const [notificationsMuted, setNotificationsMuted] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const n = normalizeDisplayNameText(displayName);
+  const nameLabel =
+    n.length > 0
+      ? n
+      : displayName !== undefined && displayName.trim().length > 0
+        ? displayName.trim()
+        : 'Usuario';
 
   const settingsHref = tone === 'admin' ? '/admin/configuracion' : '/portal/ajustes';
   const privacyHref = `${settingsHref}#privacidad`;
@@ -85,7 +94,11 @@ export default function ProfileDropdown({
 
       {open ? (
         <div
-          className="absolute right-0 mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] rounded-2xl overflow-hidden bg-white/95 dark:bg-[#181818] ring-1 ring-ink/10 dark:ring-white/10 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] backdrop-blur-xl"
+          className="absolute right-0 mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ink/[0.06] bg-[#FBF6EF]/78 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] ring-1 ring-inset ring-white/30 dark:border-white/10 dark:bg-[#141312]/78 dark:ring-white/5"
+          style={{
+            backdropFilter: 'blur(40px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          }}
           role="menu"
         >
           {/* ── Cabecera identidad ── */}
@@ -94,11 +107,11 @@ export default function ProfileDropdown({
               aria-hidden="true"
               className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full bg-primary/12 ring-1 ring-inset ring-primary/20 font-display text-[0.92rem] italic text-primary dark:bg-primary/25 dark:text-white dark:ring-primary/35"
             >
-              {initialsOf(displayName)}
+              {initialsOf(nameLabel)}
             </span>
             <div className="min-w-0">
               <p className="font-display text-[0.95rem] text-ink leading-tight tracking-[-0.01em] truncate dark:text-white">
-                {displayName ?? 'Usuario'}
+                {nameLabel}
               </p>
               {email ? (
                 <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted truncate dark:text-white/55">

@@ -10,6 +10,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { enforceRateLimit, rateLimitJsonResponse } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,15 @@ export async function GET(req: NextRequest, { params }: Params): Promise<Respons
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  const rate = await enforceRateLimit({
+    key: `portal_recurso_dl:${user.id}`,
+    max: 120,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) {
+    return rateLimitJsonResponse(rate);
   }
 
   const { data: rec, error } = await supabase

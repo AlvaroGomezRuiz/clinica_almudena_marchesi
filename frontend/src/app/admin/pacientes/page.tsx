@@ -10,6 +10,9 @@ import {
   StatCard,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
+import PacienteListContactReveal from '@/components/admin/pacientes/PacienteListContactReveal';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Pacientes | Panel Almudena' };
@@ -19,8 +22,9 @@ export const dynamic = 'force-dynamic';
  * Nota sobre PII:
  *   - Los nombres y DNIs viven en columnas _ciphertext (AES-256-GCM a nivel Postgres vía pgcrypto + Vault).
  *   - Esta vista usa `v_pacientes_resumen_admin` que SOLO expone flags booleanos
- *     (has_dni, has_telefono…) + métricas agregadas. El plaintext sólo se sirve
- *     desde la ficha individual vía RPC auditado (migración 0012).
+ *     (has_dni, has_telefono…) + métricas agregadas. El plaintext en listado se
+ *     obtiene solo al pulsar un icono (RPC `paciente_revelar_campo`, auditado).
+ *     La ficha completa sigue usando bulk auditado en su página.
  *   - Búsqueda:
  *       · display_name / email → match en `profiles` (join por user_id).
  *       · DNI/NIE, teléfono y email RGPD → lookup via RPC
@@ -63,6 +67,7 @@ interface PacienteResumen {
   has_dni: boolean;
   has_telefono: boolean;
   has_email: boolean;
+  has_direccion: boolean;
   has_contacto_emergencia: boolean;
   has_alergias: boolean;
   sesiones_completadas: number;
@@ -76,6 +81,7 @@ interface ProfileLite {
   id: string;
   display_name: string | null;
   email: string;
+  avatar_url: string | null;
 }
 
 interface BonoActivoRow {
@@ -140,7 +146,7 @@ export default async function AdminPacientesPage({
   let q1 = supabase
     .from('v_pacientes_resumen_admin')
     .select(
-      'id, user_id, fecha_alta, fecha_nacimiento, activo, tags, color_etiqueta, avatar_url, consentimiento_rgpd, created_at, has_dni, has_telefono, has_email, has_contacto_emergencia, has_alergias, sesiones_completadas, ultima_cita, proxima_cita, diagnosticos_activos, adjuntos_total',
+      'id, user_id, fecha_alta, fecha_nacimiento, activo, tags, color_etiqueta, avatar_url, consentimiento_rgpd, created_at, has_dni, has_telefono, has_email, has_direccion, has_contacto_emergencia, has_alergias, sesiones_completadas, ultima_cita, proxima_cita, diagnosticos_activos, adjuntos_total',
       { count: 'exact' }
     )
     .eq('activo', true)
@@ -173,7 +179,7 @@ export default async function AdminPacientesPage({
   if (userIds.length > 0) {
     const { data: profs } = await supabase
       .from('profiles')
-      .select('id, display_name, email')
+      .select('id, display_name, email, avatar_url')
       .in('id', userIds);
     (profs as ProfileLite[] | null)?.forEach((p) => profilesByUserId.set(p.id, p));
   }
@@ -214,10 +220,14 @@ export default async function AdminPacientesPage({
 
   return (
     <>
+      <RealtimeRefresh
+        channelName="admin-pacientes-list"
+        tables={['pacientes', 'profiles', 'citas', 'bonos_pacientes']}
+      />
       <PageHeader
         eyebrow={`${count ?? 0} ${(count ?? 0) === 1 ? 'resultado' : 'resultados'}${query ? ` · «${query}»` : ''}`}
         title="Gestión de pacientes"
-        description="Resumen no-sensible. Para ver DNI, teléfono o notas clínicas, abre la ficha (acceso auditado)."
+        description="Resumen no-sensible. Desde «Contacto» eliges qué dato descifrar (auditado); la ficha abre historia y notas clínicas."
         actions={
           <Link href="/admin/pacientes/alta">
             <Button variant="primary" icon="person_add">Alta manual</Button>
@@ -307,10 +317,10 @@ export default async function AdminPacientesPage({
         />
       ) : (
         <SurfaceCard className="p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-ink/5 dark:border-white/5">
+          <div className="max-h-[min(72vh,640px)] overflow-auto">
+            <table className="w-full min-w-[720px] text-left">
+              <thead className="sticky top-0 z-[1] border-b border-ink/5 bg-canvas/95 shadow-[0_1px_0_rgba(28,28,25,0.06)] backdrop-blur-sm dark:border-white/5 dark:bg-[#141413]/95">
+                <tr>
                   <th className="px-6 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     Paciente
                   </th>
@@ -330,7 +340,7 @@ export default async function AdminPacientesPage({
                 </tr>
               </thead>
               <tbody>
-                {pacientes.map((p) => {
+                {pacientes.map((p, rowIdx) => {
                   const profile = p.user_id ? profilesByUserId.get(p.user_id) : null;
                   const displayName = profile?.display_name ?? `Paciente #${p.id.slice(0, 8).toUpperCase()}`;
                   const initials = (profile?.display_name ?? profile?.email ?? '?')
@@ -339,33 +349,28 @@ export default async function AdminPacientesPage({
                     .slice(0, 2)
                     .map((s) => s[0]?.toUpperCase() ?? '')
                     .join('') || '?';
+                  const avatarUrl =
+                    (profile?.avatar_url && profile.avatar_url.trim().length > 0
+                      ? profile.avatar_url
+                      : null) ||
+                    (p.avatar_url && p.avatar_url.trim().length > 0 ? p.avatar_url : null) ||
+                    null;
+                  const zebra =
+                    rowIdx % 2 === 1
+                      ? 'bg-ink/[0.03] dark:bg-white/[0.03]'
+                      : 'bg-transparent';
                   return (
                     <tr
                       key={p.id}
-                      className="border-b border-ink/5 hover:bg-white/50 transition-colors dark:border-white/5 dark:hover:bg-white/5"
+                      className={`border-b border-ink/5 transition-colors hover:bg-white/60 dark:border-white/5 dark:hover:bg-white/[0.06] ${zebra}`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {p.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.avatar_url}
-                              alt=""
-                              className="h-10 w-10 rounded-full object-cover ring-1 ring-inset ring-ink/10 dark:ring-white/15"
-                            />
-                          ) : (
-                            <span
-                              className="grid h-10 w-10 place-items-center rounded-full font-display text-[0.82rem] font-medium text-ink dark:text-white ring-1 ring-inset ring-ink/10 dark:ring-white/15"
-                              style={{
-                                background: p.color_etiqueta
-                                  ? `${p.color_etiqueta}20`
-                                  : 'rgba(75,100,95,0.12)',
-                              }}
-                              aria-hidden="true"
-                            >
-                              {initials}
-                            </span>
-                          )}
+                          <PacienteListAvatar
+                            imageUrl={avatarUrl}
+                            initials={initials}
+                            colorEtiqueta={p.color_etiqueta}
+                          />
                           <div className="min-w-0">
                             <p className="font-display text-[0.98rem] text-ink truncate tracking-[-0.01em] dark:text-white">
                               {displayName}
@@ -411,41 +416,18 @@ export default async function AdminPacientesPage({
                         </p>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="flex gap-1">
-                          {p.has_telefono ? (
-                            <span
-                              className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary dark:bg-primary/25 dark:text-white"
-                              title="Teléfono registrado"
-                              aria-label="Teléfono registrado"
-                            >
-                              <span className="material-symbols-outlined text-[0.95rem]" aria-hidden="true">
-                                phone
-                              </span>
-                            </span>
-                          ) : null}
-                          {p.has_email ? (
-                            <span
-                              className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-primary dark:bg-primary/25 dark:text-white"
-                              title="Email registrado"
-                              aria-label="Email registrado"
-                            >
-                              <span className="material-symbols-outlined text-[0.95rem]" aria-hidden="true">
-                                mail
-                              </span>
-                            </span>
-                          ) : null}
-                          {p.has_contacto_emergencia ? (
-                            <span
-                              className="grid h-7 w-7 place-items-center rounded-full bg-[#c89b5a]/15 text-[#8a6530] dark:bg-[#c89b5a]/25 dark:text-[#e9c88a]"
-                              title="Contacto de emergencia"
-                              aria-label="Contacto de emergencia"
-                            >
-                              <span className="material-symbols-outlined text-[0.95rem]" aria-hidden="true">
-                                emergency
-                              </span>
-                            </span>
-                          ) : null}
-                        </div>
+                        <PacienteListContactReveal
+                          pacienteId={p.id}
+                          patientLabel={displayName}
+                          avatarImageUrl={avatarUrl}
+                          avatarInitials={initials}
+                          colorEtiqueta={p.color_etiqueta}
+                          hasTelefono={p.has_telefono}
+                          hasEmail={p.has_email}
+                          hasContactoEmergencia={p.has_contacto_emergencia}
+                          hasDireccion={p.has_direccion}
+                          hasDni={p.has_dni}
+                        />
                       </td>
                       <td className="px-4 py-4">
                         <Chip tone={p.consentimiento_rgpd ? 'positive' : 'warning'}>

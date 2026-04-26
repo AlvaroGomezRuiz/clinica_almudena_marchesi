@@ -1,214 +1,99 @@
-# Informe Ejecutivo para la Clinica
+# Informe ejecutivo para la clínica (producto y garantías)
 
-> **Destinatario**: Almudena Marchesi Fernandez (cliente)
-> **Autor**: equipo de ingenieria
-> **Fecha**: 21 de abril de 2026
-> **Proposito**: explicar, en terminos comprensibles, el estado del sistema digital de la clinica y las garantias de seguridad con las que cuenta.
-
----
-
-## 1. Que tienes hoy
-
-Una **plataforma profesional completa** con tres piezas:
-
-1. **Web publica** — para que cualquier persona te descubra y pida cita.
-2. **Portal del paciente** — donde el paciente reserva, paga, lee sus recursos y se comunica contigo.
-3. **Portal de administracion** — tu panel privado con agenda, fichas, facturacion, chat y configuracion.
-
-Todo conectado entre si y alojado en infraestructura **de grado bancario** (Vercel + Supabase), replicada automaticamente en Europa (Frankfurt, Alemania) — cumpliendo la normativa europea.
+> **Destinatario:** responsable de la clínica. **Fecha:** 2026-04-26. **Autor:** ingeniería.  
+> **Propósito:** describir con precisión qué hay en producción (o pre-producción), qué puede hacer cada rol, y qué responsabilidades legales/organizativas siguen siendo de la titular (DPIA, textos legales, DPO si aplica).  
+> **Detalle técnico profundo:** `docs/01_auditorias/seguridad-rgpd.md` y las auditorías por capa en el mismo directorio `01_auditorias/`.
 
 ---
 
-## 2. Que puede hacer tu paciente
+## 1. Qué es el sistema hoy (en una frase)
 
-| Accion                                     | Como                                                |
-|--------------------------------------------|-----------------------------------------------------|
-| Buscar informacion sobre tu enfoque        | Web publica (home, enfoque, servicios, sobre mi, contacto) |
-| Registrarse con email + contrasena segura  | `Registro paciente` con aceptacion de RGPD + firma   |
-| Reservar una cita                          | Calendario con huecos reales de tu agenda            |
-| Pagar una cita o comprar un bono           | Stripe directo en la pagina (Apple Pay, tarjeta, Bizum, Klarna) |
-| Ver su historial y sus notas personales    | Portal paciente → Citas                              |
-| Leer recursos que le has asignado          | Portal paciente → Recursos                           |
-| Chatear contigo en tiempo real             | Portal paciente → Mensajes (con adjuntos y audio)    |
-| Editar su perfil, tema claro/oscuro        | Portal paciente → Ajustes                            |
-| Solicitar derecho RGPD (export / borrado)  | Portal paciente → Ajustes → RGPD                     |
-| Recibir recordatorios automaticos          | Email 24h antes (si opt-in)                          |
+Una **aplicación web a medida** con **web pública**, **portal del paciente** (citas, pagos, recursos, mensajería, ajustes) y **panel de administración** (agenda, ficha clínica cifrada, facturación, recursos, mensajes, configuración), alojada en **Vercel** (UE) y con datos en **Supabase** (región **eu-central-1**, Alemania) y pagos a través de **Stripe** (infraestructura con compliance PCI; el flujo de tarjeta no pasa por servidores propios en claro).
+
+**Dominio canónico** documentado en el repositorio: `https://ampsicologia.es` y contacto `contacto@ampsicologia.es` (cualquier dominio adicional debe quedar alineado en DNS, Vercel, Supabase y Resend).
 
 ---
 
-## 3. Que puedes hacer tu
+## 2. Qué puede hacer el paciente (producto)
 
-| Accion                                      | Como                                                    |
-|---------------------------------------------|---------------------------------------------------------|
-| Ver agenda semanal, diaria, mensual         | Panel `/admin/agenda`                                   |
-| Crear plantillas de horario                 | `/admin/agenda` → Plantillas                            |
-| Bloquear dias (vacaciones, enfermedad)      | `/admin/agenda` → Bloqueos con color + nota             |
-| Dar de alta pacientes manualmente           | `/admin/pacientes/alta`                                 |
-| Consultar ficha clinica cifrada             | `/admin/pacientes/[id]` (con trazabilidad del acceso)  |
-| Anadir diagnosticos y medicacion cifrada    | Dentro de la ficha del paciente                         |
-| Exportar historial (PDF / JSON)             | Boton en la ficha                                       |
-| Revisar bonos activos                       | `/admin/pacientes/[id]` → Bonos                         |
-| Gestionar todos los pagos                   | `/admin/facturacion` con export CSV                     |
-| Emitir facturas con tu NIF + COPM + REGCESS | Automaticas tras cada pago + PDF descargable            |
-| Responder mensajes de pacientes             | `/admin/mensajes` con panel ficha lateral               |
-| Subir recursos (PDF, audio)                 | `/admin/recursos`                                       |
-| Asignar recursos a pacientes concretos      | Boton en cada recurso                                   |
-| Activar MFA (autenticador movil)            | `/admin/configuracion`                                  |
-| Consultar logs de accesos                   | `/admin/configuracion` → Logs                           |
+| Acción | Dónde / cómo (alto nivel) |
+|--------|---------------------------|
+| Informarse | Páginas públicas: inicio, enfoque, servicios, sobre mí, contacto, legales |
+| Registrarse | `/registro-paciente` con aceptación de política y flujo de verificación de email (Supabase Auth) |
+| Reservar cita | `/portal/citas/reservar` con huecos reales, pago o bono según reglas de negocio |
+| Pagar o bonos | `/portal/pagos` (Stripe, métodos según dashboard: tarjeta, carteras, Klarna, SEPA si se activa) |
+| Gestionar citas | `/portal/citas` (incl. cancelación según ventana de **>48h** hacia el futuro, sin reembolso automático forzado a Stripe en el flujo del paciente — ver `0046` en comentario operativo) |
+| Mensajería | Chat en tiempo real con posibilidad de adjuntos y notas de voz según límites de la API |
+| Recursos asignados | Listado, pestañas, visor de PDF o audio, enlaces a **ver** recurso concreto |
+| Ajustes | Tema, notificaciones, **derechos RGPD** (solicitudes) |
+| Bienvenida / onboarding | Gate de bienvenida según lógica de `portal-gate` hasta cita o pago |
+
+*Si el flujo concreto difiere de lo anterior por cambio de negocio, la fuente de verdad es el código y las migraciones, no solo este documento.*
 
 ---
 
-## 4. Como protegemos los datos del paciente
+## 3. Qué puede hacer el profesional / admin
 
-La normativa en Espana te obliga, como psicologa, a proteger los datos clinicos con **medidas apropiadas al nivel maximo** (RGPD Art. 32, Ley 41/2002). Esto es lo que hay:
-
-### Capa 1: la conversacion es secreta
-Todo el trafico entre el navegador del paciente y nuestros servidores viaja **cifrado** con el mismo protocolo que usa tu banco (TLS 1.3). Un atacante que intercepte la red **no vera nada**.
-
-### Capa 2: el navegador esta blindado
-El navegador recibe instrucciones estrictas: no puede abrir tu web dentro de otra pagina falsa, no puede ejecutar codigo inyectado por intrusos, no puede pedir permisos de camara o microfono por sorpresa.
-
-### Capa 3: cada persona ve solo lo suyo
-Cuando un paciente entra, el sistema verifica en milisegundos:
-- **Quien eres** (autenticacion con contrasena robusta y, opcionalmente, MFA).
-- **Que puedes ver** (Row Level Security: el paciente A no puede, por diseno, ver nada del paciente B — ni aunque modifique la URL manualmente).
-
-### Capa 4: los datos sensibles estan cifrados en la propia base de datos
-Nombres, DNI, telefonos, direcciones, diagnosticos, notas clinicas: **se guardan cifrados** con AES-256 (mismo estandar que usan gobiernos y bancos). Sin la clave maestra, la base de datos es un fichero de ruido ilegible.
-
-La clave maestra vive en una "caja fuerte" (Supabase Vault), nunca en un archivo del codigo, nunca en un email, nunca en un post-it.
-
-### Capa 5: todo acceso queda grabado
-Cada vez que alguien (incluida tu) consulta un dato sensible, se registra:
-- Quien ha sido.
-- Cuando.
-- Que campo.
-- Desde donde.
-
-Este registro se guarda en formato **tamper-evident** (si alguien intentase modificarlo a posteriori, se detectaria al instante por una huella digital encadenada).
+| Acción | Dónde / cómo |
+|--------|--------------|
+| Ver y gestionar agenda | Vistas en `/admin/agenda` (incl. bloqueos, plantillas según estén configuradas) |
+| Pacientes y ficha clínica | Ficha cifrada, secciones editables, notas, diagnósticos, medicación, **imprimir** |
+| Listado y contacto | Revelación controlada de contacto, avatares coherentes con portal |
+| Facturación y exportaciones | `/admin/facturacion` con KPI, CSV, **asignar bono manual** (método tarjeta / transferencia / regalo / Klarna según migración `0057`) |
+| Recursos | Subir, asignar, enlace a visor en admin y portal |
+| Mensajes | Bandeja, conversación con misma lógica de cifrado que el paciente |
+| Configuración | MFA, preferencias, logs de accesos según lo implementado |
 
 ---
 
-## 5. Cumplimiento normativo
+## 4. Cómo se protege la información (resumen, no asesoría legal)
 
-| Norma                                        | Estado                                 |
-|----------------------------------------------|----------------------------------------|
-| **RGPD** (Reglamento Europeo)                | Tecnico: cubierto. Legal: pendiente DPIA formal |
-| **LOPDGDD** (Ley Organica Espana)            | Tecnico: cubierto                      |
-| **Ley 41/2002** (Autonomia del paciente e historia clinica) | Tecnico: cubierto (Art. 15, 16, 17, 18) |
-| **Ley 34/2002** (LSSI - comercio electronico) | Paginas legales creadas como plantilla |
+| Capa | Explicación breve |
+|------|-------------------|
+| **Transporte** | HTTPS (TLS) entre el navegador y Vercel/Supabase. |
+| **Aplicación** | Cabeceras (CSP, HSTS, etc.) según `next.config.js` — reducen riesgo de inyección y *clickjacking* en el margen de lo razonable en la web. |
+| **Cuenta** | Autenticación con contraseña, MFA posible en admin, sesión en cookies httpOnly. |
+| **Autorización en base de datos** | Políticas por fila (el paciente A no obtiene filas del paciente B, aunque se invente un ID en la consola). |
+| **Cifrado en almacenamiento** | PII y datos clínicos relevantes cifrados en columna; chat en cifrado en reposo; clave vía *vault* (no en el repositorio). |
+| **Auditoría** | Trazas de apertura de campos y acciones sensibles, diseño *tamper-evident* en pasos de auditoría. |
 
-**Importante**: tu abogada debe revisar los textos legales (`/aviso-legal`, `/privacidad`, `/cookies`) antes de publicar. Son plantillas base que deben adaptarse a tu caso concreto (NIF real, direccion fiscal real, responsable del tratamiento, etc.).
+**Importante (organizacional):** la clínica debe mantener **revisión legal** de avisos y políticas, **DPIA** si el abogado/DPD lo requiere, y un **proceso** para atender derechos (export, supresión) aunque la plataforma ya tenga trámites técnicos.
 
----
-
-## 6. Que pasa si algo falla
-
-### Si se cae un servicio externo
-- **Vercel cae** (el hosting de la web): muy improbable, 99.99% uptime. Si ocurre, se recupera automaticamente en minutos.
-- **Supabase cae** (la base de datos): tambien 99.99% uptime. En caso extremo, restauramos desde backup automatico (se hace cada 24h).
-- **Stripe cae** (los pagos): el paciente vera un error claro y podra reintentar. Las reservas se marcan como "pago pendiente" sin confirmar la cita.
-
-### Si alguien intenta atacar
-- Los intentos de fuerza bruta al login estan limitados (rate limiting).
-- Las contrasenas se almacenan cifradas con bcrypt (no podemos verlas ni nosotros).
-- Los pagos nunca tocan nuestros servidores: van directos a Stripe (PCI-DSS).
-- Un ataque XSS/SQL injection no tiene efecto gracias a las capas 2 y 3.
-
-### Si un paciente pierde su contrasena
-- Se envia un enlace de recuperacion a su email (valido 1 hora).
-- Si activa MFA, necesitara su codigo de recuperacion adicional.
-
-### Si tu pierdes tu contrasena
-- Lo mismo que un paciente + recuperacion por telefono (via mail a clinica.almudena.marchesi@outlook.com).
-- Si ademas pierdes tu MFA: hay que restaurar con codigo de recuperacion (el que copiaste al activarla). Guardalo en Bitwarden.
+**Norma ↔ implementación (tabla de alto nivel):** ver `seguridad-rgpd.md` (capa verde/ámbar/pendiente).
 
 ---
 
-## 7. Coste operativo estimado
+## 5. Coste operativo orientativo (no oferta comercial de terceros)
 
-| Servicio                      | Plan actual | Coste mensual | Que cubre                         |
-|-------------------------------|-------------|---------------|-----------------------------------|
-| Vercel                        | Free        | 0 EUR          | Hosting web, hasta 100k visitas/mes |
-| Supabase                      | Free        | 0 EUR          | Base de datos, auth, edge, 500MB  |
-| Stripe                        | N/A        | comision 1,5% + 0,25 EUR por cobro | Pagos con tarjeta                 |
-| Resend                        | Free        | 0 EUR          | 3.000 emails/mes                  |
-| Dominio **amclinicapsicologia.es** | Pendiente compra | ~12 EUR/ano | Registro; luego DNS Vercel + Resend |
-| Sentry                        | Free        | 0 EUR          | 5k errores/mes monitorizados      |
+| Partida | Comentario |
+|---------|------------|
+| Vercel, Supabase, Sentry, Resend (planes gratuitos o bajos) | Suelen empezar en 0€ fijo mientras se respeten cuotas. |
+| Stripe | Comisiones por cobro (no almacenamento de PAN en tu servidor). |
+| Dominio y correo | Renovación anual del dominio; DNS correctamente enlazado. |
+| Crecimiento | Puede ser necesario Supabase Pro / Vercel Pro al subir tráfico o almacenamiento. |
 
-**Total fijo mensual**: **~1 EUR/mes** (domino prorateado) + **comision pagos Stripe**.
-
-Escalable si un dia superas los limites gratuitos:
-- Supabase Pro: 25 USD/mes (8 GB DB, PITR 7 dias, HIBP password check).
-- Vercel Pro: 20 USD/mes (analytics avanzado).
-- Resend Pro: 20 USD/mes (50.000 emails/mes).
+*Cifras puntuales de €/mes: ver `docs/00_proyecto/costes-herramientas.md` (Cursor, dominio, etc.).*
 
 ---
 
-## 8. Roadmap proximo
+## 6. Valor del software (ingeniería)
 
-### Inmediato (antes de go-live, requiere tu input)
-1. Decidir dominio definitivo (te pedi opciones en lista).
-2. ~~NIF, COPM (M-40804), titulación PGS~~ — recibido; pendiente **REGCESS** cuando el colegio lo confirme y **compra del dominio** al cierre.
-3. Rotar todas las contrasenas y API keys tecnicas (hay checklist en el repo).
-4. Revision legal de politica de privacidad y aviso legal por tu abogada.
-
-### Semana 1 tras go-live
-5. Pentest externo basico (puedo contratar o hacer auditoria adicional).
-6. Configurar alertas de pago fallido en tu email.
-7. Campana educacion pacientes (comunicar el portal).
-
-### Mes 1-3
-8. Cifrado de mensajes chat end-to-end (mejora opcional).
-9. Notificaciones push navegador (PWA).
-10. Drag & drop en agenda admin (mejora UX).
-
-### Trimestral
-11. Auditoria interna: revisar accesos sensibles (auditoria).
-12. Test de restauracion de backup.
-13. Rotacion de credenciales (obligatorio cada 90 dias).
+Criterios, LOC y bandas de **reposición** (rehacer el alcance con un tercero): `docs/02_informes/valor-reposicion-software.md`. **No** es valoración de negocio, marca ni facturación futura.
 
 ---
 
-## 9. Preguntas frecuentes
+## 7. Preguntas frecuentes (breves)
 
-**¿Los datos salen de Europa?**
-No. Supabase region `eu-central-1` (Frankfurt). Stripe procesa en Irlanda/UK (dentro de transferencia con garantias).
-
-**¿Puedo recuperar mis datos si cambio de proveedor?**
-Si. Portabilidad total: `pg_dump` en Postgres estandar exporta todo (salvo cifrado, que requiere la clave maestra).
-
-**¿Necesito un Delegado de Proteccion de Datos (DPO)?**
-No por ley si operas sola y no superas 5000 pacientes con tratamiento regular. Recomendable si escalas.
-
-**¿Puedo acceder al codigo fuente?**
-Si. Esta en GitHub bajo tu cuenta (tras transferencia). Licencia propietaria.
-
-**¿Quien tiene acceso a la base de datos por linea de comandos?**
-Solo tu y el equipo de ingenieria autorizado. El servicio Supabase tiene sus propios empleados con acceso restringido segun su DPA.
-
-**¿Que pasa con los pacientes de mas de 5 anos de baja?**
-Se anonimizan automaticamente (nombre, email, DNI borrados; estadisticas clinicas preservadas sin identificar).
+| Pregunta | Respuesta corta |
+|----------|------------------|
+| ¿Dónde están mis datos? | En la región de Supabase configurada (almacenamiento de base bajo su DPA; Stripe/Resend con su propio DPA). |
+| ¿Puedo cambiar de proveedor? | Los datos de Postgres son exportables (con planificación de **clave de cifrado** y de migración; no es “cambio de host en 1 clíc” sin riesgo). |
+| ¿Quién toca el código? | Ingeniería bajo repositorio privado; la titular de la cuenta GitHub/Supabase es la *propietaria* del despliegue. |
 
 ---
 
-## 10. Contacto tecnico
+## 8. Contacto y continuidad
 
-Cualquier duda, incidencia o solicitud de cambio: equipo de ingenieria.
+Cualquier incidencia de producto, cambio de normativa, o ajuste de clínica → coordinación con **equipo de ingeniería** y, donde corresponda, con **asesor legal** o **DPD** externo.
 
-Para emergencias (caida total, brecha de seguridad, perdida datos): contacto directo. Tiempo de respuesta objetivo: 2h laborables, 24h fines de semana.
-
----
-
-*Este informe se actualiza con cada hito tecnico. Ultima revision sustancial: 21 abril 2026.*
-
----
-
-## 11. Actualizacion 23 abril 2026 (resumen para la clinica)
-
-- **Dominio y marca en web:** produccion canonica **`https://ampsicologia.es`**, contacto publico **`contacto@ampsicologia.es`**. SEO/GEO tecnico (JSON-LD LocalBusiness/MedicalBusiness, legales con fecha de version) descrito en `docs/03_ingenieria/geo-y-seo.md`.
-- **Cancelacion desde portal:** el paciente solo puede anular una cita si quedan **mas de 48 horas** hasta la hora de la cita; **no** se dispara reembolso automatico en Stripe al paciente (la politica economica la marca la clinica / gestion manual). La administracion conserva sus herramientas habituales.
-- **Herramienta GEO local:** carpeta `.GEO/` en el repo con script PowerShell para generar informes HTML/JSON sobre la URL o el sitemap (sin cambiar la web).
-- **Valor del software (ingenieria):** documento con metodologia y cifras de **reposicion** revisadas (orden de magnitud **~12k–20k €** típico en España para rehacer el alcance; venta “solo código” mucho menor): `docs/02_informes/valor-reposicion-software.md`.
-
-Si en checklist interno aparece otro nombre de dominio reservado (`amclinicapsicologia.es`), conviene **unificar** DNS, Vercel, Supabase Auth redirect URLs y Resend con el dominio que finalmente sea el unico canonicamente.
+*Última revisión sustancial del producto: ver `docs/00_proyecto/cronologia.md` (hitos) y el checklist único de operación `docs/05_operaciones/checklist-produccion.md`.*

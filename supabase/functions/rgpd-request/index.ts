@@ -15,6 +15,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { resendEmailTags } from "../_shared/resend-tags.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import { captureEdgeError, wrapEdgeHandler } from "../_shared/sentry.ts";
 import {
@@ -247,10 +248,9 @@ Deno.serve(wrapEdgeHandler("rgpd-request", async (req) => {
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,
-      tags: [
-        { name: "type", value: "rgpd_ack" },
+      tags: resendEmailTags("rgpd_ack", [
         { name: "tipo", value: solicitud.tipo },
-      ],
+      ]),
     });
 
     return json({ ok: true, mode, email: send }, 200, cors);
@@ -341,9 +341,7 @@ Deno.serve(wrapEdgeHandler("rgpd-request", async (req) => {
     subject: tpl.subject,
     html: tpl.html,
     text: tpl.text,
-    tags: [
-      { name: "type", value: "rgpd_export_ready" },
-    ],
+    tags: resendEmailTags("rgpd_export_ready"),
   });
 
   return json(

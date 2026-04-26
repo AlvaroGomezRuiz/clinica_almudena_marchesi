@@ -12,6 +12,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'Cookies técnicas y de sesión en ampsicologia.es: Supabase Auth, Next.js y mediciones agregadas. Sin cookies publicitarias ni analíticas de perfilado.',
   keywords: ['cookies', 'política cookies', 'LSSI', 'sesión segura', 'ampsicologia.es'],
   ogType: 'article',
+  includeGeoHints: false,
 });
 
 const webPageJsonLd = buildLegalWebPageJsonLd({

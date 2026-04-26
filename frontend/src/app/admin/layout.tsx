@@ -5,7 +5,9 @@ import type { ReactNode } from 'react';
 import RefreshOnVisibility from '@/components/layout/RefreshOnVisibility';
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
+import { unpackDisplayNameFromRequestHeader } from '@/lib/supabase/header-display-name';
 import { SSH_KEYS } from '@/lib/supabase/middleware';
+import { resolveProfileDisplayNameForShell } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
 
@@ -44,6 +46,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const hRole = h.get(SSH_KEYS.role);
 
   let profile: ProfileLite | null = null;
+  let authMetadataFullName: string | undefined;
 
   if (hId && hEmail && hRole) {
     /* Fast path: datos verificados por el middleware. */
@@ -54,7 +57,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       id: hId,
       email: hEmail,
       role: hRole as 'admin',
-      display_name: h.get(SSH_KEYS.name),
+      display_name: unpackDisplayNameFromRequestHeader(h.get(SSH_KEYS.name)),
       avatar_url: h.get(SSH_KEYS.avatar),
     };
   } else {
@@ -68,6 +71,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       redirect('/login?reason=no_session');
     }
 
+    const metaFn = user.user_metadata?.full_name;
+    authMetadataFullName = typeof metaFn === 'string' ? metaFn : undefined;
+
     const { data: fetched } = await supabase
       .from('profiles')
       .select('id, role, display_name, avatar_url, email')
@@ -80,6 +86,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     profile = fetched;
   }
 
+  const shellDisplayName = resolveProfileDisplayNameForShell(
+    profile.display_name,
+    authMetadataFullName,
+    profile.email
+  );
+
+  const supabase = createServerClient();
+  const { data: unreadRows } = await supabase
+    .from('conversaciones')
+    .select('unread_admin')
+    .gt('unread_admin', 0);
+  const mensajesUnread =
+    (unreadRows as { unread_admin: number }[] | null)?.reduce(
+      (acc, row) => acc + (row.unread_admin ?? 0),
+      0
+    ) ?? 0;
+
   return (
     <>
       <PortalShell
@@ -87,10 +110,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         brandTitle="Almudena Marchesi"
         brandSubtitle="Panel de gestión"
         navItems={ADMIN_NAV}
+        mensajesUnread={mensajesUnread}
         user={{
           id: profile.id,
           email: profile.email,
-          displayName: profile.display_name ?? profile.email.split('@')[0],
+          displayName: shellDisplayName,
           avatarUrl: profile.avatar_url,
           role: 'admin',
         }}

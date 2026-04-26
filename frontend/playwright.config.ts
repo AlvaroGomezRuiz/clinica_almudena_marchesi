@@ -49,7 +49,7 @@ export default defineConfig({
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },
-      testMatch: /a11y\.spec\.ts|smoke\.spec\.ts/,
+      testMatch: /a11y\.spec\.ts|smoke\.spec\.ts|cierre-duro\.spec\.ts/,
     },
     // Firefox/WebKit opt-in con PLAYWRIGHT_BROWSERS=all
     ...(process.env.PLAYWRIGHT_BROWSERS === 'all'

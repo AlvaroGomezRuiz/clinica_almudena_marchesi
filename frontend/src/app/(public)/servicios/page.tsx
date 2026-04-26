@@ -5,21 +5,41 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
 import {
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS,
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS,
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS,
+  CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS,
+  CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS,
+  CLINIC_PRICE_INDIVIDUAL_CENTIMOS,
+  CLINIC_PRICE_PAREJA_CENTIMOS,
   CLINIC_SESSION_DURATION_MIN,
-  CLINIC_SESSION_PRICE_LABEL,
+  CLINIC_TARIFAS_SESION_RESUMEN,
+  formatClinicBonoAhorroVsSueltoIndividual,
+  formatClinicBonoAhorroVsSueltoPareja,
+  formatClinicPrecioEUR,
 } from '@/lib/clinic';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
+
+const serviciosBreadcrumbLd = buildBreadcrumbListJsonLd([
+  { name: 'Inicio', path: '/' },
+  { name: 'Servicios', path: '/servicios' },
+]);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/servicios',
   title: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
   description:
-    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro tipo Meet acordado con la paciente). Tarifas y bonos en consulta Moncloa / Chamberí · Madrid.',
+    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas y bonos: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
   keywords: [
+    ...clinicPrimaryKeywordsList(),
     'terapia individual Madrid',
     'terapia de pareja Madrid',
-    'psicología online',
+    'psicología online Madrid',
     'tarifas psicólogo Madrid',
+    'bono sesiones psicología',
+    'terapia ansiedad Madrid',
   ],
 });
 
@@ -28,8 +48,8 @@ const SERVICES = [
     tag: 'Adultos',
     title: 'Terapia Individual',
     body: 'Un espacio seguro para profundizar en el autoconocimiento, gestionar la ansiedad, el duelo o las dificultades relacionales desde un enfoque clínico integrador.',
-    price: CLINIC_SESSION_PRICE_LABEL,
-    duration: `${CLINIC_SESSION_DURATION_MIN}min`,
+    price: formatClinicPrecioEUR(CLINIC_PRICE_INDIVIDUAL_CENTIMOS),
+    duration: `${CLINIC_SESSION_DURATION_MIN} min`,
     href: '/registro-paciente?plan=individual',
     cta: 'Reservar Cita',
     featured: true,
@@ -38,8 +58,8 @@ const SERVICES = [
     tag: 'Relaciones',
     title: 'Terapia de Pareja',
     body: 'Restaurar la comunicación y el vínculo, navegando los conflictos desde la empatía y la responsabilidad compartida.',
-    price: '90€',
-    duration: '90min',
+    price: formatClinicPrecioEUR(CLINIC_PRICE_PAREJA_CENTIMOS),
+    duration: '75 min',
     href: '/registro-paciente?plan=pareja',
     cta: 'Consultar disponibilidad',
     featured: false,
@@ -48,8 +68,8 @@ const SERVICES = [
     tag: 'Infancia',
     title: 'Infanto-Juvenil',
     body: 'Acompañamiento en el desarrollo emocional de niños y adolescentes. Orientación a padres y trabajo terapéutico mediante el juego y la expresión creativa. La tarifa por sesión es la misma que en terapia individual.',
-    price: CLINIC_SESSION_PRICE_LABEL,
-    duration: `${CLINIC_SESSION_DURATION_MIN}min`,
+    price: formatClinicPrecioEUR(CLINIC_PRICE_INDIVIDUAL_CENTIMOS),
+    duration: `${CLINIC_SESSION_DURATION_MIN} min`,
     href: '/registro-paciente?plan=individual',
     cta: 'Reservar Cita',
     featured: false,
@@ -57,7 +77,7 @@ const SERVICES = [
   {
     tag: 'Online',
     title: 'Terapia Online',
-    body: 'Sesión en vídeo con la misma calidad clínica. El enlace (p. ej. Google Meet privado por sesión) lo coordina Almudena por mensaje seguro del portal: no compartes sala con otros pacientes. La tarifa y la logística se acuerdan en cada caso — consulta con la consulta antes de reservar.',
+    body: 'Sesión en vídeo con la misma calidad clínica. El enlace (p. ej. Google Meet privado por sesión) lo coordina Almudena por mensaje seguro del portal: no compartes sala con otros pacientes. La tarifa habitual se alinea con la sesión individual en consulta; el desglose exacto lo confirmas al reservar en el portal.',
     price: 'Consultar',
     duration: 'Videollamada acordada',
     href: '/contacto',
@@ -68,25 +88,46 @@ const SERVICES = [
 
 const BONOS = [
   {
-    name: 'Bono 5 Sesiones',
+    name: 'Bono 5 sesiones · Individual' as const,
     label: 'Continuidad',
-    price: '275€',
-    savings: 'Ahorra 25€',
-    validity: 'Válido durante 4 meses',
-    href: '/registro-paciente?plan=bono5',
+    price: formatClinicPrecioEUR(CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS),
+    savings: formatClinicBonoAhorroVsSueltoIndividual(5),
+    validity: 'Validez según portal al comprar',
+    href: '/registro-paciente?plan=individual',
   },
   {
-    name: 'Bono 10 Sesiones',
+    name: 'Bono 10 sesiones · Individual' as const,
     label: 'Transformación',
-    price: '530€',
-    savings: 'Ahorra 70€',
-    validity: 'Válido durante 8 meses',
-    href: '/registro-paciente?plan=bono10',
+    price: formatClinicPrecioEUR(CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS),
+    savings: formatClinicBonoAhorroVsSueltoIndividual(10),
+    validity: 'Validez según portal al comprar',
+    href: '/registro-paciente?plan=individual',
+  },
+  {
+    name: 'Bono 3 sesiones · Pareja' as const,
+    label: 'Acompañamiento',
+    price: formatClinicPrecioEUR(CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS),
+    savings: formatClinicBonoAhorroVsSueltoPareja(3),
+    validity: 'Validez según portal al comprar',
+    href: '/registro-paciente?plan=pareja',
+  },
+  {
+    name: 'Bono 5 sesiones · Pareja' as const,
+    label: 'Proceso',
+    price: formatClinicPrecioEUR(CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS),
+    savings: formatClinicBonoAhorroVsSueltoPareja(5),
+    validity: 'Validez según portal al comprar',
+    href: '/registro-paciente?plan=pareja',
   },
 ] as const;
 
 export default function ServiciosPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviciosBreadcrumbLd) }}
+      />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
@@ -106,6 +147,15 @@ export default function ServiciosPage() {
               Cada proceso es único. Ofrezco diferentes modalidades de terapia
               adaptadas a tus necesidades actuales, con el rigor clínico y la
               calidez que tu bienestar requiere.
+            </p>
+          </ScrollReveal>
+          <ScrollReveal delay={0.24}>
+            <p className="mt-8 max-w-2xl rounded-2xl border border-line bg-canvas-sage/40 px-5 py-4 font-body text-[0.95rem] leading-relaxed text-ink-soft text-pretty dark:bg-canvas-alt/60">
+              <span className="font-medium text-ink dark:text-white">Reservas y bonos:</span> tras el registro como
+              paciente, citas y pagos se gestionan en el portal con la misma política de cancelación (más de 48 h antes
+              del inicio cuando aplique). Tarifas orientativas de sesión:{' '}
+              <span className="whitespace-nowrap font-medium text-ink dark:text-white">{CLINIC_TARIFAS_SESION_RESUMEN}</span>
+              .
             </p>
           </ScrollReveal>
         </div>
@@ -183,39 +233,52 @@ export default function ServiciosPage() {
             </p>
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {BONOS.map((bono, i) => (
-              <ScrollReveal key={bono.name} delay={i * 0.1}>
+              <ScrollReveal key={bono.name} delay={i * 0.06}>
                 <PremiumCard tilt={false} className="h-full">
                   <div className="flex flex-col items-center text-center p-8 md:p-10 h-full">
                     <span className="font-mono text-label-sm uppercase tracking-widest text-sage-mid mb-3">
                       {bono.label}
                     </span>
-                    <h3 className="font-display text-display-3 text-ink mb-4">
+                    <h3 className="font-display text-display-3 text-ink mb-4 text-balance">
                       {bono.name}
                     </h3>
-                    <div className="mb-4">
+                    <div className="mb-4 w-full min-w-0">
                       <span className="font-display text-5xl text-ink font-light">
                         {bono.price}
                       </span>
-                      <p className="text-sage font-body font-medium text-sm mt-1">
+                      <p className="text-sage font-body font-medium text-sm mt-1.5 text-balance max-w-sm mx-auto leading-snug">
                         {bono.savings}
                       </p>
                     </div>
-                    <p className="text-ink-muted text-sm mb-6 font-body">
-                      {bono.validity}. Aplicable a Terapia Individual y Online.
+                    <p className="text-ink-muted text-sm mb-6 font-body text-balance max-w-sm">
+                      {bono.name.includes('Pareja') ? (
+                        <>Terapia de pareja. {bono.validity}.</>
+                      ) : (
+                        <>Terapia individual u online. {bono.validity}.</>
+                      )}
                     </p>
                     <Link
                       href={bono.href}
                       className="btn-primary w-full text-center mt-auto"
                     >
-                      Adquirir {bono.name.split(' ').pop()}
+                      Elegir este bono
                     </Link>
                   </div>
                 </PremiumCard>
               </ScrollReveal>
             ))}
           </div>
+          <ScrollReveal delay={0.22}>
+            <p className="text-center text-ink-muted text-sm max-w-2xl mx-auto mt-10 font-body text-pretty">
+              También disponible: bono de 3 sesiones individual por{' '}
+              <span className="whitespace-nowrap text-ink dark:text-white/90">
+                {formatClinicPrecioEUR(CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS)}
+              </span>{' '}
+              (catálogo al completo en el portal con precios y validez actualizados).
+            </p>
+          </ScrollReveal>
         </div>
 
         <div
@@ -253,6 +316,7 @@ export default function ServiciosPage() {
 
       <CTASection />
     </div>
+    </>
   );
 }
 

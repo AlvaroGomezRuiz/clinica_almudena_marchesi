@@ -8,7 +8,7 @@
  *   - citaId:       id de la cita a cancelar
  *   - inicioISO:    ISO timestamp para calcular ventana 48h (política paciente)
  *   - compact:      si true, usa variant="ghost" size="sm" (para listados)
- *   - isAdmin:      muestra toggle "forzar refund" y oculta advertencia 24h
+ *   - isAdmin:      muestra toggle "forzar refund" y oculta advertencia de ventana 48h
  *   - onCancelled:  callback opcional tras éxito (para optimistic refresh)
  */
 

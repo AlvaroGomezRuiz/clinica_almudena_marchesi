@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { clinicPrimaryKeywordsText } from '@/lib/seo/primary-keywords';
 
 export const dynamic = 'force-static';
 
@@ -19,7 +20,9 @@ export async function GET(): Promise<NextResponse> {
   return text(
     [
       '# llms.txt — Superficie de descubrimiento para motores generativos',
-      '# Sitio: Almudena Marchesi (Psicología Clínica) · Madrid (Moncloa / Chamberí)',
+      '# Sitio: Clínica Almudena Marchesi · psicología clínica (Moncloa, Chamberí, Madrid)',
+      '# Términos de descubrimiento (no clínico, solo orientación pública):',
+      `#   ${clinicPrimaryKeywordsText()}`,
       '',
       '## Canonical',
       `${base}/`,

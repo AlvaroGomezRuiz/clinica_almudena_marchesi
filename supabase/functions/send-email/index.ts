@@ -18,11 +18,13 @@ import {
   readInvoiceEmisor,
   renderInvoicePdfBytes,
 } from "../_shared/invoice-pdf-render.ts";
+import { resendEmailTags } from "../_shared/resend-tags.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import {
   renderWelcome,
   renderBookingConfirmed,
   renderReminder24h,
+  renderReminder48h,
   renderBookingCancelled,
   renderNuevaAsignacion,
   renderBonoComprado,
@@ -32,6 +34,7 @@ type EmailType =
   | "welcome"
   | "booking_confirmed"
   | "reminder_24h"
+  | "reminder_48h"
   | "booking_cancelled"
   | "nueva_asignacion"
   | "bono_comprado";
@@ -57,6 +60,7 @@ interface PrefsRow {
   booking_confirmed: boolean;
   booking_cancelled: boolean;
   reminder_24h: boolean;
+  reminder_48h: boolean;
   nueva_asignacion: boolean;
 }
 
@@ -122,6 +126,7 @@ function prefsOptInForType(
   if (type === "booking_confirmed") return prefs.booking_confirmed;
   if (type === "booking_cancelled") return prefs.booking_cancelled;
   if (type === "reminder_24h") return prefs.reminder_24h;
+  if (type === "reminder_48h") return prefs.reminder_48h;
   if (type === "nueva_asignacion") return prefs.nueva_asignacion;
   return true;
 }
@@ -140,6 +145,13 @@ function renderFor(type: EmailType, data: Record<string, unknown>, profile: Prof
       });
     case "reminder_24h":
       return renderReminder24h({
+        ...base,
+        servicio:      String(data.servicio ?? ""),
+        inicio:        String(data.inicio ?? ""),
+        duracion_min:  Number(data.duracion_min ?? 60),
+      });
+    case "reminder_48h":
+      return renderReminder48h({
         ...base,
         servicio:      String(data.servicio ?? ""),
         inicio:        String(data.inicio ?? ""),
@@ -223,7 +235,7 @@ Deno.serve(async (req) => {
   if (toUserId) {
     const { data: prefs } = await admin
       .from("notificaciones_prefs")
-      .select("welcome, booking_confirmed, booking_cancelled, reminder_24h, nueva_asignacion")
+      .select("welcome, booking_confirmed, booking_cancelled, reminder_24h, reminder_48h, nueva_asignacion")
       .eq("user_id", toUserId)
       .maybeSingle<PrefsRow>();
 
@@ -268,8 +280,13 @@ Deno.serve(async (req) => {
     return json({ error: "log_insert_failed", detail: insertErr.message }, 500, corsHeaders);
   }
 
+  const logId = logRow?.id;
+  if (logId == null) {
+    return json({ error: "log_insert_no_id" }, 500, corsHeaders);
+  }
+
   const rendered = renderFor(payload.type, payload.data ?? {}, profile);
-  if (!rendered) return json({ error: "unknown_type" }, 400, corsHeaders);
+  if (rendered == null) return json({ error: "unknown_type" }, 400, corsHeaders);
 
   let attachments: Array<{ filename: string; content: string }> | undefined;
   if (payload.type === "bono_comprado" && payload.pago_id) {
@@ -285,7 +302,7 @@ Deno.serve(async (req) => {
     html:      rendered.html,
     text:      rendered.text,
     reply_to:  REPLY_TO,
-    tags:      [{ name: "type", value: payload.type }],
+    tags:      resendEmailTags(payload.type),
     attachments,
   });
 
@@ -298,7 +315,7 @@ Deno.serve(async (req) => {
       attempts:      result.attempts,
       sent_at:       result.ok ? new Date().toISOString() : null,
     })
-    .eq("id", logRow!.id);
+    .eq("id", logId);
 
   return json(
     {

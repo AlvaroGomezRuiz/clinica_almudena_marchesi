@@ -5,7 +5,13 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+
+const sobreMiBreadcrumbLd = buildBreadcrumbListJsonLd([
+  { name: 'Inicio', path: '/' },
+  { name: 'Sobre mí', path: '/sobre-mi' },
+]);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/sobre-mi',
@@ -16,6 +22,9 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'psicóloga colegiada Madrid',
     'Almudena Marchesi psicóloga',
     'consulta psicología Moncloa',
+    'psicóloga sanitaria Madrid',
+    'Meléndez Valdés psicóloga',
+    'M-38427 psicóloga',
   ],
 });
 
@@ -51,6 +60,11 @@ const CREDENTIALS = [
 
 export default function SobreMiPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sobreMiBreadcrumbLd) }}
+      />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-20 md:pt-40 md:pb-32 px-6 md:px-12">
@@ -219,6 +233,7 @@ export default function SobreMiPage() {
 
       <CTASection />
     </div>
+    </>
   );
 }
 

@@ -5,7 +5,13 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+
+const enfoqueBreadcrumbLd = buildBreadcrumbListJsonLd([
+  { name: 'Inicio', path: '/' },
+  { name: 'Enfoque', path: '/enfoque' },
+]);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/enfoque',
@@ -16,6 +22,9 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'enfoque psicoterapéutico',
     'psicología basada en evidencia',
     'terapia Moncloa',
+    'psicóloga Chamberí',
+    'marco no juzgante terapia',
+    'psicología clínica Madrid centro',
   ],
 });
 
@@ -39,6 +48,11 @@ const METHODOLOGY_CARDS = [
 
 export default function EnfoquePage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(enfoqueBreadcrumbLd) }}
+      />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-20 md:pt-40 md:pb-28 px-6 md:px-12">
@@ -154,6 +168,7 @@ export default function EnfoquePage() {
 
       <CTASection />
     </div>
+    </>
   );
 }
 

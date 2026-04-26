@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 
 import { Button, SurfaceCard } from '@/components/portal-shell/ui';
+import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
 import { altaManualPacienteAction } from '@/services/admin/pacientes-actions';
 
 interface FormState {
@@ -151,7 +152,7 @@ export default function AltaManualForm(): JSX.Element {
             value={form.telefono}
             onChange={(v) => update('telefono', v)}
             maxLength={40}
-            placeholder="+34 600 000 000"
+            placeholder={`Ej. ${CLINIC_PUBLIC_PHONE_DISPLAY}`}
           />
           <Field
             label="Email"

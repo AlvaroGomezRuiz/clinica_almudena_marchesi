@@ -24,13 +24,23 @@ export default function PortalShell({
   brandTitle,
   brandSubtitle,
   navItems,
+  mensajesUnread = 0,
   footerSlot,
   children,
 }: ShellProps) {
-  const mobileNavItems = navItems.map((n) => ({
+  const unread = mensajesUnread > 0 ? mensajesUnread : undefined;
+  const navItemsWithBadge = navItems.map((n) =>
+    n.href.includes('/mensajes') && unread
+      ? { ...n, badge: unread }
+      : n
+  );
+
+  const mobileNavItems = navItemsWithBadge.map((n) => ({
     label: n.label,
     href: n.href,
     icon: n.icon,
+    badge: n.badge,
+    exact: n.exact,
   }));
 
   return (
@@ -84,7 +94,7 @@ export default function PortalShell({
             </span>
           </Link>
 
-          <SidebarNav items={navItems} />
+          <SidebarNav items={navItemsWithBadge} />
 
           {footerSlot ? <div className="mt-6 px-1">{footerSlot}</div> : null}
 
@@ -120,6 +130,7 @@ export default function PortalShell({
               brandTitle={brandTitle}
               brandSubtitle={brandSubtitle}
               navItems={mobileNavItems}
+              mensajesUnread={mensajesUnread}
               panelClassName=""
               buttonClassName=""
             />
@@ -179,7 +190,7 @@ export default function PortalShell({
       {/* ──────────── MAIN ──────────── */}
       <main
         id="main"
-        className="relative z-10 ml-0 md:ml-[280px] pt-[88px] pb-16 px-4 sm:px-6 md:px-10 min-h-screen"
+        className="relative z-10 ml-0 min-h-screen px-4 pb-[max(4rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] sm:px-6 md:ml-[280px] md:px-10"
       >
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>

@@ -8,10 +8,13 @@
  *           cita_id, bono_id, stripe_payment_intent, stripe_session_id
  *
  * El contenido se escapa con comillas dobles según RFC 4180.
+ *
+ * Límite: 20 exportaciones / minuto / admin (`facturacion_csv:<user_id>`).
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { enforceRateLimit, rateLimitJsonResponse } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -67,6 +70,15 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   if (profile?.role !== 'admin') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  const rate = await enforceRateLimit({
+    key: `facturacion_csv:${user.id}`,
+    max: 20,
+    windowMs: 60_000,
+  });
+  if (!rate.ok) {
+    return rateLimitJsonResponse(rate);
   }
 
   const sp = req.nextUrl.searchParams;

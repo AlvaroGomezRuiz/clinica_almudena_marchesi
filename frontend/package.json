@@ -11,6 +11,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:smoke": "playwright test smoke.spec.ts",
+    "test:e2e:cierre": "playwright test cierre-duro.spec.ts",
     "test:e2e:a11y": "playwright test a11y.spec.ts",
     "test:e2e:install": "playwright install --with-deps chromium",
     "fonts:vendor": "node scripts/vendor-fonts.mjs",

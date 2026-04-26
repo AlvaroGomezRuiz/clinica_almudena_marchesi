@@ -1,278 +1,104 @@
-# Auditoria del Frontend
+# Auditoría del frontend (Next.js 14)
 
-> **Alcance**: Next.js 14 App Router en `frontend/`.
-> **Fecha**: 2026-04-21.
+> **Fecha:** 2026-04-26 · **Raíz de build:** `frontend/` (Vercel root directory = `frontend`).  
+> **Versiones (package):** `next@^14.2.35`, `react@18`, `@supabase/ssr@^0.10.2`, `@sentry/nextjs@^8`, Playwright, `@upstash/ratelimit`, Tailwind, Radix, `next-themes`.  
+> **Líneas de código (orden de magnitud):** conteo recursivo `*.ts`/`*.tsx` bajo `frontend/src` ≈ **28k líneas** (herramienta PowerShell; rutas con `[id]` pueden requerir escapar en conteos básicos).
 
 ---
 
 ## 1. Resumen ejecutivo
 
-Frontend Next.js 14 con App Router, RSC por defecto, Tailwind CSS y una paleta editorial "Moncloa sage" que distingue la clinica del tipical template AI. Se despliega en Vercel con CI/CD automatico.
+| Dimensión | Dato aproximado (repo) | Comentario |
+|-----------|------------------------|------------|
+| Páginas / rutas `app/**/page.tsx` | 64 ficheros (incl. duplicados de casing en el FS) | Algunas rutas dinámicas `admin/.../ver/[id]`, `portal/.../ver/[id]`, `print` |
+| Server actions / servicios | 20 módulos bajo `src/services/` | Dominio: `admin`, `auth`, `citas`, `mensajes`, `pagos`, `portal`, `notificaciones`, `recursos` |
+| API routes (Route Handlers) | Bajo `src/app/api/.../route.ts` | Facturación export, factura PDF, avatares, recursos, adjuntos chat, signout |
+| Componentes | >100 bajo `components/` | Incluye `ui/`, `admin/`, `portal/`, `chat/`, `landing/`, `layout/` |
+| Pruebas E2E | `frontend/e2e/*.spec.ts` | Scripts: `test:e2e`, `test:e2e:smoke`, `test:e2e:cierre`, `test:e2e:a11y` |
 
-| Metrica                               | Valor     |
-|---------------------------------------|-----------|
-| Rutas publicas                        | 9         |
-| Rutas admin                           | 6         |
-| Rutas portal paciente                 | 5         |
-| API routes                            | 4         |
-| Server Actions (por dominio)          | ~25       |
-| Componentes totales                   | ~110      |
-| Bundle page peso medio                | < 200 KB  |
-
-**Veredicto**: frontend solido, coherente con la arquitectura backend, seguro y listo para produccion. Deuda menor en tests E2E.
+**Veredicto:** estructura **App Router** coherente, **RSC por defecto**, islas cliente para agenda extensa, chat, pagos y formularios complejos. Hardening de **CSP y cabeceras** en `next.config.js`; **middleware** para refresh de sesión Supabase y **RBAC** por prefijo de ruta.
 
 ---
 
-## 2. Arquitectura de rutas
+## 2. Árbol lógico de `src/app/`
 
-```
-frontend/src/app/
-├─ (public)/                       # grupo publico (layout landing)
-│  ├─ page.tsx                     # home /
-│  ├─ enfoque/
-│  ├─ servicios/
-│  ├─ sobre-mi/
-│  ├─ contacto/
-│  ├─ aviso-legal/  privacidad/  cookies/
-│  ├─ login/
-│  ├─ registro-paciente/
-│  └─ pagos/                       # (pago previo al portal)
-├─ admin/                          # protegido por middleware
-│  ├─ agenda/
-│  ├─ pacientes/[id]/
-│  ├─ pacientes/alta/
-│  ├─ facturacion/
-│  ├─ mensajes/
-│  ├─ recursos/
-│  └─ configuracion/
-├─ portal/                         # protegido + rol paciente
-│  ├─ citas/      citas/reservar/
-│  ├─ mensajes/
-│  ├─ recursos/
-│  ├─ pagos/      pagos/success/   pagos/cancel/
-│  └─ ajustes/
-├─ api/                            # Route Handlers (no Server Actions)
-│  ├─ admin/config/backup-keys/
-│  ├─ admin/facturacion/nota-administrativa/
-│  ├─ auth/ callback/
-│  ├─ mensajes/ subscribe/
-│  └─ portal/ recursos/[id]/download/
-├─ .well-known/ai.txt              # indexable por crawlers IA
-├─ ai/*.json                       # summary/faq/service (LLM-friendly)
-├─ llms.txt, llms-full.txt         # metadata LLM
-└─ sentry-check/                   # endpoint diagnostico Sentry
-```
+> No se copia el árbol de FS completo: las **ramas** son las que definen el producto.
 
-### 2.1 Principios respetados
+| Segmento | Rutas (patrón) | Rol |
+|----------|----------------|-----|
+| `(public)/` | `page`, `enfoque`, `servicios`, `sobre-mi`, `contacto`, legales, `login`, `registro-paciente`, `pagos` (legacy redirect) | Anónimo o auth mixta |
+| `admin/` | `agenda`, `pacientes`, `pacientes/[id]`, `pacientes/alta`, `print`, `facturacion`, `mensajes`, `recursos`, `configuracion` | `admin` (middleware) |
+| `portal/` | `bienvenida`, `citas`, `citas/reservar`, `pagos`, `mensajes`, `recursos`, `recursos/ver/[id]`, `ajustes` | `paciente` |
+| `auth/` | `callback`, `forgot-password`, `reset` | Flujos Supabase |
+| `api/` | `admin/...`, `portal/...`, `mensajes/attach`, `auth/signout` | Server sin UI, con rate limit |
+| Raíz | `sitemap`, `robots`, `manifest`, `sentry-check`, `llms.txt`, `ai/*` (meta/AI) | SEO, diagnóstico, descubrimiento |
 
-- **Grupos de ruta** `(public)` para aislar layout/footer publico.
-- **Segmento `auth/callback`** para finalizar PKCE de Supabase.
-- **API routes solo para endpoints que necesitan streaming/signed URLs** (descarga firmada de recursos, subscribe SSE de mensajes). El resto usa Server Actions.
-- **Metadata por ruta**: OG images + canonical + noindex en `admin/*` y `portal/*`.
+**Layout:** `app/layout.tsx` (global), `(public)/layout`, `admin/layout`, `portal/layout` — comprobar que metadatos y theming sigan a `buildPublicPageMetadata` y `next-themes` según rama pública.
 
 ---
 
-## 3. Organizacion de componentes
+## 3. `src/services/` (Server Actions y acoplamiento a RPC)
 
-```
-frontend/src/components/
-├─ ui/                    # primitivas (Button, Card, Input, Chip, SurfaceCard)
-├─ layout/                # header, footer, sections
-├─ landing/               # bloques AIDA home
-├─ sections/              # bloques reutilizables (Hero, FAQ, CTA)
-├─ auth/                  # login, register, MFA
-├─ booking/               # SlotPicker + calendar
-├─ chat/                  # mensajeria realtime
-├─ citas/                 # tarjetas cita, lista
-├─ pagos/                 # BonoCompraCard
-├─ payments/              # (sin uso, consolidar en pagos)
-├─ portal/                # layout + ajustes + pagos PaymentElementDrawer
-├─ portal-shell/          # shell sidebar + profile dropdown + theme toggle
-├─ realtime/              # hooks WebSocket
-├─ recursos/              # tarjetas, filtros
-├─ admin/agenda/          # grid semanal, plantillas, bloqueos
-├─ admin/configuracion/   # MFA, logs, cifrado, avatar
-├─ admin/ficha/           # SensitiveField, timeline, export
-├─ admin/mensajes/        # master-detail
-├─ admin/pacientes/       # KPIs, buscador, AltaManualForm
-└─ admin/recursos/        # subir, legal
-```
+| Módulo / dominio | Ficheros | Responsabilidad |
+|------------------|----------|-----------------|
+| `admin/actions.ts` | Varios `*` | Orquestación admin (no listar aquí cada export: ver código) |
+| `admin/ficha-actions.ts` | Ficha, campos cifrados, timeline | Pasa por RPC cifrado |
+| `admin/citas-admin-actions.ts` | Operaciones de cita en admin | Coherente con 0046+ |
+| `citas/actions.ts` | Reserva de paciente | `reservar_cita`, flujo pago |
+| `pagos/actions.ts` | Bonos, intents, resúmenes | Conecta a Edge `stripe-*` y webhooks resultantes vía DB |
+| `mensajes/actions.ts` + `fetch-adjuntos.ts` | Chat y adjuntos | Cifrado + Realtime |
+| `auth/actions.ts` | Registro, login, MFA, reset | Flujos documentados en checklist |
+| `recursos/actions.ts` + `portal/recursos-actions.ts` | CRUD y descargas | Aligned con buckets |
+| `notificaciones/actions.ts` | Prefs y email | Coherente con `notificaciones_prefs` |
+| `admin/pacientes-actions.ts`, `notas-cita-actions.ts`, `agenda-actions.ts`, `cuenta-actions.ts` | Entidades | Ver tipos y RLS |
 
-### Observaciones
-- **Duplicidad `pagos/` vs `payments/`**: `components/payments/` tiene solo 1-2 archivos viejos, consolidar en `components/pagos/`.
-- **Consistencia idiomatica**: todo en espanol (nombres de dominio), OK (rompe la regla "nombres en ingles" pero es justificable para coherencia con BD que tambien esta en espanol por requisito de la clinica).
-- **Componentes primitivos en `ui/`**: bien separados (Card, Button, Chip, SurfaceCard), API consistente (`variant`, `tone`).
+**Regla de estilo del repo:** validar entradas en el borde (Zod o equivalente) antes de `rpc()`.
 
 ---
 
-## 4. Server Actions
+## 4. Componentes de mayor peso (complejidad / superficie de bug)
 
-Organizadas por dominio en `frontend/src/services/`:
-
-```
-services/
-├─ admin/                 # acciones admin (ficha-actions, pacientes-actions)
-├─ auth/                  # login, register, MFA, recuperacion
-├─ citas.ts               # reservar, cancelar
-├─ mensajes/              # enviar, marcar leido, conversaciones
-├─ notificaciones/        # prefs opt-in
-├─ pagos/                 # actions (crear checkout + crear PI)
-├─ payments/              # (consolidar en pagos/)
-├─ portal/                # notas cita paciente
-└─ recursos/              # asignaciones
-```
-
-### 4.1 Patrones correctos
-
-- Cada action devuelve `{success, data?, error?}` tipado (nunca throws al cliente).
-- Uso de `revalidatePath` / `revalidateTag` para refetch server-side.
-- Validacion con Zod al inicio de cada action.
-- `captureClinicalError` en catch con contexto minimo (`{area, entity_id}`).
-- `cookies()` via `@supabase/ssr` → no se comparten sesiones entre requests.
-
-### 4.2 Problemas menores
-
-| Severidad | Item                                                                     | Fix                                                   |
-|-----------|--------------------------------------------------------------------------|-------------------------------------------------------|
-| Baja      | `services/payments/` duplicado con `services/pagos/`                    | Consolidar en `services/pagos/` y borrar el duplicado |
-| Baja      | `services/citas.ts` suelto (no carpeta)                                 | Mover a `services/citas/actions.ts` para consistencia |
-| Media     | Algunos actions devuelven `any` en `error.details`                      | Usar `unknown` + type guard                           |
-| Baja      | Falta rate limiting en `sendMensajeAction`                              | Anadir check de freq con `AbortController`           |
+| Componente | Ruta aprox. | Notas |
+|------------|------------|--------|
+| `AgendaClient.tsx` | `components/admin/agenda/` | Gran cantidad de estado; vista semana/día/mes |
+| `ChatPanel.tsx` | `components/chat/` | Optimistic UI, descifrado vía RPC en eventos, adjuntos, audio |
+| `SlotPicker.tsx` | `components/booking/` | Reglas de modalidad y bono |
+| `PortalShell` + `SidebarNav` | `components/portal-shell/` | Navegación, gate de bienvenida, tema |
+| `AsignarBonoManualButton` / facturación | `admin/facturacion` | Alineado con `0057` y `bono_asignar_manual` |
+| Páginas legales | `app/(public)/*` | `buildPublicPageMetadata`, JSON-LD, versiones legales |
 
 ---
 
-## 5. Supabase clients
+## 5. Seguridad en el edge del front
 
-Ubicados en `frontend/src/lib/supabase/`:
-- `server.ts` — cliente RSC / Server Action con cookies.
-- `browser.ts` — cliente client components con cookies.
-- `middleware.ts` — refresh de sesion.
-- `env.ts` — validacion fail-fast de variables.
-- `types.ts` — tipos generados + RPCs manuales F5.
-
-Uso correcto en todo el codigo: ningun componente instancia `createClient` inline.
-
----
-
-## 6. Stripe Payment Element
-
-Integracion embebida limpia (`components/portal/pagos/PaymentElementDrawer.tsx`):
-- `<Elements>` con `stripe` lazy load (`loadStripe`) + `appearance` adaptativo dark/light.
-- `clientSecret` obtenido lazy al abrir el drawer, no en mount.
-- `confirmPayment` con `return_url: /portal/pagos/success`.
-- Manejo de 3DSecure automatico (Stripe maneja redirect).
-- `SkeletonPay` y `ErrorPay` para estados loading/error.
-- Locale `es`.
-
-Excelente UX: el paciente no sale del contexto de reserva.
+| Mecanismo | Ubicación | Descripción |
+|-----------|-----------|-------------|
+| Rate limit | `lib/security/rate-limit.ts` + API routes | Upstash o memoria / instancia |
+| Validación de adjuntos | `lib/security/file-validation.ts` + `attach` route | Magic bytes, tamaño |
+| Geo (opcional) | `lib/security/geo-gate.ts` | Alineado a `GEO_ENFORCE` |
+| Sanitizado de errores al usuario | `lib/formatUserFacingError.ts` | No filtrar existencia de emails, etc. |
+| Sentry | `lib/sentry.ts` | Scrub PII en `beforeSend` |
 
 ---
 
-## 7. Estilo y Design System
+## 6. Tests y calidad
 
-### 7.1 Tailwind config
+| Tipo | Comando / ubicación |
+|------|----------------------|
+| E2E | `npm --prefix frontend run test:e2e` (ver `playwright.config`) |
+| A11y | `test:e2e:a11y` (axe) |
+| Build | `npm run build` en `frontend` |
 
-- Paleta `canvas`, `ink`, `primary` (sage green), `sand`, `umber`. Tokens semanticos.
-- Tipografia: Noto Serif (headings) + Manrope (body) + Material Symbols (icons).
-- `prefers-reduced-motion` respetado en keyframes (`.portal-rise`, `.pulse-slow`).
-- Sin `.css` extra (todo via `@apply` en `globals.css` para tokens base).
-
-### 7.2 Dark mode
-
-- `next-themes` con system default.
-- Cada componente primitivo (Card, Button, SurfaceCard, Chip) tiene variante dark.
-- Stripe Payment Element recibe `appearance` coherente con el tema activo.
-
-### 7.3 Accesibilidad (WCAG 2.2 AA)
-
-Verificado:
-- `:focus-visible` con outline 3:1 contraste.
-- `aria-label` en iconos decorativos → `aria-hidden="true"`.
-- `aria-live` en toasts de error.
-- Navegacion teclado completa en SlotPicker (Tab, Arrow, Enter).
-- Labels asociados `htmlFor`/`id`.
-- `prefers-reduced-motion` respetado.
-
-Pendiente auditoria externa (axe-core en CI).
+**Lista maestra de casos (manual y automáticos):** `docs/05_operaciones/checklist-produccion.md` **Parte B y C**.
 
 ---
 
-## 8. Performance
+## 7. Documentos de ingeniería relacionados
 
-### 8.1 Medido (Lighthouse mobile, antes de esta auditoria)
+| Documento | Uso |
+|-----------|-----|
+| `docs/03_ingenieria/estructura-frontend-src.md` | Mapa de carpetas |
+| `docs/03_ingenieria/geo-y-seo.md` | Metadatos, JSON-LD, `.GEO/` local |
+| `docs/00_proyecto/linea-base-producto.md` | Alcance de producto |
 
-| Ruta            | FCP    | LCP    | TTI    | CLS   | Score |
-|-----------------|--------|--------|--------|-------|-------|
-| `/` (home)      | 0.9s   | 1.6s   | 2.1s   | 0.03  | 97    |
-| `/servicios`    | 1.0s   | 1.8s   | 2.4s   | 0.04  | 95    |
-| `/portal`       | 1.2s   | 2.0s   | 2.8s   | 0.02  | 92    |
-
-### 8.2 Optimizaciones activas
-
-- `next/image` con AVIF + WebP, cache 1 ano.
-- `next/font` no usado (Google Fonts via `@import` en CSS — **optimizable**: migrar a `next/font`).
-- Code-splitting por rutas.
-- `@vercel/speed-insights` y `@vercel/analytics` activos.
-- `withSentryConfig` con tree-shake cliente y tunnel `/monitoring` para evadir adblockers.
-- Source maps borrados tras upload (seguridad).
-
-### 8.3 Deuda
-
-- **Google Fonts via `@import`**: migrar a `next/font` para `display:swap` nativo y evitar FOIT (mejora CWV).
-- **`critters` deshabilitado** por bug Tailwind: aceptable, no bloqueante.
-- **Imagenes hero estaticas**: considerar `<Image priority>` en LCP candidate.
-
----
-
-## 9. Seguridad frontend
-
-### 9.1 Cabeceras
-
-`next.config.js` define:
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy`: bloqueo camera, mic, geolocation, payment.
-- `Content-Security-Policy` con allowlist Vercel + Sentry.
-
-### 9.2 Cookies
-
-- Supabase Auth cookies `httpOnly` + `Secure` + `SameSite=Lax`.
-- No hay `localStorage` para tokens.
-
-### 9.3 Sentry
-
-- `sentry.client.config.ts` con `beforeSend` que redacta PII (email, DNI, telefono, IBAN).
-- `sendDefaultPii: false`.
-- `tracesSampleRate: 0.2` (no 1.0 — ahorro de cuota).
-- Tunnel `/monitoring` evita bloqueo por adblockers.
-
-### 9.4 Pendiente
-
-- Hash CSP: actualmente `script-src 'unsafe-inline'` (requerido por Next.js legacy). Migrar a nonce en Next 15.
-- `robots.txt` y `sitemap.xml` — verificar presentes en build.
-
----
-
-## 10. Deuda tecnica catalogada
-
-| Severidad | Item                                                     |
-|-----------|----------------------------------------------------------|
-| Media     | Consolidar `services/payments/` → `services/pagos/`       |
-| Media     | Mover `services/citas.ts` a carpeta `services/citas/`     |
-| Media     | Consolidar `components/payments/` → `components/pagos/`   |
-| Baja      | Migrar fonts Google → `next/font`                         |
-| Baja      | Anadir suite Playwright E2E (booking flow completo)       |
-| Baja      | Eliminar `any` residual en Server Action error details   |
-| Baja      | Hash CSP (pendiente Next 15)                              |
-
----
-
-## 11. Acciones recomendadas (pre-produccion)
-
-1. Ejecutar `npm run build` → verificar 0 errores TS/ESLint.
-2. Correr `npx lighthouse` en las 3 rutas criticas (home, servicios, portal) ≥ 90 mobile.
-3. Activar `sentry-check` endpoint como verificacion tras cada deploy.
-4. Ejecutar `axe-core` sobre home, portal, admin — documentar en issue.
-5. Anadir checklist Testing en `docs/05_operaciones/testing-checklist.md` (ya existe, actualizar).
+*Este informe se actualiza cuando cambie de forma estructural el árbol bajo `frontend/src/app` o el patrón RSC/Client.*

@@ -106,6 +106,7 @@ export default async function AdminConfiguracionPage(): Promise<JSX.Element> {
     booking_confirmed: true,
     booking_cancelled: true,
     reminder_24h: true,
+    reminder_48h: true,
     nueva_asignacion: true,
     tema: 'system',
     privacy_mode_default: false,

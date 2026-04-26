@@ -94,8 +94,8 @@ export default function MedicacionCard({
       </div>
 
       {showForm ? (
-        <div className="mb-4 rounded-2xl bg-white/60 p-4 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className="mb-4 rounded-2xl bg-white/60 p-5 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10">
+          <div className="grid gap-4 sm:grid-cols-2">
             <LabeledInput label="Nombre *" value={nombre} onChange={setNombre} placeholder="Ej. Sertralina" />
             <LabeledInput label="Dosis" value={dosis} onChange={setDosis} placeholder="50 mg" />
             <LabeledInput label="Frecuencia" value={frecuencia} onChange={setFrecuencia} placeholder="1/día" />

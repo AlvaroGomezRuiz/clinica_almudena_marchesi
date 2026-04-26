@@ -19,6 +19,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'AEPD',
   ],
   ogType: 'article',
+  includeGeoHints: false,
 });
 
 const webPageJsonLd = buildLegalWebPageJsonLd({

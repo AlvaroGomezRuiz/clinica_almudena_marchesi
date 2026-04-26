@@ -23,6 +23,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 
 import CitaResumenSheet from '@/components/admin/agenda/CitaResumenSheet';
+import {
+  bordeLateralCitaAgenda,
+  chipToneCitaEstadoAgenda,
+  labelCitaEstadoAgenda,
+  puntoCalendarioCitaEstado,
+} from '@/components/admin/agenda/cita-estado-agenda';
 import type { CitaRow } from '@/components/admin/agenda/types';
 import { Button, Chip, SurfaceCard } from '@/components/portal-shell/ui';
 import {
@@ -33,6 +39,38 @@ import {
 } from '@/services/admin/agenda-actions';
 
 export type { CitaRow } from '@/components/admin/agenda/types';
+
+function FichaAgendaLink({
+  pacienteId,
+  compact = false,
+}: {
+  readonly pacienteId: string;
+  readonly compact?: boolean;
+}): JSX.Element {
+  return (
+    <Link
+      href={`/admin/pacientes/${pacienteId}`}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+      className={
+        compact
+          ? 'grid h-6 w-6 place-items-center rounded-md text-ink/80 ring-1 ring-inset ring-ink/10 transition-[background-color,color] hover:bg-primary/12 hover:text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-white/12 dark:hover:bg-primary/20 dark:hover:text-primary-fixed-dim'
+          : 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 transition-[background-color,color] hover:bg-primary/10 hover:text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-white/10 dark:hover:bg-primary/20 dark:hover:text-primary-fixed-dim'
+      }
+      aria-label="Abrir ficha del paciente"
+      title="Ficha"
+    >
+      <span
+        className={`material-symbols-outlined ${compact ? 'text-[0.9rem]' : 'text-[1.05rem]'}`}
+        aria-hidden="true"
+      >
+        contact_page
+      </span>
+    </Link>
+  );
+}
+
 export interface BloqueoRow {
   readonly id: string;
   readonly inicio: string;
@@ -569,25 +607,34 @@ function DayView({
       ) : (
         <ul className="divide-y divide-ink/5 dark:divide-white/5">
           {items.map((it) => (
-            <li key={`${it.kind}-${it.item.id}`} className="flex items-center gap-4 py-3">
+            <li key={`${it.kind}-${it.item.id}`} className="flex items-center gap-2 py-3 sm:gap-3">
               {it.kind === 'cita' ? (
-                <button
-                  type="button"
-                  onClick={() => onSelectCita(it.item)}
-                  className="flex min-w-0 flex-1 items-center gap-4 text-left outline-none ring-primary/40 focus-visible:ring-2"
-                >
-                  <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
-                    {format(new Date(it.item.inicio), 'HH:mm')}
-                  </span>
-                  <span className="h-10 w-px bg-ink/10 dark:bg-white/10" aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-body text-[0.92rem] text-ink dark:text-white">{it.item.servicio_nombre}</p>
-                    <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
-                      Hasta {format(new Date(it.item.fin), 'HH:mm')} · {it.item.estado}
-                    </p>
-                  </div>
-                  <Chip tone="positive">{it.item.estado}</Chip>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onSelectCita(it.item)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none ring-primary/40 focus-visible:ring-2 sm:gap-4"
+                  >
+                    <span className="w-14 shrink-0 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] sm:w-16 dark:text-white">
+                      {format(new Date(it.item.inicio), 'HH:mm')}
+                    </span>
+                    <span className="h-10 w-px shrink-0 bg-ink/10 dark:bg-white/10" aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-body text-[0.92rem] text-ink dark:text-white">
+                        {it.item.servicio_nombre}
+                      </p>
+                      <p className="mt-0.5 line-clamp-1 font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                        {it.item.paciente_display_name?.trim() || 'Paciente'}
+                        <span className="text-ink-muted/80 dark:text-white/40"> · </span>
+                        Hasta {format(new Date(it.item.fin), 'HH:mm')}
+                      </p>
+                    </div>
+                    <Chip tone={chipToneCitaEstadoAgenda(it.item.estado)}>
+                      {labelCitaEstadoAgenda(it.item.estado)}
+                    </Chip>
+                  </button>
+                  {it.item.paciente_id ? <FichaAgendaLink pacienteId={it.item.paciente_id} /> : null}
+                </>
               ) : (
                 <>
                   <span className="w-16 font-display text-[1.1rem] text-ink tabular-nums tracking-[-0.01em] dark:text-white">
@@ -646,16 +693,20 @@ function WeekGrid({
   const inicioSemana = startOfWeek(fechaAncla, { weekStartsOn: 1 });
   const dias = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
 
-  // Rango horario visual: 08:00 - 21:00 (26 slots de 30 min)
+  // Rango horario visual: 08:00–20:00 (24 medias horas). Simétrico al día laboral clínico.
   const hourStart = 8;
-  const hourEnd = 21;
+  const hourEnd = 20;
   const slotMin = 30;
   const totalSlots = ((hourEnd - hourStart) * 60) / slotMin;
+  const pxPorMediaHora = 28; // h-7; debe coincidir con EventoBlock
+  const gridBodyHeightPx = totalSlots * pxPorMediaHora;
 
   return (
     <SurfaceCard className="overflow-hidden">
-      <div className="grid grid-cols-[64px_repeat(7,1fr)] border-b border-ink/8 dark:border-white/8">
-        <div />
+      <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
+        <div className="min-w-0 w-full min-[720px]:min-w-[44rem]">
+      <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] border-b border-ink/8 dark:border-white/8">
+        <div className="min-w-12 shrink-0" aria-hidden="true" />
         {dias.map((d) => {
           const esHoy = isSameDay(d, new Date());
           return (
@@ -663,7 +714,7 @@ function WeekGrid({
               key={d.toISOString()}
               type="button"
               onClick={() => onSelectDay(d)}
-              className={`border-l border-ink/8 py-2 text-left px-2 transition-colors hover:bg-white/40 dark:border-white/8 dark:hover:bg-white/5 ${
+              className={`min-w-0 border-l border-ink/6 py-2 text-left px-1.5 transition-colors hover:bg-white/40 dark:border-white/6 dark:hover:bg-white/5 sm:px-2 ${
                 esHoy ? 'bg-primary/5 dark:bg-primary/10' : ''
               }`}
             >
@@ -682,27 +733,26 @@ function WeekGrid({
         })}
       </div>
 
-      <div className="grid grid-cols-[64px_repeat(7,1fr)] relative">
-        {/* Columna de horas */}
-        <div>
+      <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
+        {/* Columna de horas (alineada con la cabecera) */}
+        <div className="min-w-12 shrink-0">
           {Array.from({ length: hourEnd - hourStart }, (_, i) => (
             <div
               key={`h-${i}`}
-              className="h-14 border-b border-ink/5 px-2 text-right font-body text-[0.62rem] tabular-nums text-ink-muted dark:border-white/5 dark:text-white/40"
+              className="h-14 border-b border-ink/[0.06] px-0.5 text-right font-body text-[0.6rem] tabular-nums text-ink-muted dark:border-white/[0.06] dark:text-white/40 sm:px-1 sm:text-[0.62rem]"
             >
               {String(hourStart + i).padStart(2, '0')}:00
             </div>
           ))}
         </div>
 
-        {/* 7 columnas */}
         {dias.map((dia) => {
           const estado = computeDiaEstado(dia, citas, bloqueos, aplicaciones, plantillas);
           return (
             <div
               key={`col-${dia.toISOString()}`}
-              className="relative border-l border-ink/5 dark:border-white/5"
-              style={{ height: `${(hourEnd - hourStart) * 56}px` }}
+              className="relative min-w-0 overflow-hidden border-l border-ink/[0.06] dark:border-white/[0.06]"
+              style={{ height: `${gridBodyHeightPx}px` }}
             >
               {/* Overlay día bloqueado */}
               {estado.bloqueadoPorPlantilla ? (
@@ -716,11 +766,11 @@ function WeekGrid({
                 </div>
               ) : null}
 
-              {/* Grid de slots horarios (guías visuales) */}
+              {/* Guías: solo línea en cada hora en punto (menos ruido que cada 30 min). */}
               {Array.from({ length: totalSlots }, (_, s) => (
                 <div
                   key={`s-${s}`}
-                  className={`h-7 ${s % 2 === 0 ? 'border-t border-ink/5 dark:border-white/5' : ''}`}
+                  className={`h-7 ${s % 2 === 0 ? 'border-t border-ink/[0.07] dark:border-white/[0.07]' : ''}`}
                 />
               ))}
 
@@ -733,7 +783,9 @@ function WeekGrid({
                   hourStart={hourStart}
                   tone="cita"
                   title={c.servicio_nombre}
-                  subtitle={c.estado}
+                  estadoCita={c.estado}
+                  nombrePaciente={c.paciente_display_name?.trim() || null}
+                  pacienteId={c.paciente_id}
                   onActivate={() => onSelectCita(c)}
                 />
               ))}
@@ -745,34 +797,43 @@ function WeekGrid({
                   hourStart={hourStart}
                   tone="bloqueo"
                   title={b.motivo ?? 'Bloqueo'}
-                  subtitle={b.dia_completo ? 'Día completo' : undefined}
+                  bloqueoExtra={b.dia_completo ? 'Día completo' : null}
                 />
               ))}
             </div>
           );
         })}
       </div>
+        </div>
+      </div>
     </SurfaceCard>
   );
 }
 
-function EventoBlock({
-  inicio,
-  fin,
-  hourStart,
-  tone,
-  title,
-  subtitle,
-  onActivate,
-}: {
-  readonly inicio: Date;
-  readonly fin: Date;
-  readonly hourStart: number;
-  readonly tone: 'cita' | 'bloqueo';
-  readonly title: string;
-  readonly subtitle?: string;
-  readonly onActivate?: () => void;
-}): JSX.Element | null {
+function EventoBlock(
+  props:
+    | {
+        readonly inicio: Date;
+        readonly fin: Date;
+        readonly hourStart: number;
+        readonly tone: 'cita';
+        readonly title: string;
+        readonly estadoCita: string;
+        readonly nombrePaciente: string | null;
+        readonly pacienteId: string;
+        readonly onActivate: () => void;
+      }
+    | {
+        readonly inicio: Date;
+        readonly fin: Date;
+        readonly hourStart: number;
+        readonly tone: 'bloqueo';
+        readonly title: string;
+        readonly bloqueoExtra: string | null;
+        readonly onActivate?: undefined;
+      }
+): JSX.Element | null {
+  const { inicio, fin, hourStart, tone, title } = props;
   const minutosDesdeInicio =
     (inicio.getHours() - hourStart) * 60 + inicio.getMinutes();
   const duracionMin = Math.max(
@@ -781,46 +842,68 @@ function EventoBlock({
   );
   if (minutosDesdeInicio < 0) return null;
 
-  const top = (minutosDesdeInicio / 30) * 28; // cada slot 30m = 28px (h-7)
-  const height = (duracionMin / 30) * 28;
+  const slotPx = 28;
+  const top = (minutosDesdeInicio / 30) * slotPx;
+  const height = (duracionMin / 30) * slotPx;
 
-  const cls =
-    tone === 'cita'
-      ? 'bg-primary/12 ring-1 ring-inset ring-primary/25 text-primary-dim dark:bg-primary/30 dark:ring-primary-fixed/35 dark:text-white'
-      : 'bg-[#c89b5a]/15 ring-1 ring-inset ring-[#c89b5a]/30 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:ring-[#c89b5a]/35 dark:text-[#e9c88a]';
+  const estiloPos = { top: `${top}px`, height: `${height}px`, minHeight: '20px' } as const;
 
-  const inner = (
-    <>
-      <p className="font-body text-[0.68rem] font-semibold leading-tight tabular-nums">
-        {format(inicio, 'HH:mm')}
-      </p>
-      <p className="font-body text-[0.7rem] leading-tight truncate">
-        {title}
-      </p>
-    </>
-  );
+  const capaBloqueo = `bg-[#c89b5a]/15 ring-1 ring-inset ring-[#c89b5a]/30 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:ring-[#c89b5a]/35 dark:text-[#e9c88a]`;
 
-  const style = { top: `${top}px`, height: `${height}px`, minHeight: '20px' } as const;
-  const box = `absolute left-1 right-1 rounded-lg px-1.5 py-1 overflow-hidden text-left ${cls}`;
-
-  if (tone === 'cita' && onActivate) {
+  if (tone === 'bloqueo') {
     return (
-      <button
-        type="button"
-        className={`${box} w-auto cursor-pointer outline-none ring-primary/40 transition hover:brightness-[1.02] focus-visible:ring-2 dark:hover:brightness-110`}
-        style={style}
-        title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}
-        onClick={onActivate}
-        aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}`}
+      <div
+        className={`absolute left-1 right-1 overflow-hidden rounded-lg px-1.5 py-1 text-left ${capaBloqueo}`}
+        style={estiloPos}
+        title={`${title}${
+          props.bloqueoExtra ? ` · ${props.bloqueoExtra}` : ''
+        }`}
       >
-        {inner}
-      </button>
+        <p className="font-body text-[0.68rem] font-semibold leading-tight tabular-nums">
+          {format(inicio, 'HH:mm')}
+        </p>
+        <p className="font-body text-[0.7rem] leading-tight truncate">
+          {title}
+        </p>
+        {props.bloqueoExtra ? (
+          <p className="mt-0.5 font-body text-[0.6rem] leading-tight text-[#6b5025] dark:text-[#c9a76a]">
+            {props.bloqueoExtra}
+          </p>
+        ) : null}
+      </div>
     );
   }
 
+  const { estadoCita, nombrePaciente, pacienteId, onActivate } = props;
+  const bordeCita = `border-l-2 ${bordeLateralCitaAgenda(estadoCita)}`;
+  const capaCita = `bg-primary/12 text-primary-dim ring-1 ring-inset ring-primary/25 dark:bg-primary/30 dark:ring-primary-fixed/35 dark:text-white`;
+  const sublinea =
+    (nombrePaciente ? `${nombrePaciente} · ` : '') + labelCitaEstadoAgenda(estadoCita);
+
   return (
-    <div className={box} style={style} title={`${title}${subtitle ? ` · ${subtitle}` : ''}`}>
-      {inner}
+    <div className="absolute left-1 right-1" style={estiloPos}>
+      <div className="relative h-full w-full min-h-0">
+        <button
+          type="button"
+          onClick={onActivate}
+          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-5 text-left outline-none transition hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:brightness-110 ${bordeCita} ${capaCita}`}
+          title={`${title} · ${sublinea}`}
+          aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}, ${sublinea}`}
+        >
+          <p className="font-body text-[0.65rem] font-semibold leading-tight tabular-nums">
+            {format(inicio, 'HH:mm')}
+          </p>
+          <p className="line-clamp-1 font-body text-[0.68rem] font-medium leading-tight text-ink/90 dark:text-white">
+            {title}
+          </p>
+          <p className="line-clamp-2 min-h-0 font-body text-[0.55rem] leading-tight text-primary-dim/95 dark:text-white/82">
+            {sublinea}
+          </p>
+        </button>
+        <div className="absolute right-0.5 top-0.5 z-10">
+          <FichaAgendaLink compact pacienteId={pacienteId} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -861,7 +944,7 @@ function MonthOverview({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid auto-rows-[minmax(5.5rem,1fr)] grid-cols-7 gap-1">
         {dias.map((dia) => {
           const estado = computeDiaEstado(dia, citas, bloqueos, aplicaciones, plantillas);
           const esHoy = isSameDay(dia, new Date());
@@ -874,7 +957,7 @@ function MonthOverview({
               key={dia.toISOString()}
               type="button"
               onClick={() => onSelectDay(dia)}
-              className={`min-h-[92px] rounded-xl p-2 text-left transition-colors ring-1 ring-inset ${
+              className={`min-h-0 rounded-xl p-2 text-left transition-colors ring-1 ring-inset ${
                 estado.bloqueadoPorPlantilla
                   ? 'bg-[#c89b5a]/12 ring-[#c89b5a]/25 dark:bg-[#c89b5a]/20 dark:ring-[#c89b5a]/30'
                   : esHoy
@@ -896,7 +979,9 @@ function MonthOverview({
                   {estado.citasDia.slice(0, 3).map((c) => (
                     <span
                       key={c.id}
-                      className="inline-block h-1.5 w-1.5 rounded-full bg-primary dark:bg-primary-fixed-dim"
+                      className={`inline-block h-1.5 w-1.5 rounded-full ${puntoCalendarioCitaEstado(
+                        c.estado
+                      )}`}
                       aria-hidden="true"
                     />
                   ))}

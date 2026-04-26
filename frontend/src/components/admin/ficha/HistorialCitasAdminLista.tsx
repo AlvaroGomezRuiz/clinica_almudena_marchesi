@@ -4,13 +4,21 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCallback, useState, type JSX } from 'react';
 
+import {
+  chipToneCitaEstadoAgenda,
+  labelCitaEstadoAgenda,
+} from '@/components/admin/agenda/cita-estado-agenda';
+import { lineaTarifaCitaFicha } from '@/components/admin/ficha/ficha-cita-pago';
 import NotaSesionAdminEditor from '@/components/admin/ficha/NotaSesionAdminEditor';
+import { Chip } from '@/components/portal-shell/ui';
 
 export interface CitaListaItem {
   readonly id: string;
   readonly inicio: string;
   readonly estado: string;
   readonly servicio_nombre: string;
+  readonly precio_centimos: number;
+  readonly duracion_minutos: number;
 }
 
 interface Props {
@@ -51,10 +59,10 @@ export default function HistorialCitasAdminLista({
 
   return (
     <>
-      <ol className="relative space-y-6 pl-8">
+      <ol className="relative space-y-5 pl-6 sm:space-y-6 sm:pl-8">
         <span
           aria-hidden="true"
-          className="absolute left-[3px] top-2 bottom-2 w-px bg-ink/15 dark:bg-white/15"
+          className="absolute left-[2px] top-2 bottom-2 w-px bg-ink/15 sm:left-[3px] dark:bg-white/15"
         />
         {slice.map((c, idx) => {
           const globalIdx = citas.findIndex((x) => x.id === c.id);
@@ -68,29 +76,34 @@ export default function HistorialCitasAdminLista({
             <li key={c.id} className="relative">
               <span
                 aria-hidden="true"
-                className={`absolute -left-[33px] top-3 h-2.5 w-2.5 rounded-full ring-4 ring-canvas dark:ring-[#1a1a1a] ${
+                className={`absolute -left-[25px] top-3 h-2.5 w-2.5 rounded-full ring-4 ring-canvas sm:-left-[33px] dark:ring-[#1a1a1a] ${
                   active ? 'bg-primary' : 'bg-ink/30 dark:bg-white/30'
                 }`}
               />
               <div
-                className={`rounded-3xl p-6 transition ${
+                className={`rounded-2xl p-4 transition sm:rounded-3xl sm:p-6 ${
                   active
                     ? 'bg-white/80 ring-1 ring-inset ring-ink/10 dark:bg-white/[0.05] dark:ring-white/10'
                     : 'bg-white/40 dark:bg-white/[0.025]'
                 }`}
               >
-                <div className="mb-3 flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                  <div className="min-w-0">
+                    <h3 className="font-display text-[1.02rem] italic text-ink sm:text-[1.05rem] dark:text-white">
                       {modalidad}
                     </h3>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 font-body text-[0.7rem] font-bold uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
-                      <span>{format(fecha, "d MMMM yyyy", { locale: es })}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{format(fecha, 'HH:mm', { locale: es })}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{c.estado}</span>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <span className="font-body text-[0.7rem] font-bold uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+                        {format(fecha, "d MMM yyyy", { locale: es })} ·{' '}
+                        {format(fecha, 'HH:mm', { locale: es })} · {c.duracion_minutos} min
+                      </span>
+                      <Chip tone={chipToneCitaEstadoAgenda(c.estado)}>
+                        {labelCitaEstadoAgenda(c.estado)}
+                      </Chip>
                     </div>
+                    <p className="mt-2 font-body text-[0.75rem] leading-relaxed text-ink-muted dark:text-white/60">
+                      {lineaTarifaCitaFicha(c.estado, c.precio_centimos)}
+                    </p>
                   </div>
                   <span
                     className={`font-body text-[0.75rem] font-bold tracking-tight ${

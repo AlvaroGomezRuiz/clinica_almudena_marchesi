@@ -10,9 +10,17 @@ import {
   CLINIC_ADDRESS_LINE1,
   CLINIC_ADDRESS_LINE2,
   CLINIC_CONTACT_EMAIL,
+  CLINIC_PUBLIC_PHONE_DISPLAY,
+  CLINIC_PUBLIC_PHONE_E164,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+
+const contactoBreadcrumbLd = buildBreadcrumbListJsonLd([
+  { name: 'Inicio', path: '/' },
+  { name: 'Contacto', path: '/contacto' },
+]);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/contacto',
@@ -23,6 +31,9 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'consulta Meléndez Valdés',
     'psicología Moncloa',
     'cita psicología Madrid',
+    'dónde psicólogo Chamberí',
+    'consulta psicología 28015',
+    'psicóloga colegiada Madrid',
   ],
 });
 
@@ -33,6 +44,13 @@ const CONTACT_ITEMS = [
     value: CLINIC_ADDRESS,
     href: getClinicGoogleMapsHref(),
     external: true,
+  },
+  {
+    icon: 'call',
+    label: 'Teléfono',
+    value: CLINIC_PUBLIC_PHONE_DISPLAY,
+    href: `tel:${CLINIC_PUBLIC_PHONE_E164}`,
+    external: false,
   },
   {
     icon: 'mail',
@@ -51,6 +69,11 @@ const SCHEDULE = [
 
 export default function ContactoPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactoBreadcrumbLd) }}
+      />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
@@ -221,6 +244,7 @@ export default function ContactoPage() {
       <MoncloaSection />
       <CTASection />
     </div>
+    </>
   );
 }
 

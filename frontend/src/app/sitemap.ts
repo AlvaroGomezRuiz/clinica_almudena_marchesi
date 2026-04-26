@@ -1,14 +1,10 @@
 import type { MetadataRoute } from 'next';
 
+import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { LEGAL_LAST_UPDATED_ISO } from '@/lib/seo/legal-version';
 
 function getBaseUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.SITE_URL ??
-    'https://ampsicologia.es';
-  return raw.replace(/\/+$/, '');
+  return CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -22,25 +18,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/enfoque`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.8,
+      priority: 0.85,
     },
     {
       url: `${baseUrl}/servicios`,
       lastModified: now,
       changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/contacto`,
-      lastModified: now,
-      changeFrequency: 'yearly',
-      priority: 0.6,
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/sobre-mi`,
       lastModified: now,
       changeFrequency: 'yearly',
-      priority: 0.6,
+      priority: 0.75,
+    },
+    {
+      url: `${baseUrl}/contacto`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/registro-paciente`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/cookies`,
@@ -62,4 +64,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 }
-

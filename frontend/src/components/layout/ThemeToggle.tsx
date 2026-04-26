@@ -49,8 +49,8 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
     // Placeholder SSR-safe con las mismas dimensiones que el control real
     const skeleton =
       variant === 'compact'
-        ? 'h-9 w-9 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8'
-        : 'h-9 w-full max-w-[280px] rounded-full bg-white/40 ring-1 ring-inset ring-ink/8';
+        ? 'size-11 rounded-full bg-white/40 ring-1 ring-inset ring-ink/8'
+        : 'h-11 w-full max-w-[280px] rounded-full bg-white/40 ring-1 ring-inset ring-ink/8';
     return <span aria-hidden="true" className={`${skeleton} ${className}`} />;
   }
 
@@ -100,7 +100,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
       onClick={() => setTheme(nextBinary)}
       aria-label={`Cambiar a modo ${labelFor(nextBinary).toLowerCase()} (actual: ${labelFor(effective)})`}
       title={`Tema actual: ${labelFor(effective)} · click para ${labelFor(nextBinary).toLowerCase()}`}
-      className={`group grid h-9 w-9 place-items-center rounded-full bg-white/55 ring-1 ring-inset ring-ink/10 backdrop-blur-md transition-[background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/80 dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10 ${className}`}
+      className={`group grid size-11 min-h-[44px] min-w-[44px] place-items-center rounded-full bg-white/55 ring-1 ring-inset ring-ink/10 backdrop-blur-md transition-[background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:bg-white/80 dark:bg-white/5 dark:ring-white/10 dark:hover:bg-white/10 ${className}`}
     >
       <span
         className="material-symbols-outlined text-[1.1rem] text-ink-soft group-hover:text-primary transition-colors dark:text-white/70 dark:group-hover:text-white"

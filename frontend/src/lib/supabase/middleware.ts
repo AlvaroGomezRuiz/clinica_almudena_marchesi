@@ -15,6 +15,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { isPortalUnlocked } from '@/lib/portal-gate';
+
+import { packDisplayNameForRequestHeader } from './header-display-name';
 import { getSupabaseEnv } from './env';
 import type { Database, Profile } from './types';
 
@@ -38,8 +41,18 @@ const H_USER_EMAIL = 'x-ss-user-email';
 const H_USER_ROLE = 'x-ss-user-role';
 const H_USER_NAME = 'x-ss-user-name';
 const H_USER_AVATAR = 'x-ss-user-avatar';
+const H_PORTAL_PATH = 'x-ss-portal-path';
+const H_PORTAL_UNLOCKED = 'x-ss-portal-unlocked';
 
-const SSH_HEADERS = [H_USER_ID, H_USER_EMAIL, H_USER_ROLE, H_USER_NAME, H_USER_AVATAR];
+const SSH_HEADERS = [
+  H_USER_ID,
+  H_USER_EMAIL,
+  H_USER_ROLE,
+  H_USER_NAME,
+  H_USER_AVATAR,
+  H_PORTAL_PATH,
+  H_PORTAL_UNLOCKED,
+];
 
 /**
  * Endurece las opciones de cookie impuestas por Supabase-SSR.
@@ -62,7 +75,8 @@ function hardenCookieOptions(options: CookieOptions): CookieOptions {
 }
 
 export async function updateSupabaseSession(
-  request: NextRequest
+  request: NextRequest,
+  pathname?: string
 ): Promise<SupabaseSessionResult> {
   /* Headers mutables del request. Purgamos los x-ss-* que pudiera haber
      enviado un atacante para evitar spoofing de identidad server-side. */
@@ -120,8 +134,20 @@ export async function updateSupabaseSession(
     requestHeaders.set(H_USER_ID, user.id);
     requestHeaders.set(H_USER_EMAIL, user.email);
     requestHeaders.set(H_USER_ROLE, profile.role);
-    if (profile.display_name) requestHeaders.set(H_USER_NAME, profile.display_name);
+    if (profile.display_name)
+      requestHeaders.set(H_USER_NAME, packDisplayNameForRequestHeader(profile.display_name));
     if (profile.avatar_url) requestHeaders.set(H_USER_AVATAR, profile.avatar_url);
+
+    if (
+      pathname &&
+      pathname.startsWith('/portal') &&
+      profile.role === 'paciente' &&
+      !needsMfa
+    ) {
+      const unlocked = await isPortalUnlocked(supabase, user.id);
+      requestHeaders.set(H_PORTAL_PATH, pathname);
+      requestHeaders.set(H_PORTAL_UNLOCKED, unlocked ? '1' : '0');
+    }
 
     const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
     /* Preservamos cookies que Supabase setteó durante el refresh. */

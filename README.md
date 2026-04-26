@@ -12,7 +12,7 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 >
 > **Política cancelación paciente:** migración `0046_cancelar_cita_48h_sin_reembolso_paciente.sql` — el paciente solo cancela si la cita es **>48h**; sin reembolso Stripe automático al paciente (gestión manual / política clínica). Admin mantiene flujo con refund cuando aplica.
 >
-> **Auditoría económica (reposición):** `docs/02_informes/valor-reposicion-software.md` (revisión 2: cifras ancladas a LOC del repo y tarifas PYME; banda **~12k–20k €** típica de rehacer el alcance, techo ~24k €).
+> **Auditoría económica (reposición):** `docs/02_informes/valor-reposicion-software.md` (banda **~12k–20k €** típica de rehacer el alcance, techo razonable en torno a **~30k €** según tramo y tarifa; ver sección 3 del informe).
 >
 > **Toolkit GEO local:** carpeta **`.GEO/`** (PowerShell + Python venv aislado) — `.\.GEO\run-geo-audit.ps1` genera informes HTML/JSON en `.GEO/reports/`. Ver `.GEO/README.md`.
 
@@ -53,8 +53,8 @@ almudena/
 │  ├─ functions/                # Edge Functions (Deno) — send-email, stripe-*, health, rgpd, invoice-pdf, cancel-cita…
 │  ├─ scripts/                  # bundle_for_deploy.mjs + smoke_test.mjs
 │  └─ BOOTSTRAP.md              # Setup paso a paso
-├─ docs/                        # Documentacion completa (ver seccion 12)
-├─ .GEO/                        # Auditoria GEO local (Python venv + run-geo-audit.ps1)
+├─ docs/                        # Toda la documentación .md del producto (ver §12)
+├─ .GEO/                        # (Opcional en el clon) Auditoría GEO local — ver docs/00_proyecto/cronologia.md Hito 16
 ├─ .gitignore
 └─ README.md                    # este archivo
 ```
@@ -157,10 +157,13 @@ npm run dev
 ### Capa 5 — Defensas aplicativas (ronda senior · abril 2026)
 
 - **CSP unificada** — única fuente de verdad en `frontend/next.config.js` (`async headers()`). Eliminada la duplicación previa en middleware que generaba CSP divergente entre rutas estáticas y dinámicas. Directivas estrictas: `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`, `worker-src 'self' blob:`, `upgrade-insecure-requests`. Añadidos: `Cross-Origin-Resource-Policy: same-origin`, `Origin-Agent-Cluster: ?1`.
-- **Rate limiter** en memoria (`src/lib/security/rate-limit.ts`) por `(acción, user_id)` con ventana deslizante. Aplicado a:
-  - `POST /api/mensajes/attach` → 20 uploads/min por usuario.
-  - `POST /api/admin/avatar/upload` → 10/h.
-  - `POST /api/admin/recursos/upload` → 30/h (admin).
+- **Rate limiting** (`src/lib/security/rate-limit.ts`): ventana deslizante; con `UPSTASH_REDIS_*` el contador es **global** entre instancias; sin Redis, reserva en memoria por instancia. Puntos de uso (entre otros):
+  - `POST /api/mensajes/attach` — 20/min por usuario.
+  - `POST /api/admin/avatar/upload` — 10/h.
+  - `POST /api/admin/recursos/upload` — 30/h (admin).
+  - `GET /api/admin/facturacion/export` — exportaciones CSV por admin.
+  - `GET /api/admin/recursos/file/[id]`, `GET /api/portal/recursos/download/[id]` — descargas.
+  - `GET /api/portal/factura/[pagoId]/pdf` — generación de PDF.
 - **Magic-bytes validation** (`src/lib/security/file-validation.ts`) — valida la firma binaria real del archivo contra el MIME declarado. Protege contra MIME spoofing (ejecutables renombrados a `.png`). Formatos aceptados: PNG, JPEG, WEBP, HEIC/HEIF, AVIF, PDF, GIF.
 - **CSV injection (OWASP)** — `csvEscape()` en el export de facturación prefija con `'` cualquier valor que empiece por `=`, `+`, `-`, `@`, tab o CR. Previene ejecución de fórmulas al abrir el CSV en Excel.
 - **Supabase client singleton** (`src/lib/supabase/client.ts`) — una única instancia WebSocket Realtime por pestaña.
@@ -278,7 +281,7 @@ Orden estricto:
 | 0006 | `chat.sql` | Vista `v_conversaciones_admin` + RPCs chat. |
 | 0007 | `disponibilidad.sql` | `horarios_clinica` + RPCs `obtener_disponibilidad` + `reservar_cita`. |
 | 0008 | `seed_demo.sql` | Datos demo (opcional, solo si existen los users demo). |
-| 0009 | `email.sql` | `emails_log`, `notificaciones_prefs`, RPC `citas_pendientes_recordatorio_24h`, `pg_cron` horario. |
+| 0009 | `email.sql` | `emails_log`, `notificaciones_prefs`, RPC recordatorio 24h (base), `pg_cron` horario. Ventanas finas: **0060** + **0061** (48h + 24h, `reminder_48h` / `reminder_24h`). |
 | 0010 | `stripe.sql` | `bonos_config`, `stripe_events`, RPCs `preparar_checkout_*`, `procesar_pago_stripe`. |
 | 0011 | `audit_hashchain` + `cancelacion_asignacion` | Auditoría tamper-evident + cancelación/asignación. |
 | 0012 | `auditoria_ficha_clinica` | Registro de accesos a ficha. |
@@ -340,7 +343,8 @@ Sistema de envíos automáticos con **Resend** (3.000 mails/mes gratis, DKIM aut
 | Tipo | Disparador | Ventana |
 |---|---|---|
 | `booking_confirmed` | Post-`reservarCitaAction` (solo si cita queda `confirmada`). | Inmediato |
-| `reminder_24h`      | `pg_cron` horario (minuto 5) + Edge Fn `cron-recordatorios-24h`. | 23-25h antes |
+| `reminder_48h`      | `pg_cron` horario (minuto 5) + Edge `cron-recordatorios-24h` (migr. `0060`+`0061`) | **47h–49h** (≈2 días) |
+| `reminder_24h`      | Mismo cron / Edge (migr. `0060`+`0061`) | **23h–25h** (≈mañana) |
 | `booking_cancelled` | Post-cancelación desde admin o paciente. | Inmediato |
 | `nueva_asignacion`  | Al asignar un recurso desde el admin. | Inmediato |
 | `welcome`           | Alta de paciente (admin manual o flujo auto-registro). | Inmediato |
@@ -350,9 +354,11 @@ Sistema de envíos automáticos con **Resend** (3.000 mails/mes gratis, DKIM aut
 ```
 supabase/functions/
   _shared/
+    clinic-brand.ts   # NAP, colegiación, email contacto, tag Resend `brand:almudena`
     cors.ts           # CORS allowlist (localhost + prod)
     resend.ts         # POST /emails con retry exponencial (3 intentos)
-    templates.ts      # HTML inline-styled (Georgia + sage/parchment)
+    resend-tags.ts    # Tags unificados (auditoría en el panel de Resend)
+    templates.ts      # Un shell HTML + pie equivalente en texto plano
   send-email/
     index.ts          # Router por tipo · JWT · opt-in · dedupe · log
   cron-recordatorios-24h/
@@ -572,33 +578,21 @@ Si `processing_error` no es null → la firma era válida pero algo falló dentr
 
 ---
 
-## 12. Documentacion tecnica
+## 12. Documentación técnica
 
-Índice maestro y criterios editoriales: **`docs/README.md`**. Árbol actual:
+Toda la documentación en **Markdown** está en **`docs/`** (raíz del monorepo). **No** hay carpeta `frontend/docs/`.
 
-```
-docs/
-├─ README.md                    # Mapa, costes directos documentados, criterio imparcial
-├─ 00_proyecto/                 # Cronología, estado/pendientes, planes, verificaciones
-│  ├─ cronologia.md
-│  ├─ estado-y-pendientes.md
-│  ├─ costes-herramientas.md
-│  ├─ plan-remediacion-2026-04-22.md
-│  └─ verificacion-fases-3-4-6.md
-├─ 01_auditorias/               # Revisiones técnicas puntuales (snapshot por dominio)
-├─ 02_informes/                 # Informes ejecutivos, E2E, valoración de reposición
-├─ 03_ingenieria/               # Arquitectura viva, GEO/SEO, roadmap
-├─ 04_diseno/                   # Sistema visual
-└─ 05_operaciones/              # Runbooks: Sentry, testing, Stripe SEPA, alertas
-```
+| Entrada | Contenido |
+|--------|------------|
+| `docs/README.md` | Mapa, criterios, orden de lectura |
+| `docs/00_proyecto/linea-base-producto.md` | Alcance y módulos en la línea base actual |
+| `docs/00_proyecto/estado-y-pendientes.md` | Bloqueos, dominio, secrets |
+| `docs/05_operaciones/checklist-produccion.md` | Operación, QA profundo, E2E, go-live (un solo doc) |
+| `docs/02_informes/ejecutivo-cliente.md` | Visión de negocio (clínica) |
+| `docs/02_informes/valor-reposicion-software.md` | Valor de reposición (ingeniería) |
+| `supabase/BOOTSTRAP.md` | Primer arranque de base y entorno local |
 
-**Lectura recomendada para onboarding rapido**:
-1. Este README y `docs/README.md`.
-2. `docs/02_informes/ejecutivo-cliente.md` — vision de producto.
-3. `docs/01_auditorias/arquitectura.md` — diseno del sistema.
-4. `docs/00_proyecto/estado-y-pendientes.md` — estado live.
-5. `docs/01_auditorias/seguridad-rgpd.md` — compliance.
-6. `docs/02_informes/valor-reposicion-software.md` — valor de reposición (metodología explícita, sin marketing).
+Lectura breve de onboarding: este README → `docs/README.md` → `02_informes/ejecutivo-cliente` o `estado-y-pendientes` → `01_auditorias/seguridad-rgpd.md` si aplica compliance.
 
 ---
 

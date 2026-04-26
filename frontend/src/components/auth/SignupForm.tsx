@@ -23,6 +23,7 @@
 
 import { useState, useTransition } from 'react';
 
+import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
 import { signupAction, type SignupResult } from '@/services/auth/actions';
 import { validateDniNie } from '@/lib/validation/dni';
 import { PasswordInput, isPasswordStrong } from './PasswordInput';
@@ -229,7 +230,7 @@ export function SignupForm(): JSX.Element {
           maxLength={22}
           disabled={pending}
           className={inputCls}
-          placeholder="+34 600 000 000"
+          placeholder={`Ej. ${CLINIC_PUBLIC_PHONE_DISPLAY}`}
         />
       </div>
 

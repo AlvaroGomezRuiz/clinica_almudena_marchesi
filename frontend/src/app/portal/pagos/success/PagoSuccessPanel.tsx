@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, SurfaceCard } from '@/components/portal-shell/ui';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { PORTAL_SUCCESS_EMAIL_TIP, PORTAL_SUCCESS_NEXT_BONO } from '@/lib/portal/onboarding-copy';
 import {
   resumenFromPaymentIntentJson,
   type StripeResumen,
@@ -75,6 +77,8 @@ export default function PagoSuccessPanel({
   paymentIntentClientSecret,
   userId,
 }: Props): JSX.Element {
+  const router = useRouter();
+  const refreshedGate = useRef(false);
   const [pago, setPago] = useState<PagoSuccessRow | null>(initialPago);
   const [gaveUp, setGaveUp] = useState(false);
   const [clientResumen, setClientResumen] = useState<StripeResumen | null>(null);
@@ -177,6 +181,12 @@ export default function PagoSuccessPanel({
     userId,
   ]);
 
+  useEffect(() => {
+    if (!pago || refreshedGate.current) return;
+    refreshedGate.current = true;
+    void router.refresh();
+  }, [pago, router]);
+
   const importeCents = pago
     ? pago.importe_centimos
     : stripeResumen
@@ -277,7 +287,37 @@ export default function PagoSuccessPanel({
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
+      {showConfirmado && pago && (pago.bono_id != null && pago.bono_id.length > 0) && !pago.cita_id ? (
+        <div
+          className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10"
+          role="region"
+          aria-label="Próximo paso tras bono"
+        >
+          <p className="font-body text-[0.85rem] leading-relaxed text-ink dark:text-white/90">
+            {PORTAL_SUCCESS_NEXT_BONO}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/portal/citas/reservar">
+              <Button variant="primary" icon="event_available" className="w-full sm:w-auto">
+                Reservar mi primera cita
+              </Button>
+            </Link>
+            <Link href="/portal/pagos">
+              <Button variant="surface" icon="card_membership">
+                Ver bono y sesiones
+              </Button>
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {pago && showConfirmado ? (
+        <p className="mt-4 font-body text-[0.75rem] leading-relaxed text-ink-muted dark:text-white/50">
+          {PORTAL_SUCCESS_EMAIL_TIP}
+        </p>
+      ) : null}
+
+      <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
         {pago?.cita_id ? (
           <Link href={`/portal/citas?reserva=ok&id=${pago.cita_id}`}>
             <Button variant="primary" icon="event_available">
@@ -287,8 +327,8 @@ export default function PagoSuccessPanel({
         ) : null}
         {pago?.bono_id ? (
           <Link href="/portal/pagos">
-            <Button variant="primary" icon="card_membership">
-              Ver mi bono
+            <Button variant="surface" icon="card_membership">
+              Ir a Bonos y pagos
             </Button>
           </Link>
         ) : null}

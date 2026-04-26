@@ -1,119 +1,86 @@
 # Auditoría de valor del software (revisión honesta)
 
-> **Fecha:** 23 de abril de 2026 · **Revisión 2** (corrige bandas de la primera versión).  
-> **Alcance:** código del monorepo medido en disco + criterio de mercado **realista** (freelance / pequeño proveedor España), no tarifa “consultora enterprise” ni venta de startup.  
-> **Excluye:** marca, pacientes, ingresos recurrentes, activos legales fuera del repo.
+> **Fecha:** 2026-04-26 · **Revisión 3** (sustituye bandas de informes anteriores si hubiera conflicto: prevalece este + el código en repo).  
+> **Alcance:** valor de **reemplazo** del repositorio (código, SQL, Edge) para **una sola** clínica, sin hinchar el techo a modelo “consultora Big Four + reescritura total bajo auditoría 24/7”.
+
+**Excluye (explícitamente):** negocio clínico, marca, cartera de pacientes, DPO externo, DPIA formal, diseño de marca, fotografía, campañas, horas de terapia.
 
 ---
 
-## 0. Corrección respecto a la primera versión del informe
+## 0. Nota de método (cómo se fijan las cifras)
 
-La banda **32.000 € – 72.000 €** era **demasiado alta** para este proyecto concreto.
-
-**Por qué estaba mal:**
-
-- Se partió de **600–1.170 h** como si un **segundo equipo** fuera a reescribir todo desde cero con fricción máxima y control de calidad tipo auditoría externa continua. Eso es un modelo de “seguro todo riesgo”, no el coste habitual de un **producto single-tenant** ya resuelto en un solo codebase.
-- Se aplicó tarifa **55–85 €/h** mezclando consultoría senior pura con trabajo de implementación; en la práctica, muchas horas de UI, SQL y integraciones se facturan (o se internalizan) **por debajo** de ese rango en PYMEs y autónomos.
-- **No se contrastó con el tamaño real del código** antes de fijar horas.
-
-Este documento **sustituye** esas cifras por otras **ancladas al repo** y a un rango de mercado defendible.
+1. Se parte del **tamaño real** del repositorio (líneas en `frontend/src` ≈ **28.000** para `*.ts` / `*.tsx` en conteo de sistema de archivos; *no* es una métrica de “complejidad lógica pura” pero evita cifras manifiestamente dispares).  
+2. Se aplica un **rango de horas** de reimplementación competente (Next + Supabase + RLS + Stripe, sin inventar 800 h de fricción artificial).  
+3. Se multiplica por **tarifas de mercado PYME / autónomo** en España (35–55 €/h) para re-posición, no 85 €/h de *strategy deck* a menos que se documente ese presupuesto aparte.  
+4. Se separa el valor de **vender el repo** “as is” (casi inexistente como mercado) del valor de **sustituir** el entregable.
 
 ---
 
-## 1. Qué es este producto (sin hinchar el pecho)
+## 1. Tamaño objetivo del repositorio (abril 2026)
 
-Una aplicación **a medida para una sola clínica**: web pública, portal paciente, admin, Postgres con RLS, cifrado de datos sensibles, Stripe, emails, chat realtime, PDFs, documentación y endurecimiento de seguridad.
+| Área | Método | Orden de magnitud |
+|------|--------|-------------------|
+| `frontend/src` (`.ts` + `.tsx`) | Conteo de líneas recursivo en PowerShell | **≈ 28.000 líneas** (± rutas con `[` que algunos conteos no expanden) |
+| `supabase/migrations` | 50+ ficheros `.sql` | **Varios miles** de líneas de SQL (muchos fixes y stubs de reconciliación) |
+| `supabase/functions` + `_shared` | 11 funciones con `index.ts` + shared | **≈ 2.5k–3.5k** líneas TS Deno, según crecimiento |
+| `frontend/e2e` | Especificaciones Playwright | **Varios cientos** de líneas (smoke, cierre, a11y, reservas, pago) |
 
-Es **mucho más** que un WordPress con plugin de citas, pero **no** es un ERP hospitalario multi-centro ni un producto SaaS con roadmap comercial y equipo de ventas.
+**Honestidad:** en migraciones hay **stubs** o migraciones mínimas de *repair*; el “SQL de producto” no se reparte uniformemente. El LOC de UI tampoco: `types.ts` y `AgendaClient` inflan contadores sin mapear 1:1 a lógica de cifrado nueva.
 
----
-
-## 2. Mediciones objetivas del repositorio (abril 2026)
-
-Conteo aproximado con herramientas locales (`Get-Content`, líneas no vacías por fichero):
-
-| Área | Ficheros (aprox.) | Líneas (aprox.) |
-|------|-------------------|-----------------|
-| `frontend/src` (`*.ts` / `*.tsx`) | ~167 | **~25.500** |
-| `supabase/migrations` (`*.sql`) | 89 | **~5.900** |
-| `supabase/functions` (`*.ts`, recursivo) | ~17 | **~3.000** |
-| `frontend/e2e` (`*.ts`) | ~7 | **~300** |
-
-**Notas honestas sobre esas cifras:**
-
-- En migraciones hay **decenas de ficheros stub** de unas pocas líneas (historial CLI); el SQL “de producto” está concentrado en **~40 migraciones** serias, no en 89 piezas iguales de complejidad.
-- `types.ts` y componentes grandes (`AgendaClient`, `ChatPanel`, ficha admin) suben LOC **sin** equivaler a la misma densidad de lógica de negocio que una RPC nueva de cifrado; el LOC solo orienta **orden de magnitud**.
-
-**Orden de magnitud global:** del orden de **30.000–35.000 líneas** de código productivo (TS/TSX/SQL relevante), más documentación en `docs/`.
+**Orden de magnitud global aceptable:** **~35k–40k** líneas productivas (TS+TSX+SQL relevante) si se incluyen migraciones y Edge, más documentación en `docs/`.
 
 ---
 
-## 3. Traducción a horas (modelo conservador, no “película de miedo”)
+## 2. Desglose en bloques (horas creíbles de re-hacer *desde cero*)
 
-Para **rehacer** algo equivalente (mismo alcance funcional, sin copiar/pegar este repo), una estimación **razonable** para un full-stack competente en Next + Supabase sería:
+| Bloque de trabajo | Horas razonables (banda) |
+|-------------------|--------------------------|
+| Modelo de datos + RLS + RPCs núcleo (citas, pacientes, disponibilidad, conflictos) | 100–200 |
+| Cifrado, vault, blind index, ajustes RGPD serios y revisión de fugas | 70–140 |
+| Stripe: PI, webhooks, idempotencia, bonos, bono manual 0040+0057 | 50–100 |
+| UI admin + portal (muchos flujos y accesibilidad) | 140–240 |
+| Chat + Realtime + adjuntos + cifrado de mensaje + vistas | 50–100 |
+| Email Resend + crons + preferencias de rebote | 30–60 |
+| Hardening: rate limits, upload, Geo opcional, CSP, SEO, JSON-LD | 40–80 |
+| E2E, documentación, operación, checklist | 30–60 |
+| **Suma (centro bajo a centro alto)** | **≈ 500–1000 h** (no 1500) |
 
-| Bloque | Horas creíbles |
-|--------|----------------|
-| Modelo datos + RLS + RPCs núcleo (citas, pacientes, disponibilidad) | 90–160 |
-| Cifrado, vault, blind index, correcciones RGPD serias | 60–120 |
-| Stripe + webhooks + idempotencia + bonos | 45–85 |
-| Portales UI admin + paciente (muchas pantallas) | 120–200 |
-| Chat + storage + adjuntos + realtime | 40–75 |
-| Emails Resend + cron + preferencias | 30–55 |
-| SEO/GEO técnico, CSP, rate limits, hardening | 35–65 |
-| E2E/a11y parcial, docs operativas | 25–50 |
-| **Total** | **≈ 445–810 h** |
-
-La primera versión del informe se quedaba en la **parte alta** de un rango parecido y además subía tarifa: por eso explotaba a **30k+**.
-
-Aquí se usa el **centro–bajo** del rango horario para “reposición con proveedor medianamente eficiente”, no el peor caso:
-
-- **Horas ancla para valor de mercado:** **~320–520 h** de trabajo humano efectivo (mezcla implementación + revisión; parte del mecanográfico acelerado con IA en el proyecto real).
+**Anchor para “reposición con proveedor medianamente bueno”:** tratar **320–550 h** como el tramo de mercado asumido para cálculo, no el peor caso 800+.
 
 ---
 
-## 4. Tarifa y bandas en euros (IVA fuera; mercado España 2026)
+## 3. Banda de valor en euros (IVA al margen, España 2026)
 
-**Tarifa de mercado “real”** para este tipo de trabajo (mezcla senior en decisiones críticas + implementación):
+| Parámetro | Suelo (conservador) | Centro (defendible) | Techo (aún razonable) |
+|-----------|--------------------|--------------------|------------------------|
+| Horas × tarifa 35 / 45 / 55 €/h | 11.2k @ 320×35 | 18.0k @ 400×45 | 30.2k @ 550×55 |
 
-- **35–55 €/h** como autónomo / pequeño estudio que compite por PYME (no Big Four).
+### Banda recomendada (texto fijo)
 
-**Producto (reposición encargada a terceros):**
+- **Reimplementar** el **mismo alcance funcional** hoy, con tercer equipo competente, sin *gold-plating* de re-auditoría continua: **~11.000 € – 32.000 €** con ancla verbal **frecuente** en **~14.000 € – 24.000 €** (cierre típico PYME).  
+- **Teórico 72k €+** de informes viejos **solo** aparece con **(horas >800) × (tarifas 80–90) × reescritura cero riesgo**: **no aplica** a un producto *single-tenant* ya resuelto en un monorepo.
 
-| Escenario | Cálculo orientativo | Resultado |
-|-----------|---------------------|------------|
-| Suelo | 320 h × 35 €/h | **~11.200 €** |
-| Centro | 400 h × 45 €/h | **~18.000 €** |
-| Techo razonable | 520 h × 55 €/h | **~28.600 €** |
+- **Venta aislada del repositorio** a un tercero sin contexto: **~2.500 € – 9.000 €** — el techo bajo no es calidad, es **falta de liquidez de un activo tan específico**.
 
-### Banda recomendada (sincera)
+### Sprint de cierre intenso (si se factura aparte)
 
-- **Si mañana pagas a alguien para reimplementar el mismo alcance** (sin contar duplicar errores ni pagar abogados externos): **~10.000 € – 24.000 €**, siendo lo más defendible el intervalo **~12.000 € – 20.000 €**.
-- **Si vendieras solo el código “as is”** (sin garantía, sin conocimiento tácito, poco mercado para “comprar repo de clínica ajena”): **~2.500 € – 8.000 €** — aquí el valor es bajo **no** porque el código sea malo, sino porque **casi nadie compra** este tipo de activo fuera de contexto.
-
-### Qué pasó con “72.000 €”
-
-Solo se llega ahí si se mezclan **>800 h** con **tarifa consultora 80–90 €/h** y se asume rehacer **todo** con proceso tipo auditoría continua. Eso **no describe** el tamaño ni el contexto de este repo: sería **honestamente inflado** para una sola clínica y un solo producto.
+- Marginal de **2–3 semanas** a lo intensivo: **~80–140 h × 40–55 €/h → ~3.200 – 7.700 €** adicionales, **no** confundir con el valor de todo el activo.
 
 ---
 
-## 5. Los 15 días intensivos (qué representan en dinero)
+## 4. Conclusión en una frase
 
-No “valen” el proyecto entero. Como **marginal** de un sprint de cierre (asumiendo muchas horas diarias y parte de coordinación):
-
-- **~80–140 h** × **40–55 €/h** → **~3.200 € – 7.700 €** de trabajo incremental facturable en mercado autónomo, **además** del tiempo ya invertido antes en el repositorio.
+El repositorio es un **activo de ingeniería serio** para una clínica **única**; su valor de **reposición razonable** está en la **banda de decenas de miles bajos a medianos**, y **no** razona como venta de licencia *off-the-shelf* a escala nacionales — salvo que haya un comprador *estratégico* con sinergia (poco frecuente).
 
 ---
 
-## 6. Qué sigue sin incluir este documento
+## 5. Dónde no aplica esto (lista taxativa)
 
-- Abogado, DPIA formal, DPO, seguros.
-- Diseño gráfico, fotografía, campañas.
-- Infra recurrente (Vercel, Supabase, Stripe, dominios).
-- Valor del negocio clínico (eso es otro orden de magnitud y otra disciplina).
+| Concepto | Por qué se excluye de la cifra |
+|----------|---------------------------------|
+| Valor de la práctica (pacientes, recurrencia) | Económicas de clínica; no de código. |
+| Horas de psicóloga | Fuera de TI. |
+| Cumplimiento *solo* legal (DPIA, bufete) | Presupuestos a parte. |
+| Infra recurrente futura 10 años | TCO, no reemplazo una vez. |
 
----
-
-## 7. Conclusión en una frase
-
-Este repo es **un activo técnico serio de PYME**: por encima de unos pocos miles de euros si lo valoras por **coste de reposición razonable**, y **por debajo de ~25.000 €** si se evita inflar horas y tarifas de consultora grande; **no** razona vender el código suelto por decenas de miles, y la versión anterior del informe **sobreestimaba** esa parte.
+*Si el mercado, salarios o el alcance del repo divergen significativamente, re-ejecutar el §1 (LOC) y re-anclar; no reutilizar este texto dentro de 18 meses sin re-medición.*

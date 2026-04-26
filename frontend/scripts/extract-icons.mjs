@@ -140,8 +140,9 @@ const SAFE = [
   'medication', 'pill', 'vaccines', 'science', 'volunteer_activism', 'hearing',
   'assignment', 'assignment_ind', 'assignment_turned_in', 'add_notes',
   // Pagos
-  'credit_card', 'payments', 'euro', 'receipt', 'receipt_long', 'price_check',
-  'card_membership', 'confirmation_number', 'account_balance_wallet', 'savings',
+  'credit_card', 'payments', 'payment', 'euro', 'receipt', 'receipt_long', 'price_check',
+  'card_membership', 'card_giftcard', 'redeem', 'confirmation_number', 'account_balance',
+  'account_balance_wallet', 'savings',
   'shopping_bag',
   // Agenda / citas
   'event_available', 'event_busy', 'event_note', 'event_upcoming', 'event_repeat',

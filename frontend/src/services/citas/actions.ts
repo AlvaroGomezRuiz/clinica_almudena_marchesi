@@ -35,6 +35,7 @@ const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{
 
 // ---------------------------------------------------------------------------
 // Listar slots disponibles de un servicio en una fecha
+// (RPC: solo oculta citas confirmada/completada; bloqueo_temporal no quita el hueco.)
 // ---------------------------------------------------------------------------
 export async function getDisponibilidadAction(
   fechaISO: string,
@@ -76,6 +77,14 @@ export async function reservarCitaAction(
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    if (/slot_ocupado|exclusion_violation|23P01/i.test(msg)) {
+      return {
+        ok: false,
+        code: 'slot_ocupado',
+        message:
+          'Ese hueco acaba de ocuparse (reserva en curso o cita ya confirmada). Actualiza la lista o elige otra hora.',
+      };
+    }
     return { ok: false, code: 'unknown', message: msg };
   }
 

@@ -24,11 +24,18 @@ import {
   useTransition,
   type FormEvent,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
 
 import AudioRecorderButton from '@/components/chat/AudioRecorderButton';
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
+import {
+  CHAT_AUDIO_MESSAGE_BODY,
+  CHAT_TEXT_PLACEHOLDER,
+  CHAT_TEXT_PLACEHOLDER_HINT,
+} from '@/lib/chat/chat-composer-copy';
+import { formatChatAttachmentDisplayName } from '@/lib/chat/format-chat-attachment-name';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { marcarLeidosAction, sendMensajeAction } from '@/services/mensajes/actions';
 
@@ -84,12 +91,116 @@ export interface ChatMensaje {
   readonly failed?: boolean;
 }
 
+type BrowserSupabase = ReturnType<typeof createBrowserClient>;
+
+async function fetchAdjuntosForMensajeCliente(
+  supabase: BrowserSupabase,
+  mensajeId: string
+): Promise<readonly ChatAdjunto[]> {
+  const { data: rows, error } = await supabase
+    .from('mensajes_adjuntos')
+    .select('id, mensaje_id, nombre, mime, size_bytes, tipo, storage_path')
+    .eq('mensaje_id', mensajeId);
+
+  if (error || !rows?.length) return [];
+
+  const paths = rows.map((r) => r.storage_path);
+  const { data: signed } = await supabase.storage
+    .from('chat-adjuntos')
+    .createSignedUrls(paths, 3600);
+
+  const urlByPath = new Map<string, string>();
+  for (const s of signed ?? []) {
+    if (s.path && s.signedUrl) urlByPath.set(s.path, s.signedUrl);
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    mime: r.mime,
+    size_bytes: r.size_bytes,
+    tipo: r.tipo as ChatAdjunto['tipo'],
+    signed_url: urlByPath.get(r.storage_path) ?? null,
+  }));
+}
+
+async function mensajePerteneceAConversacion(
+  supabase: BrowserSupabase,
+  mensajeId: string,
+  conversacionId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('mensajes')
+    .select('conversation_id')
+    .eq('id', mensajeId)
+    .maybeSingle();
+  return data?.conversation_id === conversacionId;
+}
+
+async function loadMensajeCompletoConRetry(
+  supabase: BrowserSupabase,
+  mensajeId: string
+): Promise<ChatMensaje | null> {
+  const delaysMs = [0, 150, 400, 800, 1400];
+
+  for (let i = 0; i < delaysMs.length; i += 1) {
+    const wait = delaysMs[i] ?? 0;
+    if (wait > 0) {
+      await new Promise<void>((r) => {
+        setTimeout(r, wait);
+      });
+    }
+
+    const { data: dec, error: decErr } = await supabase.rpc('chat_descifrar_mensaje', {
+      p_id: mensajeId,
+    });
+    if (decErr || !dec) continue;
+
+    const row = Array.isArray(dec) ? dec[0] : dec;
+    if (!row || typeof row !== 'object' || !('id' in row)) continue;
+
+    const r = row as {
+      id: string;
+      conversation_id: string;
+      sender_user_id: string;
+      body: string | null;
+      read_at: string | null;
+      created_at: string;
+    };
+
+    const adjuntos = await fetchAdjuntosForMensajeCliente(supabase, mensajeId);
+    const body = String(r.body ?? '');
+    const t = body.trim();
+    const expectsAttachment =
+      /^📎\s/u.test(t) || /^🎤/u.test(t) || t === CHAT_AUDIO_MESSAGE_BODY;
+    const last = i === delaysMs.length - 1;
+
+    if (!expectsAttachment || adjuntos.length > 0 || last) {
+      return {
+        id: String(r.id),
+        conversation_id: String(r.conversation_id),
+        sender_user_id: String(r.sender_user_id),
+        body,
+        read_at: r.read_at ? String(r.read_at) : null,
+        created_at: String(r.created_at),
+        adjuntos: adjuntos.length > 0 ? adjuntos : undefined,
+      };
+    }
+  }
+
+  return null;
+}
+
 interface ChatPanelProps {
   readonly conversacionId: string;
   readonly currentUserId: string;
   readonly initialMensajes: readonly ChatMensaje[];
   readonly otherLabel: string;
   readonly otherSubtitle?: string;
+  /** Miniatura en hilo (tú); si falta, icono neutro. */
+  readonly selfAvatarUrl?: string | null;
+  /** Miniatura del interlocutor (cabecera + burbujas recibidas). */
+  readonly otherAvatarUrl?: string | null;
 }
 
 const MAX_LENGTH = 4000;
@@ -101,6 +212,8 @@ export default function ChatPanel({
   initialMensajes,
   otherLabel,
   otherSubtitle,
+  selfAvatarUrl,
+  otherAvatarUrl,
 }: ChatPanelProps) {
   const router = useRouter();
   const [mensajes, setMensajes] = useState<readonly ChatMensaje[]>(initialMensajes);
@@ -114,6 +227,26 @@ export default function ChatPanel({
 
   // Memoizamos el cliente Supabase (singleton por render de vida del componente)
   const supabase = useMemo(() => createBrowserClient(), []);
+
+  const initialSnapshotKey = useMemo(
+    () =>
+      `${initialMensajes.length}\u001f${initialMensajes.map((m) => m.id).join('\u001f')}\u001f${initialMensajes.at(-1)?.created_at ?? ''}`,
+    [initialMensajes]
+  );
+
+  /** Tras `router.refresh()` el RSC entrega nuevos mensajes; fusionamos con optimistic pendiente. */
+  useEffect(() => {
+    setMensajes((prev) => {
+      const optimistic = prev.filter(
+        (m) => m.pending === true || m.failed === true || m.id.startsWith('temp-')
+      );
+      const serverIds = new Set(initialMensajes.map((m) => m.id));
+      const keepOpt = optimistic.filter((o) => !serverIds.has(o.id));
+      return [...initialMensajes, ...keepOpt].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+    });
+  }, [initialSnapshotKey, initialMensajes]);
 
   // ───── scroll helpers ─────
   const scrollToBottom = useCallback((smooth: boolean) => {
@@ -141,13 +274,55 @@ export default function ChatPanel({
     marcarLeidosAction(conversacionId);
   }, [conversacionId]);
 
-  // ───── Suscripción Realtime ─────
-  /*
-   * El payload de postgres_changes contiene `body_ciphertext` (cifrado con
-   * app_encrypt en BD). La UI necesita plaintext, así que tras un INSERT
-   * pedimos la fila descifrada mediante la RPC `chat_descifrar_mensaje`,
-   * que reusa la misma autorización que la RLS (admin o paciente dueño).
-   */
+  const mergeMensajeFromServer = useCallback(
+    (full: ChatMensaje) => {
+      setMensajes((prev) => {
+        const byId = prev.findIndex((x) => x.id === full.id);
+        if (byId >= 0) {
+          const next = prev.slice();
+          next[byId] = {
+            ...next[byId],
+            ...full,
+            pending: false,
+            failed: false,
+          };
+          return next;
+        }
+        if (full.sender_user_id === currentUserId) {
+          const pj = prev.findIndex(
+            (x) => x.pending === true && x.sender_user_id === currentUserId
+          );
+          if (pj >= 0) {
+            const next = prev.slice();
+            next[pj] = { ...full, pending: false, failed: false };
+            return next;
+          }
+        }
+        if (prev.some((x) => x.id === full.id)) return prev;
+        return [...prev, full].sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
+      if (full.sender_user_id !== currentUserId) {
+        void marcarLeidosAction(conversacionId);
+      }
+    },
+    [conversacionId, currentUserId]
+  );
+
+  const onAttachUploaded = useCallback(
+    async (mensajeId: string) => {
+      const ok = await mensajePerteneceAConversacion(supabase, mensajeId, conversacionId);
+      if (!ok) return;
+      const full = await loadMensajeCompletoConRetry(supabase, mensajeId);
+      if (!full) return;
+      stickToBottomRef.current = true;
+      mergeMensajeFromServer(full);
+    },
+    [supabase, conversacionId, mergeMensajeFromServer]
+  );
+
+  // ───── Suscripción Realtime (mensajes + adjuntos) ─────
   useEffect(() => {
     const channel = supabase
       .channel(`chat-${conversacionId}`)
@@ -163,62 +338,14 @@ export default function ChatPanel({
           const raw = payload.new as {
             id?: string;
             sender_user_id?: string;
-            read_at?: string | null;
-            created_at?: string;
           };
           const id = raw.id;
           if (!id) return;
 
-          // Si ya existe (optimistic o dedupe), no hacemos roundtrip.
-          let alreadyPresent = false;
-          setMensajes((prev) => {
-            alreadyPresent = prev.some((x) => x.id === id);
-            return prev;
-          });
-          if (alreadyPresent) return;
+          const full = await loadMensajeCompletoConRetry(supabase, id);
+          if (!full) return;
 
-          // Si es propio, el optimistic ya trae plaintext; sólo reemplazamos
-          // id si aún estaba como temp-. Intentamos matching por remitente.
-          if (raw.sender_user_id === currentUserId) {
-            setMensajes((prev) => {
-              const idx = prev.findIndex(
-                (x) => x.pending && x.sender_user_id === currentUserId,
-              );
-              if (idx >= 0) {
-                const merged: ChatMensaje = {
-                  ...prev[idx],
-                  id,
-                  pending: false,
-                  read_at: raw.read_at ?? null,
-                  created_at: raw.created_at ?? prev[idx].created_at,
-                };
-                const next = prev.slice();
-                next[idx] = merged;
-                return next;
-              }
-              return prev;
-            });
-            return;
-          }
-
-          // Mensaje del otro participante: pedimos el plaintext vía RPC.
-          try {
-            const { data } = await supabase.rpc('chat_descifrar_mensaje', { p_id: id });
-            const row = Array.isArray(data) ? data[0] : data;
-            if (!row) return;
-            const decrypted: ChatMensaje = {
-              id: String(row.id),
-              conversation_id: String(row.conversation_id),
-              sender_user_id: String(row.sender_user_id),
-              body: String(row.body ?? ''),
-              read_at: row.read_at ? String(row.read_at) : null,
-              created_at: String(row.created_at),
-            };
-            setMensajes((prev) => (prev.some((x) => x.id === decrypted.id) ? prev : [...prev, decrypted]));
-            marcarLeidosAction(conversacionId);
-          } catch {
-            /* Silencio: próximo POLL o refresh servirá el mensaje. */
-          }
+          mergeMensajeFromServer(full);
         }
       )
       .subscribe();
@@ -226,7 +353,32 @@ export default function ChatPanel({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, conversacionId, currentUserId]);
+  }, [supabase, conversacionId, mergeMensajeFromServer]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`chat-adjuntos-${conversacionId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'mensajes_adjuntos' },
+        async (payload) => {
+          const row = payload.new as { mensaje_id?: string };
+          const mensajeId = row.mensaje_id;
+          if (!mensajeId) return;
+          const ok = await mensajePerteneceAConversacion(supabase, mensajeId, conversacionId);
+          if (!ok) return;
+          const full = await loadMensajeCompletoConRetry(supabase, mensajeId);
+          if (!full) return;
+          stickToBottomRef.current = true;
+          mergeMensajeFromServer(full);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, conversacionId, mergeMensajeFromServer]);
 
   // ───── Envío con optimistic UI ─────
   const handleSend = useCallback(
@@ -307,10 +459,19 @@ export default function ChatPanel({
       {/* Cabecera */}
       <header className="flex items-center justify-between gap-3 px-6 py-4">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:bg-primary/25 dark:ring-primary/30 dark:shadow-none">
-            <span className="material-symbols-outlined text-[1.25rem] text-primary dark:text-white" aria-hidden="true">
-              person
-            </span>
+          <span className="relative grid h-11 w-11 flex-shrink-0 place-items-center overflow-hidden rounded-2xl bg-primary/10 ring-1 ring-inset ring-primary/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:bg-primary/25 dark:ring-primary/30 dark:shadow-none">
+            {otherAvatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={otherAvatarUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <span className="material-symbols-outlined text-[1.25rem] text-primary dark:text-white" aria-hidden="true">
+                person
+              </span>
+            )}
           </span>
           <div className="min-w-0">
             <p className="truncate font-body text-[1.02rem] font-semibold leading-snug tracking-normal text-ink dark:text-white">
@@ -368,7 +529,14 @@ export default function ChatPanel({
                   <span className="h-px flex-1 bg-ink/8" aria-hidden="true" />
                 </div>
                 {group.mensajes.map((m) => (
-                  <Burbuja key={m.id} mensaje={m} esMio={m.sender_user_id === currentUserId} />
+                  <Burbuja
+                    key={m.id}
+                    mensaje={m}
+                    esMio={m.sender_user_id === currentUserId}
+                    selfAvatarUrl={selfAvatarUrl}
+                    otherAvatarUrl={otherAvatarUrl}
+                    otherInitial={otherLabel.trim().charAt(0) || '?'}
+                  />
                 ))}
               </li>
             ))}
@@ -394,19 +562,25 @@ export default function ChatPanel({
           </p>
         ) : null}
 
-        <div className="flex items-end gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <ChatAttachButton
             conversationId={conversacionId}
             disabled={isPending}
+            onUploaded={onAttachUploaded}
           />
-          <AudioRecorderButton conversacionId={conversacionId} disabled={isPending} />
+          <AudioRecorderButton
+            conversacionId={conversacionId}
+            disabled={isPending}
+            onUploaded={onAttachUploaded}
+          />
           <textarea
             name="mensaje"
             rows={1}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onTextareaKey}
-            placeholder="Escribe un mensaje… (Enter para enviar · Shift+Enter salto)"
+            placeholder={CHAT_TEXT_PLACEHOLDER}
+            title={CHAT_TEXT_PLACEHOLDER_HINT}
             maxLength={MAX_LENGTH}
             className="flex-1 resize-none rounded-2xl bg-white/80 px-4 py-3 font-body text-[0.92rem] leading-relaxed text-ink placeholder:text-ink-muted/80 ring-1 ring-inset ring-ink/8 outline-none transition-[box-shadow,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] focus:bg-white focus:ring-primary/40 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40 dark:ring-white/10 dark:focus:bg-white/10 dark:focus:ring-primary/60"
             aria-label="Escribir mensaje"
@@ -424,8 +598,7 @@ export default function ChatPanel({
           </button>
         </div>
 
-        <p className="mt-1.5 flex items-center justify-between font-body text-[0.65rem] text-ink-muted dark:text-white/55">
-          <span>Los mensajes se envían cifrados en tránsito (TLS) y quedan archivados.</span>
+        <p className="mt-1.5 flex items-center justify-end font-body text-[0.65rem] text-ink-muted dark:text-white/55">
           <span className="tabular-nums">
             {draft.length}/{MAX_LENGTH}
           </span>
@@ -435,12 +608,125 @@ export default function ChatPanel({
   );
 }
 
+/**
+ * Convierte http(s) del texto en enlaces seguros (solo protocolos http/https).
+ * El resto del texto se deja en spans (sin interpretar HTML).
+ */
+function messageBodyWithLinks(text: string, esMio: boolean): ReactNode[] {
+  const re = /(https?:\/\/[^\s]+)/gi;
+  const parts = text.split(re);
+  const linkClass = esMio
+    ? 'break-all underline underline-offset-2 text-on-primary hover:brightness-110'
+    : 'break-all underline underline-offset-2 text-primary hover:text-primary-dim dark:text-primary-fixed-dim dark:hover:text-white';
+  return parts.map((part, i) => {
+    if (part === '') return null;
+    if (/^https?:\/\//i.test(part)) {
+      try {
+        const u = new URL(part);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+          return <span key={`${i}-${part.slice(0, 12)}`}>{part}</span>;
+        }
+        return (
+          <a
+            key={`${i}-${u.hostname}`}
+            href={u.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={linkClass}
+          >
+            {part}
+          </a>
+        );
+      } catch {
+        return <span key={`${i}-x`}>{part}</span>;
+      }
+    }
+    return <span key={`${i}-t`}>{part}</span>;
+  });
+}
+
+/** Ocultar línea de cuerpo autogenerada (📎 / 🎤 / nombre duplicado del adjunto). */
+function isAutoAttachmentCaption(body: string, adjuntos: readonly ChatAdjunto[]): boolean {
+  const t = body.trim();
+  if (!t || adjuntos.length === 0) return false;
+  if (/^📎\s/u.test(t)) return true;
+  if (adjuntos.some((a) => a.tipo === 'audio') && t === CHAT_AUDIO_MESSAGE_BODY) {
+    return true;
+  }
+  if (/^🎤/u.test(t) && adjuntos.some((a) => a.tipo === 'audio')) return true;
+  if (adjuntos.length === 1) {
+    const a0 = adjuntos[0].nombre;
+    const aTrim = a0.trim();
+    if (t === aTrim) return true;
+    if (t === `📎 ${aTrim}`.trim()) return true;
+    const pretty = formatChatAttachmentDisplayName(a0);
+    if (t === pretty || t === `📎 ${pretty}`.trim()) return true;
+  }
+  return false;
+}
+
 // ───────────────────────────────────────────────────────────────────────────
 // Burbuja individual
 // ───────────────────────────────────────────────────────────────────────────
-function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
+function ChatThumb({
+  url,
+  fallbackLetter,
+  align,
+}: {
+  url?: string | null;
+  fallbackLetter: string;
+  align: 'left' | 'right';
+}) {
+  const ring =
+    align === 'left'
+      ? 'ring-ink/10 dark:ring-white/12'
+      : 'ring-primary/25 dark:ring-white/15';
+  if (url) {
+    return (
+      <span className={`mb-0.5 h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ${ring}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" className="h-full w-full object-cover" width={32} height={32} />
+      </span>
+    );
+  }
+  const ch = fallbackLetter.trim();
+  if (ch) {
+    return (
+      <span
+        className={`mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/[0.06] font-body text-[0.68rem] font-semibold text-ink-muted ring-1 ring-ink/10 dark:bg-white/10 dark:text-white/75 dark:ring-white/12 ${ring}`}
+        aria-hidden="true"
+      >
+        {ch.toUpperCase().slice(0, 1)}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`mb-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/[0.06] ring-1 ring-ink/10 dark:bg-white/10 dark:ring-white/12 ${ring}`}
+      aria-hidden="true"
+    >
+      <span className="material-symbols-outlined text-[1rem] text-ink-muted dark:text-white/60">
+        person
+      </span>
+    </span>
+  );
+}
+
+function Burbuja({
+  mensaje,
+  esMio,
+  selfAvatarUrl,
+  otherAvatarUrl,
+  otherInitial,
+}: {
+  mensaje: ChatMensaje;
+  esMio: boolean;
+  selfAvatarUrl?: string | null;
+  otherAvatarUrl?: string | null;
+  otherInitial: string;
+}) {
   const base =
-    'max-w-[78%] rounded-2xl px-4 py-2.5 font-body text-[0.92rem] leading-[1.5] whitespace-pre-wrap break-words shadow-[0_6px_20px_-14px_rgba(28,28,25,0.3)]';
+    'max-w-[min(78%,calc(100%-2.75rem))] rounded-2xl px-4 py-2.5 font-body text-[0.92rem] leading-[1.5] whitespace-pre-wrap break-words shadow-[0_6px_20px_-14px_rgba(28,28,25,0.3)]';
   const own = mensaje.failed
     ? 'bg-[#b2675e]/85 text-white'
     : 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_-12px_rgba(75,100,95,0.45)] dark:bg-primary-dark dark:text-white';
@@ -448,11 +734,22 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
     'bg-white text-ink ring-1 ring-inset ring-ink/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_-14px_rgba(28,28,25,0.2)] dark:bg-white/5 dark:text-white dark:ring-white/10 dark:shadow-none';
 
   const adjuntos = mensaje.adjuntos ?? [];
+  const hideBodyLine = isAutoAttachmentCaption(mensaje.body, adjuntos);
+  const label = (n: string): string => formatChatAttachmentDisplayName(n);
 
   return (
-    <div className={`my-1 flex ${esMio ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`my-1 flex items-end gap-2 ${esMio ? 'flex-row-reverse justify-end' : 'justify-start'}`}
+    >
+      <ChatThumb
+        url={esMio ? selfAvatarUrl : otherAvatarUrl}
+        fallbackLetter={esMio ? '' : otherInitial}
+        align={esMio ? 'right' : 'left'}
+      />
       <div className={`${base} ${esMio ? own : other} ${mensaje.pending ? 'opacity-70' : ''}`}>
-        <p>{mensaje.body}</p>
+        {!hideBodyLine && mensaje.body.trim() ? (
+          <p className="whitespace-pre-wrap break-words">{messageBodyWithLinks(mensaje.body, esMio)}</p>
+        ) : null}
         {adjuntos.length > 0 ? (
           <ul className="mt-2 flex flex-col gap-1.5">
             {adjuntos.map((a) => (
@@ -463,17 +760,16 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
                       controls
                       preload="metadata"
                       src={a.signed_url}
-                      className="h-9 w-full"
-                    >
-                      {a.nombre}
-                    </audio>
+                      title={label(a.nombre)}
+                      className="min-h-11 w-full"
+                    />
                   </div>
                 ) : a.tipo === 'imagen' && a.signed_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <a href={a.signed_url} target="_blank" rel="noreferrer">
+                  <a href={a.signed_url} target="_blank" rel="noreferrer" title={label(a.nombre)}>
                     <img
                       src={a.signed_url}
-                      alt={a.nombre}
+                      alt={label(a.nombre)}
                       loading="lazy"
                       decoding="async"
                       className="max-h-56 max-w-full rounded-xl object-cover ring-1 ring-inset ring-white/40"
@@ -484,20 +780,21 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
                     href={a.signed_url}
                     target="_blank"
                     rel="noreferrer"
-                    className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 ring-1 ring-inset transition ${
+                    title={label(a.nombre)}
+                    className={`inline-flex min-w-0 max-w-full items-center gap-2 rounded-xl px-3 py-1.5 ring-1 ring-inset transition ${
                       esMio
                         ? 'bg-white/15 ring-white/20 text-on-primary hover:bg-white/25'
                         : 'bg-white ring-ink/10 text-ink hover:bg-white/80 dark:bg-white/10 dark:text-white dark:ring-white/15'
                     }`}
                   >
                     <span
-                      className="material-symbols-outlined text-[1rem]"
+                      className="material-symbols-outlined shrink-0 text-[1rem]"
                       aria-hidden="true"
                     >
                       {a.mime === 'application/pdf' ? 'picture_as_pdf' : 'attach_file'}
                     </span>
-                    <span className="max-w-[220px] truncate font-body text-[0.8rem]">
-                      {a.nombre}
+                    <span className="min-w-0 break-words font-body text-[0.8rem]">
+                      {label(a.nombre)}
                     </span>
                   </a>
                 ) : (
@@ -512,7 +809,7 @@ function Burbuja({ mensaje, esMio }: { mensaje: ChatMensaje; esMio: boolean }) {
                     >
                       lock
                     </span>
-                    {a.nombre} (no disponible)
+                    {label(a.nombre)} (no disponible)
                   </span>
                 )}
               </li>

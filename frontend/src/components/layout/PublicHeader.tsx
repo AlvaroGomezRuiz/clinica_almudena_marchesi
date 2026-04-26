@@ -23,9 +23,12 @@ const NAV_ITEMS = [
 
 const MOBILE_NAV_ITEMS = [
   { href: '/', label: 'Inicio', icon: 'home' },
-  ...NAV_ITEMS.map((item) => ({ ...item, icon: 'arrow_forward' })),
+  { href: '/enfoque', label: 'Enfoque', icon: 'psychology' },
+  { href: '/servicios', label: 'Servicios', icon: 'medical_services' },
+  { href: '/sobre-mi', label: 'Sobre Mí', icon: 'person' },
+  { href: '/contacto', label: 'Contacto', icon: 'mail' },
   { href: '/registro-paciente', label: 'Reservar Cita', icon: 'calendar_month' },
-  { href: '/login', label: 'Portal del Paciente', icon: 'person' },
+  { href: '/login', label: 'Portal del Paciente', icon: 'badge' },
 ] as const;
 
 export default function PublicHeader() {
@@ -71,13 +74,6 @@ export default function PublicHeader() {
 
   return (
     <>
-      <a
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-canvas focus:px-4 focus:py-2 focus:shadow-apple-md focus:text-sage"
-        href="#main"
-      >
-        Saltar al contenido principal
-      </a>
-
       <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
         <div className="flex justify-center pt-4 px-4 md:px-8">
           {/* Apple Liquid Glass Nav Pill */}
@@ -119,7 +115,7 @@ export default function PublicHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative font-body text-[0.85rem] font-medium px-3.5 py-2 rounded-pill transition-all duration-400 ease-apple ${
+                    className={`relative min-h-11 items-center font-body text-[0.85rem] font-medium inline-flex px-3.5 py-2.5 rounded-pill transition-all duration-400 ease-apple ${
                       isActive(item.href)
                         ? 'text-sage bg-sage/8'
                         : 'text-ink-soft hover:text-ink hover:bg-ink/[0.03]'
@@ -135,7 +131,7 @@ export default function PublicHeader() {
                 <ThemeToggle />
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 bg-sage text-white text-[0.82rem] font-medium px-5 py-2 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97]"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-pill bg-sage px-5 py-2.5 text-[0.82rem] font-medium text-white transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97]"
                   style={{ boxShadow: '0 2px 10px rgba(74,99,85,0.18)' }}
                 >
                   Portal del Paciente

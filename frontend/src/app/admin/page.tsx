@@ -14,6 +14,8 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { primerNombre, saludoDiurnoEs } from '@/lib/greeting-es';
+import { getPreferredProfileFullName } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Inicio | Panel Almudena' };
@@ -50,6 +52,9 @@ function euro(centimos: number): string {
 
 export default async function AdminInicioPage() {
   const supabase = createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const now = new Date();
   const hoyStart = startOfDay(now).toISOString();
   const hoyEnd = endOfDay(now).toISOString();
@@ -58,6 +63,7 @@ export default async function AdminInicioPage() {
 
   // --- Queries paralelas ---
   const [
+    { data: adminProfile },
     { count: pacientesActivos },
     { data: citasHoy, count: citasHoyCount },
     { data: pagosMes },
@@ -67,6 +73,13 @@ export default async function AdminInicioPage() {
     { data: rgpdPendientes },
     { data: notaGlobal },
   ] = await Promise.all([
+    user?.id
+      ? supabase
+          .from('profiles')
+          .select('display_name')
+          .eq('id', user.id)
+          .maybeSingle<{ display_name: string | null }>()
+      : Promise.resolve({ data: null as { display_name: string | null } | null }),
     supabase
       .from('pacientes')
       .select('id', { count: 'exact', head: true })
@@ -157,6 +170,19 @@ export default async function AdminInicioPage() {
   };
   const rgpdList = (rgpdPendientes as RgpdPendienteRow[] | null) ?? [];
   const notaInicial = notaGlobal?.nota ?? '';
+  const metaFull =
+    typeof user?.user_metadata?.full_name === 'string'
+      ? user.user_metadata.full_name
+      : undefined;
+  const preferredAdmin = getPreferredProfileFullName(
+    adminProfile?.display_name,
+    metaFull
+  );
+  const nombreCabecera =
+    preferredAdmin.length > 0
+      ? primerNombre(preferredAdmin, 'Almudena')
+      : 'Almudena';
+  const tituloSaludo = `${saludoDiurnoEs(now)}, ${nombreCabecera}.`;
 
   return (
     <>
@@ -167,7 +193,7 @@ export default async function AdminInicioPage() {
       <div className="portal-rise">
         <PageHeader
           eyebrow={format(now, "EEEE d 'de' MMMM", { locale: es })}
-          title="Buenos días, Almudena."
+          title={tituloSaludo}
           description="Panorámica editorial de tu consulta. Cada métrica se actualiza en tiempo real vía Supabase Realtime."
           actions={
             <Link href="/admin/agenda">

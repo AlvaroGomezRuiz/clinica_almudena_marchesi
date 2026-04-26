@@ -1,7 +1,7 @@
-# Roadmap de Ingenieria
+# Roadmap de ingeniería
 
-> Tareas tecnicas agrupadas por horizonte temporal.
-> Para bloqueos pre-launch operativos (dominio, NIF, etc.) ver `docs/00_proyecto/estado-y-pendientes.md`.
+> Tareas técnicas por horizonte. La **línea base** del binario y módulos ya entregados está en `docs/00_proyecto/linea-base-producto.md`.  
+> Bloqueos de go-live (dominio, NIF, etc.): `docs/00_proyecto/estado-y-pendientes.md`.
 
 ---
 
@@ -34,7 +34,7 @@
 ### Verificacion
 - [ ] Activar endpoint `/sentry-check` post-deploy.
 - [ ] Run `axe-core` en home + portal + admin.
-- [ ] Smoke test manual de `docs/05_operaciones/testing-checklist.md`.
+- [ ] Smoke / checklist: `docs/05_operaciones/checklist-produccion.md` (Parte A = humo prod; Parte B = staging; Parte C = go-live).
 
 ---
 

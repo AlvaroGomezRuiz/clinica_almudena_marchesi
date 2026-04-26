@@ -15,6 +15,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Mis citas | Portal Paciente' };
@@ -228,10 +229,17 @@ export default async function PortalCitasPage(): Promise<JSX.Element | null> {
 
   return (
     <>
+      {pacienteId ? (
+        <RealtimeRefresh
+          channelName={`portal-citas-${pacienteId}`}
+          tables={['citas', 'pagos', 'citas_notas_paciente']}
+          filter={`paciente_id=eq.${pacienteId}`}
+        />
+      ) : null}
       <PageHeader
         eyebrow="Mis citas"
         title="Sesiones con Almudena"
-        description="Revisa tus próximas citas, consulta el historial y registra reflexiones privadas."
+        description="Revisa tus próximas citas, consulta el historial y registra reflexiones privadas. La anulación online desde el portal solo está disponible si quedan más de 48 h hasta el inicio (cuando la cita lo permita)."
         actions={
           <Link href="/portal/citas/reservar">
             <Button variant="primary" icon="add">

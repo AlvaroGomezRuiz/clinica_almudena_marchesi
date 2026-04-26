@@ -107,7 +107,7 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - Consolidacion `.DOCS/` + `docs/` en un unico `docs/` con seis carpetas numeradas (convención anterior en inglés).
 - Limpieza scripts obsoletos.
 - Reescritura `.gitignore` + `README.md`.
-- Seis auditorías técnicas + informe ejecutivo (ver `docs/01_auditorias/` y `docs/02_informes/`).
+- Auditorías técnicas en `01_auditorias/` (`arquitectura`, `backend`, `frontend`, `base-de-datos`, `seguridad-rgpd`); informes: `02_informes/ejecutivo-cliente` y `valor-reposicion-software`.
 
 ## Hito 13 — Cierre pre-launch: UX admin + observabilidad + cleanup (22-abr-2026)
 
@@ -136,7 +136,7 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - **Data hygiene** (FASE 4):
   - Migración idempotente `0028_retirar_seed_demo.sql` lista para
     ejecutar justo antes del go-live (limpia demo sin tocar admins).
-- **Docs** (FASE 5): `docs/03_ingenieria/roadmap.md` y `docs/00_proyecto/estado-y-pendientes.md`
+- **Docs** (cierre de ronda 2026-04-22): `docs/03_ingenieria/roadmap.md` y `docs/00_proyecto/estado-y-pendientes.md`
   reflejan todo lo anterior; FASE FINAL (dominio) queda listada y
   pospuesta.
 
@@ -162,7 +162,7 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - Dominio de producción canónico **`https://ampsicologia.es`** (metadata, URLs públicas, contacto `contacto@ampsicologia.es` donde aplique en código).
 - `buildPublicPageMetadata`, JSON-LD `@graph` en home, `WebPage` + `dateModified` en páginas legales; versión legal **`2026-04-23-v1`**.
 - Toolkit local **`.GEO/`**: script `run-geo-audit.ps1` + venv Python para auditorías reproducibles sobre URL o `sitemap.xml` (informes en `.GEO/reports/`).
-- Documentación: `docs/03_ingenieria/geo-y-seo.md` y `.GEO/README.md`.
+- Documentación: `docs/03_ingenieria/geo-y-seo.md`; toolkit local `.GEO/` (si el clon lo incluye).
 
 ## Hito 17 — Migraciones Supabase: alineación CLI + reglas cancelación paciente (23-abr-2026)
 
@@ -179,6 +179,29 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - Nuevo `docs/README.md` (índice y criterios) y `costes-herramientas.md` (Cursor + dominio).
 - Enlaces en documentación y `README.md` raíz alineados a las nuevas rutas.
 
+## Hito 19 — Documentación unificada en `docs/` (26-abr-2026)
+
+- Un solo árbol de Markdown en la **raíz** del monorepo; retirada la duplicación bajo `frontend/docs/`.
+- Añadidos: `00_proyecto/linea-base-producto.md`, `05_operaciones/checklist-produccion.md`, `03_ingenieria/estructura-frontend-src.md`. La verificación puntual de 2026-04-22 quedó resumida en la sección *Verificación de build* (más abajo); eliminado el antiguo fichero de comprobación por “fases” sueltas.
+- `docs/README.md` e índice de `README.md` raíz (§12) actualizados.
+- **(Actualización 26-abr-2026, bis)** `02_informes/informe-unico.md` y `01_auditorias/sintesis-plataforma.md` (experimentos de consolidación) reemplazados de nuevo por **auditorías completas** por capítulo + dos informes (`ejecutivo-cliente`, `valor-reposicion-software`). `plan-remediacion-2026-04-22` retirado: el histórico queda en git. Checklists `testing` + `produccion` unificados en `05_operaciones/checklist-produccion.md`.
+
+## Hito 21 — Política 48h en producto: cancelación y recordatorio email (26-abr-2026)
+
+- **Cancelación paciente (online):** ya fijada en `0046` (más de 48h hasta el inicio; sin refund Stripe automático al paciente en ese flujo).
+- **Recordatorios de cita:** `0060` (enum, columna, RPC 24h) + `0061` (RPC 48h) — `reminder_48h` (47h–49h) y `reminder_24h` (23h–25h). La cancelación online sigue **48h** (`0046`).
+
+## Hito 20 — Documentación: auditorías completas y checklist unificado (26-abr-2026)
+
+- Restaurados y reescritos al estado del repo: `01_auditorias/{arquitectura,backend,frontend,base-de-datos}.md` y `02_informes/{ejecutivo-cliente,valor-reposicion-software}.md` (revisión 3 en valor de reposición).
+- Eliminados: `plan-remediacion-2026-04-22.md`, `02_informes/informe-unico.md`, `01_auditorias/sintesis-plataforma.md`, `05_operaciones/testing-checklist.md` (contenido fusionado en `checklist-produccion.md` Partes A–C).
+- `docs/README.md` e índice de `README.md` raíz (§12) alineados a la nueva estructura y tablas.
+
+## Verificación de build (22 abr 2026)
+
+- En `frontend/`: `npx tsc --noEmit` y `npm run build` (Next 14) correctos en esa fecha.
+- Ámbito revisado: ficha admin (edición por secciones, historial), portal de pagos y recursos, chat con audio y validación **magic bytes** + límites en `POST /api/mensajes/attach`. SEPA en Stripe: guía en `docs/05_operaciones/activar-sepa-stripe.md` (activación de dashboard, no bloqueo de código).
+
 ## Estado actual (punto de partida para siguientes sesiones)
 
 - **Backend único**: Supabase (Postgres **17** en proyecto enlazado + Edge Functions Deno + Auth + Storage + Realtime + Vault/pgcron).
@@ -188,4 +211,4 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - **Pagos**: Stripe Payment Element + webhooks idempotentes.
 - **Emails**: Resend + plantillas; Auth SMTP opcional hacia Resend.
 - **Observabilidad**: Sentry (frontend + edge según despliegue).
-- **Bloqueos go-live típicos**: unificar dominio/DNS (si queda alias pendiente), Stripe Live + rotación de secrets, ejecutar `0028_retirar_seed_demo.sql` antes de abrir al público, checklist `docs/00_proyecto/estado-y-pendientes.md`.
+- **Bloqueos go-live típicos**: unificar dominio/DNS (si queda alias pendiente), Stripe Live + rotación de secrets, ejecutar `0028_retirar_seed_demo.sql` antes de abrir al público; checklists `docs/00_proyecto/estado-y-pendientes.md` y `docs/05_operaciones/checklist-produccion.md`.

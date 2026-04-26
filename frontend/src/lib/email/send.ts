@@ -18,6 +18,7 @@ export type EmailType =
   | 'welcome'
   | 'booking_confirmed'
   | 'reminder_24h'
+  | 'reminder_48h'
   | 'booking_cancelled'
   | 'nueva_asignacion';
 

@@ -10,9 +10,9 @@ import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { Button } from '@/components/portal-shell/ui';
-
+import { labelCitaEstadoAgenda, chipToneCitaEstadoAgenda } from '@/components/admin/agenda/cita-estado-agenda';
 import type { CitaRow } from '@/components/admin/agenda/types';
+import { Button, Chip } from '@/components/portal-shell/ui';
 
 function euroLabel(centimos: number | null): string {
   if (centimos == null || Number.isNaN(centimos)) return '—';
@@ -108,7 +108,11 @@ export default function CitaResumenSheet({
                 <dt className="text-[0.62rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/50">
                   Estado
                 </dt>
-                <dd className="mt-0.5 capitalize text-ink dark:text-white">{cita.estado}</dd>
+                <dd className="mt-0.5">
+                  <Chip tone={chipToneCitaEstadoAgenda(cita.estado)}>
+                    {labelCitaEstadoAgenda(cita.estado)}
+                  </Chip>
+                </dd>
               </div>
               <div>
                 <dt className="text-[0.62rem] uppercase tracking-[0.15em] text-ink-muted dark:text-white/50">
@@ -143,7 +147,7 @@ export default function CitaResumenSheet({
             <Button
               variant="surface"
               size="sm"
-              icon="history_edu"
+              icon="menu_book"
               onClick={() => {
                 handleClose();
                 router.push(`/admin/pacientes/${cita.paciente_id}#historia-clinica`);

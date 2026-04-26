@@ -11,6 +11,7 @@ import {
 import { RecursoAssignAllButton } from '@/components/recursos/RecursoAssignAllButton';
 import { RecursoAssignButton } from '@/components/recursos/RecursoAssignButton';
 import UploadRecursoButton from '@/components/admin/recursos/UploadRecursoButton';
+import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Recursos | Panel Almudena' };
@@ -126,10 +127,15 @@ export default async function AdminRecursosPage({
 
   return (
     <>
+      <RealtimeRefresh channelName="admin-recursos-lib" tables={['recursos']} />
+      <RealtimeRefresh
+        channelName="admin-recursos-asignaciones"
+        tables={['recurso_asignaciones']}
+      />
       <PageHeader
         eyebrow={`${count ?? 0} / ${total} recursos`}
         title="Biblioteca de recursos"
-        description="Guías, audios, plantillas y ejercicios que puedes asignar a tus pacientes."
+        description="Guías, audios, plantillas y ejercicios. «Ver» abre el visor embebido (PDF, imagen, audio, vídeo); «Asignar» envía el material a un paciente; «Todos» asigna a varios a la vez."
         actions={<UploadRecursoButton />}
       />
 
@@ -215,6 +221,18 @@ export default async function AdminRecursosPage({
                   </div>
                 </header>
 
+                {r.tipo === 'imagen' && r.storage_path ? (
+                  <div className="mb-3 aspect-[16/10] max-h-40 w-full overflow-hidden rounded-xl bg-ink/[0.06] ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- ruta API interna + redirect firmado */}
+                    <img
+                      src={`/api/admin/recursos/file/${r.id}`}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+
                 <h3 className="font-display text-[1.05rem] italic text-ink dark:text-white">
                   {r.titulo}
                 </h3>
@@ -229,8 +247,14 @@ export default async function AdminRecursosPage({
                     {format(new Date(r.created_at), 'd MMM yyyy', { locale: es })}
                   </p>
                   <div className="flex flex-wrap items-center justify-end gap-2">
-                    <RecursoAssignAllButton recursoId={r.id} recursoTitulo={r.titulo} />
+                    <Link
+                      href={`/admin/recursos/ver/${r.id}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 font-body text-[0.76rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/18"
+                    >
+                      Ver
+                    </Link>
                     <RecursoAssignButton recursoId={r.id} recursoTitulo={r.titulo} />
+                    <RecursoAssignAllButton recursoId={r.id} recursoTitulo={r.titulo} />
                   </div>
                 </footer>
               </SurfaceCard>

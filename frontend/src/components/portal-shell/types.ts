@@ -27,6 +27,8 @@ export interface ShellProps {
   readonly brandTitle: string;
   readonly brandSubtitle: string;
   readonly navItems: readonly NavItem[];
+  /** Total mensajes no leídos (paciente: su conversación; admin: suma conversaciones). */
+  readonly mensajesUnread?: number;
   readonly footerSlot?: ReactNode;
   readonly children: ReactNode;
 }

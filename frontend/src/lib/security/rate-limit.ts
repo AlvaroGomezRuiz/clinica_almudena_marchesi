@@ -21,6 +21,7 @@
  *   - Nunca se guarda información sensible en la key (solo UUID/IP hash).
  */
 
+import { NextResponse } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -108,6 +109,18 @@ function enforceInMemory(opts: RateLimitOptions): RateLimitResult {
 }
 
 // ─── API pública ────────────────────────────────────────────────────────────
+
+/**
+ * Respuesta JSON 429 con `Retry-After` (segundos), alineada a `POST /api/mensajes/attach`.
+ */
+export function rateLimitJsonResponse(result: RateLimitResult): NextResponse {
+  const retryAfterSec = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+  return NextResponse.json(
+    { error: 'rate_limited' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSec) } }
+  );
+}
+
 export async function enforceRateLimit(opts: RateLimitOptions): Promise<RateLimitResult> {
   const limiter = getLimiter(opts.max, opts.windowMs);
   if (limiter) {

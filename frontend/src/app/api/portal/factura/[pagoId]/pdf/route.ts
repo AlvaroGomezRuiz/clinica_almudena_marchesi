@@ -12,6 +12,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { enforceRateLimit, rateLimitJsonResponse } from '@/lib/security/rate-limit';
 import { createServerClient } from '@/lib/supabase/server';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 
@@ -38,8 +39,18 @@ export async function GET(
     data: { session },
     error: sessErr,
   } = await supabase.auth.getSession();
-  if (sessErr || !session?.access_token) {
+  if (sessErr || !session?.access_token || !session.user) {
     return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+  const rate = await enforceRateLimit({
+    key: `portal_factura_pdf:${userId}`,
+    max: 20,
+    windowMs: 3600_000,
+  });
+  if (!rate.ok) {
+    return rateLimitJsonResponse(rate);
   }
 
   // Defensa: RLS valida, pero fallamos rápido si el pago no existe para el user.
