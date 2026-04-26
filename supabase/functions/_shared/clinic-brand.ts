@@ -1,6 +1,10 @@
 /**
  * Datos de marca para cabecera/pie de correo (Resend / Edge).
  * Mantener alineado con `frontend/src/lib/clinic.ts` y drawer público.
+ *
+ * Coherencia legal: los mismos datos (nombre, NIF, dirección, colegiada) deben
+ * coincidir con los secretos `FACTURA_EMISOR_*` usados en PDFs de factura
+ * (`readInvoiceEmisor` en `invoice-pdf-render.ts`).
  */
 
 /** Título de documento <title> y línea de copyright bajo el bloque principal. */

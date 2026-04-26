@@ -12,7 +12,7 @@ export default function FichaPrintToolbar(): JSX.Element {
       <p className="font-body text-[0.82rem] text-ink-soft dark:text-white/70">
         Vista lista para imprimir o guardar como PDF desde el navegador (Ctrl+P / “Guardar como PDF”).
       </p>
-      <Button type="button" variant="primary" icon="print" onClick={() => window.print()}>
+      <Button type="button" variant="primary" icon="picture_as_pdf" onClick={() => window.print()}>
         Imprimir / PDF
       </Button>
     </div>

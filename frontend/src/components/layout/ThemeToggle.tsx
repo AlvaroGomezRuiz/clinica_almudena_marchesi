@@ -22,6 +22,10 @@ type Variant = 'compact' | 'segmented';
 interface ThemeToggleProps {
   readonly variant?: Variant;
   readonly className?: string;
+  /** En `segmented`: si false, solo texto (sin glifos Material). */
+  readonly segmentedGlyphs?: boolean;
+  /** En `segmented`: estilos para panel oscuro (drawer móvil). */
+  readonly segmentedOnDark?: boolean;
 }
 
 type Mode = 'light' | 'dark' | 'system';
@@ -35,7 +39,12 @@ function labelFor(mode: Mode): string {
   return mode === 'dark' ? 'Oscuro' : mode === 'light' ? 'Claro' : 'Sistema';
 }
 
-export default function ThemeToggle({ variant = 'compact', className = '' }: ThemeToggleProps) {
+export default function ThemeToggle({
+  variant = 'compact',
+  className = '',
+  segmentedGlyphs = true,
+  segmentedOnDark = false,
+}: ThemeToggleProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -59,7 +68,11 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
       <div
         role="radiogroup"
         aria-label="Tema"
-        className={`flex w-full flex-wrap items-stretch justify-center gap-1 rounded-full bg-white/60 p-1 ring-1 ring-inset ring-ink/8 backdrop-blur-md dark:bg-white/5 dark:ring-white/10 sm:flex-nowrap sm:justify-stretch ${className}`}
+        className={`flex w-full flex-wrap items-stretch justify-center gap-1 rounded-full p-1 backdrop-blur-md sm:flex-nowrap sm:justify-stretch ${
+          segmentedOnDark
+            ? 'bg-white/10 ring-1 ring-inset ring-white/15'
+            : 'bg-white/60 ring-1 ring-inset ring-ink/8 dark:bg-white/5 dark:ring-white/10'
+        } ${className}`}
       >
         {ORDER.map((mode) => {
           const active = current === mode;
@@ -71,14 +84,20 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
               type="button"
               onClick={() => setTheme(mode)}
               className={`inline-flex min-w-0 flex-1 basis-[30%] items-center justify-center gap-1 rounded-full px-2 py-2 font-body text-[0.62rem] uppercase tracking-[0.1em] transition-[background-color,color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] sm:basis-0 sm:px-3 sm:text-[0.72rem] sm:tracking-[0.14em] ${
-                active
-                  ? 'bg-primary/12 text-primary dark:bg-primary/25 dark:text-white'
-                  : 'text-ink-soft hover:text-ink dark:text-white/60 dark:hover:text-white'
+                segmentedOnDark
+                  ? active
+                    ? 'bg-white/18 text-white'
+                    : 'text-white/65 hover:bg-white/10 hover:text-white'
+                  : active
+                    ? 'bg-primary/12 text-primary dark:bg-primary/25 dark:text-white'
+                    : 'text-ink-soft hover:text-ink dark:text-white/60 dark:hover:text-white'
               }`}
             >
-              <span className="material-symbols-outlined shrink-0 text-[1rem]" aria-hidden="true">
-                {iconFor(mode)}
-              </span>
+              {segmentedGlyphs ? (
+                <span className="material-symbols-outlined shrink-0 text-[1rem]" aria-hidden="true">
+                  {iconFor(mode)}
+                </span>
+              ) : null}
               <span className="truncate">{labelFor(mode)}</span>
             </button>
           );

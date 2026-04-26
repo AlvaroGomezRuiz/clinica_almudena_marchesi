@@ -124,7 +124,8 @@ export function detectFileKind(
  * pasen como PNG).
  */
 export function kindFromMime(mime: string): AllowedFileKind | null {
-  switch (mime) {
+  const base = mime.split(';')[0]?.trim().toLowerCase() ?? '';
+  switch (base) {
     case 'image/png':
       return 'png';
     case 'image/jpeg':

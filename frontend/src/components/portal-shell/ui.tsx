@@ -98,7 +98,11 @@ export function PageHeader({ eyebrow, title, description, actions }: PageHeaderP
           </p>
         ) : null}
       </div>
-      {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
+      {actions ? (
+        <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-3 md:w-auto">
+          {actions}
+        </div>
+      ) : null}
     </header>
   );
 }
@@ -300,7 +304,7 @@ export function Button({
           className={`ml-auto grid h-7 w-7 place-items-center rounded-full transition-[transform,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[1px] ${iconPillCls}`}
           aria-hidden="true"
         >
-          <span className="material-symbols-outlined text-[1rem]">{icon}</span>
+          <span className="material-symbols-outlined text-[1rem] normal-case">{icon}</span>
         </span>
       ) : null}
     </button>

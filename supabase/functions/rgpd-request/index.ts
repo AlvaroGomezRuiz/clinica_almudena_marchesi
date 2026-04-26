@@ -15,6 +15,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
+import { resolveResendFrom, resolveResendReplyTo } from "../_shared/resend-from.ts";
 import { resendEmailTags } from "../_shared/resend-tags.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import { captureEdgeError, wrapEdgeHandler } from "../_shared/sentry.ts";
@@ -24,7 +25,6 @@ import {
 } from "../_shared/templates.ts";
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
-const FROM = Deno.env.get("EMAIL_FROM") ?? "Almudena <hola@almudenaagullo.com>";
 const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
 interface RgpdRow {
@@ -243,7 +243,8 @@ Deno.serve(wrapEdgeHandler("rgpd-request", async (req) => {
     });
 
     const send = await sendViaResend({
-      from: FROM,
+      from: resolveResendFrom(),
+      reply_to: resolveResendReplyTo(),
       to: profile.email,
       subject: tpl.subject,
       html: tpl.html,
@@ -336,7 +337,8 @@ Deno.serve(wrapEdgeHandler("rgpd-request", async (req) => {
   });
 
   const send = await sendViaResend({
-    from: FROM,
+    from: resolveResendFrom(),
+    reply_to: resolveResendReplyTo(),
     to: profile.email,
     subject: tpl.subject,
     html: tpl.html,

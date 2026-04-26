@@ -158,6 +158,9 @@ const SAFE = [
   // Layout / estructura
   'view_week', 'grid_view', 'diversity_3', 'auto_awesome', 'auto_awesome_motion',
   'picture_as_pdf',
+  'print',
+  'home_pin',
+  'shield_person',
   // Estados on/off (radio, checkbox, toggle) — usados en PasswordInput,
   // MarcarCompletadoButton, TogglePrefs, etc. Bugfix 22-abr-2026.
   'radio_button_unchecked', 'radio_button_checked',

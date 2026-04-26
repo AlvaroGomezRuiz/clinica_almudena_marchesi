@@ -11,6 +11,7 @@
 // -----------------------------------------------------------------------------
 
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { resolveResendFrom, resolveResendReplyTo } from "../_shared/resend-from.ts";
 import { resendEmailTags } from "../_shared/resend-tags.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import { renderReminder24h, renderReminder48h } from "../_shared/templates.ts";
@@ -29,9 +30,7 @@ interface CandidateRow {
 type ReminderKind = "reminder_24h" | "reminder_48h";
 type PrefKey = "reminder_24h" | "reminder_48h";
 
-const APP_URL    = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
-const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "Clínica Almudena <onboarding@resend.dev>";
-const REPLY_TO   = Deno.env.get("RESEND_REPLY_TO") ?? undefined;
+const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
 
 function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -105,12 +104,12 @@ async function processBatch(
 
     const rendered = render(c);
     const result = await sendViaResend({
-      from:     FROM_EMAIL,
+      from:     resolveResendFrom(),
       to:       c.email,
       subject:  rendered.subject,
       html:     rendered.html,
       text:     rendered.text,
-      reply_to: REPLY_TO,
+      reply_to: resolveResendReplyTo(),
       tags: resendEmailTags(kind, [
         { name: "cita_id", value: c.cita_id },
       ]),

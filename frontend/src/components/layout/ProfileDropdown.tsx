@@ -94,7 +94,7 @@ export default function ProfileDropdown({
 
       {open ? (
         <div
-          className="absolute right-0 mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ink/[0.06] bg-[#FBF6EF]/78 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] ring-1 ring-inset ring-white/30 dark:border-white/10 dark:bg-[#141312]/78 dark:ring-white/5"
+          className="absolute right-0 z-[60] mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ink/[0.06] bg-[#FBF6EF]/92 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] ring-1 ring-inset ring-white/30 dark:border-white/10 dark:bg-[#141312]/92 dark:ring-white/5"
           style={{
             backdropFilter: 'blur(40px) saturate(180%)',
             WebkitBackdropFilter: 'blur(40px) saturate(180%)',

@@ -25,9 +25,9 @@ import PaymentElementDrawer from '@/components/portal/pagos/PaymentElementDrawer
 import { inferModalidadServicio } from '@/lib/booking/servicio-modalidad';
 import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
 import {
-  getDisponibilidadAction,
+  getCuadriculaReservaAction,
   reservarCitaAction,
-  type Slot,
+  type SlotCuadricula,
 } from '@/services/citas/actions';
 
 export interface ServicioOption {
@@ -66,11 +66,11 @@ export default function SlotPicker({
       : servicios[0]?.id ?? ''
   );
   const [fecha, setFecha] = useState<Date>(today);
-  const [slots, setSlots] = useState<readonly Slot[]>([]);
+  const [slots, setSlots] = useState<readonly SlotCuadricula[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reservando, startReserva] = useTransition();
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<SlotCuadricula | null>(null);
   const policyDialogRef = useRef<HTMLDialogElement>(null);
   const [pendingPayment, setPendingPayment] = useState<{
     citaId: string;
@@ -119,7 +119,7 @@ export default function SlotPicker({
     setLoading(true);
     setError(null);
 
-    getDisponibilidadAction(fechaISO, servicioId)
+    getCuadriculaReservaAction(fechaISO, servicioId)
       .then((data) => {
         if (ctrl.signal.aborted) return;
         setSlots(data);
@@ -145,19 +145,21 @@ export default function SlotPicker({
     policyDialogRef.current?.close();
   };
 
-  const ejecutarReserva = (slot: Slot) => {
-    if (!servicioId) return;
+  const ejecutarReserva = (slot: SlotCuadricula) => {
+    if (!servicioId || !slot.permite_reserva) return;
     setError(null);
 
     startReserva(async () => {
       const res = await reservarCitaAction(servicioId, slot.slot_inicio);
       if (!res.ok) {
         closePolicyDialog();
-        setError(res.message);
         if (res.code === 'slot_ocupado') {
-          getDisponibilidadAction(format(fecha, 'yyyy-MM-dd'), servicioId).then(setSlots);
+          void getCuadriculaReservaAction(format(fecha, 'yyyy-MM-dd'), servicioId).then(setSlots);
           setSelectedSlot(null);
+          setError(null);
+          return;
         }
+        setError(res.message);
         return;
       }
 
@@ -379,24 +381,46 @@ export default function SlotPicker({
           >
             {slots.map((s) => {
               const picked = selectedSlot?.slot_inicio === s.slot_inicio;
+              const bloqueado = !s.permite_reserva;
               return (
                 <button
                   key={s.slot_inicio}
                   type="button"
-                  disabled={reservando}
+                  disabled={reservando || bloqueado}
+                  aria-disabled={bloqueado}
                   aria-pressed={picked}
-                  onClick={() =>
+                  title={
+                    bloqueado
+                      ? 'Horario no disponible'
+                      : picked
+                        ? 'Pulsa de nuevo para deseleccionar'
+                        : 'Seleccionar hora'
+                  }
+                  onClick={() => {
+                    if (bloqueado) return;
                     setSelectedSlot((prev) =>
                       prev?.slot_inicio === s.slot_inicio ? null : s
-                    )
-                  }
-                  className={`group h-11 rounded-xl font-body text-[0.88rem] tabular-nums ring-1 ring-inset transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 ${
-                    picked
-                      ? 'bg-primary text-on-primary shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] ring-primary/50 dark:bg-primary dark:text-on-primary'
-                      : 'bg-white/60 text-ink ring-white/50 hover:-translate-y-[2px] hover:bg-primary hover:text-on-primary hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary'
-                  }`}
+                    );
+                  }}
+                  className={`group relative h-11 overflow-hidden rounded-xl font-body text-[0.88rem] tabular-nums ring-1 ring-inset transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+                    bloqueado
+                      ? 'cursor-not-allowed bg-ink/[0.06] text-ink/35 ring-ink/10 dark:bg-white/[0.04] dark:text-white/35 dark:ring-white/8'
+                      : picked
+                        ? 'bg-primary text-on-primary shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] ring-primary/50 active:scale-[0.97] dark:bg-primary dark:text-on-primary'
+                        : 'bg-white/60 text-ink ring-white/50 hover:-translate-y-[2px] hover:bg-primary hover:text-on-primary hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary'
+                  } ${reservando && !bloqueado ? 'opacity-40' : ''}`}
                 >
-                  {format(new Date(s.slot_inicio), 'HH:mm')}
+                  {bloqueado ? (
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    >
+                      <span className="h-px w-[130%] rotate-[36deg] bg-ink/18 dark:bg-white/20" />
+                    </span>
+                  ) : null}
+                  <span className={bloqueado ? 'relative' : ''}>
+                    {format(new Date(s.slot_inicio), 'HH:mm')}
+                  </span>
                 </button>
               );
             })}

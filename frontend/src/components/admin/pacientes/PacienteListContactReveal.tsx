@@ -129,7 +129,7 @@ export default function PacienteListContactReveal({
         type="button"
         variant="surface"
         size="sm"
-        icon="shield_person"
+        icon="shield_lock"
         onClick={openMenu}
         disabled={!hayAlgunaRevelacion}
         className="max-w-full"
@@ -286,7 +286,7 @@ export default function PacienteListContactReveal({
                     >
                       <span className="inline-flex min-w-0 items-center gap-2">
                         <span className="material-symbols-outlined shrink-0 text-[1.1rem]" aria-hidden="true">
-                          home_pin
+                          assignment_ind
                         </span>
                         <span className="truncate">DNI y domicilio</span>
                       </span>

@@ -1,0 +1,60 @@
+'use client';
+
+import type { JSX } from 'react';
+
+/**
+ * Piezas compartidas del menú móvil editorial (prot. img. 16):
+ * fondo oscuro difuminado, tipografía display, enlaces centrados sin iconos.
+ */
+
+import Link from 'next/link';
+
+import { cn } from '@/lib/utils';
+
+export interface EditorialMobileNavItem {
+  readonly href: string;
+  readonly label: string;
+  readonly active?: boolean;
+  readonly badgeCount?: number;
+}
+
+/** Overlay + panel base para drawer móvil (oscuro, cristal). */
+export const EDITORIAL_MOBILE_OVERLAY_CLASS =
+  'absolute inset-0 cursor-default bg-[#070605]/82 transition-colors duration-500';
+
+export const EDITORIAL_MOBILE_PANEL_CLASS =
+  'relative z-[70] mx-auto flex h-full max-h-[100dvh] w-full max-w-sm flex-col px-3 py-2 text-white sm:px-4 sm:py-2.5';
+
+export function EditorialMobileNavLink({
+  href,
+  label,
+  active,
+  badgeCount,
+  onNavigate,
+}: EditorialMobileNavItem & { readonly onNavigate?: () => void }): JSX.Element {
+  const hasBadge = typeof badgeCount === 'number' && badgeCount > 0;
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex min-h-11 w-full max-w-full flex-row items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-center transition-colors active:opacity-85',
+        'font-display text-[clamp(0.78rem,3.6vw,0.95rem)] font-medium uppercase tracking-[0.14em]',
+        active
+          ? 'bg-white/12 text-white ring-1 ring-inset ring-white/22 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+          : 'text-white/88 hover:bg-white/[0.07] hover:text-white',
+      )}
+    >
+      <span className="min-w-0 truncate">{label}</span>
+      {hasBadge ? (
+        <span
+          className="shrink-0 rounded-full bg-[#c94c4c] px-1.5 py-0.5 font-body text-[0.58rem] font-semibold tabular-nums leading-none text-white ring-1 ring-white/25"
+          aria-label={`${badgeCount} sin leer`}
+        >
+          {badgeCount > 99 ? '99+' : String(badgeCount)}
+        </span>
+      ) : null}
+    </Link>
+  );
+}

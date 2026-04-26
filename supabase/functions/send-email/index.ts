@@ -19,6 +19,7 @@ import {
   renderInvoicePdfBytes,
 } from "../_shared/invoice-pdf-render.ts";
 import { resendEmailTags } from "../_shared/resend-tags.ts";
+import { resolveResendFrom, resolveResendReplyTo } from "../_shared/resend-from.ts";
 import { sendViaResend } from "../_shared/resend.ts";
 import {
   renderWelcome,
@@ -65,9 +66,6 @@ interface PrefsRow {
 }
 
 const APP_URL = Deno.env.get("FRONTEND_URL") ?? "https://ampsicologia.es";
-const FROM_EMAIL = Deno.env.get("RESEND_FROM_EMAIL") ?? "Clínica Almudena <onboarding@resend.dev>";
-const REPLY_TO =
-  Deno.env.get("RESEND_REPLY_TO") ?? "clinica.almudena.marchesi@outlook.com";
 
 function json(body: unknown, status: number, corsHeaders: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {
@@ -296,12 +294,12 @@ Deno.serve(async (req) => {
   }
 
   const result = await sendViaResend({
-    from:      FROM_EMAIL,
+    from:      resolveResendFrom(),
     to:        toEmail,
     subject:   rendered.subject,
     html:      rendered.html,
     text:      rendered.text,
-    reply_to:  REPLY_TO,
+    reply_to:  resolveResendReplyTo(),
     tags:      resendEmailTags(payload.type),
     attachments,
   });

@@ -1,21 +1,26 @@
 'use client';
 
 /**
- * MobileNavDrawer — pantalla completa (<md) alineada con PublicMobileDrawer:
- * overlay blur + panel centrado, mismas densidades de nav, Link de Next.js.
+ * MobileNavDrawer — misma línea visual que PublicMobileDrawer (prot. img. 16 oscuro):
+ * cristal oscuro, tipografía display, sin iconos en enlaces; tema segmentado sin glifos.
  */
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import {
+  EDITORIAL_MOBILE_OVERLAY_CLASS,
+  EDITORIAL_MOBILE_PANEL_CLASS,
+  EditorialMobileNavLink,
+} from '@/components/layout/EditorialMobileNav';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { logoutAction } from '@/services/auth/actions';
 
 const GLASS_OVERLAY: CSSProperties = {
-  backdropFilter: 'blur(40px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+  backdropFilter: 'blur(44px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(44px) saturate(160%)',
 };
 
 type NavItem = {
@@ -37,24 +42,11 @@ type MobileNavDrawerProps = {
   brandTitle: string;
   brandSubtitle?: string;
   navItems: NavItem[];
-  /** Suma no leídos (mismo número que el badge de Mensajes). */
   mensajesUnread?: number;
   footerItems?: NavItem[];
   panelClassName: string;
   buttonClassName?: string;
 };
-
-function UnreadBadge({ count }: { count: number }) {
-  const label = count > 99 ? '99+' : String(count);
-  return (
-    <span
-      className="absolute -right-1 -top-1 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#c94c4c] px-0.5 font-body text-[0.62rem] font-semibold leading-none text-white shadow-sm ring-2 ring-canvas dark:ring-[#111]"
-      aria-label={`${count} mensajes sin leer`}
-    >
-      {label}
-    </span>
-  );
-}
 
 export default function MobileNavDrawer({
   brandTitle,
@@ -67,11 +59,6 @@ export default function MobileNavDrawer({
 }: MobileNavDrawerProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-
-  const navBase =
-    'text-ink hover:bg-ink/[0.03] dark:text-white/85 dark:hover:bg-white/[0.06]';
-  const navCurrent =
-    'bg-sage/8 text-sage dark:bg-white/10 dark:text-white ring-1 ring-inset ring-sage/15 dark:ring-white/10';
 
   useEffect(() => {
     if (!open) return;
@@ -111,14 +98,20 @@ export default function MobileNavDrawer({
           stroke="currentColor"
           strokeWidth="1.75"
           strokeLinecap="round"
-          className="text-ink dark:text-white"
           aria-hidden="true"
         >
           <line x1="4" y1="7" x2="20" y2="7" />
           <line x1="4" y1="12" x2="20" y2="12" />
           <line x1="4" y1="17" x2="20" y2="17" />
         </svg>
-        {mensajesUnread > 0 ? <UnreadBadge count={mensajesUnread} /> : null}
+        {mensajesUnread > 0 ? (
+          <span
+            className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#c94c4c] px-0.5 font-body text-[0.58rem] font-semibold leading-none text-white ring-2 ring-[#0a0908]"
+            aria-label={`${mensajesUnread} mensajes sin leer`}
+          >
+            {mensajesUnread > 99 ? '99+' : String(mensajesUnread)}
+          </span>
+        ) : null}
       </button>
 
       <div
@@ -129,7 +122,7 @@ export default function MobileNavDrawer({
         aria-hidden={!open}
       >
         <div
-          className="absolute inset-0 cursor-default bg-canvas/95 transition-colors duration-500 dark:bg-[#111111]/95"
+          className={EDITORIAL_MOBILE_OVERLAY_CLASS}
           style={GLASS_OVERLAY}
           onClick={() => setOpen(false)}
           aria-hidden="true"
@@ -137,31 +130,28 @@ export default function MobileNavDrawer({
 
         <div
           className={cn(
-            'relative z-[70] mx-auto flex h-full max-h-[100dvh] w-full max-w-sm flex-col px-3 py-2 sm:px-4 sm:py-2.5',
+            EDITORIAL_MOBILE_PANEL_CLASS,
+            'backdrop-blur-xl',
             panelClassName,
           )}
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
         >
-          <div className="relative flex shrink-0 items-center justify-center py-0.5">
-            <div className="flex min-w-0 flex-col items-center px-8 text-center">
-              <p className="font-display text-[1rem] font-medium leading-tight tracking-normal text-ink dark:text-white sm:text-[1.05rem]">
+          <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
+            <div className="flex min-w-0 flex-col items-center px-10 text-center">
+              <p className="font-display text-[1.02rem] font-medium leading-tight tracking-tight text-white sm:text-[1.08rem]">
                 {brandTitle}
               </p>
               {brandSubtitle ? (
-                <p className="mt-0.5 font-mono text-[0.55rem] uppercase leading-snug tracking-[0.1em] text-ink-muted dark:text-white/55">
+                <p className="mt-1 font-body text-[0.55rem] uppercase tracking-[0.16em] text-white/55">
                   {brandSubtitle}
                 </p>
               ) : null}
             </div>
             <button
               type="button"
-              className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/5 dark:bg-white/10"
-              style={{
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-              }}
+              className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/15 hover:bg-white/16"
               onClick={() => setOpen(false)}
               aria-label="Cerrar"
             >
@@ -173,7 +163,6 @@ export default function MobileNavDrawer({
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
-                className="text-ink dark:text-white"
                 aria-hidden="true"
               >
                 <line x1="3" y1="3" x2="15" y2="15" />
@@ -183,7 +172,7 @@ export default function MobileNavDrawer({
           </div>
 
           <nav
-            className="mx-auto flex min-h-0 w-full min-w-0 max-w-sm flex-1 flex-col justify-start gap-0.5 overflow-y-auto overflow-x-hidden pt-1.5 pr-0.5 pb-1 [scrollbar-gutter:stable]"
+            className="mx-auto flex min-h-0 w-full min-w-0 max-w-sm flex-1 flex-col justify-center gap-1 overflow-y-auto overflow-x-hidden px-0.5 py-3 [scrollbar-gutter:stable]"
             aria-label="Navegación principal"
           >
             {navItems.map((item) => {
@@ -191,87 +180,48 @@ export default function MobileNavDrawer({
               const badgeN = hasRowBadge && item.badge !== undefined ? item.badge : 0;
               const current = isNavActive(pathname, item);
               return (
-                <Link
+                <EditorialMobileNavLink
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
-                  aria-current={current ? 'page' : undefined}
-                  className={cn(
-                    'flex min-h-10 w-full flex-row items-center justify-start gap-2.5 rounded-apple px-2.5 py-1.5 text-left transition-colors active:opacity-80',
-                    'dark:hover:bg-white/[0.04]',
-                    current
-                      ? navCurrent
-                      : navBase,
-                  )}
-                >
-                  <span
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-ink/[0.04] text-ink/80 dark:bg-white/[0.08] dark:text-white/70"
-                    aria-hidden="true"
-                  >
-                    <span
-                      className="material-symbols-outlined text-[1.1rem] text-current"
-                      data-icon={item.icon}
-                    >
-                      {item.icon}
-                    </span>
-                  </span>
-                  <span className="min-w-0 flex-1 font-display text-[0.95rem] font-light leading-tight tracking-normal sm:text-[1.02rem]">
-                    {item.label}
-                  </span>
-                  {hasRowBadge ? (
-                    <span
-                      className="shrink-0 rounded-full bg-[#c94c4c] px-1.5 py-0.5 font-body text-[0.6rem] font-semibold text-white tabular-nums"
-                      aria-label={badgeN > 99 ? 'Más de 99' : `${badgeN} sin leer`}
-                    >
-                      {badgeN > 99 ? '99+' : String(badgeN)}
-                    </span>
-                  ) : null}
-                </Link>
+                  label={item.label}
+                  active={current}
+                  badgeCount={hasRowBadge ? badgeN : undefined}
+                  onNavigate={() => setOpen(false)}
+                />
               );
             })}
           </nav>
 
-          <div className="shrink-0 space-y-1.5 border-t border-ink/5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 dark:border-white/8">
+          <div className="shrink-0 space-y-2 border-t border-white/10 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3">
             <div className="px-0.5">
-              <p className="pb-1 text-center font-body text-[0.55rem] uppercase tracking-[0.16em] text-ink-muted dark:text-white/50">
+              <p className="pb-1 text-center font-body text-[0.52rem] uppercase tracking-[0.18em] text-white/45">
                 Tema
               </p>
-              <ThemeToggle variant="segmented" className="w-full justify-between" />
+              <ThemeToggle
+                variant="segmented"
+                segmentedGlyphs={false}
+                segmentedOnDark
+                className="w-full justify-between"
+              />
             </div>
 
             {footerItems && footerItems.length > 0
               ? footerItems.map((item) => (
-                  <Link
+                  <EditorialMobileNavLink
                     key={item.href}
                     href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="flex min-h-9 w-full flex-row items-center gap-2 rounded-apple px-2.5 py-1.5 text-left text-ink-muted transition-colors hover:bg-ink/[0.04] hover:text-ink dark:text-white/60 dark:hover:bg-white/[0.04] dark:hover:text-white"
-                  >
-                    <span
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink/[0.04] dark:bg-white/[0.06]"
-                      aria-hidden="true"
-                    >
-                      <span className="material-symbols-outlined text-base text-current" data-icon={item.icon}>
-                        {item.icon}
-                      </span>
-                    </span>
-                    <span className="font-body text-xs">{item.label}</span>
-                  </Link>
+                    label={item.label}
+                    onNavigate={() => setOpen(false)}
+                  />
                 ))
               : null}
 
             <form action={logoutAction} className="pt-0.5">
               <button
                 type="submit"
-                className="flex w-full min-h-9 items-center justify-start gap-2 rounded-apple px-2.5 py-1.5 text-left text-ink-muted transition-colors hover:bg-error/5 hover:text-error dark:text-white/55 dark:hover:bg-red-950/30 dark:hover:text-red-300"
+                className="flex w-full min-h-10 items-center justify-center rounded-2xl px-4 py-2.5 text-center font-display text-[0.78rem] font-medium uppercase tracking-[0.12em] text-red-200/95 transition-colors hover:bg-red-950/35"
               >
-                <span
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink/[0.04] dark:bg-white/[0.06]"
-                  aria-hidden="true"
-                >
-                  <span className="material-symbols-outlined text-base">logout</span>
-                </span>
-                <span className="font-body text-xs">Cerrar sesión</span>
+                Cerrar sesión
               </button>
             </form>
           </div>

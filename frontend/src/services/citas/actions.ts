@@ -19,6 +19,11 @@ export interface Slot {
   readonly slot_fin: string;
 }
 
+/** Hueco en la rejilla diaria (libre u ocupado visualmente). */
+export interface SlotCuadricula extends Slot {
+  readonly permite_reserva: boolean;
+}
+
 export type ReservaResult =
   | { readonly ok: true; readonly citaId: string; readonly confirmada: boolean; readonly consumioBono: boolean }
   | { readonly ok: false; readonly code: ReservaErrorCode; readonly message: string };
@@ -51,6 +56,29 @@ export async function getDisponibilidadAction(
     { p_fecha: fechaISO, p_servicio_id: servicioId }
   );
   return data ?? [];
+}
+
+/**
+ * Rejilla completa del día: incluye huecos ocupados (`permite_reserva: false`)
+ * para mostrarlos deshabilitados en UI sin ocultarlos.
+ */
+export async function getCuadriculaReservaAction(
+  fechaISO: string,
+  servicioId: string
+): Promise<readonly SlotCuadricula[]> {
+  if (!UUID_RE.test(servicioId)) return [];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return [];
+
+  const supabase = createServerClient();
+  const data = await rpcPost<
+    Array<{ slot_inicio: string; slot_fin: string; permite_reserva: boolean }>
+  >(supabase, 'obtener_cuadricula_reserva', { p_fecha: fechaISO, p_servicio_id: servicioId });
+  const rows = data ?? [];
+  return rows.map((r) => ({
+    slot_inicio: String(r.slot_inicio),
+    slot_fin: String(r.slot_fin),
+    permite_reserva: Boolean(r.permite_reserva),
+  }));
 }
 
 // ---------------------------------------------------------------------------

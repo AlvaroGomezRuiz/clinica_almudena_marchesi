@@ -617,7 +617,7 @@ function messageBodyWithLinks(text: string, esMio: boolean): ReactNode[] {
   const parts = text.split(re);
   const linkClass = esMio
     ? 'break-all underline underline-offset-2 text-on-primary hover:brightness-110'
-    : 'break-all underline underline-offset-2 text-primary hover:text-primary-dim dark:text-primary-fixed-dim dark:hover:text-white';
+    : 'break-all underline underline-offset-2 text-zinc-800 hover:text-zinc-950 dark:text-white/85 dark:hover:text-white';
   return parts.map((part, i) => {
     if (part === '') return null;
     if (/^https?:\/\//i.test(part)) {
@@ -731,21 +731,21 @@ function Burbuja({
     ? 'bg-[#b2675e]/85 text-white'
     : 'bg-primary text-on-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_24px_-12px_rgba(75,100,95,0.45)] dark:bg-primary-dark dark:text-white';
   const other =
-    'bg-white text-ink ring-1 ring-inset ring-ink/6 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_8px_20px_-14px_rgba(28,28,25,0.2)] dark:bg-white/5 dark:text-white dark:ring-white/10 dark:shadow-none';
+    'bg-zinc-200 text-zinc-900 ring-1 ring-inset ring-zinc-300/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_6px_18px_-12px_rgba(28,28,25,0.18)] dark:bg-zinc-800 dark:text-white/95 dark:ring-white/12 dark:shadow-none';
 
   const adjuntos = mensaje.adjuntos ?? [];
   const hideBodyLine = isAutoAttachmentCaption(mensaje.body, adjuntos);
   const label = (n: string): string => formatChatAttachmentDisplayName(n);
 
   return (
-    <div
-      className={`my-1 flex items-end gap-2 ${esMio ? 'flex-row-reverse justify-end' : 'justify-start'}`}
-    >
-      <ChatThumb
-        url={esMio ? selfAvatarUrl : otherAvatarUrl}
-        fallbackLetter={esMio ? '' : otherInitial}
-        align={esMio ? 'right' : 'left'}
-      />
+    <div className={`my-1 flex items-end gap-2 ${esMio ? 'justify-end' : 'justify-start'}`}>
+      {!esMio ? (
+        <ChatThumb
+          url={otherAvatarUrl}
+          fallbackLetter={otherInitial}
+          align="left"
+        />
+      ) : null}
       <div className={`${base} ${esMio ? own : other} ${mensaje.pending ? 'opacity-70' : ''}`}>
         {!hideBodyLine && mensaje.body.trim() ? (
           <p className="whitespace-pre-wrap break-words">{messageBodyWithLinks(mensaje.body, esMio)}</p>
@@ -818,7 +818,7 @@ function Burbuja({
         ) : null}
         <p
           className={`mt-1 flex items-center gap-1 font-body text-[0.62rem] tabular-nums ${
-            esMio ? 'justify-end text-on-primary/75' : 'text-ink-muted'
+            esMio ? 'justify-end text-on-primary/75' : 'justify-start text-zinc-600 dark:text-white/55'
           }`}
         >
           {timeFormatter.format(new Date(mensaje.created_at))}
@@ -841,6 +841,9 @@ function Burbuja({
           ) : null}
         </p>
       </div>
+      {esMio ? (
+        <ChatThumb url={selfAvatarUrl} fallbackLetter="" align="right" />
+      ) : null}
     </div>
   );
 }

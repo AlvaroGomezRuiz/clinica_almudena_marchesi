@@ -53,6 +53,12 @@ export function chatAudioErrorToMessage(code: string | null | undefined): string
   if (code === 'upload_error') {
     return 'No se pudo completar el envío del audio. Prueba otra conexión o más tarde.';
   }
+  if (code === 'file_signature_mismatch') {
+    return 'El navegador envió un formato de audio no reconocido. Prueba de nuevo o adjunta un archivo.';
+  }
+  if (code === 'rate_limited') {
+    return 'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.';
+  }
   if (code.startsWith('HTTP ')) {
     return 'No se pudo subir el audio. Comprueba la conexión.';
   }

@@ -886,7 +886,7 @@ function EventoBlock(
         <button
           type="button"
           onClick={onActivate}
-          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-5 text-left outline-none transition hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:brightness-110 ${bordeCita} ${capaCita}`}
+          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-9 text-left outline-none transition hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:brightness-110 ${bordeCita} ${capaCita}`}
           title={`${title} · ${sublinea}`}
           aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}, ${sublinea}`}
         >

@@ -544,6 +544,10 @@ export interface Database {
         Args: { p_fecha: string; p_servicio_id: string };
         Returns: Array<{ slot_inicio: string; slot_fin: string }>;
       };
+      obtener_cuadricula_reserva: {
+        Args: { p_fecha: string; p_servicio_id: string };
+        Returns: Array<{ slot_inicio: string; slot_fin: string; permite_reserva: boolean }>;
+      };
       reservar_cita: {
         Args: { p_servicio_id: string; p_slot_inicio: string };
         Returns: Array<{

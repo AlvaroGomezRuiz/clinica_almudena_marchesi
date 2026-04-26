@@ -82,6 +82,12 @@ interface ShellOptions {
 function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
   const baseUrl = appUrl.replace(/\/$/, '');
   const safePreheader = escapeHtml(preheader);
+  const logoRaw = Deno.env.get('CLINIC_EMAIL_LOGO_URL')?.trim() ?? '';
+  const safeLogo =
+    logoRaw.length > 0 && /^https:\/\//i.test(logoRaw) ? escapeHtml(logoRaw) : null;
+  const headerMark = safeLogo
+    ? `<img src="${safeLogo}" alt="" width="36" height="36" style="display:inline-block;width:36px;height:36px;border-radius:10px;object-fit:cover;vertical-align:middle;border:0;" />`
+    : `<span style="display:inline-block;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,${COLORS.sage} 0%,${COLORS.sageDark} 100%);vertical-align:middle;"></span>`;
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -100,7 +106,7 @@ function shell(inner: string, { preheader, appUrl }: ShellOptions): string {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
             <tr>
               <td style="vertical-align:middle;">
-                <span style="display:inline-block;width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,${COLORS.sage} 0%,${COLORS.sageDark} 100%);vertical-align:middle;"></span>
+                ${headerMark}
                 <span style="display:inline-block;margin-left:12px;vertical-align:middle;">
                   <span style="display:block;font-family:Georgia,serif;font-size:18px;letter-spacing:0.02em;color:${COLORS.ink};">${escapeHtml(CLINIC_EMAIL_HEADER_LINE1)}</span>
                   <span style="display:block;margin-top:4px;font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:${COLORS.inkSoft};">${escapeHtml(CLINIC_EMAIL_HEADER_LINE2)}</span>

@@ -26,7 +26,11 @@ import { sendMensajeAction } from '@/services/mensajes/actions';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const ALLOWED = new Set([
+function mimeBase(mime: string): string {
+  return mime.split(';')[0]?.trim().toLowerCase() ?? '';
+}
+
+const ALLOWED_BASE = new Set([
   'image/png',
   'image/jpeg',
   'image/webp',
@@ -103,22 +107,24 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!/^[0-9a-f-]{36}$/i.test(conversacionId)) {
     return NextResponse.json({ error: 'conversacion_invalida' }, { status: 400 });
   }
-  if (!ALLOWED.has(file.type)) {
+  const declaredBase = mimeBase(file.type);
+  if (!ALLOWED_BASE.has(declaredBase)) {
     return NextResponse.json(
       { error: 'mime_no_soportado', mime: file.type },
       { status: 415 }
     );
   }
-  const maxForKind = file.type.startsWith('audio/') || file.type === 'application/ogg'
-    ? MAX_AUDIO_BYTES
-    : MAX_BYTES;
+  const maxForKind =
+    declaredBase.startsWith('audio/') || declaredBase === 'application/ogg'
+      ? MAX_AUDIO_BYTES
+      : MAX_BYTES;
   if (file.size > maxForKind) {
     return NextResponse.json({ error: 'file_demasiado_grande' }, { status: 413 });
   }
 
   /* Verificación magic-bytes: el Content-Type viene del cliente y es trivial
      de falsificar. Revisamos la firma real del archivo contra la lista blanca. */
-  const declaredKind = kindFromMime(file.type);
+  const declaredKind = kindFromMime(declaredBase);
   if (!declaredKind) {
     return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
   }

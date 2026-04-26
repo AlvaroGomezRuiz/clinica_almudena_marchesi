@@ -87,6 +87,10 @@ export default function AudioRecorderButton({
             mensaje_id?: string;
           };
           if (!res.ok || !body.ok) {
+            if (res.status === 429) {
+              setErr('rate_limited');
+              return;
+            }
             setErr(body.error != null && body.error.length > 0 ? body.error : `HTTP ${res.status}`);
             return;
           }

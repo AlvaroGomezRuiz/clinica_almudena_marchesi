@@ -123,7 +123,7 @@ export default function PortalShell({
       </aside>
 
       {/* ──────────── TOPBAR ──────────── */}
-      <header className="portal-topbar fixed left-0 right-0 top-0 z-30 md:left-[280px]">
+      <header className="portal-topbar fixed left-0 right-0 top-0 z-[45] md:left-[280px]">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 md:px-10">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <MobileNavDrawer
