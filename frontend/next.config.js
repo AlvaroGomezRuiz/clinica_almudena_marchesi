@@ -85,8 +85,8 @@ function buildCsp() {
     "worker-src 'self' blob:",
     /* manifest-src: propio manifest. */
     "manifest-src 'self'",
-    /* media-src: self (para recursos de audio/video en el portal). */
-    "media-src 'self'",
+    /* media-src: self + Supabase Storage (audio/video del chat). */
+    `media-src 'self' ${supabaseHost}`.trim(),
     /* upgrade-insecure-requests: cualquier http:// se auto-reescribe a https://. */
     'upgrade-insecure-requests',
   ];
