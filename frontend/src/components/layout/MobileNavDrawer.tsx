@@ -18,6 +18,7 @@ import {
 import ThemeToggle from '@/components/layout/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { logoutAction } from '@/services/auth/actions';
+import { useTheme } from 'next-themes';
 
 type NavItem = {
   label: string;
@@ -58,6 +59,8 @@ export default function MobileNavDrawer({
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+  const { resolvedTheme } = useTheme();
+  const segmentedOnDark = resolvedTheme === 'dark';
 
   useEffect(() => {
     setPortalTarget(document.body);
@@ -112,7 +115,7 @@ export default function MobileNavDrawer({
         </svg>
         {mensajesUnread > 0 ? (
           <span
-            className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#c94c4c] px-0.5 font-body text-[0.58rem] font-semibold leading-none text-white ring-2 ring-[#0a0908]"
+            className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-[#c94c4c] px-0.5 font-body text-[0.58rem] font-semibold leading-none text-white ring-2 ring-canvas dark:ring-[#0a0908]"
             aria-label={`${mensajesUnread} mensajes sin leer`}
           >
             {mensajesUnread > 99 ? '99+' : String(mensajesUnread)}
@@ -144,21 +147,17 @@ export default function MobileNavDrawer({
                   <div
                     className={cn(
                       EDITORIAL_MOBILE_PANEL_CLASS,
-                      'min-h-0 flex-1 bg-[#070605]/92',
+                      'min-h-0 flex-1 bg-canvas dark:bg-[#0a0908]',
                       panelClassName,
                     )}
-                    style={{
-                      backdropFilter: 'blur(36px) saturate(150%)',
-                      WebkitBackdropFilter: 'blur(36px) saturate(150%)',
-                    }}
                   >
-              <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
+              <div className="relative flex shrink-0 items-center justify-center border-b border-ink/10 py-2 dark:border-white/10">
                 <div className="flex min-w-0 flex-col items-center px-10 text-center leading-tight">
-                  <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-white">
+                  <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-ink dark:text-white">
                     {brandTitle}
                   </span>
                   {brandSubtitle ? (
-                    <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-white/55">
+                    <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
                       {brandSubtitle}
                     </span>
                   ) : null}
@@ -166,7 +165,7 @@ export default function MobileNavDrawer({
 
                 <button
                   type="button"
-                  className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/15 transition-colors hover:bg-white/16"
+                  className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-ink/[0.08] text-ink ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ink/[0.12] dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/16"
                   onClick={() => setOpen(false)}
                   aria-label="Cerrar menú"
                 >
@@ -217,15 +216,15 @@ export default function MobileNavDrawer({
                 })}
               </nav>
 
-              <div className="shrink-0 space-y-2 border-t border-white/10 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3">
+              <div className="shrink-0 space-y-2 border-t border-ink/10 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 dark:border-white/10">
                 <div className="px-0.5">
-                  <p className="pb-1 text-center font-body text-[0.52rem] uppercase tracking-[0.18em] text-white/45">
+                  <p className="pb-1 text-center font-body text-[0.52rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/45">
                     Tema
                   </p>
                   <ThemeToggle
                     variant="segmented"
                     segmentedGlyphs={false}
-                    segmentedOnDark
+                    segmentedOnDark={segmentedOnDark}
                     className="w-full justify-between"
                   />
                 </div>
@@ -244,13 +243,13 @@ export default function MobileNavDrawer({
                 <form action={logoutAction} className="pt-0.5">
                   <button
                     type="submit"
-                    className="flex w-full min-h-10 items-center justify-center rounded-2xl px-4 py-2.5 text-center font-display text-[0.78rem] font-medium uppercase tracking-[0.12em] text-red-200/95 transition-colors hover:bg-red-950/35"
+                    className="flex w-full min-h-10 items-center justify-center rounded-2xl px-4 py-2.5 text-center font-display text-[0.78rem] font-medium uppercase tracking-[0.12em] text-[#9a2f2f] transition-colors hover:bg-red-100 dark:text-red-200/95 dark:hover:bg-red-950/35"
                   >
                     Cerrar sesión
                   </button>
                 </form>
 
-                <p className="px-0.5 pt-1 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-white/45">
+                <p className="px-0.5 pt-1 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/45">
                   Moncloa, Madrid
                 </p>
               </div>

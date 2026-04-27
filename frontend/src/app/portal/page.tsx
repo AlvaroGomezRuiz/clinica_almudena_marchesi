@@ -251,8 +251,8 @@ export default async function PortalInicioPage() {
                       style={{ transition: 'stroke-dasharray 700ms cubic-bezier(0.16,1,0.3,1)' }}
                     />
                   </svg>
-                  <div className="absolute inset-0 grid place-items-center">
-                    <p className="font-display text-[1.75rem] italic leading-none text-primary tabular-nums tracking-[-0.02em]">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-center font-display text-[1.75rem] leading-none text-primary tabular-nums tracking-tight">
                       {sesionesRestantes}
                     </p>
                   </div>

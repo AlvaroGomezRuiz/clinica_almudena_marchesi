@@ -3,6 +3,14 @@ import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+import {
+  colorEtiquetaConversacionList,
+  imageUrlConversacionList,
+  initialsConversacionList,
+  type PacienteRowLite,
+} from '@/components/admin/mensajes/conversacion-list-avatar-data';
+import PacienteListContactReveal from '@/components/admin/pacientes/PacienteListContactReveal';
+import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Chip, PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
 import { createServerClient } from '@/lib/supabase/server';
@@ -26,6 +34,7 @@ interface MensajeRow {
 interface ConversacionAdminRow {
   id: string;
   paciente_id: string;
+  paciente_user_id: string | null;
   paciente_display_name: string | null;
   paciente_email: string | null;
 }
@@ -42,6 +51,9 @@ interface FichaRow {
   sesiones_completadas: number;
   has_telefono: boolean;
   has_dni: boolean;
+  has_email: boolean;
+  has_direccion: boolean;
+  has_contacto_emergencia: boolean;
 }
 
 export async function generateMetadata({ params }: Params): Promise<{ title: string }> {
@@ -64,14 +76,15 @@ export default async function AdminConversacionPage({
 
   const { data: conv } = await supabase
     .from('v_conversaciones_admin')
-    .select('id, paciente_id, paciente_display_name, paciente_email')
+    .select('id, paciente_id, paciente_user_id, paciente_display_name, paciente_email')
     .eq('id', id)
     .maybeSingle();
 
   const convTyped = conv as unknown as ConversacionAdminRow | null;
   if (!convTyped) notFound();
 
-  const [mensajesRes, fichaRes, selfProfRes] = await Promise.all([
+  const pacUid = convTyped.paciente_user_id;
+  const [mensajesRes, fichaRes, selfProfRes, pacRowRes, profileAvRes] = await Promise.all([
     supabase
       .from('v_mensajes_chat')
       .select('id, conversation_id, sender_user_id, body, read_at, created_at')
@@ -81,7 +94,7 @@ export default async function AdminConversacionPage({
     supabase
       .from('v_pacientes_resumen_admin')
       .select(
-        'id, fecha_alta, tags, color_etiqueta, avatar_url, consentimiento_rgpd, proxima_cita, ultima_cita, sesiones_completadas, has_telefono, has_dni'
+        'id, fecha_alta, tags, color_etiqueta, avatar_url, consentimiento_rgpd, proxima_cita, ultima_cita, sesiones_completadas, has_telefono, has_dni, has_email, has_direccion, has_contacto_emergencia'
       )
       .eq('id', convTyped.paciente_id)
       .maybeSingle(),
@@ -90,6 +103,14 @@ export default async function AdminConversacionPage({
       .select('avatar_url')
       .eq('id', user.id)
       .maybeSingle<{ avatar_url: string | null }>(),
+    supabase
+      .from('pacientes')
+      .select('id, user_id, avatar_url, color_etiqueta')
+      .eq('id', convTyped.paciente_id)
+      .maybeSingle<PacienteRowLite>(),
+    pacUid
+      ? supabase.from('profiles').select('avatar_url').eq('id', pacUid).maybeSingle<{ avatar_url: string | null }>()
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   const normalizados = ((mensajesRes.data as MensajeRow[] | null) ?? []).map((m) => ({
@@ -101,10 +122,30 @@ export default async function AdminConversacionPage({
   const ficha = fichaRes.data as unknown as FichaRow | null;
   const selfAvatarUrl = (selfProfRes.data as { avatar_url: string | null } | null)?.avatar_url ?? null;
 
+  const pacById = new Map<string, PacienteRowLite>();
+  const pr = pacRowRes.data as PacienteRowLite | null;
+  if (pr) pacById.set(pr.id, pr);
+  const profileAvatarByUserId = new Map<string, string | null>();
+  if (pacUid) {
+    profileAvatarByUserId.set(
+      pacUid,
+      (profileAvRes.data as { avatar_url: string | null } | null)?.avatar_url ?? null
+    );
+  }
+  const avatarResolved = imageUrlConversacionList(
+    convTyped.paciente_id,
+    convTyped.paciente_user_id,
+    pacById,
+    profileAvatarByUserId
+  );
+
   const display =
     convTyped.paciente_display_name?.trim() ||
     convTyped.paciente_email ||
     `Paciente #${convTyped.paciente_id.slice(0, 8)}`;
+
+  const listInitials = initialsConversacionList(display, convTyped.paciente_email);
+  const etiquetaColor = colorEtiquetaConversacionList(convTyped.paciente_id, pacById);
 
   return (
     <>
@@ -136,7 +177,7 @@ export default async function AdminConversacionPage({
             otherLabel={display}
             otherSubtitle={convTyped.paciente_email ?? undefined}
             selfAvatarUrl={selfAvatarUrl}
-            otherAvatarUrl={ficha?.avatar_url ?? null}
+            otherAvatarUrl={avatarResolved ?? ficha?.avatar_url ?? null}
           />
         </div>
 
@@ -161,26 +202,13 @@ export default async function AdminConversacionPage({
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div
-                    className="grid h-12 w-12 place-items-center rounded-2xl font-display text-[1.1rem] text-canvas ring-1 ring-inset ring-ink/10 dark:text-ink dark:ring-white/10"
-                    style={{
-                      background:
-                        ficha.color_etiqueta ??
-                        'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
-                    }}
-                    aria-hidden="true"
-                  >
-                    {ficha.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={ficha.avatar_url}
-                        alt=""
-                        className="h-full w-full rounded-2xl object-cover"
-                      />
-                    ) : (
-                      display.trim().charAt(0).toUpperCase()
-                    )}
-                  </div>
+                  <PacienteListAvatar
+                    imageUrl={avatarResolved ?? ficha.avatar_url ?? null}
+                    initials={listInitials}
+                    colorEtiqueta={etiquetaColor ?? ficha.color_etiqueta}
+                    size="lg"
+                    className="rounded-2xl ring-primary/15"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="font-body text-[0.88rem] text-ink dark:text-white truncate">
                       {display}
@@ -223,23 +251,21 @@ export default async function AdminConversacionPage({
                   </div>
                 ) : null}
 
-                <div className="flex gap-2 pt-2 text-[0.7rem]">
-                  {ficha.has_telefono ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary dark:bg-primary/25 dark:text-white">
-                      <span className="material-symbols-outlined text-[0.8rem]" aria-hidden="true">
-                        phone
-                      </span>
-                      Tlf
-                    </span>
-                  ) : null}
-                  {ficha.has_dni ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary dark:bg-primary/25 dark:text-white">
-                      <span className="material-symbols-outlined text-[0.8rem]" aria-hidden="true">
-                        badge
-                      </span>
-                      DNI
-                    </span>
-                  ) : null}
+                <div className="pt-2">
+                  <PacienteListContactReveal
+                    pacienteId={convTyped.paciente_id}
+                    patientLabel={display}
+                    avatarImageUrl={avatarResolved ?? ficha.avatar_url ?? null}
+                    avatarInitials={listInitials}
+                    colorEtiqueta={etiquetaColor ?? ficha.color_etiqueta}
+                    hasTelefono={ficha.has_telefono}
+                    hasEmail={ficha.has_email}
+                    hasContactoEmergencia={ficha.has_contacto_emergencia}
+                    hasDireccion={ficha.has_direccion}
+                    hasDni={ficha.has_dni}
+                    triggerLabel="Información"
+                    triggerIcon="contact_page"
+                  />
                 </div>
               </div>
             )}

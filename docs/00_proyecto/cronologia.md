@@ -191,6 +191,24 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - **Cancelación paciente (online):** ya fijada en `0046` (más de 48h hasta el inicio; sin refund Stripe automático al paciente en ese flujo).
 - **Recordatorios de cita:** `0060` (enum, columna, RPC 24h) + `0061` (RPC 48h) — `reminder_48h` (47h–49h) y `reminder_24h` (23h–25h). La cancelación online sigue **48h** (`0046`).
 
+## Hito 22 — Refinamientos de la app: agenda, horario Madrid, público y accesibilidad (26-abr-2026)
+
+- **Nombre interno:** *refinamientos de la app* (ajustes de UX y consistencia sin cambiar el alcance base del producto).
+- **Agenda (vista semana):** posicionamiento con **Europe/Madrid**, rejilla en **px** alineada, franja visual **09:00–21:00**; móvil simplificado (nombre en pastilla); tablet/desktop centrado.
+- **Horario y datos:** migración **`0064_horario_clinica_09_22_y_limpieza_citas_fuera_franja.sql`** + validación **09:00–21:59** Madrid en reserva y alta manual de cita.
+- **Web pública:** tarjetas sin iconos, títulos centrados (`PhilosophySection`, `/enfoque`).
+- **Menú móvil portales + público:** `createPortal` a `document.body`; contraste **claro/oscuro** en `EditorialMobileNav` / drawers (WCAG).
+- **Documentación:** `docs/00_proyecto/refinamientos-app-2026-04-26.md` (detalle); README raíz y `docs/README.md` enlazan el bloque.
+
+## Hito 23 — Refinamientos de la app: RGPD, ficha, agenda y pulido transversal (27-abr-2026)
+
+- **Nombre interno:** *refinamientos de la app* (continuación de Hito 22; mismos criterios: ajustes sin redefinir alcance).
+- **Auditoría (Configuración admin):** resolución correcta del **nombre** en el log de `admin_lookups` mediante cadena `pacientes` → `profiles` (el enlace a ficha ya existía).
+- **Ficha paciente:** **adjuntos** con subida validada, almacenamiento `paciente-adjuntos`, listado y descarga por URL firmada (admin).
+- **Agenda admin:** **cancelar cita** desde el panel de resumen de cita; alineado con RPC `cancelar_cita` y liberación de hueco en disponibilidad.
+- **Transversal:** refinamientos de panel mensajes, listados (pacientes/bonos/biblioteca), pagos/email PDF, avisos de reserva, web pública modo claro — detalle en `docs/00_proyecto/refinamientos-app-2026-04-27.md`.
+- **Migraciones Supabase:** eliminado el duplicado de versión **`0062`** (había dos `.sql` con el mismo prefijo). La función **`terapeuta_public_profile`** queda en **`0065_terapeuta_public_profile.sql`** para que `schema_migrations` no choque (`23505`). Ver tabla y operativa en el mismo doc de refinamientos 27-abr.
+
 ## Hito 20 — Documentación: auditorías completas y checklist unificado (26-abr-2026)
 
 - Restaurados y reescritos al estado del repo: `01_auditorias/{arquitectura,backend,frontend,base-de-datos}.md` y `02_informes/{ejecutivo-cliente,valor-reposicion-software}.md` (revisión 3 en valor de reposición).

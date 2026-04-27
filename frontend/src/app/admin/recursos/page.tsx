@@ -154,7 +154,7 @@ export default async function AdminRecursosPage({
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 font-body text-[0.82rem] ring-1 ring-inset transition ${
                 isActive
                   ? 'bg-ink text-canvas ring-ink/60 dark:bg-white dark:text-ink dark:ring-white/40'
-                  : 'bg-white/50 text-ink ring-ink/8 hover:bg-white/70 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:bg-white/10'
+                  : 'bg-white/60 text-ink ring-ink/12 hover:bg-white/85 dark:bg-zinc-700 dark:text-white dark:ring-white/25 dark:hover:bg-zinc-600'
               }`}
             >
               {t.label}
@@ -162,7 +162,7 @@ export default async function AdminRecursosPage({
                 className={`rounded-full px-1.5 text-[0.68rem] tabular-nums ${
                   isActive
                     ? 'bg-canvas/20 text-canvas dark:bg-ink/20 dark:text-ink'
-                    : 'bg-ink/10 text-ink-muted dark:bg-white/10 dark:text-white/60'
+                    : 'bg-ink/12 text-ink dark:bg-white/15 dark:text-white'
                 }`}
               >
                 {n}

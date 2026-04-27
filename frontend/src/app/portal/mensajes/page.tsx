@@ -4,7 +4,6 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import ChatPanel from '@/components/chat/ChatPanel';
-import { getClinicAbsoluteImageUrl } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import { enrichMensajesWithAdjuntos } from '@/services/mensajes/fetch-adjuntos';
 
@@ -90,6 +89,17 @@ export default async function PortalMensajesPage() {
     .eq('id', user.id)
     .maybeSingle<{ avatar_url: string | null }>();
 
+  const { data: terapeutaRows } = await supabase.rpc('terapeuta_public_profile');
+  const therapistAvatar = ((): string | null => {
+    if (!Array.isArray(terapeutaRows) || terapeutaRows.length === 0) return null;
+    const row: unknown = terapeutaRows[0];
+    if (typeof row !== 'object' || row === null) return null;
+    const av = Reflect.get(row, 'avatar_url');
+    if (typeof av !== 'string') return null;
+    const t = av.trim();
+    return t.length > 0 ? t : null;
+  })();
+
   return (
     <>
       <PageHeader
@@ -105,7 +115,7 @@ export default async function PortalMensajesPage() {
         otherLabel="Almudena Marchesi"
         otherSubtitle="Psicóloga · colegiada Nº M-38427"
         selfAvatarUrl={selfProf?.avatar_url ?? null}
-        otherAvatarUrl={getClinicAbsoluteImageUrl('/images/almudena-profile.avif')}
+        otherAvatarUrl={therapistAvatar}
       />
     </>
   );

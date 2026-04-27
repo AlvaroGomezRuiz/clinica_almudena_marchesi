@@ -901,14 +901,17 @@ function EventoBlock(
         <button
           type="button"
           onClick={onActivate}
-          className={`flex h-full w-full min-h-0 flex-col overflow-hidden rounded-lg py-0.5 outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:opacity-95 max-md:items-center max-md:justify-center max-md:px-1 max-md:text-center md:items-center md:justify-center md:gap-0.5 md:px-2 md:pb-1 md:pt-1 md:pr-10 md:text-center ${bordeCita} ${capaCita}`}
+          className={`relative flex h-full w-full min-h-0 flex-col overflow-hidden rounded-lg py-0.5 outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:opacity-95 max-md:items-center max-md:justify-center max-md:px-1 max-md:text-center md:items-center md:justify-center md:gap-0.5 md:px-2 md:pb-1 md:pt-1 md:text-center ${bordeCita} ${capaCita}`}
           title={`${title} · ${sublinea}`}
           aria-label={`Cita: ${title}, ${horaEtiqueta}, ${sublinea}`}
         >
+          <span className="absolute right-1 top-1 z-10 hidden md:inline-flex">
+            <FichaAgendaLink compact pacienteId={pacienteId} />
+          </span>
           <span className="font-body text-[0.62rem] font-semibold leading-snug text-[#0f1614] dark:text-white md:hidden">
             {nombreMostrar}
           </span>
-          <span className="hidden min-h-0 w-full flex-col items-center justify-center gap-0.5 px-0.5 text-center md:flex">
+          <span className="hidden min-h-0 w-full flex-col items-center justify-center gap-0.5 px-0.5 pt-5 text-center md:flex">
             <span className="font-body text-[0.65rem] font-semibold tabular-nums text-[#0f1614] dark:text-white">
               {horaEtiqueta}
             </span>
@@ -920,9 +923,6 @@ function EventoBlock(
             </span>
           </span>
         </button>
-        <div className="absolute right-0.5 top-0.5 z-10 hidden md:block">
-          <FichaAgendaLink compact pacienteId={pacienteId} />
-        </div>
       </div>
     </div>
   );

@@ -61,6 +61,8 @@ export default async function AdminAgendaPage({
       .gte('inicio', desde.toISOString())
       .lte('inicio', hasta.toISOString())
       .neq('estado', 'cancelada')
+      /* Solo citas confirmadas u homologadas: ocultar reservas pendientes de pago en rejilla */
+      .neq('estado', 'bloqueo_temporal')
       .order('inicio'),
     supabase
       .from('agenda_bloqueos')

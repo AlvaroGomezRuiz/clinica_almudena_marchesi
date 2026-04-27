@@ -90,6 +90,21 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
   const ultimos = (ultimosRaw as PagoRow[] | null) ?? [];
   const bonos = (bonosRaw as BonoRow[] | null) ?? [];
 
+  const bonoPacienteIds = Array.from(new Set(bonos.map((b) => b.paciente_id)));
+  const { data: resumenUltima } =
+    bonoPacienteIds.length > 0
+      ? await supabase
+          .from('v_pacientes_resumen_admin')
+          .select('id, ultima_cita')
+          .in('id', bonoPacienteIds)
+      : { data: [] as { id: string; ultima_cita: string | null }[] };
+  const ultimaCitaPorPaciente = new Map(
+    ((resumenUltima as { id: string; ultima_cita: string | null }[] | null) ?? []).map((r) => [
+      r.id,
+      r.ultima_cita,
+    ])
+  );
+
   const totalMes = pagosAnual
     .filter(
       (p) =>
@@ -235,7 +250,7 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
           />
         ) : (
           <div className="-mx-1 overflow-x-auto rounded-md sm:mx-0">
-            <table className="w-full min-w-[34rem] text-left">
+            <table className="w-full min-w-[40rem] text-left">
               <caption className="sr-only">
                 Bonos activos: progreso de sesiones y fechas de compra o caducidad
               </caption>
@@ -244,6 +259,7 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                   <Th>Paciente</Th>
                   <Th>Progreso</Th>
                   <Th>Total sesiones</Th>
+                  <Th>Última cita</Th>
                   <Th>Caduca</Th>
                   <Th>Comprado</Th>
                 </tr>
@@ -260,8 +276,8 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                   const low = restantes <= 2;
                   const zebra =
                     idx % 2 === 1
-                      ? 'bg-ink/[0.035] dark:bg-white/[0.045]'
-                      : 'bg-transparent';
+                      ? 'bg-ink/[0.06] dark:bg-white/[0.08]'
+                      : 'bg-ink/[0.02] dark:bg-white/[0.02]';
                   return (
                     <tr
                       key={b.id}
@@ -292,6 +308,14 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
                       </td>
                       <td className="px-2 py-2 font-body text-[0.76rem] tabular-nums text-ink sm:px-4 sm:py-3 sm:text-[0.82rem] dark:text-white">
                         {b.sesiones_totales}
+                      </td>
+                      <td className="px-2 py-2 text-center font-body text-[0.74rem] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.8rem] dark:text-white/55">
+                        {(() => {
+                          const u = ultimaCitaPorPaciente.get(b.paciente_id);
+                          return u
+                            ? format(new Date(u), "d MMM yyyy · HH:mm", { locale: es })
+                            : '—';
+                        })()}
                       </td>
                       <td className="px-2 py-2 font-body text-[0.74rem] text-ink-muted sm:px-4 sm:py-3 sm:text-[0.8rem] dark:text-white/55">
                         {b.fecha_expiracion

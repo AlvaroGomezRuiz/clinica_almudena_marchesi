@@ -18,6 +18,7 @@ import MedicacionCard from '@/components/admin/ficha/MedicacionCard';
 import TagsEditor from '@/components/admin/ficha/TagsEditor';
 import { labelAdminLookupCampo } from '@/components/admin/ficha/admin-lookup-campo-label';
 import FichaPacienteHeaderActions from '@/components/admin/ficha/FichaPacienteHeaderActions';
+import PacienteAdjuntosCard from '@/components/admin/ficha/PacienteAdjuntosCard';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
@@ -334,12 +335,20 @@ export default async function FichaPacientePage({
       <section className="mb-5 flex flex-wrap items-center gap-4 sm:mb-6 sm:gap-6 portal-rise">
         <div className="flex items-center gap-4">
           <div
-            className="flex h-16 w-16 items-center justify-center rounded-2xl font-display text-[1.5rem] text-canvas ring-1 ring-inset ring-ink/10 dark:text-ink dark:ring-white/10"
-            style={{
-              background:
-                paciente.color_etiqueta ??
-                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
-            }}
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl font-display text-[1.5rem] ring-1 ring-inset ${
+              profile?.avatar_url
+                ? 'text-canvas ring-ink/10 dark:ring-white/10'
+                : 'bg-white text-zinc-950 ring-zinc-400/55 shadow-sm dark:bg-white/8 dark:text-white dark:ring-white/15'
+            }`}
+            style={
+              profile?.avatar_url
+                ? {
+                    background:
+                      paciente.color_etiqueta ??
+                      'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
+                  }
+                : undefined
+            }
             aria-hidden="true"
           >
             {profile?.avatar_url ? (
@@ -544,53 +553,16 @@ export default async function FichaPacientePage({
         {/* Col derecha: adjuntos + auditoría (timeline de citas arriba, en Historia clínica) */}
         <aside className="space-y-4 sm:space-y-6 lg:sticky lg:top-4 lg:self-start">
           <SurfaceCard>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-[1.15rem] italic text-ink dark:text-white">
-                Adjuntos
-              </h2>
-              <Chip tone="neutral">{adjuntos.length}</Chip>
-            </div>
-            <p className="mb-4 font-body text-[0.72rem] leading-relaxed text-ink-muted dark:text-white/55">
-              Informes externos, consentimientos firmados o documentación que no forman parte del chat.
-              Solo personal autorizado; las descargas quedan acotadas al contexto clínico. No subas
-              contraseñas ni datos de terceros sin base legal.
-            </p>
-            {adjuntos.length === 0 ? (
-              <p className="py-4 text-center font-body text-[0.85rem] text-ink-soft dark:text-white/45">
-                Sin archivos todavía.
-                <br />
-                <span className="text-[0.7rem] text-ink-muted dark:text-white/45">
-                  Si falta la subida en tu entorno, revisa el bucket privado y políticas RLS de
-                  almacenamiento.
-                </span>
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {adjuntos.slice(0, 5).map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center gap-2 rounded-xl bg-white/50 p-2 dark:bg-white/5"
-                  >
-                    <span
-                      className="material-symbols-outlined text-ink-muted dark:text-white/55"
-                      aria-hidden="true"
-                    >
-                      attach_file
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate font-body text-[0.8rem] text-ink dark:text-white">
-                        {a.nombre}
-                      </p>
-                      <p className="font-body text-[0.7rem] text-ink-muted dark:text-white/55">
-                        {format(new Date(a.created_at), "d MMM yyyy", {
-                          locale: es,
-                        })}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <PacienteAdjuntosCard
+              pacienteId={paciente.id}
+              adjuntos={adjuntos.map((a) => ({
+                id: a.id,
+                nombre: a.nombre,
+                created_at: a.created_at,
+                mime: a.mime,
+                size_bytes: a.size_bytes,
+              }))}
+            />
           </SurfaceCard>
 
           <SurfaceCard>

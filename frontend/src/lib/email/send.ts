@@ -20,7 +20,8 @@ export type EmailType =
   | 'reminder_24h'
   | 'reminder_48h'
   | 'booking_cancelled'
-  | 'nueva_asignacion';
+  | 'nueva_asignacion'
+  | 'bono_comprado';
 
 interface SendEmailInput {
   readonly type: EmailType;

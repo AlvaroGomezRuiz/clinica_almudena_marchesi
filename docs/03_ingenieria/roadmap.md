@@ -3,6 +3,8 @@
 > Tareas técnicas por horizonte. La **línea base** del binario y módulos ya entregados está en `docs/00_proyecto/linea-base-producto.md`.  
 > Bloqueos de go-live (dominio, NIF, etc.): `docs/00_proyecto/estado-y-pendientes.md`.
 
+**Refinamientos de la app** (pulido UX/RGPD sin redefinir alcance): `docs/00_proyecto/refinamientos-app-2026-04-26.md`, `docs/00_proyecto/refinamientos-app-2026-04-27.md`.
+
 ---
 
 ## Horizonte 1 — Pre-launch (bloquea go-live)

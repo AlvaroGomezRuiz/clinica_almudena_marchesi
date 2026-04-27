@@ -54,31 +54,25 @@ export default function PublicMobileDrawer({
             aria-hidden="true"
           />
 
-          <div
-            className={`${EDITORIAL_MOBILE_PANEL_CLASS} min-h-0 flex-1`}
-            style={{
-              backdropFilter: 'blur(36px) saturate(150%)',
-              WebkitBackdropFilter: 'blur(36px) saturate(150%)',
-            }}
-          >
-            <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
+          <div className={`${EDITORIAL_MOBILE_PANEL_CLASS} min-h-0 flex-1 bg-canvas dark:bg-[#0a0908]`}>
+            <div className="relative flex shrink-0 items-center justify-center border-b border-ink/10 py-2 dark:border-white/10">
               <Link
                 href="/"
-                className="flex min-w-0 flex-col items-center px-10 text-center leading-tight active:opacity-80 transition-opacity"
+                className="flex min-w-0 flex-col items-center px-10 text-center leading-tight transition-opacity active:opacity-80"
                 onClick={onClose}
                 aria-label="Ir a Inicio"
               >
-                <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-white">
+                <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-ink dark:text-white">
                   Almudena Marchesi
                 </span>
-                <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-white/55">
+                <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-zinc-800 dark:text-white/55">
                   Psicología clínica — Moncloa
                 </span>
               </Link>
 
               <button
                 type="button"
-                className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white ring-1 ring-inset ring-white/15 transition-colors hover:bg-white/16"
+                className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-ink/[0.08] text-ink ring-1 ring-inset ring-ink/12 transition-colors hover:bg-ink/[0.12] dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/16"
                 onClick={onClose}
                 aria-label="Cerrar menú"
               >
@@ -119,8 +113,8 @@ export default function PublicMobileDrawer({
               ))}
             </nav>
 
-            <div className="shrink-0 border-t border-white/10 pt-2 pb-[max(0.35rem,env(safe-area-inset-bottom))]">
-              <p className="px-0.5 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-white/45">
+            <div className="shrink-0 border-t border-ink/10 pt-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] dark:border-white/10">
+              <p className="px-0.5 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/45">
                 Moncloa, Madrid
               </p>
             </div>

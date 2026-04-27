@@ -324,16 +324,19 @@ export default async function AdminPacientesPage({
                   <th className="px-6 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     Paciente
                   </th>
-                  <th className="px-4 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+                  <th className="px-4 py-4 text-center font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+                    Última cita
+                  </th>
+                  <th className="px-4 py-4 text-center font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     Próxima cita
                   </th>
-                  <th className="px-4 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55 text-center">
+                  <th className="px-4 py-4 text-center font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     Sesiones
                   </th>
-                  <th className="px-4 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+                  <th className="px-4 py-4 text-center font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     Contacto
                   </th>
-                  <th className="px-4 py-4 font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+                  <th className="px-4 py-4 text-center font-body text-[0.65rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
                     RGPD
                   </th>
                   <th className="px-4 py-4" />
@@ -357,8 +360,8 @@ export default async function AdminPacientesPage({
                     null;
                   const zebra =
                     rowIdx % 2 === 1
-                      ? 'bg-ink/[0.03] dark:bg-white/[0.03]'
-                      : 'bg-transparent';
+                      ? 'bg-ink/[0.055] dark:bg-white/[0.07]'
+                      : 'bg-ink/[0.02] dark:bg-white/[0.02]';
                   return (
                     <tr
                       key={p.id}
@@ -393,7 +396,21 @@ export default async function AdminPacientesPage({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 text-center align-middle">
+                        {p.ultima_cita ? (
+                          <div>
+                            <p className="font-body text-[0.84rem] text-ink dark:text-white">
+                              {format(new Date(p.ultima_cita), "d MMM yyyy", { locale: es })}
+                            </p>
+                            <p className="mt-0.5 font-body text-[0.68rem] text-ink-muted tabular-nums dark:text-white/55">
+                              {format(new Date(p.ultima_cita), 'HH:mm')}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="font-body text-[0.78rem] text-ink-muted dark:text-white/45">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-center align-middle">
                         {p.proxima_cita ? (
                           <div>
                             <p className="font-body text-[0.84rem] text-ink dark:text-white">
@@ -407,7 +424,7 @@ export default async function AdminPacientesPage({
                           <span className="font-body text-[0.78rem] text-ink-muted dark:text-white/45">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-center">
+                      <td className="px-4 py-4 text-center align-middle">
                         <p className="font-display text-[1.1rem] text-ink tabular-nums dark:text-white">
                           {p.sesiones_completadas}
                         </p>
@@ -415,7 +432,8 @@ export default async function AdminPacientesPage({
                           completadas
                         </p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 text-center align-middle">
+                        <div className="flex justify-center">
                         <PacienteListContactReveal
                           pacienteId={p.id}
                           patientLabel={displayName}
@@ -428,8 +446,9 @@ export default async function AdminPacientesPage({
                           hasDireccion={p.has_direccion}
                           hasDni={p.has_dni}
                         />
+                        </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 text-center align-middle">
                         <Chip tone={p.consentimiento_rgpd ? 'positive' : 'warning'}>
                           {p.consentimiento_rgpd ? 'Firmado' : 'Pendiente'}
                         </Chip>

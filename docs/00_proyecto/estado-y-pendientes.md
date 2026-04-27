@@ -4,6 +4,8 @@
 > **Regla**: nada de secretos en claro aquí (solo nombres de variables y pasos).
 > **Estructura `docs/`** (raíz del repo, carpetas numeradas, índice `docs/README.md`):
 
+Última actualización: **2026-04-27** — **Refinamientos de la app** (segunda pasada: auditoría en Configuración con nombre de paciente coherente, adjuntos en ficha con subida/descarga admin, cancelación de cita desde panel de agenda, refinamientos de panel mensajes/listados/pagos/web pública): **`docs/00_proyecto/refinamientos-app-2026-04-27.md`**. **Migraciones:** la RPC `terapeuta_public_profile` está en **`0065_terapeuta_public_profile.sql`** (antes duplicaba el número **`0062`** con `0062_cuadricula_reserva_slots.sql`, lo que rompía `supabase db push` con clave duplicada en `schema_migrations`). La pasada **26-abr** sigue en **`refinamientos-app-2026-04-26.md`** (migración **`0064`**: aplicar en remoto si aún no está; revisar staging antes del `DELETE` fuera de franja).
+
 Última actualización: **2026-04-23** — además del bloque del 22-abr:
 - **Dominio canónico en código/metadata de producción:** `https://ampsicologia.es` y contacto `contacto@ampsicologia.es` (SEO/GEO: `docs/03_ingenieria/geo-y-seo.md`). Si el dominio comercial final difiere del nombre reservado en checklist histórico (`amclinicapsicologia.es`), **reconciliar** DNS, Vercel, Supabase Auth redirects, `FRONTEND_URL` y Resend en una sola pasada.
 - **Migraciones CLI:** historial remoto (`202604…`) alineado con repo mediante stubs `202604*_remote_reconcile.sql` + `migration repair --status applied` para `0001`…`0046`; `npx supabase db push` → *Remote database is up to date.* Detalle: `docs/00_proyecto/cronologia.md` (Hito 17).

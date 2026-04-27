@@ -12,6 +12,7 @@ import { useEffect, useRef } from 'react';
 
 import { labelCitaEstadoAgenda, chipToneCitaEstadoAgenda } from '@/components/admin/agenda/cita-estado-agenda';
 import type { CitaRow } from '@/components/admin/agenda/types';
+import { CitaCancelButton } from '@/components/citas/CitaCancelButton';
 import { Button, Chip } from '@/components/portal-shell/ui';
 
 function euroLabel(centimos: number | null): string {
@@ -20,6 +21,10 @@ function euroLabel(centimos: number | null): string {
     style: 'currency',
     currency: 'EUR',
   }).format(centimos / 100);
+}
+
+function puedeCancelarDesdeAgendaAdmin(estado: string): boolean {
+  return estado === 'confirmada' || estado === 'bloqueo_temporal';
 }
 
 export default function CitaResumenSheet({
@@ -138,9 +143,29 @@ export default function CitaResumenSheet({
                 </dd>
               </div>
             </dl>
+            {puedeCancelarDesdeAgendaAdmin(cita.estado) ? (
+              <p className="mt-4 rounded-xl bg-ink/[0.04] px-3 py-2 font-body text-[0.78rem] leading-relaxed text-ink-soft ring-1 ring-inset ring-ink/8 dark:bg-white/[0.04] dark:text-white/65 dark:ring-white/10">
+                Si cancelas desde aquí, la cita queda anulada y el hueco vuelve a estar disponible en reservas
+                (según política de reembolso y bonos).
+              </p>
+            ) : null}
           </div>
 
-          <footer className="flex flex-col gap-2 border-t border-ink/8 px-5 py-4 dark:border-white/10 sm:flex-row sm:flex-wrap sm:justify-end">
+          <footer className="flex flex-col gap-2 border-t border-ink/8 px-5 py-4 dark:border-white/10 sm:flex-row sm:flex-wrap sm:justify-end sm:items-center">
+            {puedeCancelarDesdeAgendaAdmin(cita.estado) ? (
+              <div className="order-last flex w-full justify-start sm:order-first sm:mr-auto sm:w-auto">
+                <CitaCancelButton
+                  citaId={cita.id}
+                  inicioISO={cita.inicio}
+                  compact
+                  isAdmin
+                  servicioNombre={cita.servicio_nombre}
+                  onCancelled={() => {
+                    handleClose();
+                  }}
+                />
+              </div>
+            ) : null}
             <Button variant="ghost" size="sm" onClick={handleClose}>
               Cerrar
             </Button>

@@ -128,16 +128,42 @@ export default async function AdminConfiguracionPage(): Promise<JSX.Element> {
 
   const lookups = (lookupsRaw ?? []) as readonly AdminLookup[];
 
-  // Resolver nombres de pacientes (display_name) para el log
+  // Resolver nombres: admin_lookups.paciente_id → pacientes.id → profiles.display_name
   const pacienteIds = Array.from(new Set(lookups.map((l) => l.paciente_id)));
   const nombreMap = new Map<string, string>();
   if (pacienteIds.length > 0) {
-    const { data: perfiles } = await supabase
-      .from('profiles')
-      .select('id, display_name')
+    const { data: pacRows } = await supabase
+      .from('pacientes')
+      .select('id, user_id')
       .in('id', pacienteIds);
-    for (const p of (perfiles ?? []) as readonly { id: string; display_name: string | null }[]) {
-      nombreMap.set(p.id, p.display_name ?? '—');
+    type PacRow = { id: string; user_id: string | null };
+    const rows = (pacRows ?? []) as readonly PacRow[];
+    const userIds = Array.from(
+      new Set(rows.map((r) => r.user_id).filter((u): u is string => Boolean(u)))
+    );
+    let profileByUserId = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds);
+      profileByUserId = new Map(
+        ((profs ?? []) as readonly { id: string; display_name: string | null }[]).map((p) => [
+          p.id,
+          p.display_name,
+        ])
+      );
+    }
+    const pacienteIdToUserId = new Map(rows.map((r) => [r.id, r.user_id] as const));
+    for (const pid of pacienteIds) {
+      const uid = pacienteIdToUserId.get(pid);
+      const raw =
+        uid !== null && uid !== undefined ? profileByUserId.get(uid) ?? null : null;
+      const trimmed = raw?.trim() ?? '';
+      nombreMap.set(
+        pid,
+        trimmed.length > 0 ? trimmed : `Paciente #${pid.slice(0, 8)}`
+      );
     }
   }
 

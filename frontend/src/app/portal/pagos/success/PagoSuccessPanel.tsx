@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, SurfaceCard } from '@/components/portal-shell/ui';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { PORTAL_SUCCESS_EMAIL_TIP, PORTAL_SUCCESS_NEXT_BONO } from '@/lib/portal/onboarding-copy';
+import { solicitarEmailReciboBonoAction } from '@/services/pagos/receipt-email-action';
 import {
   resumenFromPaymentIntentJson,
   type StripeResumen,
@@ -83,6 +84,7 @@ export default function PagoSuccessPanel({
 }: Props): JSX.Element {
   const router = useRouter();
   const refreshedGate = useRef(false);
+  const receiptEmailRequestedRef = useRef(false);
   const [pago, setPago] = useState<PagoSuccessRow | null>(initialPago);
   const [gaveUp, setGaveUp] = useState(false);
   const [clientResumen, setClientResumen] = useState<StripeResumen | null>(null);
@@ -190,6 +192,12 @@ export default function PagoSuccessPanel({
     refreshedGate.current = true;
     void router.refresh();
   }, [pago, router]);
+
+  useEffect(() => {
+    if (!pago?.bono_id || receiptEmailRequestedRef.current) return;
+    receiptEmailRequestedRef.current = true;
+    void solicitarEmailReciboBonoAction(pago.id);
+  }, [pago?.bono_id, pago?.id]);
 
   const importeCents = pago
     ? pago.importe_centimos

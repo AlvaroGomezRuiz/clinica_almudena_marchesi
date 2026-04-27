@@ -50,7 +50,7 @@ export default function NombreEditor({ initial }: Props): JSX.Element {
           type="button"
           onClick={save}
           disabled={isPending || value.trim() === initial.trim()}
-          className="rounded-full bg-ink px-4 py-2 font-body text-[0.78rem] text-canvas transition hover:bg-ink-soft disabled:opacity-40 dark:bg-white dark:text-ink dark:hover:bg-white/90"
+          className="rounded-full bg-ink px-4 py-2 font-body text-[0.78rem] font-medium text-canvas shadow-sm ring-1 ring-ink/15 transition hover:bg-ink-soft disabled:opacity-40 dark:bg-primary dark:text-on-primary dark:ring-primary/40 dark:hover:bg-primary-dim dark:hover:text-on-primary"
         >
           {isPending ? 'Guardando…' : 'Guardar'}
         </button>

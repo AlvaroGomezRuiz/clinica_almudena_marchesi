@@ -510,6 +510,18 @@ export default function SlotPicker({
             className="overflow-y-auto px-4 py-3 sm:px-5 sm:py-4"
           >
             <div className="space-y-3 font-body text-[0.84rem] leading-relaxed text-ink-soft sm:text-[0.88rem] dark:text-white/78">
+              {selectedSlot &&
+              (new Date(selectedSlot.slot_inicio).getTime() - Date.now()) / 3_600_000 <= 48 &&
+              (new Date(selectedSlot.slot_inicio).getTime() - Date.now()) > 0 ? (
+                <div
+                  role="alert"
+                  className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2.5 font-body text-[0.82rem] text-amber-950 dark:border-amber-500/40 dark:bg-amber-950/35 dark:text-amber-50"
+                >
+                  <strong className="font-semibold">Reserva en menos de 48 horas.</strong>{' '}
+                  Si confirmas esta hora, la política de la consulta no permite cancelarla después desde el
+                  portal (solo por mensaje seguro con la clínica). Asegúrate de poder asistir.
+                </div>
+              ) : null}
               <p className="text-pretty">
                 <strong className="font-medium text-ink dark:text-white">
                   La cancelación online desde el portal solo está disponible si quedan más de 48 horas

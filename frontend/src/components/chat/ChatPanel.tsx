@@ -482,12 +482,6 @@ export default function ChatPanel({
             ) : null}
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/50 ring-1 ring-inset ring-white/50 px-2.5 py-1 backdrop-blur-md dark:bg-white/5 dark:ring-white/10">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
-          <span className="font-body text-[0.65rem] uppercase tracking-[0.18em] text-ink-soft dark:text-white/60">
-            En vivo
-          </span>
-        </span>
       </header>
 
       <span aria-hidden="true" className="hairline mx-4" />

@@ -27,6 +27,10 @@ export interface PacienteListContactRevealProps {
   readonly hasContactoEmergencia: boolean;
   readonly hasDireccion: boolean;
   readonly hasDni: boolean;
+  /** Texto del botón (p. ej. «Información» en chat admin). */
+  readonly triggerLabel?: string;
+  /** Icono Material (`shield_lock` por defecto). */
+  readonly triggerIcon?: string;
 }
 
 interface TriggerPayload {
@@ -51,6 +55,8 @@ export default function PacienteListContactReveal({
   hasContactoEmergencia,
   hasDireccion,
   hasDni,
+  triggerLabel = 'Contacto',
+  triggerIcon = 'shield_lock',
 }: PacienteListContactRevealProps): JSX.Element {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [trigger, setTrigger] = useState<TriggerPayload | null>(null);
@@ -129,19 +135,19 @@ export default function PacienteListContactReveal({
         type="button"
         variant="surface"
         size="sm"
-        icon="shield_lock"
+        icon={triggerIcon}
         onClick={openMenu}
         disabled={!hayAlgunaRevelacion}
-        className="max-w-full"
+        className="w-full max-w-full sm:w-auto"
         aria-label="Abrir panel de contacto: teléfono, email o datos cifrados (acceso auditado)"
       >
-        <span className="truncate">Contacto</span>
+        <span className="truncate">{triggerLabel}</span>
       </Button>
 
       <dialog
         ref={dialogRef}
         onClose={closeAll}
-        className="max-w-md w-[calc(100%-2rem)] rounded-2xl border-0 bg-canvas p-0 text-ink shadow-2xl ring-1 ring-ink/10 backdrop:bg-ink/40 open:flex dark:bg-[#1a1a1a] dark:text-white dark:ring-white/10"
+        className="max-w-md w-[calc(100vw-1.5rem)] max-h-[90dvh] rounded-2xl border-0 bg-canvas p-0 text-ink shadow-2xl ring-1 ring-ink/10 backdrop:bg-ink/40 open:flex dark:bg-[#1a1a1a] dark:text-white dark:ring-white/10 sm:w-[calc(100%-2rem)]"
         aria-labelledby="pac-contact-sheet-title"
       >
         <div className="flex max-h-[85vh] w-full min-w-0 flex-col">

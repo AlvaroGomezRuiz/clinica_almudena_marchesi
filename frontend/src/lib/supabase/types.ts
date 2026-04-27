@@ -557,6 +557,11 @@ export interface Database {
         }>;
       };
       chat_mi_conversacion: { Args: Record<string, never>; Returns: string };
+      /** Avatar del terapeuta (primer admin); solo paciente autenticado. Migración 0062. */
+      terapeuta_public_profile: {
+        Args: Record<string, never>;
+        Returns: Array<{ avatar_url: string | null; display_name: string | null }>;
+      };
       chat_enviar_mensaje: {
         Args: { p_conversacion_id: string; p_contenido: string };
         Returns: Array<{

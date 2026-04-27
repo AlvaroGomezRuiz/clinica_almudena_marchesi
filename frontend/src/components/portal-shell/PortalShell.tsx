@@ -192,7 +192,7 @@ export default function PortalShell({
               panelClassName=""
             />
             <div className="min-w-0 flex-1 md:hidden">
-              <p className="truncate font-body text-[0.92rem] font-semibold leading-snug tracking-normal text-ink dark:text-white">
+              <p className="truncate font-display text-[0.88rem] italic font-semibold uppercase leading-snug tracking-[0.06em] text-ink dark:text-white">
                 {user.displayName}
               </p>
               <p className="mt-0.5 truncate font-body text-[0.62rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/55">
@@ -207,7 +207,7 @@ export default function PortalShell({
             <ThemeToggle variant="compact" />
 
             <div className="hidden text-right sm:block">
-              <p className="font-body text-[0.88rem] font-semibold tracking-normal text-ink leading-snug dark:text-white">
+              <p className="font-display text-[0.88rem] italic font-semibold uppercase leading-snug tracking-[0.06em] text-ink dark:text-white">
                 {user.displayName}
               </p>
               <p className="mt-1 font-body text-[0.65rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
