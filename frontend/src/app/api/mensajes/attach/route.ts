@@ -20,6 +20,7 @@ import {
   type AllowedFileKind,
 } from '@/lib/security/file-validation';
 import { enforceRateLimit, getClientIp, rateLimitJsonResponse } from '@/lib/security/rate-limit';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import { sendMensajeAction } from '@/services/mensajes/actions';
 
@@ -183,11 +184,12 @@ export async function POST(req: NextRequest): Promise<Response> {
   const mensajeId = msgRes.mensaje.id;
   const storagePath = `${conversacionId}/${mensajeId}/${nombre}`;
 
-  // 2) Subir binario al bucket (privado). El buffer ya fue leído arriba.
-  // NOTA: usamos `mimeForBucket(declaredBase)` para normalizar MIMEs con
-  // codec params y variantes no reconocidas por el bucket.
+  // 2) Subir binario al bucket (privado).
+  // Preferimos admin (service_role) para bypasear RLS de storage.
+  // Fallback a supabase (anon key) si no hay service_role configurada.
   const bucketMime = mimeForBucket(declaredBase);
-  const { error: upErr } = await supabase.storage
+  const storageClient = createAdminClient() ?? supabase;
+  const { error: upErr } = await storageClient.storage
     .from('chat-adjuntos')
     .upload(storagePath, bytes, {
       contentType: bucketMime,
@@ -204,8 +206,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
-  // 3) Registrar adjunto en tabla
-  const { data: adjunto, error: insErr } = await supabase
+  // 3) Registrar adjunto en tabla (admin client para bypasear RLS)
+  const { data: adjunto, error: insErr } = await storageClient
     .from('mensajes_adjuntos')
     .insert({
       mensaje_id: mensajeId,
@@ -220,7 +222,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   if (insErr) {
     // best-effort cleanup del binario
-    await supabase.storage.from('chat-adjuntos').remove([storagePath]);
+    await storageClient.storage.from('chat-adjuntos').remove([storagePath]);
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
 
