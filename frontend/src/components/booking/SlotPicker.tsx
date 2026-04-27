@@ -402,23 +402,24 @@ export default function SlotPicker({
                       prev?.slot_inicio === s.slot_inicio ? null : s
                     );
                   }}
-                  className={`group relative h-11 overflow-hidden rounded-xl font-body text-[0.88rem] tabular-nums ring-1 ring-inset transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`group relative h-11 overflow-hidden rounded-xl font-body text-[0.88rem] tabular-nums transition-[transform,background-color,box-shadow] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
                     bloqueado
-                      ? 'cursor-not-allowed bg-ink/[0.06] text-ink/35 ring-ink/10 dark:bg-white/[0.04] dark:text-white/35 dark:ring-white/8'
+                      ? 'cursor-not-allowed border border-blue-800/90 bg-transparent text-ink/40 ring-0 dark:border-blue-600 dark:bg-transparent dark:text-white/40'
                       : picked
-                        ? 'bg-primary text-on-primary shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] ring-primary/50 active:scale-[0.97] dark:bg-primary dark:text-on-primary'
-                        : 'bg-white/60 text-ink ring-white/50 hover:-translate-y-[2px] hover:bg-primary hover:text-on-primary hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary'
+                        ? 'bg-primary text-on-primary shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] ring-1 ring-inset ring-primary/50 active:scale-[0.97] dark:bg-primary dark:text-on-primary'
+                        : 'bg-white/60 text-ink ring-1 ring-inset ring-white/50 hover:-translate-y-[2px] hover:bg-primary hover:text-on-primary hover:shadow-[0_12px_28px_-14px_rgba(75,100,95,0.42)] active:scale-[0.97] dark:bg-white/[0.08] dark:text-white dark:ring-white/14 dark:hover:bg-primary dark:hover:text-on-primary'
                   } ${reservando && !bloqueado ? 'opacity-40' : ''}`}
                 >
                   {bloqueado ? (
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                      className="pointer-events-none absolute inset-0 z-[2] overflow-hidden rounded-[inherit]"
                     >
-                      <span className="h-px w-[130%] rotate-[36deg] bg-ink/18 dark:bg-white/20" />
+                      {/* Diagonal TL→BR (hueco ya ocupado / no reservable) */}
+                      <span className="absolute left-1/2 top-1/2 h-px w-[min(180%,12rem)] max-w-none -translate-x-1/2 -translate-y-1/2 rotate-45 bg-neutral-400/85 dark:bg-white/45" />
                     </span>
                   ) : null}
-                  <span className={bloqueado ? 'relative' : ''}>
+                  <span className={bloqueado ? 'relative z-[1]' : ''}>
                     {format(new Date(s.slot_inicio), 'HH:mm')}
                   </span>
                 </button>

@@ -219,6 +219,7 @@ export default function PortalShell({
               tone={tone}
               displayName={user.displayName}
               email={user.email}
+              avatarUrl={user.avatarUrl}
               button={
                 user.avatarUrl ? (
                   <span className="inline-block h-9 w-9 overflow-hidden rounded-full ring-1 ring-ink/10 hover:ring-ink/20 transition-all dark:ring-white/15 dark:hover:ring-white/30">

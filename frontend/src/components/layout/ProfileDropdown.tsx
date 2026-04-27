@@ -16,6 +16,7 @@
  * /portal/ajustes o /admin/configuracion mediante server actions RLS-safe.
  */
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -30,6 +31,8 @@ interface ProfileDropdownProps {
   readonly tone?: ShellTone;
   readonly displayName?: string;
   readonly email?: string;
+  /** URL pública del avatar (mismo origen que la pastilla de la topbar). */
+  readonly avatarUrl?: string | null;
 }
 
 function initialsOf(name?: string): string {
@@ -43,6 +46,7 @@ export default function ProfileDropdown({
   tone = 'patient',
   displayName,
   email,
+  avatarUrl,
 }: ProfileDropdownProps) {
   const [open, setOpen] = useState(false);
   const [notificationsMuted, setNotificationsMuted] = useState(false);
@@ -99,12 +103,26 @@ export default function ProfileDropdown({
         >
           {/* ── Cabecera identidad ── */}
           <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-            <span
-              aria-hidden="true"
-              className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full bg-primary/12 ring-1 ring-inset ring-primary/20 font-display text-[0.92rem] italic text-primary dark:bg-primary/25 dark:text-white dark:ring-primary/35"
-            >
-              {initialsOf(nameLabel)}
-            </span>
+            {avatarUrl !== null &&
+            avatarUrl !== undefined &&
+            avatarUrl.trim().length > 0 ? (
+              <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-inset ring-primary/20 dark:ring-primary/35">
+                <Image
+                  src={avatarUrl}
+                  alt=""
+                  width={44}
+                  height={44}
+                  className="h-full w-full object-cover"
+                />
+              </span>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/12 ring-1 ring-inset ring-primary/20 font-display text-[0.92rem] italic text-primary dark:bg-primary/25 dark:text-white dark:ring-primary/35"
+              >
+                {initialsOf(nameLabel)}
+              </span>
+            )}
             <div className="min-w-0">
               <p className="font-display text-[0.95rem] text-ink leading-tight tracking-[-0.01em] truncate dark:text-white">
                 {nameLabel}

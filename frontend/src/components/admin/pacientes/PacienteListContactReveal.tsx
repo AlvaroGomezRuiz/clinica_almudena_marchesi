@@ -5,7 +5,7 @@
  * DNI/domicilio) y paso de revelación vía `paciente_revelar_campo` (auditado).
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
 import { Button } from '@/components/portal-shell/ui';
@@ -29,8 +29,10 @@ export interface PacienteListContactRevealProps {
   readonly hasDni: boolean;
   /** Texto del botón (p. ej. «Información» en chat admin). */
   readonly triggerLabel?: string;
-  /** Icono Material (`shield_lock` por defecto). */
+  /** Icono Material (`shield_lock` por defecto). Ignorado si `triggerIconNode` está definido. */
   readonly triggerIcon?: string;
+  /** Sustituye el icono Material (p. ej. SVG fuera del subset woff2 local). */
+  readonly triggerIconNode?: ReactNode;
 }
 
 interface TriggerPayload {
@@ -57,6 +59,7 @@ export default function PacienteListContactReveal({
   hasDni,
   triggerLabel = 'Contacto',
   triggerIcon = 'shield_lock',
+  triggerIconNode,
 }: PacienteListContactRevealProps): JSX.Element {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [trigger, setTrigger] = useState<TriggerPayload | null>(null);
@@ -135,7 +138,8 @@ export default function PacienteListContactReveal({
         type="button"
         variant="surface"
         size="sm"
-        icon={triggerIcon}
+        icon={triggerIconNode ? undefined : triggerIcon}
+        iconNode={triggerIconNode}
         onClick={openMenu}
         disabled={!hayAlgunaRevelacion}
         className="w-full max-w-full sm:w-auto"

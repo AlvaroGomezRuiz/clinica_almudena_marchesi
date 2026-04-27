@@ -10,6 +10,7 @@ import {
   type PacienteRowLite,
 } from '@/components/admin/mensajes/conversacion-list-avatar-data';
 import PacienteListContactReveal from '@/components/admin/pacientes/PacienteListContactReveal';
+import { ContactFichaIcon } from '@/components/icons/ContactFichaIcon';
 import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Chip, PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
@@ -264,7 +265,7 @@ export default async function AdminConversacionPage({
                     hasDireccion={ficha.has_direccion}
                     hasDni={ficha.has_dni}
                     triggerLabel="Información"
-                    triggerIcon="contact_page"
+                    triggerIconNode={<ContactFichaIcon className="h-4 w-4 text-current" />}
                   />
                 </div>
               </div>
