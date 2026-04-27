@@ -717,8 +717,6 @@ function AudioPlayerBubble({
   const [currentTime, setCurrentTime] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  // Guard para evitar loop infinito en el workaround de duración WebM
-  const seekFixAppliedRef = useRef(false);
   const playingRef = useRef(false);
 
   const togglePlay = useCallback(() => {
@@ -749,39 +747,25 @@ function AudioPlayerBubble({
       if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setProgress((el.currentTime / el.duration) * 100);
         setCurrentTime(el.currentTime);
-      }
-    };
-    const onError = () => setLoadError(true);
-
-    /* Workaround WebM duration bug: MediaRecorder no escribe la
-       duración en el contenedor → el navegador reporta Infinity o 0.
-       Forzamos un seek al final para que calcule la duración real. */
-    const tryFixDuration = () => {
-      if (seekFixAppliedRef.current) return;
-      if (el.duration && isFinite(el.duration) && el.duration > 0) {
-        setDuration(el.duration);
-        return;
-      }
-      seekFixAppliedRef.current = true;
-      el.currentTime = 1e10;
-    };
-
-    const onSeeked = () => {
-      if (!seekFixAppliedRef.current) return;
-      if (el.duration && isFinite(el.duration) && el.duration > 0) {
+        // La duración se vuelve fiable durante la reproducción
         setDuration(el.duration);
       }
-      if (el.currentTime > 0 && !playingRef.current) {
-        // Usamos setTimeout para evitar loop síncrono de seek
-        setTimeout(() => { el.currentTime = 0; }, 0);
-      }
-      // Desactivar el guard para que no interfiera con seeks normales del usuario
-      seekFixAppliedRef.current = false;
     };
-
     const onDurationChange = () => {
       if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setDuration(el.duration);
+      }
+    };
+    const onError = () => {
+      // Solo marcar error si es un error real de fuente (no de seek)
+      const code = el.error?.code;
+      console.warn('[AudioPlayer] Error cargando audio:', {
+        code,
+        message: el.error?.message,
+        src: el.src?.slice(0, 80),
+      });
+      if (code && code !== MediaError.MEDIA_ERR_ABORTED) {
+        setLoadError(true);
       }
     };
 
@@ -789,24 +773,20 @@ function AudioPlayerBubble({
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnded);
     el.addEventListener('timeupdate', onTimeUpdate);
-    el.addEventListener('loadedmetadata', tryFixDuration);
-    el.addEventListener('canplaythrough', tryFixDuration);
     el.addEventListener('durationchange', onDurationChange);
-    el.addEventListener('seeked', onSeeked);
     el.addEventListener('error', onError);
 
-    // Si ya tiene metadata cargada (hydration o cache del navegador)
-    if (el.readyState >= 1) tryFixDuration();
+    // Si ya tiene metadata cargada (hydration o cache)
+    if (el.duration && isFinite(el.duration) && el.duration > 0) {
+      setDuration(el.duration);
+    }
 
     return () => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
       el.removeEventListener('timeupdate', onTimeUpdate);
-      el.removeEventListener('loadedmetadata', tryFixDuration);
-      el.removeEventListener('canplaythrough', tryFixDuration);
       el.removeEventListener('durationchange', onDurationChange);
-      el.removeEventListener('seeked', onSeeked);
       el.removeEventListener('error', onError);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -902,7 +882,7 @@ function AudioPlayerBubble({
               ? `${fmtTime(currentTime)} / ${fmtTime(duration)}`
               : duration > 0
                 ? fmtTime(duration)
-                : '0:00'}
+                : '\u2014:\u2014\u2014'}
         </span>
       </div>
 
