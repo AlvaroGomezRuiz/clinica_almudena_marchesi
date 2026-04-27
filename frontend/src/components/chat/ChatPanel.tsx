@@ -715,78 +715,101 @@ function AudioPlayerBubble({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [loadError, setLoadError] = useState(false);
   const progressBarRef = useRef<HTMLDivElement>(null);
+  // Guard para evitar loop infinito en el workaround de duración WebM
+  const seekFixAppliedRef = useRef(false);
+  const playingRef = useRef(false);
 
   const togglePlay = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (playing) {
+    if (playingRef.current) {
       el.pause();
     } else {
-      void el.play();
+      el.play().catch(() => {
+        setLoadError(true);
+      });
     }
-  }, [playing]);
+  }, []);
 
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
+
+    const onPlay = () => { playingRef.current = true; setPlaying(true); };
+    const onPause = () => { playingRef.current = false; setPlaying(false); };
     const onEnded = () => {
+      playingRef.current = false;
       setPlaying(false);
       setProgress(0);
       setCurrentTime(0);
     };
     const onTimeUpdate = () => {
-      if (el.duration && isFinite(el.duration)) {
+      if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setProgress((el.currentTime / el.duration) * 100);
         setCurrentTime(el.currentTime);
       }
     };
-    const setDurationSafe = () => {
-      if (el.duration && isFinite(el.duration) && el.duration > 0) {
-        setDuration(el.duration);
-      }
-    };
+    const onError = () => setLoadError(true);
+
     /* Workaround WebM duration bug: MediaRecorder no escribe la
-       duración en el contenedor → el navegador reporta Infinity.
+       duración en el contenedor → el navegador reporta Infinity o 0.
        Forzamos un seek al final para que calcule la duración real. */
-    const onLoadedMetadata = () => {
-      if (!el.duration || !isFinite(el.duration) || el.duration === 0) {
-        el.currentTime = 1e10; // seek al "final"
-      } else {
+    const tryFixDuration = () => {
+      if (seekFixAppliedRef.current) return;
+      if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setDuration(el.duration);
+        return;
       }
+      seekFixAppliedRef.current = true;
+      el.currentTime = 1e10;
     };
+
     const onSeeked = () => {
-      // Después del seek forzado, la duración real ya está disponible
+      if (!seekFixAppliedRef.current) return;
       if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setDuration(el.duration);
       }
-      // Restaurar la posición al inicio solo si no está reproduciéndose
-      if (el.currentTime > 0 && !playing) {
-        el.currentTime = 0;
+      if (el.currentTime > 0 && !playingRef.current) {
+        // Usamos setTimeout para evitar loop síncrono de seek
+        setTimeout(() => { el.currentTime = 0; }, 0);
+      }
+      // Desactivar el guard para que no interfiera con seeks normales del usuario
+      seekFixAppliedRef.current = false;
+    };
+
+    const onDurationChange = () => {
+      if (el.duration && isFinite(el.duration) && el.duration > 0) {
+        setDuration(el.duration);
       }
     };
-    const onDurationChange = () => setDurationSafe();
 
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnded);
     el.addEventListener('timeupdate', onTimeUpdate);
-    el.addEventListener('loadedmetadata', onLoadedMetadata);
+    el.addEventListener('loadedmetadata', tryFixDuration);
+    el.addEventListener('canplaythrough', tryFixDuration);
     el.addEventListener('durationchange', onDurationChange);
     el.addEventListener('seeked', onSeeked);
+    el.addEventListener('error', onError);
+
+    // Si ya tiene metadata cargada (hydration o cache del navegador)
+    if (el.readyState >= 1) tryFixDuration();
+
     return () => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
       el.removeEventListener('timeupdate', onTimeUpdate);
-      el.removeEventListener('loadedmetadata', onLoadedMetadata);
+      el.removeEventListener('loadedmetadata', tryFixDuration);
+      el.removeEventListener('canplaythrough', tryFixDuration);
       el.removeEventListener('durationchange', onDurationChange);
       el.removeEventListener('seeked', onSeeked);
+      el.removeEventListener('error', onError);
     };
-  }, [playing]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSeek = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
@@ -833,15 +856,18 @@ function AudioPlayerBubble({
           <button
             type="button"
             onClick={togglePlay}
+            disabled={loadError}
             className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors ${
-              esMio
-                ? 'bg-white/25 hover:bg-white/35 text-on-primary'
-                : 'bg-zinc-400/20 hover:bg-zinc-400/30 text-zinc-700 dark:bg-white/15 dark:hover:bg-white/25 dark:text-white'
+              loadError
+                ? 'opacity-40 cursor-not-allowed bg-white/10'
+                : esMio
+                  ? 'bg-white/25 hover:bg-white/35 text-on-primary'
+                  : 'bg-zinc-400/20 hover:bg-zinc-400/30 text-zinc-700 dark:bg-white/15 dark:hover:bg-white/25 dark:text-white'
             }`}
-            aria-label={playing ? 'Pausar audio' : 'Reproducir audio'}
+            aria-label={loadError ? 'Audio no disponible' : playing ? 'Pausar audio' : 'Reproducir audio'}
           >
             <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">
-              {playing ? 'pause' : 'play_arrow'}
+              {loadError ? 'error' : playing ? 'pause' : 'play_arrow'}
             </span>
           </button>
           {/* Barra de progreso seekable */}
@@ -870,19 +896,22 @@ function AudioPlayerBubble({
             ? 'text-on-primary/60'
             : 'text-zinc-500 dark:text-white/40'
         }`}>
-          {playing || currentTime > 0
-            ? `${fmtTime(currentTime)} / ${fmtTime(duration)}`
-            : duration > 0
-              ? fmtTime(duration)
-              : '0:00'}
+          {loadError
+            ? 'No disponible'
+            : playing || currentTime > 0
+              ? `${fmtTime(currentTime)} / ${fmtTime(duration)}`
+              : duration > 0
+                ? fmtTime(duration)
+                : '0:00'}
         </span>
       </div>
 
-      {/* Audio element invisible */}
-      <audio ref={audioRef} preload="metadata" src={src} className="hidden" />
+      {/* Audio — preload="auto" necesario para WebM sin metadata de duración */}
+      <audio ref={audioRef} preload="auto" src={src} className="hidden" />
     </div>
   );
 }
+
 
 // ───────────────────────────────────────────────────────────────────────────
 // Burbuja individual

@@ -144,11 +144,25 @@ export async function POST(req: NextRequest): Promise<Response> {
      de falsificar. Revisamos la firma real del archivo contra la lista blanca. */
   const declaredKind = kindFromMime(declaredBase);
   if (!declaredKind) {
+    console.warn('[attach] MIME no soportado:', { raw: file.type, base: declaredBase, size: file.size });
     return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
+
+  // Diagnóstico temporal: loguear info del archivo subido
+  const hexHead = Array.from(bytes.subarray(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+  console.info('[attach]', {
+    rawType: file.type,
+    base: declaredBase,
+    bucket: mimeForBucket(declaredBase),
+    size: file.size,
+    declaredKind,
+    hexHead,
+  });
+
   const detectedKind = detectFileKind(bytes, ALLOWED_KINDS);
   if (!detectedKind || detectedKind !== declaredKind) {
+    console.warn('[attach] Signature mismatch:', { declaredKind, detectedKind, hexHead });
     return NextResponse.json(
       { error: 'file_signature_mismatch' },
       { status: 415 }

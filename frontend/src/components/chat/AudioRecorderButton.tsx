@@ -93,7 +93,13 @@ export default function AudioRecorderButton({
               setErr('rate_limited');
               return;
             }
-            // Reintentar si quedan intentos
+            // 4xx = error del cliente (mime, firma, tamaño) → no reintentar
+            if (res.status >= 400 && res.status < 500) {
+              console.warn('[audio upload] Client error:', body.error, res.status);
+              setErr(body.error != null && body.error.length > 0 ? body.error : `HTTP ${res.status}`);
+              return;
+            }
+            // 5xx = error del servidor → reintentar
             if (retry < 3) {
               await new Promise<void>((r) => setTimeout(r, 1000 * 2 ** retry));
               return attempt(retry + 1);
@@ -138,10 +144,10 @@ export default function AudioRecorderButton({
       const mime = pickMime();
       let rec: MediaRecorder;
       try {
-        rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32_000 });
+        rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 48_000 });
       } catch {
         try {
-          rec = new MediaRecorder(stream, { audioBitsPerSecond: 32_000 });
+          rec = new MediaRecorder(stream, { audioBitsPerSecond: 48_000 });
         } catch {
           rec = new MediaRecorder(stream);
         }
@@ -167,6 +173,11 @@ export default function AudioRecorderButton({
         }
         if (parts.length === 0) return;
         const blob = new Blob(parts, { type: rec.mimeType || mime });
+        // Verificar que el blob no esté vacío (header WebM sin frames ~40 bytes)
+        if (blob.size < 100) {
+          setErr('upload_error');
+          return;
+        }
         const blobType = blob.type.toLowerCase();
         const ext = blobType.includes('ogg')
           ? 'ogg'
