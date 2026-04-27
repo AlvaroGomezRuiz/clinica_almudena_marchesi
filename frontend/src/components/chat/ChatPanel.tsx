@@ -743,22 +743,40 @@ function AudioPlayerBubble({
         setCurrentTime(el.currentTime);
       }
     };
+    const setDurationSafe = () => {
+      if (el.duration && isFinite(el.duration) && el.duration > 0) {
+        setDuration(el.duration);
+      }
+    };
+    /* Workaround WebM duration bug: MediaRecorder no escribe la
+       duración en el contenedor → el navegador reporta Infinity.
+       Forzamos un seek al final para que calcule la duración real. */
     const onLoadedMetadata = () => {
-      if (el.duration && isFinite(el.duration)) {
+      if (!el.duration || !isFinite(el.duration) || el.duration === 0) {
+        el.currentTime = 1e10; // seek al "final"
+      } else {
         setDuration(el.duration);
       }
     };
-    const onDurationChange = () => {
-      if (el.duration && isFinite(el.duration)) {
+    const onSeeked = () => {
+      // Después del seek forzado, la duración real ya está disponible
+      if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setDuration(el.duration);
       }
+      // Restaurar la posición al inicio solo si no está reproduciéndose
+      if (el.currentTime > 0 && !playing) {
+        el.currentTime = 0;
+      }
     };
+    const onDurationChange = () => setDurationSafe();
+
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnded);
     el.addEventListener('timeupdate', onTimeUpdate);
     el.addEventListener('loadedmetadata', onLoadedMetadata);
     el.addEventListener('durationchange', onDurationChange);
+    el.addEventListener('seeked', onSeeked);
     return () => {
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
@@ -766,8 +784,9 @@ function AudioPlayerBubble({
       el.removeEventListener('timeupdate', onTimeUpdate);
       el.removeEventListener('loadedmetadata', onLoadedMetadata);
       el.removeEventListener('durationchange', onDurationChange);
+      el.removeEventListener('seeked', onSeeked);
     };
-  }, []);
+  }, [playing]);
 
   const handleSeek = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
@@ -978,8 +997,8 @@ function Burbuja({
                     fallbackLetter={esMio ? '' : otherInitial}
                   />
                 ) : a.tipo === 'imagen' && a.signed_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <a href={a.signed_url} target="_blank" rel="noreferrer" title={label(a.nombre)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={a.signed_url}
                       alt={label(a.nombre)}
