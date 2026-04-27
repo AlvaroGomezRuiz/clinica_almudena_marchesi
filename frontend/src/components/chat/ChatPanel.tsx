@@ -695,8 +695,26 @@ function isAutoAttachmentCaption(body: string, adjuntos: readonly ChatAdjunto[])
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// Reproductor de audio estilo WhatsApp
+// Reproductor de audio estilo WhatsApp con waveform
 // ───────────────────────────────────────────────────────────────────────────
+
+/** Genera un array de alturas pseudo-aleatorias a partir de un string (determinista). */
+function generateWaveform(seed: string, bars: number): number[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  }
+  const out: number[] = [];
+  for (let i = 0; i < bars; i++) {
+    h = ((h << 5) - h + i * 7 + 1) | 0;
+    // Normalizar a 0.15–1.0 para que haya variación visual
+    out.push(0.15 + (Math.abs(h % 1000) / 1000) * 0.85);
+  }
+  return out;
+}
+
+const WAVEFORM_BARS = 36;
+
 function AudioPlayerBubble({
   src,
   title,
@@ -716,8 +734,11 @@ function AudioPlayerBubble({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [loadError, setLoadError] = useState(false);
-  const progressBarRef = useRef<HTMLDivElement>(null);
+  const waveformRef = useRef<HTMLDivElement>(null);
   const playingRef = useRef(false);
+
+  // Waveform determinista basada en la URL del audio
+  const waveform = useMemo(() => generateWaveform(src, WAVEFORM_BARS), [src]);
 
   const togglePlay = useCallback(() => {
     const el = audioRef.current;
@@ -747,7 +768,6 @@ function AudioPlayerBubble({
       if (el.duration && isFinite(el.duration) && el.duration > 0) {
         setProgress((el.currentTime / el.duration) * 100);
         setCurrentTime(el.currentTime);
-        // La duración se vuelve fiable durante la reproducción
         setDuration(el.duration);
       }
     };
@@ -757,7 +777,6 @@ function AudioPlayerBubble({
       }
     };
     const onError = () => {
-      // Solo marcar error si es un error real de fuente (no de seek)
       const code = el.error?.code;
       console.warn('[AudioPlayer] Error cargando audio:', {
         code,
@@ -776,7 +795,6 @@ function AudioPlayerBubble({
     el.addEventListener('durationchange', onDurationChange);
     el.addEventListener('error', onError);
 
-    // Si ya tiene metadata cargada (hydration o cache)
     if (el.duration && isFinite(el.duration) && el.duration > 0) {
       setDuration(el.duration);
     }
@@ -794,7 +812,7 @@ function AudioPlayerBubble({
   const handleSeek = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
       const el = audioRef.current;
-      const bar = progressBarRef.current;
+      const bar = waveformRef.current;
       if (!el || !bar || !el.duration || !isFinite(el.duration)) return;
       const rect = bar.getBoundingClientRect();
       const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -810,14 +828,18 @@ function AudioPlayerBubble({
     return `${m}:${String(sec).padStart(2, '0')}`;
   };
 
+  // Colores de las barras del waveform
+  const playedColor = esMio ? 'rgba(255,255,255,0.85)' : 'rgba(80,80,80,1)';
+  const unplayedColor = esMio ? 'rgba(255,255,255,0.3)' : 'rgba(160,160,160,0.5)';
+
   const avatarRing = esMio
     ? 'ring-white/30'
     : 'ring-zinc-400/30 dark:ring-white/20';
 
   return (
-    <div className="flex items-center gap-3 py-1 min-w-[200px] max-w-[280px]" title={title}>
+    <div className="flex items-center gap-3 py-1 min-w-[220px] max-w-[300px]" title={title}>
       {/* Avatar circular */}
-      <span className={`relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ${avatarRing} ${esMio ? 'bg-white/20' : 'bg-zinc-300/60 dark:bg-white/10'}`}>
+      <span className={`relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ${avatarRing} ${esMio ? 'bg-white/20' : 'bg-zinc-300/60 dark:bg-white/10'}`}>
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -830,14 +852,14 @@ function AudioPlayerBubble({
         )}
       </span>
 
-      {/* Play/pause + barra */}
+      {/* Play/pause + waveform */}
       <div className="flex-1 flex flex-col gap-1 min-w-0">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={togglePlay}
             disabled={loadError}
-            className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors ${
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors ${
               loadError
                 ? 'opacity-40 cursor-not-allowed bg-white/10'
                 : esMio
@@ -846,28 +868,46 @@ function AudioPlayerBubble({
             }`}
             aria-label={loadError ? 'Audio no disponible' : playing ? 'Pausar audio' : 'Reproducir audio'}
           >
-            <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">
+            <span className="material-symbols-outlined text-[1.2rem]" aria-hidden="true">
               {loadError ? 'error' : playing ? 'pause' : 'play_arrow'}
             </span>
           </button>
-          {/* Barra de progreso seekable */}
+
+          {/* Waveform */}
           <div
-            ref={progressBarRef}
+            ref={waveformRef}
             onClick={handleSeek}
-            className={`flex-1 h-[6px] rounded-full cursor-pointer relative overflow-hidden ${
-              esMio
-                ? 'bg-white/20'
-                : 'bg-zinc-400/25 dark:bg-white/15'
-            }`}
+            className="flex-1 flex items-center gap-[2px] h-[28px] cursor-pointer relative"
+            role="slider"
+            aria-label="Progreso del audio"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress)}
           >
-            <div
-              className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-100 ease-linear ${
-                esMio
-                  ? 'bg-white/70'
-                  : 'bg-zinc-600 dark:bg-white/60'
-              }`}
-              style={{ width: `${progress}%` }}
-            />
+            {waveform.map((h, i) => {
+              const barProgress = (i / waveform.length) * 100;
+              const isPlayed = barProgress < progress;
+              return (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full transition-colors duration-75"
+                  style={{
+                    height: `${Math.max(3, h * 28)}px`,
+                    minWidth: '2px',
+                    backgroundColor: isPlayed ? playedColor : unplayedColor,
+                  }}
+                />
+              );
+            })}
+            {/* Indicador circular (dot) */}
+            {progress > 0 && (
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 w-[10px] h-[10px] rounded-full shadow-sm pointer-events-none ${
+                  esMio ? 'bg-white' : 'bg-zinc-600 dark:bg-white/90'
+                }`}
+                style={{ left: `calc(${progress}% - 5px)` }}
+              />
+            )}
           </div>
         </div>
         {/* Duración */}
@@ -886,7 +926,7 @@ function AudioPlayerBubble({
         </span>
       </div>
 
-      {/* Audio — preload="auto" necesario para WebM sin metadata de duración */}
+      {/* Audio hidden */}
       <audio ref={audioRef} preload="auto" src={src} className="hidden" />
     </div>
   );
