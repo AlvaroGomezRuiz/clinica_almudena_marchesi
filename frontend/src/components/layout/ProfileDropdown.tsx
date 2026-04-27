@@ -94,11 +94,7 @@ export default function ProfileDropdown({
 
       {open ? (
         <div
-          className="absolute right-0 z-[120] mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ink/[0.06] bg-[#FBF6EF]/92 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] ring-1 ring-inset ring-white/30 dark:border-white/10 dark:bg-[#141312]/92 dark:ring-white/5"
-          style={{
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          }}
+          className="absolute right-0 z-[120] mt-3 w-[min(100vw-1.5rem,360px)] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-ink/10 bg-[#FBF6EF] shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] ring-1 ring-inset ring-white/40 dark:border-white/12 dark:bg-[#1a1918] dark:shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)] dark:ring-white/10"
           role="menu"
         >
           {/* ── Cabecera identidad ── */}
@@ -114,11 +110,11 @@ export default function ProfileDropdown({
                 {nameLabel}
               </p>
               {email ? (
-                <p className="mt-0.5 font-body text-[0.72rem] text-ink-muted truncate dark:text-white/55">
+                <p className="mt-0.5 truncate font-body text-[0.72rem] text-ink-muted dark:text-white/75">
                   {email}
                 </p>
               ) : null}
-              <p className="mt-1 font-body text-[0.62rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/45">
+              <p className="mt-1 font-body text-[0.62rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/65">
                 {tone === 'admin' ? 'Administración' : 'Portal paciente'}
               </p>
             </div>
@@ -128,7 +124,7 @@ export default function ProfileDropdown({
 
           {/* ── Tema ── */}
           <div className="px-4 py-3">
-            <p className="mb-2 font-body text-[0.62rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/55">
+            <p className="mb-2 font-body text-[0.62rem] uppercase tracking-[0.2em] text-ink-muted dark:text-white/70">
               Tema
             </p>
             <ThemeToggle variant="segmented" className="w-full justify-between" />
@@ -140,13 +136,13 @@ export default function ProfileDropdown({
           <button
             type="button"
             onClick={() => setNotificationsMuted((v) => !v)}
-            className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm text-ink hover:bg-ink/5 transition-colors dark:text-white dark:hover:bg-white/5"
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm text-ink transition-colors hover:bg-ink/[0.06] dark:text-white dark:hover:bg-white/[0.08]"
             role="menuitemcheckbox"
             aria-checked={!notificationsMuted}
           >
             <span className="flex items-center gap-3">
               <span
-                className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/8 dark:text-white/70"
+                className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/10 dark:text-white/80"
                 aria-hidden="true"
               >
                 <span className="material-symbols-outlined text-[1.05rem]">
@@ -172,11 +168,11 @@ export default function ProfileDropdown({
           <Link
             href={settingsHref}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-ink/5 transition-colors dark:text-white dark:hover:bg-white/5"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-ink transition-colors hover:bg-ink/[0.06] dark:text-white dark:hover:bg-white/[0.08]"
             role="menuitem"
           >
             <span
-              className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/8 dark:text-white/70"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/10 dark:text-white/80"
               aria-hidden="true"
             >
               <span className="material-symbols-outlined text-[1.05rem]">settings</span>
@@ -187,11 +183,11 @@ export default function ProfileDropdown({
           <Link
             href={privacyHref}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-ink/5 transition-colors dark:text-white dark:hover:bg-white/5"
+            className="flex items-center gap-3 px-4 py-3 text-sm text-ink transition-colors hover:bg-ink/[0.06] dark:text-white dark:hover:bg-white/[0.08]"
             role="menuitem"
           >
             <span
-              className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/8 dark:text-white/70"
+              className="grid h-8 w-8 place-items-center rounded-lg bg-ink/5 text-ink-soft dark:bg-white/10 dark:text-white/80"
               aria-hidden="true"
             >
               <span className="material-symbols-outlined text-[1.05rem]">shield_lock</span>

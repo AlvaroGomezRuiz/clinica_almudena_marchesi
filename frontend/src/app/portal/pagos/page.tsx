@@ -268,7 +268,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
         El importe cobrado coincide con el servicio que elijas al reservar o comprar el bono.
       </p>
       {servicioIndividual || servicioPareja || servicioIndividualPareja ? (
-        <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mb-8 grid items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {servicioIndividual ? (
             <SesionSueltaInfoCard
               titulo="Sesión individual"
@@ -315,7 +315,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
               <h3 className="mb-3 font-display text-[1.05rem] italic text-ink dark:text-white">
                 Psicoterapia individual
               </h3>
-              <div className="mb-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mb-8 grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {bonosCatalogoIndividual.map((bono) => (
                   <BonoCompraCard key={bono.id} bono={bono} />
                 ))}
@@ -327,7 +327,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
               <h3 className="mb-3 font-display text-[1.05rem] italic text-ink dark:text-white">
                 Terapia de pareja
               </h3>
-              <div className="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mb-10 grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {bonosCatalogoPareja.map((bono) => (
                   <BonoCompraCard key={bono.id} bono={bono} />
                 ))}

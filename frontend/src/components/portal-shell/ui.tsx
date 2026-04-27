@@ -135,7 +135,7 @@ export function StatCard({ label, value, delta, icon, footnote }: StatCardProps)
     <SurfaceCard>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-body text-[0.65rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/55">
+          <p className="font-body text-[0.65rem] uppercase tracking-[0.22em] text-ink-muted dark:text-white/65">
             {label}
           </p>
           <p className="mt-4 font-display text-[clamp(2.25rem,3.5vw,2.875rem)] leading-[0.95] italic text-ink tabular-nums tracking-[-0.02em] dark:text-white">
@@ -150,7 +150,9 @@ export function StatCard({ label, value, delta, icon, footnote }: StatCardProps)
             </div>
           ) : null}
           {footnote ? (
-            <p className="mt-3 font-body text-[0.72rem] text-ink-muted dark:text-white/55 tracking-tight">{footnote}</p>
+            <p className="mt-3 font-body text-[0.72rem] text-ink-muted tracking-tight dark:text-white/68">
+              {footnote}
+            </p>
           ) : null}
         </div>
         {icon ? (

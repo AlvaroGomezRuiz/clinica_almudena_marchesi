@@ -155,14 +155,11 @@ export default function AvatarUploader({
           type="button"
           onClick={handlePick}
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-1.5 font-body text-[0.78rem] text-canvas transition hover:bg-ink-soft disabled:opacity-40 dark:bg-white dark:text-ink dark:hover:bg-white/90"
+          className="rounded-full bg-ink px-4 py-2 font-body text-[0.78rem] font-medium text-canvas transition hover:bg-ink-soft disabled:opacity-40 dark:bg-white/[0.14] dark:text-white dark:ring-1 dark:ring-inset dark:ring-white/25 dark:hover:bg-white/[0.22]"
         >
-          <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
-            {isPending ? 'progress_activity' : 'upload'}
-          </span>
           {isPending ? 'Subiendo…' : 'Cambiar avatar'}
         </button>
-        <p className="mt-1 font-body text-[0.7rem] text-ink-muted dark:text-white/55">
+        <p className="mt-1 font-body text-[0.7rem] text-ink-muted dark:text-white/70">
           PNG, JPG o WebP · máx 2 MB · podrás recortar antes de guardar
         </p>
         {error ? (

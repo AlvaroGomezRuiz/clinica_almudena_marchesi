@@ -190,7 +190,6 @@ export default function PortalShell({
               navItems={mobileNavItems}
               mensajesUnread={mensajesUnread}
               panelClassName=""
-              buttonClassName=""
             />
             <div className="min-w-0 flex-1 md:hidden">
               <p className="truncate font-body text-[0.92rem] font-semibold leading-snug tracking-normal text-ink dark:text-white">

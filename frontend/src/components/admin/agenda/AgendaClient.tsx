@@ -56,7 +56,7 @@ function FichaAgendaLink({
       }}
       className={
         compact
-          ? 'grid h-6 w-6 place-items-center rounded-md text-ink/80 ring-1 ring-inset ring-ink/10 transition-[background-color,color] hover:bg-primary/12 hover:text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-white/12 dark:hover:bg-primary/20 dark:hover:text-primary-fixed-dim'
+          ? 'grid h-6 w-6 place-items-center rounded-md text-[#1a2421] ring-1 ring-inset ring-[#9eb5ad] transition-[background-color,color] hover:bg-white/50 hover:text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-white dark:ring-white/25 dark:hover:bg-white/10 dark:hover:text-primary-fixed-dim'
           : 'grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-muted ring-1 ring-inset ring-ink/8 transition-[background-color,color] hover:bg-primary/10 hover:text-primary focus-visible:outline focus-visible:ring-2 focus-visible:ring-primary/40 dark:ring-white/10 dark:hover:bg-primary/20 dark:hover:text-primary-fixed-dim'
       }
       aria-label="Abrir ficha del paciente"
@@ -691,20 +691,20 @@ function WeekGrid({
   const inicioSemana = startOfWeek(fechaAncla, { weekStartsOn: 1 });
   const dias = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
 
-  // Rango horario visual: 08:00–20:00 (24 medias horas). Simétrico al día laboral clínico.
-  const hourStart = 8;
-  const hourEnd = 20;
+  // Rango horario visual: 09:00–22:00 (etiquetas de hora en punto; rejilla hasta fin de franja 21:30).
+  const hourStart = 9;
+  const hourEnd = 23;
   const slotMin = 30;
   const totalSlots = ((hourEnd - hourStart) * 60) / slotMin;
   const pxPorMediaHora = 28; // h-7; debe coincidir con EventoBlock
   const gridBodyHeightPx = totalSlots * pxPorMediaHora;
 
   return (
-    <SurfaceCard className="overflow-hidden">
+    <SurfaceCard className="overflow-hidden rounded-2xl ring-1 ring-inset ring-ink/10 dark:ring-white/10">
       <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
         <div className="min-w-0 w-full min-[720px]:min-w-[44rem]">
-      <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] border-b border-ink/8 dark:border-white/8">
-        <div className="min-w-12 shrink-0" aria-hidden="true" />
+      <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] border-b border-ink/8 sm:grid-cols-[3rem_repeat(7,minmax(0,1fr))] dark:border-white/8">
+        <div className="min-w-10 shrink-0 sm:min-w-12" aria-hidden="true" />
         {dias.map((d) => {
           const esHoy = isSameDay(d, new Date());
           return (
@@ -731,9 +731,9 @@ function WeekGrid({
         })}
       </div>
 
-      <div className="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
+      <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
         {/* Columna de horas (alineada con la cabecera) */}
-        <div className="min-w-12 shrink-0">
+        <div className="min-w-10 shrink-0 sm:min-w-12">
           {Array.from({ length: hourEnd - hourStart }, (_, i) => (
             <div
               key={`h-${i}`}
@@ -846,7 +846,8 @@ function EventoBlock(
 
   const estiloPos = { top: `${top}px`, height: `${height}px`, minHeight: '20px' } as const;
 
-  const capaBloqueo = `bg-[#c89b5a]/15 ring-1 ring-inset ring-[#c89b5a]/30 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:ring-[#c89b5a]/35 dark:text-[#e9c88a]`;
+  const capaBloqueo =
+    'bg-[#e8d8c4] text-[#5c4324] ring-1 ring-inset ring-[#c9a882] dark:bg-[#3d3428] dark:text-[#f0e4d4] dark:ring-[#8a7355]';
 
   if (tone === 'bloqueo') {
     return (
@@ -864,7 +865,7 @@ function EventoBlock(
           {title}
         </p>
         {props.bloqueoExtra ? (
-          <p className="mt-0.5 font-body text-[0.6rem] leading-tight text-[#6b5025] dark:text-[#c9a76a]">
+          <p className="mt-0.5 font-body text-[0.6rem] leading-tight text-[#4a3820] dark:text-[#e8dcc8]">
             {props.bloqueoExtra}
           </p>
         ) : null}
@@ -874,7 +875,8 @@ function EventoBlock(
 
   const { estadoCita, nombrePaciente, pacienteId, onActivate } = props;
   const bordeCita = `border-l-2 ${bordeLateralCitaAgenda(estadoCita)}`;
-  const capaCita = `bg-primary/12 text-primary-dim ring-1 ring-inset ring-primary/25 dark:bg-primary/30 dark:ring-primary-fixed/35 dark:text-white`;
+  const capaCita =
+    'bg-[#dce8e4] text-[#1a2421] ring-1 ring-inset ring-[#9eb5ad] shadow-sm dark:bg-[#2c3532] dark:text-[#f2f7f5] dark:ring-[#4a5c56]';
   const sublinea =
     (nombrePaciente ? `${nombrePaciente} · ` : '') + labelCitaEstadoAgenda(estadoCita);
 
@@ -884,17 +886,17 @@ function EventoBlock(
         <button
           type="button"
           onClick={onActivate}
-          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-9 text-left outline-none transition hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:brightness-110 ${bordeCita} ${capaCita}`}
+          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-9 text-left outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:opacity-95 ${bordeCita} ${capaCita}`}
           title={`${title} · ${sublinea}`}
           aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}, ${sublinea}`}
         >
-          <p className="font-body text-[0.65rem] font-semibold leading-tight tabular-nums">
+          <p className="font-body text-[0.65rem] font-semibold leading-tight tabular-nums text-[#0f1614] dark:text-white">
             {format(inicio, 'HH:mm')}
           </p>
-          <p className="line-clamp-1 font-body text-[0.68rem] font-medium leading-tight text-ink/90 dark:text-white">
+          <p className="line-clamp-1 font-body text-[0.68rem] font-medium leading-tight text-[#1a2421] dark:text-[#f7faf9]">
             {title}
           </p>
-          <p className="line-clamp-2 min-h-0 font-body text-[0.55rem] leading-tight text-primary-dim/95 dark:text-white/82">
+          <p className="line-clamp-2 min-h-0 font-body text-[0.55rem] leading-tight text-[#2d3d36] dark:text-[#d5e3dd]">
             {sublinea}
           </p>
         </button>
