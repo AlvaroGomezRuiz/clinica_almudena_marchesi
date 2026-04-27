@@ -190,6 +190,10 @@ const config: Config = {
           '0%, 100%': { opacity: '0.6' },
           '50%': { opacity: '1' },
         },
+        'modal-in': {
+          '0%': { opacity: '0', transform: 'scale(0.92) translateY(12px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
       },
 
       animation: {

@@ -132,6 +132,47 @@ function validatePasswordStrength(pw: string): string | null {
   return null;
 }
 
+/**
+ * Traduce mensajes de error comunes de Supabase Auth al español.
+ * Los mensajes originales son en inglés; aquí mapeamos los más frecuentes
+ * para que el usuario vea algo comprensible.
+ */
+function translateSupabaseError(msg: string): string {
+  const translations: Array<[RegExp, string]> = [
+    [
+      /error sending confirmation email/i,
+      'No se ha podido enviar el correo de confirmación. Revisa que el email sea correcto e inténtalo de nuevo en unos minutos.',
+    ],
+    [
+      /rate limit|too many requests|email rate limit/i,
+      'Has superado el límite de intentos. Espera unos minutos antes de volver a intentarlo.',
+    ],
+    [
+      /email not confirmed/i,
+      'Tu email aún no está confirmado. Revisa tu bandeja de entrada (o spam).',
+    ],
+    [
+      /invalid email/i,
+      'El email introducido no es válido.',
+    ],
+    [
+      /password.*too short|password.*too weak/i,
+      'La contraseña es demasiado débil. Debe tener al menos 12 caracteres con mayúsculas, minúsculas, números y símbolos.',
+    ],
+    [
+      /signup.*disabled/i,
+      'El registro de nuevos usuarios está temporalmente deshabilitado. Contacta con la clínica.',
+    ],
+  ];
+
+  for (const [pattern, translation] of translations) {
+    if (pattern.test(msg)) return translation;
+  }
+
+  // Fallback genérico si no reconocemos el mensaje.
+  return `Error al crear la cuenta: ${msg}`;
+}
+
 export async function signupAction(formData: FormData): Promise<SignupResult> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const password = String(formData.get('password') ?? '');
@@ -248,7 +289,7 @@ export async function signupAction(formData: FormData): Promise<SignupResult> {
         email,
       };
     }
-    return { ok: false, message: error.message };
+    return { ok: false, message: translateSupabaseError(error.message) };
   }
 
   return { ok: true, pendingVerification: true, email };

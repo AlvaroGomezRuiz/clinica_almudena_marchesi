@@ -21,17 +21,19 @@
  *   4. Sesión activa → /portal.
  */
 
-import { useState, useTransition } from 'react';
+import { useState, useCallback, useTransition } from 'react';
 
 import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
 import { signupAction, type SignupResult } from '@/services/auth/actions';
 import { validateDniNie } from '@/lib/validation/dni';
+import { EmailConfirmationModal } from './EmailConfirmationModal';
 import { PasswordInput, isPasswordStrong } from './PasswordInput';
 
 export function SignupForm(): JSX.Element {
   const [result, setResult] = useState<SignupResult | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showModal, setShowModal] = useState(false);
 
   // Campos controlados (necesario para los componentes de password y feedback DNI).
   const [givenName, setGivenName] = useState('');
@@ -74,35 +76,13 @@ export function SignupForm(): JSX.Element {
     startTransition(async () => {
       const res = await signupAction(fd);
       setResult(res);
+      if (res.ok) setShowModal(true);
     });
   }
 
-  if (result?.ok) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="rounded-2xl bg-primary/8 p-6 ring-1 ring-primary/20"
-      >
-        <p className="font-display text-[10px] uppercase tracking-[0.15em] text-primary/80 font-medium">
-          Email enviado
-        </p>
-        <h2 className="mt-2 font-display text-[1.5rem] italic leading-tight text-ink">
-          Verifica tu correo electrónico
-        </h2>
-        <p className="mt-3 font-body text-[0.9rem] leading-relaxed text-ink-soft">
-          Te hemos enviado un enlace de confirmación a{' '}
-          <strong className="font-medium text-ink">{result.email}</strong>. Abre
-          el mensaje y haz click en el botón para activar tu cuenta. El enlace
-          caduca en 24 horas.
-        </p>
-        <p className="mt-4 font-body text-[0.8rem] text-ink-muted">
-          ¿No lo encuentras? Revisa spam o promociones. Si sigue sin llegar,
-          contacta con la consulta.
-        </p>
-      </div>
-    );
-  }
+  const handleCloseModal = useCallback(() => setShowModal(false), []);
+
+  const successEmail = result?.ok ? result.email : '';
 
   const inputCls =
     'w-full bg-white/50 dark:bg-black/30 border border-outline-variant/30 dark:border-white/10 rounded-lg px-4 py-3 font-body text-[0.95rem] text-ink placeholder:text-ink-muted/70 focus:ring-2 focus:ring-sage focus:outline-none disabled:opacity-60';
@@ -110,6 +90,7 @@ export function SignupForm(): JSX.Element {
     'block font-display text-[10px] uppercase tracking-[0.15em] text-ink-soft mb-2 font-medium';
 
   return (
+    <>
     <form onSubmit={onSubmit} className="space-y-6" noValidate>
       {/* Honeypot — oculto a usuarios, visible a bots */}
       <input
@@ -426,5 +407,12 @@ export function SignupForm(): JSX.Element {
         </a>
       </p>
     </form>
+
+      <EmailConfirmationModal
+        email={successEmail}
+        open={showModal}
+        onClose={handleCloseModal}
+      />
+    </>
   );
 }
