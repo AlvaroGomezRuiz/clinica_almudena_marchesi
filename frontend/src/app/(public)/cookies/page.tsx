@@ -9,7 +9,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
   path: '/cookies',
   title: 'Política de Cookies — Almudena Marchesi Fernández (Madrid)',
   description:
-    'Cookies técnicas y de sesión en ampsicologia.es: Supabase Auth, Next.js y mediciones agregadas. Sin cookies publicitarias ni analíticas de perfilado.',
+    'Cookies técnicas y de sesión en ampsicologia.es: Supabase Auth, Stripe, Next.js y mediciones agregadas. Sin cookies publicitarias ni analíticas de perfilado.',
   keywords: ['cookies', 'política cookies', 'LSSI', 'sesión segura', 'ampsicologia.es'],
   ogType: 'article',
   includeGeoHints: false,
@@ -95,17 +95,31 @@ export default function CookiesPage() {
                       Sesión Supabase Auth (JWT): autenticación del portal de pacientes y administración con
                       cookies <strong className="text-ink">HttpOnly</strong>,{' '}
                       <strong className="text-ink">Secure</strong> en producción y{' '}
-                      <strong className="text-ink">SameSite=Lax</strong>. El prefijo depende del proyecto.
+                      <strong className="text-ink">SameSite=Lax</strong>. Estos atributos impiden que
+                      scripts externos o sitios de terceros accedan al contenido de la cookie.
                     </td>
                   </tr>
                   <tr>
                     <td className="px-4 py-3 font-mono text-xs text-ink">
-                      Preferencias de tema (local)
+                      Preferencias de tema (localStorage)
                     </td>
                     <td className="px-4 py-3">Técnica / funcional</td>
                     <td className="px-4 py-3">Persistente local</td>
                     <td className="px-4 py-3">
-                      Almacenamiento local para recordar modo claro u oscuro (sin cruces con terceros).
+                      Almacenamiento local para recordar modo claro u oscuro. No se envía a ningún
+                      servidor ni se comparte con terceros.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-mono text-xs text-ink">
+                      __stripe_mid / __stripe_sid
+                    </td>
+                    <td className="px-4 py-3">Técnica / necesaria</td>
+                    <td className="px-4 py-3">Sesión / 1 año</td>
+                    <td className="px-4 py-3">
+                      Cookies establecidas por Stripe durante el proceso de pago para la prevención
+                      de fraude y la seguridad de la transacción. Solo se activan en las páginas de pago
+                      del portal del paciente.
                     </td>
                   </tr>
                 </tbody>
@@ -118,9 +132,15 @@ export default function CookiesPage() {
               3. Mediciones de rendimiento y estabilidad
             </h2>
             <p>
-              El alojamiento puede registrar métricas agregadas de rendimiento y fiabilidad (p. ej. tiempos
-              de respuesta o tasas de error) conforme a la documentación del proveedor de infraestructura,
-              sin cookies de publicidad ni segmentación de audiencias para campañas.
+              La plataforma utiliza Sentry para la monitorización de errores técnicos. Sentry recibe
+              únicamente datos de errores de la aplicación (trazas de ejecución, versión del navegador)
+              y <strong className="text-ink">no instala cookies de seguimiento</strong>. Además, los datos
+              personales se eliminan automáticamente antes del envío a Sentry (scrubbing de PII).
+            </p>
+            <p className="mt-3">
+              El alojamiento (Vercel) puede registrar métricas agregadas de rendimiento y fiabilidad
+              (tiempos de respuesta, tasas de error) conforme a su documentación, sin cookies de
+              publicidad ni segmentación de audiencias.
             </p>
           </div>
 
@@ -130,8 +150,8 @@ export default function CookiesPage() {
             </h2>
             <p>
               Este sitio <strong className="text-ink">no utiliza cookies de terceros</strong> para analítica
-              publicitaria (p. ej. redes de display), remarketing ni píxeles de seguimiento masivo. La
-              navegación no se monetiza mediante intercambio de datos con brokers de publicidad.
+              publicitaria (redes de display), remarketing, píxeles de seguimiento masivo ni redes sociales.
+              La navegación no se monetiza mediante intercambio de datos con brokers de publicidad.
             </p>
           </div>
 
@@ -149,42 +169,22 @@ export default function CookiesPage() {
             </p>
             <ul className="list-disc pl-6 space-y-1 text-sm mt-2">
               <li>
-                <a
-                  href="https://support.google.com/chrome/answer/95647"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sage underline underline-offset-2"
-                >
+                <a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="text-sage underline underline-offset-2">
                   Google Chrome
                 </a>
               </li>
               <li>
-                <a
-                  href="https://support.mozilla.org/es/kb/Borrar%20cookies"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sage underline underline-offset-2"
-                >
+                <a href="https://support.mozilla.org/es/kb/Borrar%20cookies" target="_blank" rel="noopener noreferrer" className="text-sage underline underline-offset-2">
                   Mozilla Firefox
                 </a>
               </li>
               <li>
-                <a
-                  href="https://support.apple.com/es-es/guide/safari/sfri11471/mac"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sage underline underline-offset-2"
-                >
+                <a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="text-sage underline underline-offset-2">
                   Apple Safari
                 </a>
               </li>
               <li>
-                <a
-                  href="https://support.microsoft.com/es-es/microsoft-edge/eliminar-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sage underline underline-offset-2"
-                >
+                <a href="https://support.microsoft.com/es-es/microsoft-edge/eliminar-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer" className="text-sage underline underline-offset-2">
                   Microsoft Edge
                 </a>
               </li>

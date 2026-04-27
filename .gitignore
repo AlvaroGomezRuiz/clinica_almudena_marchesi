@@ -61,6 +61,12 @@ lh-*.json
 lh-report*.json
 **/lh/
 
+# E2E tests (herramienta interna, no se publica)
+frontend/e2e/
+
+# Scripts de build (output ya en public/fonts/, no necesarios en repo)
+frontend/scripts/
+
 # Playwright — salida de tests E2E
 frontend/test-results/
 frontend/playwright-report/
@@ -105,10 +111,8 @@ desktop.ini
 # -----------------------------------------------------------------------------
 # HERRAMIENTAS INTERNAS / PROTOTIPOS / ARTEFACTOS PRIVADOS
 # -----------------------------------------------------------------------------
-# Cursor: ignorar casi todo bajo .cursor, pero versionar .cursor/rules/
+# Cursor: ignorar todo bajo .cursor (reglas internas, no publicar en repo)
 .cursor/
-.cursor/rules
-.cursor/rules/**/*.mdc
 .cursorignore
 .cursorrules
 .prototipo/

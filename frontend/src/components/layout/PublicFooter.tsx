@@ -91,27 +91,57 @@ export default function PublicFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-16 pt-6 border-t border-white/8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="relative">
-            <p aria-hidden="true" className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider">
-              &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
-            </p>
-            <span className="sr-only">
-              &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
-            </span>
+        <div className="mt-16 pt-6 border-t border-white/8 flex flex-col items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center w-full gap-4">
+            <div className="relative">
+              <p aria-hidden="true" className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider">
+                &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
+              </p>
+              <span className="sr-only">
+                &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
+              </span>
+            </div>
+            <div className="flex gap-6">
+              {LEGAL_LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider hover:text-white/60 transition-colors duration-300 relative"
+                >
+                  <span aria-hidden="true">{link.label}</span>
+                  <span className="sr-only">{link.label}</span>
+                </a>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-6">
-            {LEGAL_LINKS.map((link) => (
+
+          {/* Developer Credit */}
+          <div className="flex flex-col items-center gap-1 mt-2">
+            <p className="text-[0.7rem] text-white/25 italic">
+              Web Design by{' '}
               <a
-                key={link.label}
-                href={link.href}
-                className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider hover:text-white/60 transition-colors duration-300 relative"
+                href="https://github.com/AlvaroGomezRuiz?tab=repositories"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/35 hover:text-white/60 transition-colors duration-300"
               >
-                <span aria-hidden="true">{link.label}</span>
-                <span className="sr-only">{link.label}</span>
+                Álvaro Gómez Ruiz
               </a>
-            ))}
+            </p>
+            <p className="text-[0.6rem] text-white/20 italic">
+              cont:{' '}
+              <a
+                href="mailto:alvarogomezz5370@gmail.com"
+                className="hover:text-white/40 transition-colors duration-300"
+              >
+                alvarogomezz5370@gmail.com
+              </a>
+            </p>
           </div>
+
+          <p className="font-mono text-[0.6rem] text-white/15 uppercase tracking-wider mt-1">
+            {currentYear} | Clínica Almudena Marchesi | All Rights Reserved
+          </p>
         </div>
       </div>
     </footer>

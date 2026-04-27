@@ -423,7 +423,12 @@ async function triggerBookingEmail(
         "warning",
       );
     }
-  } catch {
+  } catch (e) {
+    captureEdgeError(e, {
+      area: "stripe-webhook",
+      entity_id: citaId,
+      fingerprint: ["bookingConfirmedEmail", "exception"],
+    });
     // Mejor-esfuerzo. El pago ya quedó registrado.
   }
 }

@@ -19,6 +19,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { captureClinicalError } from '@/lib/sentry';
 import { createServerClient } from '@/lib/supabase/server';
 import { fireEmail } from '@/lib/email/send';
 
@@ -144,11 +145,10 @@ async function handleSignupMetadata(
   });
 
   if (rpcError) {
-    console.error('[auth/callback] paciente_autoregistro_cifrada falló', {
-      user_id: userId,
-      code: rpcError.code,
-      message: rpcError.message,
-    });
+    captureClinicalError(
+      new Error(`paciente_autoregistro_cifrada: ${rpcError.code ?? 'unknown'}`),
+      { area: 'auth', patient_id: userId, operation: 'autoregistro' },
+    );
     // Idempotente: si ya existe ficha (unique_violation) o falla, seguimos igual.
     // No bloqueamos el login porque la cuenta ya está verificada.
   }
@@ -171,10 +171,10 @@ async function handleSignupMetadata(
   });
 
   if (updErr) {
-    console.error('[auth/callback] no se pudo limpiar user_metadata', {
-      user_id: userId,
-      message: updErr.message,
-    });
+    captureClinicalError(
+      new Error(`limpiar user_metadata: ${updErr.code ?? 'unknown'}`),
+      { area: 'auth', patient_id: userId, operation: 'cleanup_metadata' },
+    );
   }
 }
 

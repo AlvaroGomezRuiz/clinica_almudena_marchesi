@@ -60,7 +60,7 @@ function uuid(): string {
   return crypto.randomUUID().replace(/-/g, "");
 }
 
-function parseStack(stack: string | undefined): SentryEvent["exception"]["values"][0]["stacktrace"] | undefined {
+function parseStack(stack: string | undefined): NonNullable<SentryEvent["exception"]>["values"][0]["stacktrace"] | undefined {
   if (!stack) return undefined;
   const frames = stack
     .split("\n")
@@ -131,9 +131,9 @@ function buildEvent(
   err?: unknown,
   messageFallback?: string
 ): SentryEvent {
-  const environment = Deno.env.get("SENTRY_ENVIRONMENT") ?? Deno.env.get("DENO_DEPLOYMENT_ID")
-    ? "production"
-    : "development";
+  const environment =
+    Deno.env.get("SENTRY_ENVIRONMENT") ??
+    (Deno.env.get("DENO_DEPLOYMENT_ID") ? "production" : "development");
 
   const ev: SentryEvent = {
     event_id: uuid(),

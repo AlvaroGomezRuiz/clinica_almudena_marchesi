@@ -19,7 +19,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         Saltar al contenido principal
       </a>
       <PublicHeader />
-      <div id="main">{children}</div>
+      <main id="main">{children}</main>
       <PublicFooter />
     </>
   );

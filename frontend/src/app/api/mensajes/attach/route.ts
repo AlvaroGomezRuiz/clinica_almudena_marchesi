@@ -20,6 +20,7 @@ import {
   type AllowedFileKind,
 } from '@/lib/security/file-validation';
 import { enforceRateLimit, getClientIp, rateLimitJsonResponse } from '@/lib/security/rate-limit';
+import { captureClinicalError } from '@/lib/sentry';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import { sendMensajeAction } from '@/services/mensajes/actions';
@@ -85,7 +86,12 @@ function mimeForBucket(base: string): string {
 }
 
 function sanitizeFilename(name: string): string {
-  const clean = name.normalize('NFKD').replace(/[^\w.\- ]/g, '_').trim();
+  const clean = name
+    .normalize('NFKD')
+    .replace(/\.\./g, '_')       // path traversal
+    .replace(/[\/\\]/g, '_')    // directory separators
+    .replace(/[^\w.\- ]/g, '_')
+    .trim();
   return clean.slice(0, 120) || 'archivo';
 }
 
@@ -145,25 +151,12 @@ export async function POST(req: NextRequest): Promise<Response> {
      de falsificar. Revisamos la firma real del archivo contra la lista blanca. */
   const declaredKind = kindFromMime(declaredBase);
   if (!declaredKind) {
-    console.warn('[attach] MIME no soportado:', { raw: file.type, base: declaredBase, size: file.size });
     return NextResponse.json({ error: 'mime_no_soportado' }, { status: 415 });
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
 
-  // Diagnóstico temporal: loguear info del archivo subido
-  const hexHead = Array.from(bytes.subarray(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-  console.info('[attach]', {
-    rawType: file.type,
-    base: declaredBase,
-    bucket: mimeForBucket(declaredBase),
-    size: file.size,
-    declaredKind,
-    hexHead,
-  });
-
   const detectedKind = detectFileKind(bytes, ALLOWED_KINDS);
   if (!detectedKind || detectedKind !== declaredKind) {
-    console.warn('[attach] Signature mismatch:', { declaredKind, detectedKind, hexHead });
     return NextResponse.json(
       { error: 'file_signature_mismatch' },
       { status: 415 }
@@ -198,17 +191,12 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
 
   if (upErr) {
-    console.error('[attach] Storage upload FAILED:', {
-      message: upErr.message,
-      path: storagePath,
-      mime: bucketMime,
-      size: bytes.length,
-      usingAdmin: storageClient !== supabase,
-    });
-    // rollback blanco: no podemos borrar el mensaje (RPC lo insertó), pero
-    // dejamos un error claro para el cliente.
+    captureClinicalError(
+      new Error(`storage_upload: ${upErr.message}`),
+      { area: 'chat', entity_id: mensajeId, operation: 'attach_upload' },
+    );
     return NextResponse.json(
-      { error: `storage_failed: ${upErr.message}` },
+      { error: 'storage_upload_failed' },
       { status: 500 }
     );
   }

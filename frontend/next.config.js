@@ -62,7 +62,7 @@ function buildCsp() {
        entienden ignoran `'unsafe-inline'` y solo ejecutan scripts cargados por
        scripts firmados. En legacy browsers, `'unsafe-inline'` actúa de fallback. */
     /* Stripe.js: subdominios de js.stripe.com (iframes internos) + iconos wallets; ver https://docs.stripe.com/security/guide#content-security-policy */
-    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com https://*.js.stripe.com",
+    "script-src 'self' 'unsafe-inline' 'strict-dynamic' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com https://*.js.stripe.com",
     /* style-src: `'unsafe-inline'` necesario por Tailwind arbitrary values y
        next-themes (seteo inline del atributo style en <html>). Ya NO se
        permite fonts.googleapis.com porque todas las fuentes están
