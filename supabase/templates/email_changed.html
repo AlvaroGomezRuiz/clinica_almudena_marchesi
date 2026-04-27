@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Correo electrónico actualizado</title>
+</head>
+<body style="margin:0;padding:0;background:#f4efe6;font-family:Helvetica,Arial,sans-serif;color:#1c1c19;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:20px;padding:40px 36px;box-shadow:0 12px 40px rgba(28,28,25,0.08);">
+          <tr>
+            <td>
+              <p style="margin:0 0 8px 0;font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#4a6741;letter-spacing:0.02em;">
+                Clínica Almudena Marchesi Fernández
+              </p>
+              <hr style="border:none;border-top:1px solid #e8e4dc;margin:16px 0 24px 0;" />
+              <div style="margin:0 0 20px 0;text-align:center;">
+                <div style="display:inline-block;width:56px;height:56px;line-height:56px;border-radius:50%;background:#f4efe6;font-size:26px;text-align:center;">
+                  📧
+                </div>
+              </div>
+              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:500;color:#1c1c19;line-height:1.25;text-align:center;">
+                Tu correo electrónico ha cambiado
+              </h1>
+              <p style="margin:20px 0 0 0;font-size:15px;line-height:1.65;color:#4a4a45;text-align:center;">
+                La dirección de correo electrónico asociada a tu cuenta en el portal del paciente ha sido actualizada correctamente.
+              </p>
+              <p style="margin:12px 0 0 0;font-size:14px;color:#6b6b66;text-align:center;">
+                Nuevo correo: <strong>{{ .Email }}</strong>
+              </p>
+              <div style="margin:28px 0 0 0;padding:16px 20px;background:#fef3e6;border-radius:14px;border:1px solid #f0dcc3;">
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#8b6914;">
+                  ⚠️ <strong>¿No has sido tú?</strong> Si no has solicitado este cambio, contacta inmediatamente con la clínica. Es posible que alguien haya accedido a tu cuenta sin autorización.
+                </p>
+              </div>
+              <div style="margin:24px 0 8px 0;text-align:center;">
+                <a href="mailto:clinica.almudena.marchesi@outlook.com"
+                   style="display:inline-block;padding:14px 32px;background:#4a6741;color:#ffffff;text-decoration:none;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">
+                  Contactar con la clínica
+                </a>
+              </div>
+              <hr style="border:none;border-top:1px solid #e8e4dc;margin:28px 0 20px 0;" />
+              <p style="margin:0;font-size:11px;color:#9a9a94;text-align:center;">
+                Clínica Almudena Marchesi Fernández · Madrid<br />
+                <a href="{{ .SiteURL }}/portal/ajustes#privacidad" style="color:#4a6741;">Gestionar notificaciones</a>
+                · Contacto:
+                <a href="mailto:clinica.almudena.marchesi@outlook.com" style="color:#4a6741;">clinica.almudena.marchesi@outlook.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

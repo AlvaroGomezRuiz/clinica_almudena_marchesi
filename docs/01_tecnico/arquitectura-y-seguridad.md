@@ -113,3 +113,12 @@
 | `stripe_events` | Auditoría completa de webhooks recibidos                       |
 | `emails_log`  | Registro de envíos con deduplicación                             |
 | `auditoria`   | Hash-chain de acciones sensibles                                 |
+
+
+Registro/Login/Reset     →  Supabase Auth  →  SMTP (smtp.resend.com)  →  📧
+                                                   ↑ aquí va la API Key
+                                                     en SMTP Settings
+
+Recordatorios/Recibos    →  Edge Function  →  API (api.resend.com)    →  📧
+                                                   ↑ aquí va la API Key
+                                                     en Supabase Secrets

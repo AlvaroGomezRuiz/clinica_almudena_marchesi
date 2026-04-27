@@ -236,16 +236,73 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# ── Plantillas de email personalizadas (local dev) ──────────────────────────
+# En producción estas plantillas se configuran en Supabase Dashboard >
+# Authentication > Email Templates. El contenido HTML es idéntico.
+# Nota: content_path es relativo a la raíz del proyecto (donde está supabase/).
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./templates/password_changed_notification.html"
+[auth.email.template.confirmation]
+subject = "Confirma tu correo — Clínica Almudena Marchesi"
+content_path = "./templates/confirmation.html"
+
+[auth.email.template.invite]
+subject = "Has sido invitado/a al portal — Clínica Almudena Marchesi"
+content_path = "./templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Tu enlace de acceso — Clínica Almudena Marchesi"
+content_path = "./templates/magic_link.html"
+
+[auth.email.template.change_email_address]
+subject = "Confirma tu nuevo correo — Clínica Almudena Marchesi"
+content_path = "./templates/change_email.html"
+
+[auth.email.template.reset_password]
+subject = "Restablecer contraseña — Clínica Almudena Marchesi"
+content_path = "./templates/reset_password.html"
+
+[auth.email.template.reauthentication]
+subject = "Código de verificación — Clínica Almudena Marchesi"
+content_path = "./templates/reauthentication.html"
+
+# ── Notificaciones de seguridad ──────────────────────────────────────────────
+# En producción se activan desde Supabase Dashboard > Authentication >
+# Email Templates > Security (los toggles). El HTML se pega en cada sección.
+
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Tu contraseña ha sido cambiada — Clínica Almudena Marchesi"
+content_path = "./templates/password_changed.html"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "Tu correo electrónico ha cambiado — Clínica Almudena Marchesi"
+content_path = "./templates/email_changed.html"
+
+[auth.email.notification.phone_changed]
+enabled = true
+subject = "Tu teléfono ha sido actualizado — Clínica Almudena Marchesi"
+content_path = "./templates/phone_changed.html"
+
+[auth.email.notification.identity_linked]
+enabled = true
+subject = "Nueva identidad vinculada a tu cuenta — Clínica Almudena Marchesi"
+content_path = "./templates/identity_linked.html"
+
+[auth.email.notification.identity_unlinked]
+enabled = true
+subject = "Identidad desvinculada de tu cuenta — Clínica Almudena Marchesi"
+content_path = "./templates/identity_unlinked.html"
+
+[auth.email.notification.mfa_added]
+enabled = true
+subject = "Verificación en dos pasos activada — Clínica Almudena Marchesi"
+content_path = "./templates/mfa_added.html"
+
+[auth.email.notification.mfa_removed]
+enabled = true
+subject = "Verificación en dos pasos eliminada — Clínica Almudena Marchesi"
+content_path = "./templates/mfa_removed.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Código de verificación</title>
+</head>
+<body style="margin:0;padding:0;background:#f4efe6;font-family:Helvetica,Arial,sans-serif;color:#1c1c19;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4efe6;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:20px;padding:40px 36px;box-shadow:0 12px 40px rgba(28,28,25,0.08);">
+          <tr>
+            <td>
+              <p style="margin:0 0 8px 0;font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#4a6741;letter-spacing:0.02em;">
+                Clínica Almudena Marchesi Fernández
+              </p>
+              <hr style="border:none;border-top:1px solid #e8e4dc;margin:16px 0 24px 0;" />
+              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:500;color:#1c1c19;line-height:1.25;">
+                Código de verificación
+              </h1>
+              <p style="margin:20px 0 0 0;font-size:15px;line-height:1.65;color:#4a4a45;">
+                Has solicitado realizar una acción sensible en tu cuenta. Introduce el siguiente código en el portal para continuar:
+              </p>
+              <!-- OTP Code display -->
+              <div style="margin:28px 0;text-align:center;">
+                <div style="display:inline-block;padding:20px 40px;background:#f4efe6;border-radius:16px;border:2px solid #e8e4dc;">
+                  <span style="font-family:'Courier New',monospace;font-size:36px;font-weight:700;color:#1c1c19;letter-spacing:0.25em;">
+                    {{ .Code }}
+                  </span>
+                </div>
+              </div>
+              <p style="margin:0 0 0 0;font-size:13px;line-height:1.6;color:#8a8a84;background:#faf8f4;border-radius:12px;padding:14px 18px;border:1px solid #e8e4dc;">
+                ⏱ Este código es válido durante <strong style="color:#4a4a45;">10 minutos</strong>. Si no lo has solicitado, puedes ignorar este correo.
+              </p>
+              <p style="margin:16px 0 0 0;font-size:14px;color:#6b6b66;">
+                Cuenta: <strong>{{ .Email }}</strong>
+              </p>
+              <hr style="border:none;border-top:1px solid #e8e4dc;margin:28px 0 20px 0;" />
+              <p style="margin:0;font-size:11px;color:#9a9a94;text-align:center;">
+                Clínica Almudena Marchesi Fernández · Madrid<br />
+                <a href="{{ .SiteURL }}/portal/ajustes#privacidad" style="color:#4a6741;">Gestionar notificaciones</a>
+                · Contacto:
+                <a href="mailto:clinica.almudena.marchesi@outlook.com" style="color:#4a6741;">clinica.almudena.marchesi@outlook.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -25,11 +25,17 @@ export default function LoginPage({
   const errorMsg =
     searchParams.error ??
     (searchParams.reason === 'no_session'
-      ? 'Debes iniciar sesión.'
+      ? 'Debes iniciar sesión para acceder a esta página.'
       : searchParams.reason === 'mfa_no_session'
         ? 'Sesión incompleta. Vuelve a identificarte y, si tienes MFA, introduce el código de 6 dígitos.'
-        : null);
+        : searchParams.reason === 'role_mismatch'
+          ? 'No tienes permisos para acceder a esa sección.'
+          : null);
   const nextPath = searchParams.redirect_to ?? searchParams.next;
+
+  /* Detectar si el error es de tipo "dispositivo diferente" para mostrar icono especial */
+  const isDeviceError = errorMsg?.includes('dispositivo o navegador distinto') ?? false;
+
   return (
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 md:p-12">
       <div className="max-w-screen-xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 items-center">
@@ -66,9 +72,20 @@ export default function LoginPage({
             {errorMsg ? (
               <div
                 role="alert"
-                className="mb-8 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 font-body text-sm text-red-700 dark:text-red-300"
+                className={`mb-8 rounded-2xl border px-5 py-4 font-body text-[0.88rem] leading-relaxed ${
+                  isDeviceError
+                    ? 'border-amber-500/20 bg-amber-500/5 text-amber-800 dark:text-amber-300'
+                    : 'border-red-500/20 bg-red-500/5 text-red-700 dark:text-red-300'
+                }`}
               >
-                {errorMsg}
+                <div className="flex items-start gap-3">
+                  {isDeviceError ? (
+                    <span className="mt-0.5 shrink-0 text-lg" aria-hidden="true">📱</span>
+                  ) : (
+                    <span className="mt-0.5 shrink-0 text-lg" aria-hidden="true">⚠️</span>
+                  )}
+                  <span>{errorMsg}</span>
+                </div>
               </div>
             ) : null}
 

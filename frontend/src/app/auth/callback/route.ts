@@ -55,6 +55,24 @@ function experienciaTerapiaLabel(code: string | undefined): string | null {
   }
 }
 
+/**
+ * Traduce errores comunes del intercambio de código a mensajes
+ * amigables en español. Evita que el usuario vea textos internos
+ * en inglés como el de PKCE.
+ */
+function translateCallbackError(msg: string): string {
+  if (/pkce.*verifier|code.verifier/i.test(msg)) {
+    return 'El enlace de confirmación se abrió en un dispositivo o navegador distinto al que usaste para registrarte. Por favor, abre el enlace desde el mismo navegador donde creaste la cuenta, o vuelve a iniciar sesión.';
+  }
+  if (/expired|invalid.*code/i.test(msg)) {
+    return 'El enlace ha caducado o ya fue utilizado. Solicita uno nuevo desde "¿Olvidaste tu contraseña?" o vuelve a registrarte.';
+  }
+  if (/already.*used|reuse/i.test(msg)) {
+    return 'Este enlace ya fue utilizado. Si ya verificaste tu cuenta, inicia sesión directamente.';
+  }
+  return `Error al verificar tu cuenta: ${msg}`;
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
@@ -62,15 +80,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const nextPath = safeNext(searchParams.get('next'));
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=missing_code`);
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Falta el código de verificación en el enlace. Solicita uno nuevo.')}`);
   }
 
   const supabase = createServerClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data?.user) {
+    const friendlyMsg = translateCallbackError(error?.message ?? 'auth_exchange_failed');
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error?.message ?? 'auth_exchange_failed')}`
+      `${origin}/login?error=${encodeURIComponent(friendlyMsg)}`
     );
   }
 
