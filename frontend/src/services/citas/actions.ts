@@ -10,6 +10,7 @@
  *   * 02000 (no_data_found)        → not_found
  */
 
+import { isMadridInstantWithinClinicBookingWindow } from '@/lib/clinic/madrid-booking-window';
 import { createServerClient } from '@/lib/supabase/server';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 import { fireEmail } from '@/lib/email/send';
@@ -33,6 +34,7 @@ type ReservaErrorCode =
   | 'servicio_invalido'
   | 'slot_invalido'
   | 'slot_ocupado'
+  | 'fuera_horario'
   | 'unknown';
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -93,6 +95,18 @@ export async function reservarCitaAction(
   }
   if (!ISO_RE.test(slotInicio)) {
     return { ok: false, code: 'slot_invalido', message: 'Horario inválido.' };
+  }
+
+  const slotDate = new Date(slotInicio);
+  if (Number.isNaN(slotDate.getTime())) {
+    return { ok: false, code: 'slot_invalido', message: 'Horario inválido.' };
+  }
+  if (!isMadridInstantWithinClinicBookingWindow(slotDate)) {
+    return {
+      ok: false,
+      code: 'fuera_horario',
+      message: 'Elige una hora entre las 09:00 y las 21:59 (horario de la consulta, Madrid).',
+    };
   }
 
   const supabase = createServerClient();

@@ -30,17 +30,14 @@ export const metadata: Metadata = buildPublicPageMetadata({
 
 const METHODOLOGY_CARDS = [
   {
-    icon: 'hearing',
     title: 'Escucha Activa',
     body: 'No es solo oír, es comprender el silencio entre las palabras. Mi enfoque se centra en una presencia plena donde cada síntoma y cada vivencia son validados como parte fundamental de tu historia única.',
   },
   {
-    icon: 'verified_user',
     title: 'Ausencia de Juicio',
     body: 'La terapia es el único lugar donde no necesitas ser «adecuado». Aquí, la neutralidad clínica se traduce en una aceptación incondicional que permite explorar lo más profundo sin miedo a la crítica.',
   },
   {
-    icon: 'neurology',
     title: 'Rigor Clínico',
     body: 'Especialización en Psicología Clínica para garantizar intervenciones basadas en la evidencia. El rigor es el respeto al paciente.',
   },
@@ -108,24 +105,13 @@ export default function EnfoquePage() {
                 }
               >
                 <PremiumCard tilt={false} className="h-full">
-                  <div
-                    className={`p-8 md:p-10 h-full flex flex-col gap-5 group hover:-translate-y-1 transition-all duration-600 ease-apple ${
-                      i === 2 ? 'md:flex-row md:items-center md:gap-12' : ''
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center shrink-0 group-hover:bg-sage transition-colors duration-400 ease-apple">
-                      <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
-                        {card.icon}
-                      </span>
-                    </div>
-                    <div>
-                      <h2 className="font-display text-display-3 text-ink mb-3">
-                        {card.title}
-                      </h2>
-                      <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
-                        {card.body}
-                      </p>
-                    </div>
+                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10">
+                    <h2 className="font-display text-display-3 text-balance text-ink">
+                      {card.title}
+                    </h2>
+                    <p className="text-left font-body text-[0.95rem] leading-relaxed text-ink-soft">
+                      {card.body}
+                    </p>
                   </div>
                 </PremiumCard>
               </ScrollReveal>

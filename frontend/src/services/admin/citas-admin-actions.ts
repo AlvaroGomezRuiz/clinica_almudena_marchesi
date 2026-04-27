@@ -7,6 +7,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { isMadridInstantWithinClinicBookingWindow } from '@/lib/clinic/madrid-booking-window';
 import { captureClinicalError } from '@/lib/sentry';
 import { createServerClient } from '@/lib/supabase/server';
 
@@ -54,6 +55,13 @@ export async function adminCrearCitaParaPacienteAction(input: {
     const inicio = new Date(input.inicioIso);
     if (Number.isNaN(inicio.getTime())) {
       return { ok: false, message: 'Fecha u hora no válida.' };
+    }
+    if (!isMadridInstantWithinClinicBookingWindow(inicio)) {
+      return {
+        ok: false,
+        message:
+          'La hora de inicio debe estar entre las 09:00 y las 21:59 (horario de la consulta, Madrid).',
+      };
     }
 
     const { supabase } = await requireAdmin();

@@ -24,6 +24,8 @@ import { useCallback, useMemo, useState, useTransition } from 'react';
 
 import { ContactFichaIcon } from '@/components/icons/ContactFichaIcon';
 import CitaResumenSheet from '@/components/admin/agenda/CitaResumenSheet';
+import { AGENDA_WEEK_GRID, agendaWeekGridBodyHeightPx, agendaWeekSlotCount } from '@/lib/agenda/agenda-week-grid-constants';
+import { formatMadridHHmm, getMadridHourMinute } from '@/lib/agenda/madrid-wall-clock';
 import {
   bordeLateralCitaAgenda,
   chipToneCitaEstadoAgenda,
@@ -691,13 +693,13 @@ function WeekGrid({
   const inicioSemana = startOfWeek(fechaAncla, { weekStartsOn: 1 });
   const dias = Array.from({ length: 7 }, (_, i) => addDays(inicioSemana, i));
 
-  // Rango horario visual: 09:00–22:00 (etiquetas de hora en punto; rejilla hasta fin de franja 21:30).
-  const hourStart = 9;
-  const hourEnd = 23;
-  const slotMin = 30;
-  const totalSlots = ((hourEnd - hourStart) * 60) / slotMin;
-  const pxPorMediaHora = 28; // h-7; debe coincidir con EventoBlock
-  const gridBodyHeightPx = totalSlots * pxPorMediaHora;
+  const hourStart = AGENDA_WEEK_GRID.HOUR_FIRST;
+  const hourLabelCount =
+    AGENDA_WEEK_GRID.HOUR_LAST_LABEL - AGENDA_WEEK_GRID.HOUR_FIRST + 1;
+  const totalSlots = agendaWeekSlotCount();
+  const slotPx = AGENDA_WEEK_GRID.SLOT_PX;
+  const hourRowPx = slotPx * 2;
+  const gridBodyHeightPx = agendaWeekGridBodyHeightPx();
 
   return (
     <SurfaceCard className="overflow-hidden rounded-2xl ring-1 ring-inset ring-ink/10 dark:ring-white/10">
@@ -709,7 +711,7 @@ function WeekGrid({
           const esHoy = isSameDay(d, new Date());
           return (
             <button
-              key={d.toISOString()}
+              key={format(d, 'yyyy-MM-dd')}
               type="button"
               onClick={() => onSelectDay(d)}
               className={`min-w-0 border-l border-ink/6 py-2 text-left px-1.5 transition-colors hover:bg-white/40 dark:border-white/6 dark:hover:bg-white/5 sm:px-2 ${
@@ -734,10 +736,11 @@ function WeekGrid({
       <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] sm:grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
         {/* Columna de horas (alineada con la cabecera) */}
         <div className="min-w-10 shrink-0 sm:min-w-12">
-          {Array.from({ length: hourEnd - hourStart }, (_, i) => (
+          {Array.from({ length: hourLabelCount }, (_, i) => (
             <div
-              key={`h-${i}`}
-              className="h-14 border-b border-ink/[0.06] px-0.5 text-right font-body text-[0.6rem] tabular-nums text-ink-muted dark:border-white/[0.06] dark:text-white/40 sm:px-1 sm:text-[0.62rem]"
+              key={`h-${hourStart + i}`}
+              style={{ height: hourRowPx }}
+              className="box-border border-b border-ink/[0.06] px-0.5 text-right font-body text-[0.6rem] tabular-nums text-ink-muted dark:border-white/[0.06] dark:text-white/40 sm:px-1 sm:text-[0.62rem]"
             >
               {String(hourStart + i).padStart(2, '0')}:00
             </div>
@@ -748,7 +751,7 @@ function WeekGrid({
           const estado = computeDiaEstado(dia, citas, bloqueos, aplicaciones, plantillas);
           return (
             <div
-              key={`col-${dia.toISOString()}`}
+              key={`col-${format(dia, 'yyyy-MM-dd')}`}
               className="relative min-w-0 overflow-hidden border-l border-ink/[0.06] dark:border-white/[0.06]"
               style={{ height: `${gridBodyHeightPx}px` }}
             >
@@ -768,7 +771,8 @@ function WeekGrid({
               {Array.from({ length: totalSlots }, (_, s) => (
                 <div
                   key={`s-${s}`}
-                  className={`h-7 ${s % 2 === 0 ? 'border-t border-ink/[0.07] dark:border-white/[0.07]' : ''}`}
+                  style={{ height: slotPx }}
+                  className={`box-border ${s % 2 === 0 ? 'border-t border-ink/[0.07] dark:border-white/[0.07]' : ''}`}
                 />
               ))}
 
@@ -779,6 +783,7 @@ function WeekGrid({
                   inicio={new Date(c.inicio)}
                   fin={new Date(c.fin)}
                   hourStart={hourStart}
+                  gridMaxPx={gridBodyHeightPx}
                   tone="cita"
                   title={c.servicio_nombre}
                   estadoCita={c.estado}
@@ -793,6 +798,7 @@ function WeekGrid({
                   inicio={new Date(b.inicio)}
                   fin={new Date(b.fin)}
                   hourStart={hourStart}
+                  gridMaxPx={gridBodyHeightPx}
                   tone="bloqueo"
                   title={b.motivo ?? 'Bloqueo'}
                   bloqueoExtra={b.dia_completo ? 'Día completo' : null}
@@ -814,6 +820,7 @@ function EventoBlock(
         readonly inicio: Date;
         readonly fin: Date;
         readonly hourStart: number;
+        readonly gridMaxPx: number;
         readonly tone: 'cita';
         readonly title: string;
         readonly estadoCita: string;
@@ -825,24 +832,30 @@ function EventoBlock(
         readonly inicio: Date;
         readonly fin: Date;
         readonly hourStart: number;
+        readonly gridMaxPx: number;
         readonly tone: 'bloqueo';
         readonly title: string;
         readonly bloqueoExtra: string | null;
         readonly onActivate?: undefined;
       }
 ): JSX.Element | null {
-  const { inicio, fin, hourStart, tone, title } = props;
-  const minutosDesdeInicio =
-    (inicio.getHours() - hourStart) * 60 + inicio.getMinutes();
+  const { inicio, fin, hourStart, gridMaxPx, tone, title } = props;
+  const { hour, minute } = getMadridHourMinute(inicio);
+  const minutosDesdeInicio = (hour - hourStart) * 60 + minute;
   const duracionMin = Math.max(
     15,
     (fin.getTime() - inicio.getTime()) / 60000
   );
   if (minutosDesdeInicio < 0) return null;
 
-  const slotPx = 28;
-  const top = (minutosDesdeInicio / 30) * slotPx;
-  const height = (duracionMin / 30) * slotPx;
+  const slotPx = AGENDA_WEEK_GRID.SLOT_PX;
+  const slotMin = AGENDA_WEEK_GRID.SLOT_MINUTES;
+  const topRaw = (minutosDesdeInicio / slotMin) * slotPx;
+  if (topRaw >= gridMaxPx) return null;
+
+  const heightRaw = (duracionMin / slotMin) * slotPx;
+  const height = Math.max(20, Math.min(heightRaw, gridMaxPx - topRaw));
+  const top = topRaw;
 
   const estiloPos = { top: `${top}px`, height: `${height}px`, minHeight: '20px' } as const;
 
@@ -859,7 +872,7 @@ function EventoBlock(
         }`}
       >
         <p className="font-body text-[0.68rem] font-semibold leading-tight tabular-nums">
-          {format(inicio, 'HH:mm')}
+          {formatMadridHHmm(inicio)}
         </p>
         <p className="font-body text-[0.7rem] leading-tight truncate">
           {title}
@@ -879,6 +892,8 @@ function EventoBlock(
     'bg-[#dce8e4] text-[#1a2421] ring-1 ring-inset ring-[#9eb5ad] shadow-sm dark:bg-[#2c3532] dark:text-[#f2f7f5] dark:ring-[#4a5c56]';
   const sublinea =
     (nombrePaciente ? `${nombrePaciente} · ` : '') + labelCitaEstadoAgenda(estadoCita);
+  const horaEtiqueta = formatMadridHHmm(inicio);
+  const nombreMostrar = nombrePaciente ?? 'Paciente';
 
   return (
     <div className="absolute left-1 right-1" style={estiloPos}>
@@ -886,21 +901,26 @@ function EventoBlock(
         <button
           type="button"
           onClick={onActivate}
-          className={`h-full w-full overflow-hidden rounded-lg py-0.5 pl-1.5 pr-9 text-left outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:opacity-95 ${bordeCita} ${capaCita}`}
+          className={`flex h-full w-full min-h-0 flex-col overflow-hidden rounded-lg py-0.5 outline-none transition hover:opacity-95 focus-visible:ring-2 focus-visible:ring-primary/50 dark:hover:opacity-95 max-md:items-center max-md:justify-center max-md:px-1 max-md:text-center md:items-center md:justify-center md:gap-0.5 md:px-2 md:pb-1 md:pt-1 md:pr-10 md:text-center ${bordeCita} ${capaCita}`}
           title={`${title} · ${sublinea}`}
-          aria-label={`Cita: ${title}, ${format(inicio, 'HH:mm')}, ${sublinea}`}
+          aria-label={`Cita: ${title}, ${horaEtiqueta}, ${sublinea}`}
         >
-          <p className="font-body text-[0.65rem] font-semibold leading-tight tabular-nums text-[#0f1614] dark:text-white">
-            {format(inicio, 'HH:mm')}
-          </p>
-          <p className="line-clamp-1 font-body text-[0.68rem] font-medium leading-tight text-[#1a2421] dark:text-[#f7faf9]">
-            {title}
-          </p>
-          <p className="line-clamp-2 min-h-0 font-body text-[0.55rem] leading-tight text-[#2d3d36] dark:text-[#d5e3dd]">
-            {sublinea}
-          </p>
+          <span className="font-body text-[0.62rem] font-semibold leading-snug text-[#0f1614] dark:text-white md:hidden">
+            {nombreMostrar}
+          </span>
+          <span className="hidden min-h-0 w-full flex-col items-center justify-center gap-0.5 px-0.5 text-center md:flex">
+            <span className="font-body text-[0.65rem] font-semibold tabular-nums text-[#0f1614] dark:text-white">
+              {horaEtiqueta}
+            </span>
+            <span className="line-clamp-2 font-body text-[0.68rem] font-medium leading-tight text-[#1a2421] dark:text-[#f7faf9]">
+              {title}
+            </span>
+            <span className="line-clamp-2 font-body text-[0.55rem] leading-tight text-[#2d3d36] dark:text-[#d5e3dd]">
+              {sublinea}
+            </span>
+          </span>
         </button>
-        <div className="absolute right-0.5 top-0.5 z-10">
+        <div className="absolute right-0.5 top-0.5 z-10 hidden md:block">
           <FichaAgendaLink compact pacienteId={pacienteId} />
         </div>
       </div>

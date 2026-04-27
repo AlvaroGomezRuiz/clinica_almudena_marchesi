@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 
@@ -54,8 +55,13 @@ export default function MobileNavDrawer({
   buttonClassName = '',
 }: MobileNavDrawerProps) {
   const [open, setOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -114,32 +120,38 @@ export default function MobileNavDrawer({
         ) : null}
       </button>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            className="fixed inset-0 z-[200] flex min-h-0 flex-col md:hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              className={EDITORIAL_MOBILE_OVERLAY_CLASS}
-              style={{
-                backdropFilter: 'blur(52px) saturate(165%)',
-                WebkitBackdropFilter: 'blur(52px) saturate(165%)',
-              }}
-              onClick={() => setOpen(false)}
-              aria-hidden="true"
-            />
+      {portalTarget
+        ? createPortal(
+            <AnimatePresence>
+              {open ? (
+                <motion.div
+                  className="fixed inset-0 z-[200] flex min-h-0 flex-col md:hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div
+                    className={EDITORIAL_MOBILE_OVERLAY_CLASS}
+                    style={{
+                      backdropFilter: 'blur(52px) saturate(165%)',
+                      WebkitBackdropFilter: 'blur(52px) saturate(165%)',
+                    }}
+                    onClick={() => setOpen(false)}
+                    aria-hidden="true"
+                  />
 
-            <div
-              className={cn(
-                EDITORIAL_MOBILE_PANEL_CLASS,
-                'min-h-0 flex-1 bg-[#070605]',
-                panelClassName,
-              )}
-            >
+                  <div
+                    className={cn(
+                      EDITORIAL_MOBILE_PANEL_CLASS,
+                      'min-h-0 flex-1 bg-[#070605]/92',
+                      panelClassName,
+                    )}
+                    style={{
+                      backdropFilter: 'blur(36px) saturate(150%)',
+                      WebkitBackdropFilter: 'blur(36px) saturate(150%)',
+                    }}
+                  >
               <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
                 <div className="flex min-w-0 flex-col items-center px-10 text-center leading-tight">
                   <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-white">
@@ -242,10 +254,13 @@ export default function MobileNavDrawer({
                   Moncloa, Madrid
                 </p>
               </div>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
+            portalTarget,
+          )
+        : null}
     </>
   );
 }

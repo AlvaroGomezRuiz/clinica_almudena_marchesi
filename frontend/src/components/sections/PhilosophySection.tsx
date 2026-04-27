@@ -6,17 +6,14 @@ import PremiumCard from '@/components/ui/PremiumCard';
 
 const PILLARS = [
   {
-    icon: 'psychology',
     title: 'Escucha Activa',
     body: 'Más allá de las palabras. Un silencio fértil donde cada matiz de tu historia encuentra su lugar y significado.',
   },
   {
-    icon: 'volunteer_activism',
     title: 'Sin Juicio',
     body: 'Un espacio de seguridad emocional. Tu vulnerabilidad es respetada como la herramienta más potente de cambio.',
   },
   {
-    icon: 'auto_awesome',
     title: 'Ayuda Real',
     body: 'Estrategias clínicas basadas en evidencia. No solo entender el porqué, sino construir el cómo hacia tu bienestar.',
   },
@@ -68,16 +65,11 @@ export default function PhilosophySection() {
               className="h-full"
             >
               <PremiumCard>
-                <div className="p-8 md:p-10 flex flex-col gap-6 h-full w-full group">
-                  <div className="w-12 h-12 rounded-full bg-sage-wash flex items-center justify-center group-hover:bg-sage group-hover:text-white transition-colors duration-400 ease-apple">
-                    <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400" aria-hidden="true">
-                      {pillar.icon}
-                    </span>
-                  </div>
-                  <h3 className="font-display text-display-3 text-ink">
+                <div className="flex h-full w-full flex-col gap-5 p-8 text-center md:p-10">
+                  <h3 className="font-display text-display-3 text-ink text-balance">
                     {pillar.title}
                   </h3>
-                  <p className="text-ink-soft leading-relaxed font-body text-[0.95rem]">
+                  <p className="text-left font-body text-[0.95rem] leading-relaxed text-ink-soft">
                     {pillar.body}
                   </p>
                 </div>
