@@ -65,6 +65,24 @@ function tipoFromMime(mime: string): 'archivo' | 'imagen' | 'audio' {
   return 'archivo';
 }
 
+/**
+ * Normaliza MIMEs que la API acepta pero el bucket de Supabase no tiene
+ * en su `allowed_mime_types`. Ejemplo: audio/x-m4a → audio/mp4.
+ */
+function mimeForBucket(base: string): string {
+  switch (base) {
+    case 'audio/x-m4a':
+    case 'audio/aac':
+      return 'audio/mp4';
+    case 'audio/mp3':
+      return 'audio/mpeg';
+    case 'application/ogg':
+      return 'audio/ogg';
+    default:
+      return base;
+  }
+}
+
 function sanitizeFilename(name: string): string {
   const clean = name.normalize('NFKD').replace(/[^\w.\- ]/g, '_').trim();
   return clean.slice(0, 120) || 'archivo';
@@ -152,10 +170,13 @@ export async function POST(req: NextRequest): Promise<Response> {
   const storagePath = `${conversacionId}/${mensajeId}/${nombre}`;
 
   // 2) Subir binario al bucket (privado). El buffer ya fue leído arriba.
+  // NOTA: usamos `mimeForBucket(declaredBase)` para normalizar MIMEs con
+  // codec params y variantes no reconocidas por el bucket.
+  const bucketMime = mimeForBucket(declaredBase);
   const { error: upErr } = await supabase.storage
     .from('chat-adjuntos')
     .upload(storagePath, bytes, {
-      contentType: file.type,
+      contentType: bucketMime,
       upsert: false,
       cacheControl: '3600',
     });
@@ -176,9 +197,9 @@ export async function POST(req: NextRequest): Promise<Response> {
       mensaje_id: mensajeId,
       storage_path: storagePath,
       nombre,
-      mime: file.type,
+      mime: declaredBase,
       size_bytes: file.size,
-      tipo: tipoFromMime(file.type),
+      tipo: tipoFromMime(declaredBase),
     } as never)
     .select('id')
     .single<{ id: string }>();

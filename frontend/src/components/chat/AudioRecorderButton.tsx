@@ -73,12 +73,13 @@ export default function AudioRecorderButton({
   const uploadBlob = useCallback(
     (blob: Blob, label: string): void => {
       const file = new File([blob], label, { type: blob.type || 'audio/webm' });
-      const form = new FormData();
-      form.append('file', file);
-      form.append('conversation_id', conversacionId);
-      form.append('body', CHAT_AUDIO_MESSAGE_BODY);
 
-      startTransition(async () => {
+      const attempt = async (retry: number): Promise<void> => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('conversation_id', conversacionId);
+        form.append('body', CHAT_AUDIO_MESSAGE_BODY);
+
         try {
           const res = await fetch('/api/mensajes/attach', { method: 'POST', body: form });
           const body = (await res.json()) as {
@@ -87,9 +88,15 @@ export default function AudioRecorderButton({
             mensaje_id?: string;
           };
           if (!res.ok || !body.ok) {
+            // Rate-limit: no reintentar, mostrar error directamente
             if (res.status === 429) {
               setErr('rate_limited');
               return;
+            }
+            // Reintentar si quedan intentos
+            if (retry < 3) {
+              await new Promise<void>((r) => setTimeout(r, 1000 * 2 ** retry));
+              return attempt(retry + 1);
             }
             setErr(body.error != null && body.error.length > 0 ? body.error : `HTTP ${res.status}`);
             return;
@@ -97,10 +104,16 @@ export default function AudioRecorderButton({
           setErr(null);
           if (body.mensaje_id) onUploaded?.(body.mensaje_id);
           router.refresh();
-        } catch (e) {
+        } catch {
+          if (retry < 3) {
+            await new Promise<void>((r) => setTimeout(r, 1000 * 2 ** retry));
+            return attempt(retry + 1);
+          }
           setErr('upload_error');
         }
-      });
+      };
+
+      startTransition(() => attempt(0));
     },
     [conversacionId, onUploaded, router]
   );
@@ -125,9 +138,13 @@ export default function AudioRecorderButton({
       const mime = pickMime();
       let rec: MediaRecorder;
       try {
-        rec = new MediaRecorder(stream, { mimeType: mime });
+        rec = new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32_000 });
       } catch {
-        rec = new MediaRecorder(stream);
+        try {
+          rec = new MediaRecorder(stream, { audioBitsPerSecond: 32_000 });
+        } catch {
+          rec = new MediaRecorder(stream);
+        }
       }
       recRef.current = rec;
       discardRef.current = false;
