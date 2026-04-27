@@ -24,6 +24,7 @@ import {
   useTransition,
   type FormEvent,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
@@ -660,6 +661,177 @@ function isAutoAttachmentCaption(body: string, adjuntos: readonly ChatAdjunto[])
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// Reproductor de audio estilo WhatsApp
+// ───────────────────────────────────────────────────────────────────────────
+function AudioPlayerBubble({
+  src,
+  title,
+  esMio,
+  avatarUrl,
+  fallbackLetter,
+}: {
+  src: string;
+  title: string;
+  esMio: boolean;
+  avatarUrl?: string | null;
+  fallbackLetter: string;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
+  const togglePlay = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (playing) {
+      el.pause();
+    } else {
+      void el.play();
+    }
+  }, [playing]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => {
+      setPlaying(false);
+      setProgress(0);
+      setCurrentTime(0);
+    };
+    const onTimeUpdate = () => {
+      if (el.duration && isFinite(el.duration)) {
+        setProgress((el.currentTime / el.duration) * 100);
+        setCurrentTime(el.currentTime);
+      }
+    };
+    const onLoadedMetadata = () => {
+      if (el.duration && isFinite(el.duration)) {
+        setDuration(el.duration);
+      }
+    };
+    const onDurationChange = () => {
+      if (el.duration && isFinite(el.duration)) {
+        setDuration(el.duration);
+      }
+    };
+    el.addEventListener('play', onPlay);
+    el.addEventListener('pause', onPause);
+    el.addEventListener('ended', onEnded);
+    el.addEventListener('timeupdate', onTimeUpdate);
+    el.addEventListener('loadedmetadata', onLoadedMetadata);
+    el.addEventListener('durationchange', onDurationChange);
+    return () => {
+      el.removeEventListener('play', onPlay);
+      el.removeEventListener('pause', onPause);
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('timeupdate', onTimeUpdate);
+      el.removeEventListener('loadedmetadata', onLoadedMetadata);
+      el.removeEventListener('durationchange', onDurationChange);
+    };
+  }, []);
+
+  const handleSeek = useCallback(
+    (e: ReactMouseEvent<HTMLDivElement>) => {
+      const el = audioRef.current;
+      const bar = progressBarRef.current;
+      if (!el || !bar || !el.duration || !isFinite(el.duration)) return;
+      const rect = bar.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      el.currentTime = pct * el.duration;
+    },
+    []
+  );
+
+  const fmtTime = (s: number): string => {
+    if (!isFinite(s) || s < 0) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  const avatarRing = esMio
+    ? 'ring-white/30'
+    : 'ring-zinc-400/30 dark:ring-white/20';
+
+  return (
+    <div className="flex items-center gap-3 py-1 min-w-[200px] max-w-[280px]" title={title}>
+      {/* Avatar circular */}
+      <span className={`relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ${avatarRing} ${esMio ? 'bg-white/20' : 'bg-zinc-300/60 dark:bg-white/10'}`}>
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : fallbackLetter ? (
+          <span className="font-body text-[0.72rem] font-semibold" aria-hidden="true">
+            {fallbackLetter.toUpperCase().slice(0, 1)}
+          </span>
+        ) : (
+          <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">person</span>
+        )}
+      </span>
+
+      {/* Play/pause + barra */}
+      <div className="flex-1 flex flex-col gap-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={togglePlay}
+            className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors ${
+              esMio
+                ? 'bg-white/25 hover:bg-white/35 text-on-primary'
+                : 'bg-zinc-400/20 hover:bg-zinc-400/30 text-zinc-700 dark:bg-white/15 dark:hover:bg-white/25 dark:text-white'
+            }`}
+            aria-label={playing ? 'Pausar audio' : 'Reproducir audio'}
+          >
+            <span className="material-symbols-outlined text-[1.1rem]" aria-hidden="true">
+              {playing ? 'pause' : 'play_arrow'}
+            </span>
+          </button>
+          {/* Barra de progreso seekable */}
+          <div
+            ref={progressBarRef}
+            onClick={handleSeek}
+            className={`flex-1 h-[6px] rounded-full cursor-pointer relative overflow-hidden ${
+              esMio
+                ? 'bg-white/20'
+                : 'bg-zinc-400/25 dark:bg-white/15'
+            }`}
+          >
+            <div
+              className={`absolute inset-y-0 left-0 rounded-full transition-[width] duration-100 ease-linear ${
+                esMio
+                  ? 'bg-white/70'
+                  : 'bg-zinc-600 dark:bg-white/60'
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+        {/* Duración */}
+        <span className={`font-body text-[0.65rem] tabular-nums ${
+          esMio
+            ? 'text-on-primary/60'
+            : 'text-zinc-500 dark:text-white/40'
+        }`}>
+          {playing || currentTime > 0
+            ? `${fmtTime(currentTime)} / ${fmtTime(duration)}`
+            : duration > 0
+              ? fmtTime(duration)
+              : '0:00'}
+        </span>
+      </div>
+
+      {/* Audio element invisible */}
+      <audio ref={audioRef} preload="metadata" src={src} className="hidden" />
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // Burbuja individual
 // ───────────────────────────────────────────────────────────────────────────
 function ChatThumb({
@@ -729,6 +901,10 @@ function Burbuja({
 
   const adjuntos = mensaje.adjuntos ?? [];
   const hideBodyLine = isAutoAttachmentCaption(mensaje.body, adjuntos);
+  /* Detectar si es un mensaje de audio pendiente de carga (adjuntos aún no listos) */
+  const isAudioPendingLoad =
+    adjuntos.length === 0 &&
+    mensaje.body.trim() === CHAT_AUDIO_MESSAGE_BODY;
   const label = (n: string): string => formatChatAttachmentDisplayName(n);
 
   return (
@@ -741,7 +917,18 @@ function Burbuja({
         />
       ) : null}
       <div className={`${base} ${esMio ? own : other} ${mensaje.pending ? 'opacity-70' : ''}`}>
-        {!hideBodyLine && mensaje.body.trim() ? (
+        {/* Placeholder de carga para audio sin adjuntos aún */}
+        {isAudioPendingLoad ? (
+          <div className="flex items-center gap-3 py-1 min-w-[200px]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/20 dark:bg-white/10">
+              <span className="material-symbols-outlined animate-spin text-[1.1rem]" aria-hidden="true">sync</span>
+            </span>
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="h-1 w-full rounded-full bg-white/20 dark:bg-white/10" />
+              <span className={`font-body text-[0.65rem] tabular-nums ${esMio ? 'text-on-primary/60' : 'text-zinc-500 dark:text-white/40'}`}>Cargando audio…</span>
+            </div>
+          </div>
+        ) : !hideBodyLine && mensaje.body.trim() ? (
           <p className="whitespace-pre-wrap break-words">{messageBodyWithLinks(mensaje.body, esMio)}</p>
         ) : null}
         {adjuntos.length > 0 ? (
@@ -749,15 +936,13 @@ function Burbuja({
             {adjuntos.map((a) => (
               <li key={a.id}>
                 {a.tipo === 'audio' && a.signed_url ? (
-                  <div className="w-full min-w-0 max-w-[min(100%,280px)]">
-                    <audio
-                      controls
-                      preload="metadata"
-                      src={a.signed_url}
-                      title={label(a.nombre)}
-                      className="min-h-11 w-full"
-                    />
-                  </div>
+                  <AudioPlayerBubble
+                    src={a.signed_url}
+                    title={label(a.nombre)}
+                    esMio={esMio}
+                    avatarUrl={esMio ? selfAvatarUrl : otherAvatarUrl}
+                    fallbackLetter={esMio ? '' : otherInitial}
+                  />
                 ) : a.tipo === 'imagen' && a.signed_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <a href={a.signed_url} target="_blank" rel="noreferrer" title={label(a.nombre)}>

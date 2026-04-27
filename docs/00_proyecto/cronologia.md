@@ -208,6 +208,7 @@ FastAPI queda **stand-by** en `backend/` por si el cliente quiere replegarse.
 - **Agenda admin:** **cancelar cita** desde el panel de resumen de cita; alineado con RPC `cancelar_cita` y liberación de hueco en disponibilidad.
 - **Transversal:** refinamientos de panel mensajes, listados (pacientes/bonos/biblioteca), pagos/email PDF, avisos de reserva, web pública modo claro — detalle en `docs/00_proyecto/refinamientos-app-2026-04-27.md`.
 - **Migraciones Supabase:** eliminado el duplicado de versión **`0062`** (había dos `.sql` con el mismo prefijo). La función **`terapeuta_public_profile`** queda en **`0065_terapeuta_public_profile.sql`** para que `schema_migrations` no choque (`23505`). Ver tabla y operativa en el mismo doc de refinamientos 27-abr.
+- **UX mismo día (27-abr, mismo hilo):** **avatar** en cabecera del menú de usuario (`ProfileDropdown`) en admin y portal; **slots ocupados** en `SlotPicker` con borde azul + diagonal + texto apagado; **icono «Información»** en ficha rápida del chat admin vía `ContactFichaIcon` (subset Material local sin glifo `contact_page`). Detalle y rutas en `refinamientos-app-2026-04-27.md`.
 
 ## Hito 20 — Documentación: auditorías completas y checklist unificado (26-abr-2026)
 

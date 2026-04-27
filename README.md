@@ -18,7 +18,7 @@ Sitio público + portales **admin** y **paciente** con reserva online, pagos Str
 >
 > **Refinamientos de la app (26–27-abr-2026):** iteraciones de **ajuste y pulido** sin cambiar el alcance base del producto.
 > - **26-abr:** agenda semana (rejilla Madrid, móvil), horario sesión **09:00–21:59** Madrid + migración **`0064`**, landing/Enfoque sin iconos, menú móvil con contraste WCAG. **`docs/00_proyecto/refinamientos-app-2026-04-26.md`** · `cronologia.md` **Hito 22**.
-> - **27-abr:** auditoría en Configuración (nombre paciente vía `pacientes`→`profiles`), **adjuntos en ficha** (subida + descarga firmada), **cancelar cita desde agenda** (panel resumen → hueco liberado vía RPC), más refinamientos de panel, listados, pagos/email PDF, público modo claro; **migración** `terapeuta_public_profile` renumerada a **`0065`** (evitar dos archivos `0062_*.sql`). **`docs/00_proyecto/refinamientos-app-2026-04-27.md`** · `cronologia.md` **Hito 23**.
+> - **27-abr:** auditoría en Configuración (nombre paciente vía `pacientes`→`profiles`), **adjuntos en ficha** (subida + descarga firmada), **cancelar cita desde agenda** (panel resumen → hueco liberado vía RPC), más refinamientos de panel, listados, pagos/email PDF, público modo claro; **migración** `terapeuta_public_profile` renumerada a **`0065`** (evitar dos archivos `0062_*.sql`). **Mismo hilo (UX):** foto de perfil en **cabecera del menú** usuario (`ProfileDropdown`, admin + portal), **huecos ocupados** en reserva (`SlotPicker`: borde azul + diagonal), **icono Información** en chat admin (`ContactFichaIcon`, fuente Material subset). **`docs/00_proyecto/refinamientos-app-2026-04-27.md`** · `cronologia.md` **Hito 23**.
 
 ---
 
@@ -591,7 +591,7 @@ Toda la documentación en **Markdown** está en **`docs/`** (raíz del monorepo)
 | `docs/README.md` | Mapa, criterios, orden de lectura |
 | `docs/00_proyecto/linea-base-producto.md` | Alcance y módulos en la línea base actual |
 | `docs/00_proyecto/refinamientos-app-2026-04-26.md` | Refinamientos de la app — 26-abr (agenda, horario, móvil, público) |
-| `docs/00_proyecto/refinamientos-app-2026-04-27.md` | Refinamientos de la app — 27-abr (auditoría, adjuntos ficha, cancelación agenda, pulido panel/listados) |
+| `docs/00_proyecto/refinamientos-app-2026-04-27.md` | Refinamientos de la app — 27-abr (auditoría, adjuntos ficha, cancelación agenda, pulido panel/listados; mismo hilo: avatar menú, slots ocupados reserva, icono info chat) |
 | `docs/00_proyecto/estado-y-pendientes.md` | Bloqueos, dominio, secrets |
 | `docs/05_operaciones/checklist-produccion.md` | Operación, QA profundo, E2E, go-live (un solo doc) |
 | `docs/02_informes/ejecutivo-cliente.md` | Visión de negocio (clínica) |

@@ -59,6 +59,18 @@ export function chatAudioErrorToMessage(code: string | null | undefined): string
   if (code === 'rate_limited') {
     return 'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.';
   }
+  if (code === 'mime_no_soportado') {
+    return 'El formato de audio no está soportado. Prueba con otro navegador.';
+  }
+  if (code === 'file_demasiado_grande') {
+    return 'El audio es demasiado grande. El máximo son 8 MB.';
+  }
+  if (code === 'not_authenticated') {
+    return 'Tu sesión ha expirado. Recarga la página e inténtalo de nuevo.';
+  }
+  if (code.startsWith('storage_failed')) {
+    return 'No se pudo guardar el audio en el servidor. Inténtalo de nuevo.';
+  }
   if (code.startsWith('HTTP ')) {
     return 'No se pudo subir el audio. Comprueba la conexión.';
   }

@@ -28,7 +28,7 @@ Documento fijo de **qué entrega este repo** en su estado canónico. Detalle ope
 | Documento | Uso |
 |-----------|-----|
 | `refinamientos-app-2026-04-26.md` | **Refinamientos de la app** (26-abr: agenda, horario, móvil, público) |
-| `refinamientos-app-2026-04-27.md` | **Refinamientos de la app** (27-abr: auditoría, adjuntos ficha, cancelación agenda, pulido transversal) |
+| `refinamientos-app-2026-04-27.md` | **Refinamientos de la app** (27-abr: auditoría, adjuntos ficha, cancelación agenda, pulido transversal; mismo hilo: avatar menú, slots ocupados reserva, icono info chat) |
 | `estado-y-pendientes.md` | Secrets, dominio, checklist vivo |
 | `docs/05_operaciones/checklist-produccion.md` | Operación, QA staging, E2E, go-live (un solo documento) |
 | `docs/03_ingenieria/geo-y-seo.md` | Geo, metadatos, indexación |

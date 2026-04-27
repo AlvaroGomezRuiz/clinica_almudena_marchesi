@@ -17,7 +17,7 @@ import {
 } from '@/lib/chat/chat-composer-copy';
 
 const MAX_MS = 120_000;
-const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'] as const;
+const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/aac'] as const;
 
 interface Props {
   readonly conversacionId: string;
@@ -150,7 +150,12 @@ export default function AudioRecorderButton({
         }
         if (parts.length === 0) return;
         const blob = new Blob(parts, { type: rec.mimeType || mime });
-        const ext = blob.type.includes('ogg') ? 'ogg' : 'webm';
+        const blobType = blob.type.toLowerCase();
+        const ext = blobType.includes('ogg')
+          ? 'ogg'
+          : blobType.includes('mp4') || blobType.includes('m4a') || blobType.includes('aac')
+            ? 'm4a'
+            : 'webm';
         uploadBlob(blob, `voz-${Date.now()}.${ext}`);
       };
 

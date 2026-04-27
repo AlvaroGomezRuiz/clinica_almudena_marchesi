@@ -95,8 +95,9 @@ export function detectFileKind(
       }
       if (sig.kind === 'm4a') {
         const sub = readSubType();
-        /* Candidatos audio/vídeo en contenedor ISOBMFF; aceptamos marcas de audio típicas. */
-        if (['M4A ', 'M4B ', 'mp42'].includes(sub)) {
+        /* Candidatos audio/vídeo en contenedor ISOBMFF; aceptamos marcas de audio típicas.
+           Safari produce 'isom', 'mp41', 'iso2', etc. además de 'M4A '. */
+        if (['M4A ', 'M4B ', 'mp42', 'mp41', 'isom', 'iso2', 'dash', 'avc1'].includes(sub)) {
           return 'm4a';
         }
         continue;

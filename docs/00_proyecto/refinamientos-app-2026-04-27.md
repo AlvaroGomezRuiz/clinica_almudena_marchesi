@@ -17,6 +17,9 @@
 | **Reservas** | Aviso / modal cuando la reserva queda **bajo umbral temporal** (p. ej. &lt;48h respecto a política), sin cambiar la regla de negocio ya documentada en `0046`. |
 | **Web pública** | Modo claro: **texto legible** (contraste) en bloques que dependían de grises suaves. |
 | **Supabase / migraciones** | Corrección de **numeración duplicada**: coexistían dos ficheros `0062_*.sql` (`cuadricula_reserva_slots` y `terapeuta_public_profile`). Solo puede existir **una versión por número** en `schema_migrations`; el `db push` fallaba con `23505` al registrar la segunda. La RPC **`terapeuta_public_profile`** pasó a **`0065_terapeuta_public_profile.sql`** (el contenido SQL es idéntico; solo cambia el prefijo). Tras eso, `supabase db push` aplica **`0065`** sin conflicto. **Regla:** un único prefijo numérico por archivo en `supabase/migrations/`. |
+| **Shell portales (admin + paciente)** | Menú de usuario (`ProfileDropdown`): la cabecera del desplegable muestra la **foto de perfil** (`avatar_url`) cuando existe; si no, iniciales (alineado con la pastilla de la topbar). |
+| **Reserva online (`SlotPicker`)** | Huecos **ya ocupados / no reservables** (`!permite_reserva`): borde **azul** fino, fondo transparente, hora en gris y **línea diagonal** TL→BR (indicador visual de «no disponible»). |
+| **Mensajes admin → ficha rápida** | Botón «Información» / contacto: el nombre de glifo Material **`contact_page`** no forma parte del **woff2 subset** auto-hospedado; en su lugar se usa el SVG **`ContactFichaIcon`** mediante `triggerIconNode` en `PacienteListContactReveal` (evita mostrar texto plano tipo `CONTACT_PAGE`). |
 
 ## Código de referencia (principal)
 
@@ -24,6 +27,9 @@
 - Adjuntos: `frontend/src/components/admin/ficha/PacienteAdjuntosCard.tsx`, `frontend/src/lib/security/paciente-adjunto-validation.ts`, `frontend/src/app/api/admin/pacientes/[pacienteId]/adjuntos/route.ts`, `frontend/src/app/api/admin/pacientes/adjuntos/[adjuntoId]/route.ts`
 - Agenda cancelar: `frontend/src/components/admin/agenda/CitaResumenSheet.tsx` + `frontend/src/components/citas/CitaCancelButton.tsx`
 - RPC terapeuta (chat): `supabase/migrations/0065_terapeuta_public_profile.sql` (`create or replace function public.terapeuta_public_profile`)
+- Avatar menú: `frontend/src/components/layout/ProfileDropdown.tsx`, `frontend/src/components/portal-shell/PortalShell.tsx`
+- Slots ocupados: `frontend/src/components/booking/SlotPicker.tsx`
+- Icono información chat: `frontend/src/components/admin/pacientes/PacienteListContactReveal.tsx`, `frontend/src/components/icons/ContactFichaIcon.tsx`, `frontend/src/app/admin/mensajes/[id]/page.tsx`
 
 ## Relación con otros documentos
 

@@ -12,7 +12,7 @@ Reunir **estado de proyecto**, **auditorías técnicas**, **informes de negocio*
 |---|------|------------|
 | 1 | `00_proyecto/linea-base-producto.md` | Qué entrega el producto hoy |
 | 2 | `00_proyecto/refinamientos-app-2026-04-26.md` | **Refinamientos de la app** (26-abr: agenda, horario Madrid, menú móvil, público) |
-| 2b | `00_proyecto/refinamientos-app-2026-04-27.md` | **Refinamientos de la app** (27-abr: auditoría config, adjuntos ficha, cancelación agenda, pulido panel/listados/pagos/público) |
+| 2b | `00_proyecto/refinamientos-app-2026-04-27.md` | **Refinamientos de la app** (27-abr: auditoría config, adjuntos ficha, cancelación agenda, pulido panel/listados/pagos/público; mismo hilo: avatar menú, slots ocupados reserva, icono info chat) |
 | 3 | `00_proyecto/estado-y-pendientes.md` | Bloqueos, dominio, variables, checklist operativo |
 | 4 | `00_proyecto/cronologia.md` | Hitos técnicos |
 | 5 | `03_ingenieria/arquitectura-tecnica.md` | Cómo está cableado el sistema hoy |
