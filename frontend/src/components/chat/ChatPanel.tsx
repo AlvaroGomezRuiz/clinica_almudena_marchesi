@@ -715,6 +715,9 @@ function generateWaveform(seed: string, bars: number): number[] {
 
 const WAVEFORM_BARS = 36;
 
+// Registro global: solo un audio reproduciendo a la vez
+const activeAudios = new Set<HTMLAudioElement>();
+
 function AudioPlayerBubble({
   src,
   title,
@@ -735,20 +738,43 @@ function AudioPlayerBubble({
   const [currentTime, setCurrentTime] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const waveformRef = useRef<HTMLDivElement>(null);
-  const playingRef = useRef(false);
+  const rafRef = useRef<number>(0);
 
   // Waveform determinista basada en la URL del audio
   const waveform = useMemo(() => generateWaveform(src, WAVEFORM_BARS), [src]);
 
+  // Loop de animación a 60fps para progreso fluido
+  const startAnimLoop = useCallback(() => {
+    const tick = () => {
+      const el = audioRef.current;
+      if (el && !el.paused && el.duration && isFinite(el.duration)) {
+        setProgress((el.currentTime / el.duration) * 100);
+        setCurrentTime(el.currentTime);
+        setDuration(el.duration);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const stopAnimLoop = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    }
+  }, []);
+
   const togglePlay = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
-    if (playingRef.current) {
+    if (!el.paused) {
       el.pause();
     } else {
-      el.play().catch(() => {
-        setLoadError(true);
+      // Pausar TODOS los otros audios antes de reproducir este
+      activeAudios.forEach((other) => {
+        if (other !== el && !other.paused) other.pause();
       });
+      el.play().catch(() => setLoadError(true));
     }
   }, []);
 
@@ -756,20 +782,22 @@ function AudioPlayerBubble({
     const el = audioRef.current;
     if (!el) return;
 
-    const onPlay = () => { playingRef.current = true; setPlaying(true); };
-    const onPause = () => { playingRef.current = false; setPlaying(false); };
-    const onEnded = () => {
-      playingRef.current = false;
+    // Registrar en el set global
+    activeAudios.add(el);
+
+    const onPlay = () => {
+      setPlaying(true);
+      startAnimLoop();
+    };
+    const onPause = () => {
       setPlaying(false);
+      stopAnimLoop();
+    };
+    const onEnded = () => {
+      setPlaying(false);
+      stopAnimLoop();
       setProgress(0);
       setCurrentTime(0);
-    };
-    const onTimeUpdate = () => {
-      if (el.duration && isFinite(el.duration) && el.duration > 0) {
-        setProgress((el.currentTime / el.duration) * 100);
-        setCurrentTime(el.currentTime);
-        setDuration(el.duration);
-      }
     };
     const onDurationChange = () => {
       if (el.duration && isFinite(el.duration) && el.duration > 0) {
@@ -791,7 +819,6 @@ function AudioPlayerBubble({
     el.addEventListener('play', onPlay);
     el.addEventListener('pause', onPause);
     el.addEventListener('ended', onEnded);
-    el.addEventListener('timeupdate', onTimeUpdate);
     el.addEventListener('durationchange', onDurationChange);
     el.addEventListener('error', onError);
 
@@ -800,14 +827,15 @@ function AudioPlayerBubble({
     }
 
     return () => {
+      activeAudios.delete(el);
+      stopAnimLoop();
       el.removeEventListener('play', onPlay);
       el.removeEventListener('pause', onPause);
       el.removeEventListener('ended', onEnded);
-      el.removeEventListener('timeupdate', onTimeUpdate);
       el.removeEventListener('durationchange', onDurationChange);
       el.removeEventListener('error', onError);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [startAnimLoop, stopAnimLoop]);
 
   const handleSeek = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
