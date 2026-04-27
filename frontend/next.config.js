@@ -57,12 +57,15 @@ function buildCsp() {
     "frame-ancestors 'none'",
     "object-src 'none'",
     /* script-src: self + vercel + stripe. `'unsafe-inline'` es requerido por
-       Next.js App Router para hidratar RSC. `'strict-dynamic'` endurece en
-       navegadores modernos (Firefox >80, Chrome >52): los navegadores que lo
-       entienden ignoran `'unsafe-inline'` y solo ejecutan scripts cargados por
-       scripts firmados. En legacy browsers, `'unsafe-inline'` actúa de fallback. */
-    /* Stripe.js: subdominios de js.stripe.com (iframes internos) + iconos wallets; ver https://docs.stripe.com/security/guide#content-security-policy */
-    "script-src 'self' 'unsafe-inline' 'strict-dynamic' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com https://*.js.stripe.com",
+       Next.js App Router para hidratar RSC (inyecta scripts inline sin nonce).
+       NOTA: `'strict-dynamic'` se eliminó porque sin nonces configurados los
+       navegadores modernos ignoran `'unsafe-inline'` y bloquean los scripts
+       inline de hidratación de Next.js, rompiendo toda la interactividad
+       client-side (useEffect, IntersectionObserver, etc.).
+       TODO: Configurar nonces vía middleware para poder re-añadir strict-dynamic.
+       Stripe.js: subdominios de js.stripe.com (iframes internos) + iconos wallets;
+       ver https://docs.stripe.com/security/guide#content-security-policy */
+    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live https://js.stripe.com https://*.js.stripe.com",
     /* style-src: `'unsafe-inline'` necesario por Tailwind arbitrary values y
        next-themes (seteo inline del atributo style en <html>). Ya NO se
        permite fonts.googleapis.com porque todas las fuentes están
