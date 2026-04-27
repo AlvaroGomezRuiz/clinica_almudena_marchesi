@@ -60,7 +60,7 @@ npm run dev                   # → http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | Todas         | Protegida por RLS                            |
 | `SUPABASE_SERVICE_ROLE_KEY`           | Server only   | **NUNCA** exponer al cliente                 |
 | `NEXT_PUBLIC_APP_URL`                 | Todas         | `https://ampsicologia.es`                    |
-| `STRIPE_SECRET_KEY`                   | Server (Edge) | `sk_test_` en pruebas, `sk_live_` en prod   |
+| `STRIPE_SECRET_KEY`                   | Server (Edge) | `sk_test_` en pruebas, `sk_live_` en prod    |
 | `STRIPE_WEBHOOK_SECRET`              | Server (Edge) | `whsec_` del endpoint configurado            |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | Todas         | Debe coincidir con `STRIPE_SECRET_KEY`       |
 
