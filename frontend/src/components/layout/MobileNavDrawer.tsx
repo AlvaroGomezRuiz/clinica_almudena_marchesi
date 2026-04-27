@@ -157,7 +157,7 @@ export default function MobileNavDrawer({
                     {brandTitle}
                   </span>
                   {brandSubtitle ? (
-                    <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-ink-muted dark:text-white/55">
+                    <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-ink-muted dark:text-white/80">
                       {brandSubtitle}
                     </span>
                   ) : null}
@@ -218,7 +218,7 @@ export default function MobileNavDrawer({
 
               <div className="shrink-0 space-y-2 border-t border-ink/10 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-3 dark:border-white/10">
                 <div className="px-0.5">
-                  <p className="pb-1 text-center font-body text-[0.52rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/45">
+                  <p className="pb-1 text-center font-body text-[0.52rem] uppercase tracking-[0.18em] text-ink-muted dark:text-white/85">
                     Tema
                   </p>
                   <ThemeToggle
@@ -243,13 +243,13 @@ export default function MobileNavDrawer({
                 <form action={logoutAction} className="pt-0.5">
                   <button
                     type="submit"
-                    className="flex w-full min-h-10 items-center justify-center rounded-2xl px-4 py-2.5 text-center font-display text-[0.78rem] font-medium uppercase tracking-[0.12em] text-[#9a2f2f] transition-colors hover:bg-red-100 dark:text-red-200/95 dark:hover:bg-red-950/35"
+                    className="flex w-full min-h-10 items-center justify-center rounded-2xl px-4 py-2.5 text-center font-display text-[0.78rem] font-medium uppercase tracking-[0.12em] text-[#9a2f2f] transition-colors hover:bg-red-100 dark:text-white dark:hover:bg-white/10"
                   >
                     Cerrar sesión
                   </button>
                 </form>
 
-                <p className="px-0.5 pt-1 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/45">
+                <p className="px-0.5 pt-1 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/75">
                   Moncloa, Madrid
                 </p>
               </div>

@@ -65,7 +65,7 @@ export default function PublicMobileDrawer({
                 <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-ink dark:text-white">
                   Almudena Marchesi
                 </span>
-                <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-zinc-800 dark:text-white/55">
+                <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-ink-soft dark:text-white/80">
                   Psicología clínica — Moncloa
                 </span>
               </Link>
@@ -114,7 +114,7 @@ export default function PublicMobileDrawer({
             </nav>
 
             <div className="shrink-0 border-t border-ink/10 pt-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] dark:border-white/10">
-              <p className="px-0.5 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/45">
+              <p className="px-0.5 text-center font-body text-[0.58rem] uppercase tracking-[0.14em] text-ink-muted dark:text-white/75">
                 Moncloa, Madrid
               </p>
             </div>

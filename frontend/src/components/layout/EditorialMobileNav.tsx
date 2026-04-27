@@ -44,7 +44,8 @@ export function EditorialMobileNavLink({
         'font-display text-[clamp(0.92rem,4.4vw,1.14rem)] font-medium uppercase tracking-[0.14em]',
         active
           ? 'bg-primary/14 text-primary ring-1 ring-inset ring-primary/28 shadow-none dark:bg-white/12 dark:text-white dark:ring-white/22 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-          : 'text-zinc-950 hover:bg-ink/[0.06] hover:text-zinc-950 dark:text-white/88 dark:hover:bg-white/[0.07] dark:hover:text-white',
+          : /* text-ink sigue el token (--color-ink → claro en .dark); nunca usar zinc fijo (rompe modo oscuro). */
+            'text-ink hover:bg-ink/[0.06] hover:text-ink dark:text-white dark:hover:bg-white/[0.08] dark:hover:text-white',
       )}
     >
       <span className="min-w-0 truncate">{label}</span>
