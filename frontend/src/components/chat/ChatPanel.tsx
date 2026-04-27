@@ -747,10 +747,13 @@ function AudioPlayerBubble({
   const startAnimLoop = useCallback(() => {
     const tick = () => {
       const el = audioRef.current;
-      if (el && !el.paused && el.duration && isFinite(el.duration)) {
-        setProgress((el.currentTime / el.duration) * 100);
+      if (el && !el.paused) {
         setCurrentTime(el.currentTime);
-        setDuration(el.duration);
+        const dur = el.duration;
+        if (dur && isFinite(dur) && dur > 0) {
+          setDuration(dur);
+          setProgress((el.currentTime / dur) * 100);
+        }
       }
       rafRef.current = requestAnimationFrame(tick);
     };
