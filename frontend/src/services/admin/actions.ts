@@ -160,7 +160,7 @@ export async function listarServiciosCatalogoAction(): Promise<
   return data as readonly ServicioCatalogo[];
 }
 
-export type MetodoPagoManual = 'tarjeta' | 'transferencia' | 'regalo' | 'klarna';
+export type MetodoPagoManual = 'tarjeta' | 'transferencia' | 'regalo' | 'efectivo' | 'klarna';
 
 export interface AsignarBonoManualInput {
   readonly paciente_id: string;
@@ -184,7 +184,7 @@ export type AsignarBonoManualResult =
  * Validaciones de entrada (client-side + redundantes server-side):
  *   - paciente_id, servicio_id: uuid no vacíos
  *   - sesiones: 1..50
- *   - importe_centimos: >= 0 (si 0 o método regalo → auto-excluir facturación)
+ *   - importe_centimos: >= 0 (si 0 o método regalo → auto-excluir facturación; efectivo cuenta como ingreso salvo checkbox)
  *   - validez_dias: 1..730 (2 años máx) o null
  */
 export async function asignarBonoManualAction(
@@ -202,7 +202,9 @@ export async function asignarBonoManualAction(
     if (!Number.isInteger(input.importe_centimos) || input.importe_centimos < 0) {
       return { ok: false, message: 'importe inválido' };
     }
-    if (!['tarjeta', 'transferencia', 'regalo', 'klarna'].includes(input.metodo)) {
+    if (
+      !['tarjeta', 'transferencia', 'regalo', 'efectivo', 'klarna'].includes(input.metodo)
+    ) {
       return { ok: false, message: 'método de pago inválido' };
     }
     if (!Number.isInteger(input.validez_dias) || input.validez_dias < 1 || input.validez_dias > 730) {

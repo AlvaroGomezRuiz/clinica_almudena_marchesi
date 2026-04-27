@@ -12,6 +12,7 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import AsignarBonoManualButton from '@/components/admin/facturacion/AsignarBonoManualButton';
+import { RedeemGiftIcon } from '@/components/icons/RedeemGiftIcon';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { getMetodoFacturacionPantalla } from '@/lib/admin/facturacion-metodo-display';
 import { createServerClient } from '@/lib/supabase/server';
@@ -153,7 +154,10 @@ export default async function AdminFacturacionPage(): Promise<JSX.Element> {
               </Button>
             </a>
             <a href={csvHrefInclRegalos} download>
-              <Button variant="surface" icon="redeem">
+              <Button
+                variant="surface"
+                iconNode={<RedeemGiftIcon className="h-[1rem] w-[1rem]" />}
+              >
                 CSV con regalos
               </Button>
             </a>

@@ -2,7 +2,7 @@
 
 /**
  * AsignarBonoManualButton — modal administrativo para crear bonos fuera
- * de Stripe (tarjeta, transferencia, regalo, Klarna).
+ * de Stripe (tarjeta, transferencia, regalo, efectivo, Klarna).
  *
  * Flujo:
  *   1. Admin busca paciente (reusa listarPacientesQuickAction).
@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { RedeemGiftIcon } from '@/components/icons/RedeemGiftIcon';
 import { Button } from '@/components/portal-shell/ui';
 import { METODOS_ASIGNAR_BONO } from '@/lib/admin/facturacion-metodo-display';
 import {
@@ -323,7 +324,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
 
                 {/* Método */}
                 <Campo label="Método de pago">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-2 min-[520px]:grid-cols-3 min-[700px]:grid-cols-5">
                     {METODOS_ASIGNAR_BONO.map((m) => {
                       const selected = metodo === m.value;
                       return (
@@ -333,15 +334,19 @@ export default function AsignarBonoManualButton(): JSX.Element {
                           onClick={() => setMetodo(m.value)}
                           aria-pressed={selected}
                           className={[
-                            'flex min-h-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-xl border px-2 py-2.5 font-body text-[0.72rem] leading-tight transition sm:min-h-0 sm:py-3',
+                            'flex min-h-[4.5rem] flex-col items-center justify-center gap-0.5 rounded-xl border px-1.5 py-2.5 font-body text-[0.68rem] leading-tight transition sm:min-h-0 sm:py-3 sm:text-[0.72rem]',
                             selected
                               ? 'border-primary bg-primary/10 text-primary dark:bg-primary/20'
                               : 'border-ink/10 text-ink-muted hover:border-ink/20 dark:border-white/15 dark:text-white/60',
                           ].join(' ')}
                         >
-                          <span className="material-symbols-outlined text-[1.2rem]" aria-hidden>
-                            {m.icon}
-                          </span>
+                          {m.redeemSvg ? (
+                            <RedeemGiftIcon className="h-[1.2rem] w-[1.2rem]" />
+                          ) : (
+                            <span className="material-symbols-outlined text-[1.2rem]" aria-hidden>
+                              {m.icon}
+                            </span>
+                          )}
                           <span className="text-center font-medium">{m.label}</span>
                         </button>
                       );

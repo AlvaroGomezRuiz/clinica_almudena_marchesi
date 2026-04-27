@@ -41,6 +41,10 @@ export function labelMetodoPago(m: string | null | undefined): string {
   if (x === 'link') return 'Stripe Link (pago con email)';
   if (x === 'sepa_debit') return 'Domiciliación SEPA';
   if (x === 'klarna') return 'Klarna';
+  if (x === 'efectivo') return 'Efectivo';
+  if (x === 'tarjeta') return 'Tarjeta';
+  if (x === 'transferencia') return 'Transferencia';
+  if (x === 'regalo') return 'Regalo';
   return m;
 }
 

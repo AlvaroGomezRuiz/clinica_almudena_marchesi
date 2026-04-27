@@ -237,7 +237,10 @@ interface BtnProps {
   readonly children: ReactNode;
   readonly variant?: 'primary' | 'ghost' | 'destructive' | 'surface';
   readonly size?: 'sm' | 'md' | 'lg';
+  /** Nombre de glifo Material (subset); ignorado si `iconNode` está definido. */
   readonly icon?: string;
+  /** Sustituye el glifo Material del extremo (p. ej. SVG local). */
+  readonly iconNode?: ReactNode;
   readonly type?: 'button' | 'submit' | 'reset';
   readonly className?: string;
   readonly onClick?: () => void;
@@ -251,6 +254,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   icon,
+  iconNode,
   type = 'button',
   className = '',
   onClick,
@@ -296,10 +300,17 @@ export function Button({
       disabled={disabled}
       name={name}
       value={value}
-      className={`group relative inline-flex items-center rounded-full font-display font-medium tracking-tight disabled:opacity-50 disabled:cursor-not-allowed ${icon ? sizeCls : sizeNoIcon} ${variantCls} ${motion} ${className}`}
+      className={`group relative inline-flex items-center rounded-full font-display font-medium tracking-tight disabled:opacity-50 disabled:cursor-not-allowed ${icon || iconNode ? sizeCls : sizeNoIcon} ${variantCls} ${motion} ${className}`}
     >
       <span className="whitespace-nowrap">{children}</span>
-      {icon ? (
+      {iconNode ? (
+        <span
+          className={`ml-auto grid h-7 w-7 place-items-center rounded-full text-current transition-[transform,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[1px] ${iconPillCls}`}
+          aria-hidden="true"
+        >
+          {iconNode}
+        </span>
+      ) : icon ? (
         <span
           className={`ml-auto grid h-7 w-7 place-items-center rounded-full transition-[transform,background-color] duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[1px] ${iconPillCls}`}
           aria-hidden="true"

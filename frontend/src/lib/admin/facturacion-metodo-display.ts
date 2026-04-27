@@ -4,6 +4,7 @@ const ASIGNAR_ORDER: readonly MetodoPagoManual[] = [
   'tarjeta',
   'transferencia',
   'regalo',
+  'efectivo',
   'klarna',
 ];
 
@@ -11,6 +12,7 @@ const DETALLE: { readonly [K in MetodoPagoManual]: { label: string; icon: string
   tarjeta: { label: 'Tarjeta', icon: 'credit_card' },
   transferencia: { label: 'Transferencia', icon: 'account_balance' },
   regalo: { label: 'Regalo', icon: 'card_giftcard' },
+  efectivo: { label: 'Efectivo', icon: 'euro' },
   klarna: { label: 'Klarna', icon: 'payments' },
 };
 
@@ -21,9 +23,16 @@ export const METODOS_ASIGNAR_BONO: readonly {
   value: MetodoPagoManual;
   label: string;
   icon: string;
+  /** Si true, se pinta `RedeemGiftIcon` en lugar del glifo Material. */
+  redeemSvg?: boolean;
 }[] = ASIGNAR_ORDER.map((value) => {
   const d = DETALLE[value];
-  return { value, label: d.label, icon: d.icon };
+  return {
+    value,
+    label: d.label,
+    icon: d.icon,
+    redeemSvg: value === 'regalo',
+  };
 });
 
 export interface MetodoFacturacionPantalla {
@@ -45,7 +54,13 @@ export function getMetodoFacturacionPantalla(params: {
   stripePaymentIntent: string | null;
 }): MetodoFacturacionPantalla {
   const m = normalizeMetodo(params.metodo);
-  if (m === 'tarjeta' || m === 'transferencia' || m === 'regalo' || m === 'klarna') {
+  if (
+    m === 'tarjeta' ||
+    m === 'transferencia' ||
+    m === 'regalo' ||
+    m === 'efectivo' ||
+    m === 'klarna'
+  ) {
     const d = DETALLE[m];
     return { icon: d.icon, shortLabel: d.label };
   }

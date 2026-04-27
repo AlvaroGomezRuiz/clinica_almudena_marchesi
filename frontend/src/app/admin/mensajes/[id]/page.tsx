@@ -140,7 +140,7 @@ export default async function AdminConversacionPage({
           />
         </div>
 
-        <aside className="w-full space-y-4 lg:sticky lg:top-6 lg:w-auto lg:self-start">
+        <aside className="relative z-0 w-full space-y-4 lg:sticky lg:top-6 lg:w-auto lg:self-start">
           <SurfaceCard>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-display text-[1.05rem] italic text-ink dark:text-white">

@@ -38,7 +38,7 @@ export default function PublicMobileDrawer({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[200] md:hidden"
+          className="fixed inset-0 z-[200] flex min-h-0 flex-col md:hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -47,18 +47,18 @@ export default function PublicMobileDrawer({
           <div
             className={EDITORIAL_MOBILE_OVERLAY_CLASS}
             style={{
-              backdropFilter: 'blur(44px) saturate(160%)',
-              WebkitBackdropFilter: 'blur(44px) saturate(160%)',
+              backdropFilter: 'blur(52px) saturate(165%)',
+              WebkitBackdropFilter: 'blur(52px) saturate(165%)',
             }}
             onClick={onClose}
             aria-hidden="true"
           />
 
           <div
-            className={EDITORIAL_MOBILE_PANEL_CLASS}
+            className={`${EDITORIAL_MOBILE_PANEL_CLASS} min-h-0 flex-1`}
             style={{
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
+              backdropFilter: 'blur(36px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(36px) saturate(150%)',
             }}
           >
             <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
@@ -68,10 +68,10 @@ export default function PublicMobileDrawer({
                 onClick={onClose}
                 aria-label="Ir a Inicio"
               >
-                <span className="font-display text-[1.05rem] font-medium tracking-tight text-white sm:text-[1.12rem]">
+                <span className="font-display text-[clamp(1.12rem,4vw,1.35rem)] font-medium tracking-tight text-white">
                   Almudena Marchesi
                 </span>
-                <span className="mt-1 font-body text-[0.55rem] uppercase tracking-[0.18em] text-white/55">
+                <span className="mt-1 font-body text-[clamp(0.58rem,2.2vw,0.68rem)] uppercase tracking-[0.18em] text-white/55">
                   Psicología clínica — Moncloa
                 </span>
               </Link>

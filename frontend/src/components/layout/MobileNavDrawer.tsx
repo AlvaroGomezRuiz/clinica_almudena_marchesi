@@ -116,7 +116,7 @@ export default function MobileNavDrawer({
 
       <div
         className={cn(
-          'fixed inset-0 z-[200] md:hidden transition-opacity duration-300',
+          'fixed inset-0 z-[200] flex min-h-0 flex-col md:hidden transition-opacity duration-300',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         )}
         aria-hidden={!open}
@@ -131,20 +131,24 @@ export default function MobileNavDrawer({
         <div
           className={cn(
             EDITORIAL_MOBILE_PANEL_CLASS,
-            'backdrop-blur-xl',
+            'min-h-0 flex-1 backdrop-blur-xl',
             panelClassName,
           )}
+          style={{
+            backdropFilter: 'blur(36px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(36px) saturate(150%)',
+          }}
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
         >
           <div className="relative flex shrink-0 items-center justify-center border-b border-white/10 py-2">
             <div className="flex min-w-0 flex-col items-center px-10 text-center">
-              <p className="font-display text-[1.02rem] font-medium leading-tight tracking-tight text-white sm:text-[1.08rem]">
+              <p className="font-display text-[clamp(1.05rem,4vw,1.32rem)] font-medium leading-tight tracking-tight text-white">
                 {brandTitle}
               </p>
               {brandSubtitle ? (
-                <p className="mt-1 font-body text-[0.55rem] uppercase tracking-[0.16em] text-white/55">
+                <p className="mt-1 font-body text-[clamp(0.56rem,2.2vw,0.66rem)] uppercase tracking-[0.16em] text-white/55">
                   {brandSubtitle}
                 </p>
               ) : null}

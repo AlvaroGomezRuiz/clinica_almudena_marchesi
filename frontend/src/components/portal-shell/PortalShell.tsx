@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 
 import MobileNavDrawer from '@/components/layout/MobileNavDrawer';
 import ProfileDropdown from '@/components/layout/ProfileDropdown';
@@ -8,6 +11,8 @@ import { logoutAction } from '@/services/auth/actions';
 
 import SidebarNav from './SidebarNav';
 import type { ShellProps } from './types';
+
+const SIDEBAR_LS_KEY = 'portal_shell_sidebar_open_v1';
 
 /**
  * Shell unificado para zonas privadas (admin + portal paciente).
@@ -28,6 +33,31 @@ export default function PortalShell({
   footerSlot,
   children,
 }: ShellProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(SIDEBAR_LS_KEY);
+      if (raw === '0') {
+        setSidebarOpen(false);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDEBAR_LS_KEY, next ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
   const unread = mensajesUnread > 0 ? mensajesUnread : undefined;
   const navItemsWithBadge = navItems.map((n) =>
     n.href.includes('/mensajes') && unread
@@ -70,7 +100,9 @@ export default function PortalShell({
 
       {/* ──────────── SIDEBAR (desktop) ──────────── */}
       <aside
-        className="portal-sidebar fixed left-0 top-0 z-40 hidden h-screen w-[280px] flex-col md:flex"
+        className={`portal-sidebar fixed left-0 top-0 z-40 h-screen w-[280px] flex-col ${
+          sidebarOpen ? 'hidden md:flex' : 'hidden'
+        }`}
       >
         <div className="flex h-full flex-col px-6 pt-9 pb-6">
           {/* Brand */}
@@ -123,9 +155,35 @@ export default function PortalShell({
       </aside>
 
       {/* ──────────── TOPBAR ──────────── */}
-      <header className="portal-topbar fixed left-0 right-0 top-0 z-[45] md:left-[280px]">
+      <header
+        className={`portal-topbar fixed left-0 right-0 top-0 z-[45] ${
+          sidebarOpen ? 'md:left-[280px]' : 'md:left-0'
+        }`}
+      >
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 md:px-10">
           <div className="flex min-w-0 flex-1 items-center gap-3">
+            <button
+              type="button"
+              className="relative hidden h-11 w-11 shrink-0 place-items-center rounded-full text-ink-soft ring-1 ring-inset ring-ink/10 transition-colors hover:bg-ink/[0.04] hover:text-ink md:grid dark:text-white/70 dark:ring-white/10 dark:hover:bg-white/10 dark:hover:text-white"
+              onClick={toggleSidebar}
+              aria-expanded={sidebarOpen}
+              aria-label={sidebarOpen ? 'Ocultar menú lateral' : 'Mostrar menú lateral'}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
+              </svg>
+            </button>
             <MobileNavDrawer
               brandTitle={brandTitle}
               brandSubtitle={brandSubtitle}
@@ -190,7 +248,9 @@ export default function PortalShell({
       {/* ──────────── MAIN ──────────── */}
       <main
         id="main"
-        className="relative z-10 ml-0 min-h-screen px-4 pb-[max(4rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] sm:px-6 md:ml-[280px] md:px-10"
+        className={`relative z-10 ml-0 min-h-screen px-4 pb-[max(4rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,calc(5.5rem+env(safe-area-inset-top,0px)))] sm:px-6 md:px-10 ${
+          sidebarOpen ? 'md:ml-[280px]' : 'md:ml-0'
+        }`}
       >
         <div className="mx-auto max-w-7xl">{children}</div>
       </main>

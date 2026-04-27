@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 
+import { ContactFichaIcon } from '@/components/icons/ContactFichaIcon';
 import CitaResumenSheet from '@/components/admin/agenda/CitaResumenSheet';
 import {
   bordeLateralCitaAgenda,
@@ -61,12 +62,9 @@ function FichaAgendaLink({
       aria-label="Abrir ficha del paciente"
       title="Ficha"
     >
-      <span
-        className={`material-symbols-outlined ${compact ? 'text-[0.9rem]' : 'text-[1.05rem]'}`}
-        aria-hidden="true"
-      >
-        contact_page
-      </span>
+      <ContactFichaIcon
+        className={compact ? 'h-[0.95rem] w-[0.95rem]' : 'h-[1.05rem] w-[1.05rem]'}
+      />
     </Link>
   );
 }

@@ -23,7 +23,7 @@ export const EDITORIAL_MOBILE_OVERLAY_CLASS =
   'absolute inset-0 cursor-default bg-[#070605]/82 transition-colors duration-500';
 
 export const EDITORIAL_MOBILE_PANEL_CLASS =
-  'relative z-[70] mx-auto flex h-full max-h-[100dvh] w-full max-w-sm flex-col px-3 py-2 text-white sm:px-4 sm:py-2.5';
+  'relative z-[70] flex h-full max-h-[100dvh] w-full min-w-0 flex-col px-5 py-3 text-white sm:px-8 sm:py-4';
 
 export function EditorialMobileNavLink({
   href,
@@ -40,7 +40,7 @@ export function EditorialMobileNavLink({
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex min-h-11 w-full max-w-full flex-row items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-center transition-colors active:opacity-85',
-        'font-display text-[clamp(0.78rem,3.6vw,0.95rem)] font-medium uppercase tracking-[0.14em]',
+        'font-display text-[clamp(0.92rem,4.4vw,1.14rem)] font-medium uppercase tracking-[0.14em]',
         active
           ? 'bg-white/12 text-white ring-1 ring-inset ring-white/22 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
           : 'text-white/88 hover:bg-white/[0.07] hover:text-white',
