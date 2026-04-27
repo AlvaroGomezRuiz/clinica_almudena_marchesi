@@ -62,9 +62,9 @@ function experienciaTerapiaLabel(code: string | undefined): string | null {
  */
 function translateCallbackError(msg: string): string {
   if (/pkce.*verifier|code.verifier/i.test(msg)) {
-    return 'El enlace de confirmación se abrió en un dispositivo o navegador distinto al que usaste para registrarte. Por favor, abre el enlace desde el mismo navegador donde creaste la cuenta, o vuelve a iniciar sesión.';
+    return 'El enlace ha expirado o ya fue utilizado. Vuelve a registrarte o solicita un nuevo enlace de verificación.';
   }
-  if (/expired|invalid.*code/i.test(msg)) {
+  if (/expired|invalid.*code|otp.*expired/i.test(msg)) {
     return 'El enlace ha caducado o ya fue utilizado. Solicita uno nuevo desde "¿Olvidaste tu contraseña?" o vuelve a registrarte.';
   }
   if (/already.*used|reuse/i.test(msg)) {
@@ -76,34 +76,54 @@ function translateCallbackError(msg: string): string {
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const type = searchParams.get('type') ?? 'signup';
+  const tokenHash = searchParams.get('token_hash');
+  const type = (searchParams.get('type') ?? 'signup') as
+    | 'signup'
+    | 'recovery'
+    | 'magiclink'
+    | 'email'
+    | 'email_change';
   const nextPath = safeNext(searchParams.get('next'));
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent('Falta el código de verificación en el enlace. Solicita uno nuevo.')}`);
-  }
-
   const supabase = createServerClient();
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  let user: { id: string; user_metadata: Record<string, unknown>; email?: string } | null = null;
 
-  if (error || !data?.user) {
-    const friendlyMsg = translateCallbackError(error?.message ?? 'auth_exchange_failed');
+  if (tokenHash) {
+    // ── Flujo OTP / token_hash (cross-device, sin restricción de navegador) ──
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+    if (error || !data?.user) {
+      const friendlyMsg = translateCallbackError(error?.message ?? 'otp_verify_failed');
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(friendlyMsg)}`);
+    }
+    user = {
+      id: data.user.id,
+      user_metadata: data.user.user_metadata ?? {},
+      email: data.user.email,
+    };
+  } else if (code) {
+    // ── Flujo PKCE / code (mismo navegador) ──
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error || !data?.user) {
+      const friendlyMsg = translateCallbackError(error?.message ?? 'auth_exchange_failed');
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(friendlyMsg)}`);
+    }
+    user = {
+      id: data.user.id,
+      user_metadata: data.user.user_metadata ?? {},
+      email: data.user.email,
+    };
+  } else {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(friendlyMsg)}`
+      `${origin}/login?error=${encodeURIComponent('Enlace de verificación inválido. Solicita uno nuevo.')}`
     );
   }
 
-  if (type === 'signup') {
-    await handleSignupMetadata(
-      supabase,
-      data.user.id,
-      data.user.user_metadata ?? {},
-      data.user.email ?? ''
-    );
+  if (type === 'signup' || type === 'email') {
+    await handleSignupMetadata(supabase, user.id, user.user_metadata, user.email ?? '');
 
     void fireEmail({
       type: 'welcome',
-      toUserId: data.user.id,
+      toUserId: user.id,
       data: {},
     });
   }
@@ -111,9 +131,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const target =
     type === 'recovery'
       ? '/auth/reset'
-      : type === 'signup'
-        ? nextPath ?? '/portal'
-        : nextPath ?? '/portal';
+      : nextPath ?? '/portal';
 
   return NextResponse.redirect(`${origin}${target}`);
 }
@@ -163,37 +181,46 @@ async function handleSignupMetadata(
     p_consentimiento_rgpd: true,
   });
 
+  // ¿La RPC realmente falló (no es un duplicado idempotente)?
+  const isRealError =
+    rpcError &&
+    !/unique_violation|23505|already exists/i.test(
+      `${rpcError.code ?? ''} ${rpcError.message ?? ''}`
+    );
+
   if (rpcError) {
     captureClinicalError(
       new Error(`paciente_autoregistro_cifrada: ${rpcError.code ?? 'unknown'}`),
       { area: 'auth', patient_id: userId, operation: 'autoregistro' },
     );
-    // Idempotente: si ya existe ficha (unique_violation) o falla, seguimos igual.
-    // No bloqueamos el login porque la cuenta ya está verificada.
   }
 
-  // Borrar PII temporal del user_metadata — ya está cifrado en la tabla pacientes.
-  const { error: updErr } = await supabase.auth.updateUser({
-    data: {
-      ...rawMetadata,
-      dni_nie_temp: null,
-      telefono_temp: null,
-      direccion_temp: null,
-      contacto_emergencia_nombre_temp: null,
-      contacto_emergencia_telefono_temp: null,
-      fecha_nacimiento_temp: null,
-      motivo_consulta_temp: null,
-      experiencia_terapia_temp: null,
-      medicacion_psiquiatria_temp: null,
-      needs_clinical_intake: false,
-    },
-  });
+  // Solo borramos los PII temporales si la ficha se creó (o ya existía).
+  // Si hubo un error real, conservamos los datos para que el próximo
+  // acceso al callback pueda reintentarlo.
+  if (!isRealError) {
+    const { error: updErr } = await supabase.auth.updateUser({
+      data: {
+        ...rawMetadata,
+        dni_nie_temp: null,
+        telefono_temp: null,
+        direccion_temp: null,
+        contacto_emergencia_nombre_temp: null,
+        contacto_emergencia_telefono_temp: null,
+        fecha_nacimiento_temp: null,
+        motivo_consulta_temp: null,
+        experiencia_terapia_temp: null,
+        medicacion_psiquiatria_temp: null,
+        needs_clinical_intake: false,
+      },
+    });
 
-  if (updErr) {
-    captureClinicalError(
-      new Error(`limpiar user_metadata: ${updErr.code ?? 'unknown'}`),
-      { area: 'auth', patient_id: userId, operation: 'cleanup_metadata' },
-    );
+    if (updErr) {
+      captureClinicalError(
+        new Error(`limpiar user_metadata: ${updErr.code ?? 'unknown'}`),
+        { area: 'auth', patient_id: userId, operation: 'cleanup_metadata' },
+      );
+    }
   }
 }
 

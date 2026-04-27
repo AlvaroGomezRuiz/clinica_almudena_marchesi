@@ -26,7 +26,7 @@ export default async function PortalMensajesPage() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Devuelve (o crea) la conversación del paciente actual vía RPC.
+  // Devuelve (o crea) la conversación del usuario actual vía RPC.
   const { data: convId, error: rpcErr } = await supabase.rpc('chat_mi_conversacion');
 
   if (rpcErr || !convId) {
@@ -40,8 +40,8 @@ export default async function PortalMensajesPage() {
         <SurfaceCard>
           <EmptyState
             icon="chat"
-            title="Todavía no puedes abrir el chat"
-            description="Almudena debe vincular tu perfil a una ficha clínica para habilitar la conversación. Escríbele por teléfono mientras tanto."
+            title="No se pudo cargar el chat"
+            description="Vuelve a intentarlo en unos segundos. Si el problema persiste, contacta con Almudena por teléfono."
           />
         </SurfaceCard>
       </>

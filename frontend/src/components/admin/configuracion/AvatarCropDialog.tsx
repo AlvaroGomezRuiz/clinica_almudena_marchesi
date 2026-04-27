@@ -3,9 +3,13 @@
 /**
  * Modal de recorte circular + zoom antes de subir el avatar (patrón tipo
  * “Tu Calle”, adaptado a tokens del portal: canvas cálido, tipografía existente).
+ *
+ * Renderiza el overlay con ReactDOM.createPortal para que salga del stacking
+ * context creado por backdrop-blur del SurfaceCard padre y quede sobre todo.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 
@@ -30,6 +34,11 @@ export default function AvatarCropDialog({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const onCropComplete = useCallback((_area: Area, px: Area) => {
     setCroppedAreaPixels(px);
@@ -49,9 +58,9 @@ export default function AvatarCropDialog({
     }
   };
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[200] flex items-end justify-center bg-ink/60 p-0 backdrop-blur-xl dark:bg-black/75 sm:items-center sm:p-4"
       role="dialog"
@@ -136,6 +145,7 @@ export default function AvatarCropDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

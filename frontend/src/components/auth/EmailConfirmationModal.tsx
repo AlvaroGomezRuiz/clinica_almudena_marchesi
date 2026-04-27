@@ -181,8 +181,7 @@ export function EmailConfirmationModal({ email, open, onClose }: EmailConfirmati
                   <strong className="text-white/55">promociones</strong>.
                 </p>
                 <p>
-                  <strong className="text-amber-400/70">Importante:</strong> abre el enlace en el{' '}
-                  <em className="text-white/55">mismo navegador</em> donde te registraste.
+                  Puedes abrirlo desde cualquier dispositivo o navegador.
                 </p>
               </div>
             </div>

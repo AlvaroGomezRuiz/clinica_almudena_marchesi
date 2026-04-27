@@ -243,21 +243,27 @@ otp_expiry = 3600
 
 [auth.email.template.confirmation]
 subject = "Confirma tu correo â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/confirmation.html"
 
 [auth.email.template.invite]
 subject = "Has sido invitado/a al portal â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/invite.html"
 
 [auth.email.template.magic_link]
 subject = "Tu enlace de acceso â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/magic_link.html"
 
 [auth.email.template.change_email_address]
 subject = "Confirma tu nuevo correo â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/change_email.html"
 
 [auth.email.template.reset_password]
 subject = "Restablecer contraseÃ±a â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/reset_password.html"
 
 [auth.email.template.reauthentication]
 subject = "CÃ³digo de verificaciÃ³n â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/reauthentication.html"
 
 # â”€â”€ Notificaciones de seguridad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # En producciÃ³n se activan desde Supabase Dashboard > Authentication >
@@ -266,30 +272,37 @@ subject = "CÃ³digo de verificaciÃ³n â€” ClÃ­nica Almudena Marchesi"
 [auth.email.notification.password_changed]
 enabled = true
 subject = "Tu contraseÃ±a ha sido cambiada â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/password_changed.html"
 
 [auth.email.notification.email_changed]
 enabled = true
 subject = "Tu correo electrÃ³nico ha cambiado â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/email_changed.html"
 
 [auth.email.notification.phone_changed]
 enabled = true
 subject = "Tu telÃ©fono ha sido actualizado â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/phone_changed.html"
 
 [auth.email.notification.identity_linked]
 enabled = true
 subject = "Nueva identidad vinculada a tu cuenta â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/identity_linked.html"
 
 [auth.email.notification.identity_unlinked]
 enabled = true
 subject = "Identidad desvinculada de tu cuenta â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/identity_unlinked.html"
 
 [auth.email.notification.mfa_added]
 enabled = true
 subject = "VerificaciÃ³n en dos pasos activada â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/mfa_added.html"
 
 [auth.email.notification.mfa_removed]
 enabled = true
 subject = "VerificaciÃ³n en dos pasos eliminada â€” ClÃ­nica Almudena Marchesi"
+content_path = "./templates/mfa_removed.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
