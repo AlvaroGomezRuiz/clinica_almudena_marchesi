@@ -381,6 +381,40 @@ export default function ChatPanel({
     };
   }, [supabase, conversacionId, mergeMensajeFromServer]);
 
+  // ───── Autoload adjuntos faltantes (audio sin adjuntos del SSR) ─────
+  // Si el server no pudo cargar los adjuntos (por timing, RLS, etc.),
+  // intentamos cargarlos client-side para resolver el placeholder "Cargando audio…".
+  const loadedAdjuntosRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const audioSinAdjuntos = mensajes.filter(
+      (m) =>
+        !m.pending &&
+        !m.id.startsWith('temp-') &&
+        (!m.adjuntos || m.adjuntos.length === 0) &&
+        m.body.trim() === CHAT_AUDIO_MESSAGE_BODY &&
+        !loadedAdjuntosRef.current.has(m.id)
+    );
+    if (audioSinAdjuntos.length === 0) return;
+
+    // Marcar como intentados para no repetir
+    for (const m of audioSinAdjuntos) {
+      loadedAdjuntosRef.current.add(m.id);
+    }
+
+    (async () => {
+      for (const m of audioSinAdjuntos) {
+        const adjuntos = await fetchAdjuntosForMensajeCliente(supabase, m.id);
+        if (adjuntos.length > 0) {
+          setMensajes((prev) =>
+            prev.map((msg) =>
+              msg.id === m.id ? { ...msg, adjuntos } : msg
+            )
+          );
+        }
+      }
+    })();
+  }, [mensajes, supabase]);
+
   // ───── Envío con optimistic UI ─────
   const handleSend = useCallback(
     (raw: string) => {
