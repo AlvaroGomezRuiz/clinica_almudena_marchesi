@@ -191,13 +191,20 @@ export async function POST(req: NextRequest): Promise<Response> {
   const storageClient = createAdminClient() ?? supabase;
   const { error: upErr } = await storageClient.storage
     .from('chat-adjuntos')
-    .upload(storagePath, bytes, {
+    .upload(storagePath, Buffer.from(bytes), {
       contentType: bucketMime,
       upsert: false,
       cacheControl: '3600',
     });
 
   if (upErr) {
+    console.error('[attach] Storage upload FAILED:', {
+      message: upErr.message,
+      path: storagePath,
+      mime: bucketMime,
+      size: bytes.length,
+      usingAdmin: storageClient !== supabase,
+    });
     // rollback blanco: no podemos borrar el mensaje (RPC lo insertó), pero
     // dejamos un error claro para el cliente.
     return NextResponse.json(
