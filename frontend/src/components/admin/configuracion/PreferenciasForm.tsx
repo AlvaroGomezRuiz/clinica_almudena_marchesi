@@ -2,7 +2,7 @@
 
 /**
  * PreferenciasForm — toggles de notificaciones + privacidad + sonido.
- * Cada cambio llama a `actualizarPreferenciasAction` (patch parcial).
+ * Agrupados por categorías. Cada cambio llama a `actualizarPreferenciasAction` (patch parcial).
  */
 
 import { useState, useTransition } from 'react';
@@ -19,9 +19,7 @@ type Role = 'admin' | 'paciente';
 interface Props {
   readonly prefs: NotificacionesPrefs;
   /**
-   * Rol del usuario actual. Define qué toggles son visibles:
-   *   - paciente (default): bienvenida, recordatorios ~48h y ~24h, recursos, etc.
-   *   - admin: reserva, cancelación, recordatorios, privacidad, desktop.
+   * Rol del usuario actual. Define qué toggles son visibles.
    */
   readonly role?: Role;
 }
@@ -30,71 +28,95 @@ interface ToggleDef {
   readonly key: keyof PreferenciasPatch;
   readonly label: string;
   readonly description: string;
-  /** Roles en los que aparece este toggle. Default: ambos. */
   readonly roles?: readonly Role[];
 }
 
-const EMAIL_TOGGLES: readonly ToggleDef[] = [
-  {
-    key: 'welcome',
-    label: 'Email de bienvenida',
-    description: 'Confirmación al crear la cuenta.',
-    roles: ['paciente'],
-  },
-  {
-    key: 'booking_confirmed',
-    label: 'Reserva confirmada',
-    description: 'Recibes copia cuando se agenda una sesión.',
-  },
-  {
-    key: 'booking_cancelled',
-    label: 'Reserva cancelada',
-    description: 'Aviso si una sesión queda cancelada.',
-  },
-  {
-    key: 'reminder_48h',
-    label: 'Recordatorio ~48h antes',
-    description: 'Email en la franja 47h–49h antes del inicio (en ~2 días).',
-  },
-  {
-    key: 'reminder_24h',
-    label: 'Recordatorio ~24h antes',
-    description: 'Email en la franja 23h–25h antes del inicio (mañana). La cancelación online sigue requiriendo 48h.',
-  },
-  {
-    key: 'nueva_asignacion',
-    label: 'Nuevo recurso asignado',
-    description: 'Cuando Almudena te comparte una tarea o lectura.',
-    roles: ['paciente'],
-  },
-  {
-    key: 'marketing',
-    label: 'Novedades y talleres',
-    description: 'Comunicaciones esporádicas sobre grupos y contenidos.',
-    roles: ['paciente'],
-  },
-];
+interface CategoryDef {
+  readonly id: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly toggles: readonly ToggleDef[];
+}
 
-const UI_TOGGLES: readonly ToggleDef[] = [
+const CATEGORIES: readonly CategoryDef[] = [
   {
-    key: 'privacy_mode_default',
-    label: 'Modo privacidad por defecto',
-    description: 'Oculta automáticamente datos sensibles al abrir fichas y cards.',
+    id: 'citas',
+    title: 'Citas y Sesiones',
+    description: 'Gestión de tus reservas y recordatorios automáticos.',
+    toggles: [
+      {
+        key: 'booking_confirmed',
+        label: 'Reserva confirmada',
+        description: 'Recibirás un email con los detalles cada vez que se agende una sesión.',
+      },
+      {
+        key: 'booking_cancelled',
+        label: 'Reserva cancelada',
+        description: 'Aviso en caso de que una sesión quede anulada.',
+      },
+      {
+        key: 'reminder_48h',
+        label: 'Recordatorio ~48h',
+        description: 'Recibe un aviso 48h antes de la sesión para poder cancelar sin penalización.',
+      },
+      {
+        key: 'reminder_24h',
+        label: 'Recordatorio ~24h',
+        description: 'Recordatorio final un día antes de la sesión.',
+      },
+    ],
   },
   {
-    key: 'sound',
-    label: 'Sonido en chat',
-    description: 'Reproducir un tono al recibir mensajes nuevos.',
+    id: 'mensajes',
+    title: 'Mensajes y Recursos',
+    description: 'Avisos sobre el chat y material compartido por Almudena.',
+    toggles: [
+      {
+        key: 'nueva_asignacion',
+        label: 'Nuevos recursos o tareas',
+        description: 'Aviso cuando tengas disponible nuevo material de trabajo.',
+        roles: ['paciente'],
+      },
+      {
+        key: 'chat_nuevo_mensaje',
+        label: 'Email por mensajes no leídos',
+        description: 'Recibirás un correo si tienes mensajes en el chat sin leer tras 15 minutos.',
+      },
+      {
+        key: 'sound',
+        label: 'Sonido en el chat',
+        description: 'Reproducir un tono suave al recibir un nuevo mensaje.',
+      },
+    ],
   },
   {
-    key: 'desktop_notifications',
-    label: 'Notificaciones del navegador',
-    description: 'Muestra avisos del sistema cuando la app está en segundo plano.',
-  },
-  {
-    key: 'chat_nuevo_mensaje',
-    label: 'Email al recibir mensaje',
-    description: 'Copia por email si hay mensajes sin leer >15 min.',
+    id: 'sistema',
+    title: 'Privacidad y Cuenta',
+    description: 'Ajustes sobre el funcionamiento de la plataforma y novedades.',
+    toggles: [
+      {
+        key: 'privacy_mode_default',
+        label: 'Modo privacidad por defecto',
+        description: 'Oculta automáticamente los datos sensibles (como DNI o email) en pantalla.',
+      },
+      {
+        key: 'desktop_notifications',
+        label: 'Notificaciones del navegador',
+        description: 'Avisos nativos cuando la aplicación está en segundo plano.',
+      },
+      {
+        key: 'welcome',
+        label: 'Emails de bienvenida',
+        description: 'Comunicaciones iniciales tras registrar tu cuenta.',
+        roles: ['paciente'],
+      },
+      {
+        key: 'marketing',
+        label: 'Novedades y talleres',
+        description: 'Correos esporádicos sobre nuevas terapias de grupo y eventos.',
+        roles: ['paciente'],
+      },
+    ],
   },
 ];
 
@@ -126,31 +148,30 @@ export default function PreferenciasForm({
     });
   };
 
-  const emailToggles = EMAIL_TOGGLES.filter(
-    (t) => !t.roles || t.roles.includes(role)
-  );
-  const uiToggles = UI_TOGGLES.filter(
-    (t) => !t.roles || t.roles.includes(role)
-  );
-
   return (
-    <div className="space-y-6">
-      <ToggleGroup
-        title={role === 'admin' ? 'Avisos operativos por email' : 'Notificaciones por email'}
-        toggles={emailToggles}
-        prefs={local}
-        savingKey={savingKey}
-        onToggle={toggle}
-      />
-      <ToggleGroup
-        title="Experiencia en la app"
-        toggles={uiToggles}
-        prefs={local}
-        savingKey={savingKey}
-        onToggle={toggle}
-      />
+    <div className="space-y-8">
+      {CATEGORIES.map((cat) => {
+        const visibleToggles = cat.toggles.filter(
+          (t) => !t.roles || t.roles.includes(role)
+        );
+
+        if (visibleToggles.length === 0) return null;
+
+        return (
+          <ToggleGroup
+            key={cat.id}
+            title={cat.title}
+            description={cat.description}
+            toggles={visibleToggles}
+            prefs={local}
+            savingKey={savingKey}
+            onToggle={toggle}
+          />
+        );
+      })}
+
       {error ? (
-        <p role="alert" className="font-body text-[0.8rem] text-red-600 dark:text-red-400">
+        <p role="alert" className="font-body text-[0.85rem] text-red-600 dark:text-red-400 mt-4">
           Error: {error}
         </p>
       ) : null}
@@ -160,6 +181,7 @@ export default function PreferenciasForm({
 
 interface GroupProps {
   readonly title: string;
+  readonly description?: string;
   readonly toggles: readonly ToggleDef[];
   readonly prefs: NotificacionesPrefs;
   readonly savingKey: string | null;
@@ -168,6 +190,7 @@ interface GroupProps {
 
 function ToggleGroup({
   title,
+  description,
   toggles,
   prefs,
   savingKey,
@@ -175,20 +198,27 @@ function ToggleGroup({
 }: GroupProps): JSX.Element {
   return (
     <div>
-      <h3 className="mb-3 font-display text-[0.95rem] italic text-ink dark:text-white">
-        {title}
-      </h3>
-      <ul className="divide-y divide-ink/5 dark:divide-white/5">
+      <div className="mb-4">
+        <h3 className="font-display text-[1.15rem] italic text-ink dark:text-white">
+          {title}
+        </h3>
+        {description ? (
+          <p className="mt-1 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <ul className="divide-y divide-ink/5 dark:divide-white/5 border-t border-b border-ink/5 dark:border-white/5">
         {toggles.map((t) => {
           const value = Boolean((prefs as unknown as Record<string, boolean>)[t.key]);
           const isSaving = savingKey === String(t.key);
           return (
-            <li key={String(t.key)} className="flex items-start justify-between gap-4 py-3">
-              <div>
-                <p className="font-body text-[0.88rem] text-ink dark:text-white">
+            <li key={String(t.key)} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0 border-none">
+              <div className="pr-4">
+                <p className="font-body text-[0.9rem] font-medium text-ink dark:text-white/90">
                   {t.label}
                 </p>
-                <p className="font-body text-[0.72rem] text-ink-muted dark:text-white/55">
+                <p className="mt-0.5 font-body text-[0.8rem] leading-relaxed text-ink-soft dark:text-white/60">
                   {t.description}
                 </p>
               </div>
@@ -198,15 +228,15 @@ function ToggleGroup({
                 aria-checked={value}
                 aria-busy={isSaving}
                 onClick={() => onToggle(t.key, value)}
-                className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition ${
+                className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-900 ${
                   value
                     ? 'bg-primary'
-                    : 'bg-ink/15 dark:bg-white/15'
-                } ${isSaving ? 'opacity-60' : ''}`}
+                    : 'bg-ink/20 dark:bg-white/20'
+                } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
-                    value ? 'left-[1.35rem]' : 'left-0.5'
+                  className={`absolute top-0.5 h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
+                    value ? 'translate-x-[1.35rem]' : 'translate-x-0.5'
                   }`}
                 />
               </button>
