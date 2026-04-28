@@ -94,7 +94,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   const portalPath = h.get('x-ss-portal-path') ?? '';
   const portalUnlocked = h.get('x-ss-portal-unlocked') === '1';
-  if (portalPath && !portalUnlocked && !isPortalGateBypassPath(portalPath)) {
+  const portalWelcomeDone = h.get(SSH_KEYS.portalWelcomeDone) === '1';
+  if (
+    portalPath &&
+    !portalUnlocked &&
+    !isPortalGateBypassPath(portalPath) &&
+    !portalWelcomeDone
+  ) {
     redirect('/portal/bienvenida');
   }
 

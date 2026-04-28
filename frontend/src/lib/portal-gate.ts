@@ -4,9 +4,9 @@ import type { Database } from '@/lib/supabase/types';
 
 /**
  * Rutas permitidas sin “portal desbloqueado” (pago, bono con sesión o cita
- * confirmada; ver `isPortalUnlocked` en middleware). Onboarding: bienvenida + pagos
- * + citas (p. ej. reserva o prepago) mientras se completa el primer flujo. Emails
- * de comprobante / bienvenida dependen de Edge `send-email` (no de esta lista).
+ * confirmada; ver `isPortalUnlocked` en middleware). Operativas durante el primer
+ * flujo económico/clínico. La bienvenida obligatoria (una vez) se controla con
+ * `profiles.portal_welcome_completed_at` en layout + middleware (`x-ss-portal-welcome-done`).
  */
 export function isPortalGateBypassPath(pathname: string): boolean {
   if (pathname === '/portal/bienvenida') return true;

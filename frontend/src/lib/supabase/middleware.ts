@@ -43,6 +43,7 @@ const H_USER_NAME = 'x-ss-user-name';
 const H_USER_AVATAR = 'x-ss-user-avatar';
 const H_PORTAL_PATH = 'x-ss-portal-path';
 const H_PORTAL_UNLOCKED = 'x-ss-portal-unlocked';
+const H_PORTAL_WELCOME_DONE = 'x-ss-portal-welcome-done';
 
 const SSH_HEADERS = [
   H_USER_ID,
@@ -52,6 +53,7 @@ const SSH_HEADERS = [
   H_USER_AVATAR,
   H_PORTAL_PATH,
   H_PORTAL_UNLOCKED,
+  H_PORTAL_WELCOME_DONE,
 ];
 
 /**
@@ -123,7 +125,7 @@ export async function updateSupabaseSession(
   // Cargar perfil con rol (una sola query extra gracias a la RLS profiles_self_select).
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, display_name, avatar_url')
+    .select('role, display_name, avatar_url, portal_welcome_completed_at')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -147,6 +149,10 @@ export async function updateSupabaseSession(
       const unlocked = await isPortalUnlocked(supabase, user.id);
       requestHeaders.set(H_PORTAL_PATH, pathname);
       requestHeaders.set(H_PORTAL_UNLOCKED, unlocked ? '1' : '0');
+      const welcomeDone =
+        typeof profile.portal_welcome_completed_at === 'string' &&
+        profile.portal_welcome_completed_at.length > 0;
+      requestHeaders.set(H_PORTAL_WELCOME_DONE, welcomeDone ? '1' : '0');
     }
 
     const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
@@ -175,4 +181,5 @@ export const SSH_KEYS = {
   role: H_USER_ROLE,
   name: H_USER_NAME,
   avatar: H_USER_AVATAR,
+  portalWelcomeDone: H_PORTAL_WELCOME_DONE,
 } as const;

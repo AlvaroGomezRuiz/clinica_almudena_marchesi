@@ -127,6 +127,14 @@ export async function reservarCitaAction(
           'Ese hueco acaba de ocuparse (reserva en curso o cita ya confirmada). Actualiza la lista o elige otra hora.',
       };
     }
+    if (/slot_fuera_plantilla|dia_bloqueado_por_plantilla/i.test(msg)) {
+      return {
+        ok: false,
+        code: 'fuera_horario',
+        message:
+          'Ese horario no está disponible según la plantilla de agenda activa. Elige otro día u otra franja.',
+      };
+    }
     return { ok: false, code: 'unknown', message: msg };
   }
 

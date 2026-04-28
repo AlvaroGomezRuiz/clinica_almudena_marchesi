@@ -46,6 +46,8 @@ export interface Profile {
   avatar_url: string | null;
   numero_colegiada: string | null;
   intrusion_alerts_enabled: boolean;
+  /** Paciente cerró la bienvenida del portal (onboarding una sola vez). */
+  portal_welcome_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
