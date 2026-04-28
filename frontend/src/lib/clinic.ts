@@ -116,6 +116,26 @@ export const CLINIC_PUBLIC_PHONE_DISPLAY = '+34 646 445 991' as const;
 /** Mismo número en formato E.164 para `tel:` y schema.org `telephone`. */
 export const CLINIC_PUBLIC_PHONE_E164 = '+34646445991' as const;
 
+/**
+ * Filas de horario **presencial** en página Contacto, FAQ y JSON-LD `LocalBusiness`.
+ * Puede no coincidir todavía con la agenda interna del portal hasta alineación operativa.
+ * De momento: apertura presencial solo jueves (mañana y tarde con franja intermedia).
+ */
+export const CLINIC_PUBLIC_PRESENCIAL_SCHEDULE_ROWS: ReadonlyArray<{
+  readonly day: string;
+  readonly hours: string;
+}> = [
+  { day: 'Lunes — Miércoles', hours: 'Cerrado (presencial)' },
+  { day: 'Jueves', hours: '9:00 — 15:00 · 16:00 — 21:00' },
+  { day: 'Viernes — Domingo', hours: 'Cerrado (presencial)' },
+] as const;
+
+/**
+ * Resumen en prosa para metadatos y FAQ (no afecta a lógica de reservas del portal).
+ */
+export const CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES: string =
+  'Atención presencial en el consultorio: de momento solo los jueves, en franja de mañana (9:00—15:00) y de tarde (16:00—21:00). El resto de días el consultorio permanece cerrado en lo presencial. El calendario de huecos en el portal y otras modalidades (p. ej. online) siguen su propia disponibilidad hasta alinear criterios operativos.';
+
 export const CLINIC_PAYMENT_METHODS = [
   'Efectivo',
   'Transferencia',

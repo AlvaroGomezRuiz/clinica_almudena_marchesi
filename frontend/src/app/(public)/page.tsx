@@ -2,16 +2,28 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
 import HeroSection from '@/components/sections/HeroSection';
+import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import {
   CLINIC_GEO_LAT,
   CLINIC_GEO_LNG,
   CLINIC_PUBLIC_SITE_URL,
   getClinicAbsoluteImageUrl,
 } from '@/lib/clinic';
+import { homePageFaq } from '@/lib/seo/clinic-faq-content';
+import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
+import { buildHomePageWebJsonLd } from '@/lib/seo/marketing-page-json-ld';
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
 
 const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+
+const homeFaqPageUrl: string = new URL('/', CLINIC_PUBLIC_SITE_URL).href;
+const homeFaqLd = buildFaqPageJsonLd(homePageFaq, homeFaqPageUrl);
+const homeWebPageLd = buildHomePageWebJsonLd({
+  name: 'Almudena Marchesi | Clínica de psicología clínica en Moncloa, Madrid',
+  description:
+    'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Terapia basada en evidencia. Consulta cerca de Calle Meléndez Valdés. Primera sesión exploratoria bajo cita.',
+});
 
 /* ── Dynamic imports para secciones below-the-fold ──────────────────
    ssr: true  → Google los indexa en el HTML inicial (SEO intacto)
@@ -117,7 +129,7 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: CLINIC_PUBLIC_SITE_URL,
-    languages: { 'es-ES': CLINIC_PUBLIC_SITE_URL },
+    languages: { 'es-ES': CLINIC_PUBLIC_SITE_URL, 'x-default': CLINIC_PUBLIC_SITE_URL },
   },
   ...(googleVerification ? { verification: { google: googleVerification } } : {}),
   other: {
@@ -138,6 +150,14 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeWebPageLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqLd) }}
+      />
       <div className="bg-canvas overflow-x-hidden">
         {/* Hero: importación estática — carga inmediata, máxima prioridad */}
         <HeroSection />
@@ -152,6 +172,14 @@ export default function HomePage() {
         </div>
         <div className="cv-auto">
           <MoncloaSection />
+        </div>
+        <div className="cv-auto">
+          <PublicFaqSection
+            id="faq-inicio"
+            className="bg-canvas"
+            heading="Dudas frecuentes antes de reservar"
+            items={homePageFaq}
+          />
         </div>
         <div className="cv-auto-sm">
           <CTASection />

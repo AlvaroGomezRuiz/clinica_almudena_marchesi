@@ -32,11 +32,8 @@ export function buildLegalWebPageJsonLd(
       name: 'Clínica Almudena Marchesi',
       url: base,
     },
+    about: { '@id': `${base}/#localbusiness` },
     dateModified: LEGAL_LAST_UPDATED_ISO,
-    publisher: {
-      '@type': 'MedicalBusiness',
-      name: 'Clínica Almudena Marchesi',
-      url: base,
-    },
+    publisher: { '@id': `${base}/#localbusiness` },
   };
 }

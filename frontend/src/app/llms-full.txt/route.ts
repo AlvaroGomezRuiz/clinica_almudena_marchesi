@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import {
+  CLINIC_ADDRESS,
+  CLINIC_CONTACT_EMAIL,
+  CLINIC_PUBLIC_PHONE_DISPLAY,
+  CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES,
+  CLINIC_PUBLIC_SITE_URL,
+} from '@/lib/clinic';
 import { CLINIC_PRIMARY_KEYWORDS } from '@/lib/seo/primary-keywords';
+import { getGeoDiscoveryBrief } from '@/lib/seo/geo-discovery-brief';
 
 export const dynamic = 'force-static';
 
@@ -28,10 +35,16 @@ export async function GET(): Promise<NextResponse> {
       '',
       `## Consultas típicas (sólo informativo): ${kws}`,
       '',
-      '## Descubrimiento',
-      `${base}/sitemap.xml`,
-      `${base}/llms.txt`,
-      `${base}/ai/summary.json`,
+      '## NAP (web pública; verificar con ficha local)',
+      `Dirección: ${CLINIC_ADDRESS} (CP 28015, Madrid).`,
+      `Tel: ${CLINIC_PUBLIC_PHONE_DISPLAY} · ${CLINIC_CONTACT_EMAIL}`,
+      `Presencial: ${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES}`,
+      'Cobertura informativa: Madrid (incl. barrio de Almagro en la capital, Chamartín; no Ciudad Real).',
+      `Registro: ${base}/registro-paciente`,
+      '',
+      '## Descubrimiento estructurado (IA)',
+      `${base}/ai/summary.json (NAP+geo+FAQ)`,
+      `${base}/sitemap.xml · ${base}/llms.txt`,
       '',
       '## Páginas (URLs absolutas)',
       `${base}/ (inicio)`,
@@ -48,6 +61,9 @@ export async function GET(): Promise<NextResponse> {
       '',
       '## Notas',
       '- Cita, mensajes o pagos: portal con autenticación (excluido de este índice con robots).',
+      '',
+      '## Brief ampliado (SEO semántico + interpretación local)',
+      getGeoDiscoveryBrief(base),
       '',
     ].join('\n')
   );

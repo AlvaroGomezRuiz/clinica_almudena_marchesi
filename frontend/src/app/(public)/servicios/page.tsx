@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
+import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import {
   CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS,
   CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS,
@@ -12,20 +13,21 @@ import {
   CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS,
   CLINIC_PRICE_INDIVIDUAL_CENTIMOS,
   CLINIC_PRICE_PAREJA_CENTIMOS,
+  CLINIC_PUBLIC_SITE_URL,
   CLINIC_SESSION_DURATION_MIN,
   CLINIC_TARIFAS_SESION_RESUMEN,
   formatClinicBonoAhorroVsSueltoIndividual,
   formatClinicBonoAhorroVsSueltoPareja,
   formatClinicPrecioEUR,
 } from '@/lib/clinic';
-import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
+import { serviciosPageFaq } from '@/lib/seo/clinic-faq-content';
+import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
+import { buildServiciosPageSeoJsonLd } from '@/lib/seo/servicios-page-json-ld';
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
 
-const serviciosBreadcrumbLd = buildBreadcrumbListJsonLd([
-  { name: 'Inicio', path: '/' },
-  { name: 'Servicios', path: '/servicios' },
-]);
+const serviciosFaqPageUrl: string = new URL('/servicios', CLINIC_PUBLIC_SITE_URL).href;
+const serviciosFaqLd = buildFaqPageJsonLd(serviciosPageFaq, serviciosFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/servicios',
@@ -121,12 +123,32 @@ const BONOS = [
   },
 ] as const;
 
+const serviciosSeoRichLd = buildServiciosPageSeoJsonLd({
+  path: '/servicios',
+  pageName: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
+  pageDescription:
+    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas y bonos: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
+  breadcrumb: [
+    { name: 'Inicio', path: '/' },
+    { name: 'Servicios', path: '/servicios' },
+  ],
+  services: SERVICES.map((s) => ({
+    name: s.title,
+    href: s.href,
+    description: s.body,
+  })),
+});
+
 export default function ServiciosPage() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviciosBreadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviciosSeoRichLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviciosFaqLd) }}
       />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
@@ -291,11 +313,17 @@ export default function ServiciosPage() {
         />
       </section>
 
-      {/* FAQ-ish guidance */}
-      <section className="py-20 md:py-28 px-6 md:px-12">
+      {/* FAQ + CTA breve */}
+      <PublicFaqSection
+        id="faq-servicios"
+        className="bg-canvas"
+        heading="Preguntas habituales sobre servicios y reservas"
+        items={serviciosPageFaq}
+      />
+      <section className="py-16 md:py-20 px-6 md:px-12">
         <div className="max-w-screen-xl mx-auto text-center">
           <ScrollReveal>
-            <h2 className="font-display text-display-3 text-ink mb-4 italic">
+            <h2 className="font-display text-display-3 text-ink mb-4 italic text-balance">
               ¿No sabes qué modalidad es la mejor para ti?
             </h2>
             <p className="text-ink-soft mb-8 max-w-lg mx-auto text-pretty">

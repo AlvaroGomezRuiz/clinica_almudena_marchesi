@@ -142,6 +142,7 @@ export const metadata: Metadata = {
     canonical: '/',
     languages: {
       'es-ES': CLINIC_PUBLIC_SITE_URL,
+      'x-default': CLINIC_PUBLIC_SITE_URL,
     },
   },
   category: 'health',

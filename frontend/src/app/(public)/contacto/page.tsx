@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import MoncloaSection from '@/components/sections/MoncloaSection';
 import CTASection from '@/components/sections/CTASection';
@@ -12,20 +13,33 @@ import {
   CLINIC_CONTACT_EMAIL,
   CLINIC_PUBLIC_PHONE_DISPLAY,
   CLINIC_PUBLIC_PHONE_E164,
+  CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES,
+  CLINIC_PUBLIC_PRESENCIAL_SCHEDULE_ROWS,
+  CLINIC_PUBLIC_SITE_URL,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
-import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
+import { contactoPageFaq } from '@/lib/seo/clinic-faq-content';
+import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
+import { buildMarketingPageJsonLd } from '@/lib/seo/marketing-page-json-ld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-const contactoBreadcrumbLd = buildBreadcrumbListJsonLd([
-  { name: 'Inicio', path: '/' },
-  { name: 'Contacto', path: '/contacto' },
-]);
+const contactoSeoLd = buildMarketingPageJsonLd({
+  path: '/contacto',
+  name: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
+  description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa–Chamberí, Madrid). Presencial: de momento solo jueves (franjas publicadas en la página). Teléfono, correo ${CLINIC_CONTACT_EMAIL} y cómo llegar.`,
+  breadcrumb: [
+    { name: 'Inicio', path: '/' },
+    { name: 'Contacto', path: '/contacto' },
+  ],
+});
+
+const contactoFaqPageUrl: string = new URL('/contacto', CLINIC_PUBLIC_SITE_URL).href;
+const contactoFaqLd = buildFaqPageJsonLd(contactoPageFaq, contactoFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/contacto',
   title: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
-  description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa-Chamberí): teléfono, correo ${CLINIC_CONTACT_EMAIL}, horario y cómo llegar en Madrid.`,
+  description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa–Chamberí, Madrid). Presencial: de momento solo jueves (franjas publicadas en la página). Teléfono, correo ${CLINIC_CONTACT_EMAIL} y cómo llegar.`,
   keywords: [
     'contacto psicóloga Madrid',
     'consulta Meléndez Valdés',
@@ -61,18 +75,16 @@ const CONTACT_ITEMS = [
   },
 ] as const;
 
-const SCHEDULE = [
-  { day: 'Lunes — Viernes', hours: '9:00 — 20:00' },
-  { day: 'Sábados', hours: 'Bajo demanda' },
-  { day: 'Domingos', hours: 'Cerrado' },
-] as const;
-
 export default function ContactoPage() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactoBreadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactoSeoLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactoFaqLd) }}
       />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
@@ -179,16 +191,19 @@ export default function ContactoPage() {
             <ScrollReveal delay={0.12}>
               <PremiumCard tilt={false}>
                 <div className="p-6 md:p-8">
+                  <p className="font-mono text-label-sm uppercase text-ink-muted mb-4">
+                    Apertura presencial en consultorio
+                  </p>
                   <div className="space-y-4">
-                    {SCHEDULE.map((slot) => (
+                    {CLINIC_PUBLIC_PRESENCIAL_SCHEDULE_ROWS.map((slot) => (
                       <div
                         key={slot.day}
-                        className="flex justify-between items-center py-2 border-b border-line last:border-0"
+                        className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-4 py-2 border-b border-line last:border-0"
                       >
                         <span className="font-body text-[0.92rem] text-ink">
                           {slot.day}
                         </span>
-                        <span className="font-mono text-[0.82rem] text-ink-soft tracking-wide">
+                        <span className="font-mono text-[0.82rem] text-ink-soft tracking-wide text-left sm:text-right sm:max-w-[min(100%,20rem)]">
                           {slot.hours}
                         </span>
                       </div>
@@ -196,6 +211,11 @@ export default function ContactoPage() {
                   </div>
                 </div>
               </PremiumCard>
+            </ScrollReveal>
+            <ScrollReveal delay={0.14}>
+              <p className="text-ink-muted text-[0.88rem] leading-relaxed text-pretty font-body">
+                {CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES}
+              </p>
             </ScrollReveal>
 
             {/* Location Card */}
@@ -240,6 +260,13 @@ export default function ContactoPage() {
           </div>
         </div>
       </section>
+
+      <PublicFaqSection
+        id="faq-contacto"
+        className="bg-canvas-alt"
+        heading="Dudas sobre horario, ubicación y canales de contacto"
+        items={contactoPageFaq}
+      />
 
       <MoncloaSection />
       <CTASection />

@@ -1,5 +1,5 @@
 /**
- * JSON-LD @graph (WebSite + LocalBusiness/MedicalBusiness + founder Person)
+ * JSON-LD @graph (WebSite + LocalBusiness + MedicalBusiness + Person)
  * para SEO local y Knowledge Graph. Una sola fuente de verdad con `lib/clinic.ts`.
  */
 import {
@@ -21,7 +21,27 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
   const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
   const localBusinessId = `${base}/#localbusiness`;
   const websiteId = `${base}/#website`;
+  const personId = `${base}/#person-almudena-marchesi`;
   const sameAs = getClinicSameAsUrls();
+
+  const person: Record<string, unknown> = {
+    '@type': 'Person',
+    '@id': personId,
+    name: 'Almudena Marchesi Fernández',
+    image: ogProfileImage,
+    url: base,
+    jobTitle: 'Psicóloga general sanitaria',
+    knowsLanguage: ['es-ES', 'es'],
+    identifier: {
+      '@type': 'PropertyValue',
+      name: 'Número de colegiación (COP Madrid)',
+      value: CLINIC_PROFESSIONAL_LICENSE,
+    },
+    worksFor: { '@id': localBusinessId },
+  };
+  if (sameAs.length > 0) {
+    person.sameAs = sameAs;
+  }
 
   const localBusiness: Record<string, unknown> = {
     '@type': ['LocalBusiness', 'MedicalBusiness'],
@@ -34,6 +54,16 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
     url: base,
     telephone: CLINIC_PUBLIC_PHONE_E164,
     email: CLINIC_CONTACT_EMAIL,
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        telephone: CLINIC_PUBLIC_PHONE_E164,
+        email: CLINIC_CONTACT_EMAIL,
+        contactType: 'customer service',
+        availableLanguage: 'Spanish',
+        areaServed: { '@type': 'AdministrativeArea', name: 'Comunidad de Madrid' },
+      },
+    ],
     image: ogProfileImage,
     logo: ogProfileImage,
     priceRange: '€€',
@@ -41,6 +71,42 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
     paymentAccepted: 'Cash, Credit Card, Bank Transfer',
     hasMap: getClinicGoogleMapsHref(),
     medicalSpecialty: 'https://schema.org/Psychotherapy',
+    availableService: [
+      {
+        '@type': 'Service',
+        name: 'Terapia psicológica individual (adultos)',
+        url: `${base}/servicios`,
+        serviceType: 'Psychotherapy',
+        description:
+          'Proceso clínico individual: ansiedad, estado de ánimo, estrés, duelo y otras dificultades, con cita.',
+        provider: { '@id': localBusinessId },
+      },
+      {
+        '@type': 'Service',
+        name: 'Terapia de pareja',
+        url: `${base}/servicios`,
+        serviceType: 'Psychotherapy',
+        description: 'Acompañamiento a parejas: comunicación, relación y ajuste terapéutico bajo cita.',
+        provider: { '@id': localBusinessId },
+      },
+      {
+        '@type': 'Service',
+        name: 'Psicoterapia infanto-juvenil y orientación a familia',
+        url: `${base}/servicios`,
+        serviceType: 'Psychotherapy',
+        description: 'Enfoque adaptado a edad y contexto familiar, previa valoración.',
+        provider: { '@id': localBusinessId },
+      },
+      {
+        '@type': 'Service',
+        name: 'Psicoterapia online (enlace acordado)',
+        url: `${base}/servicios`,
+        serviceType: 'Psychotherapy',
+        description:
+          'Modalidad a distancia con criterio clínico, canal seguro y política de privacidad del portal.',
+        provider: { '@id': localBusinessId },
+      },
+    ],
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'Calle de Meléndez Valdés 22, 1D',
@@ -63,13 +129,21 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
       { '@type': 'AdministrativeArea', name: 'Comunidad de Madrid' },
       { '@type': 'Place', name: 'Moncloa – Aravaca' },
       { '@type': 'Place', name: 'Chamberí' },
+      { '@type': 'Place', name: 'Chamartín' },
+      { '@type': 'Place', name: 'Almagro (Madrid), barrio de Chamartín' },
     ],
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        dayOfWeek: 'Thursday',
         opens: '09:00',
-        closes: '20:00',
+        closes: '15:00',
+      },
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: 'Thursday',
+        opens: '16:00',
+        closes: '21:00',
       },
     ],
     knowsAbout: [
@@ -86,12 +160,7 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
       'Terapia de pareja',
       'Terapia infanto-juvenil',
     ],
-    founder: {
-      '@type': 'Person',
-      name: 'Almudena Marchesi Fernández',
-      jobTitle: `Psicóloga sanitaria · Colegiada nº ${CLINIC_PROFESSIONAL_LICENSE}`,
-      worksFor: { '@id': localBusinessId },
-    },
+    founder: { '@id': personId },
   };
 
   if (sameAs.length > 0) {
@@ -111,7 +180,18 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
         url: base,
         inLanguage: 'es-ES',
         publisher: { '@id': localBusinessId },
+        about: { '@id': localBusinessId },
+        mainEntity: { '@id': localBusinessId },
+        potentialAction: {
+          '@type': 'ReserveAction',
+          name: 'Registro y reserva en el portal del paciente',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: `${base}/registro-paciente`,
+          },
+        },
       },
+      person,
       localBusiness,
     ],
   };

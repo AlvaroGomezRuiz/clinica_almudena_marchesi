@@ -1,17 +1,30 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
+import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
-import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
+import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { enfoquePageFaq } from '@/lib/seo/clinic-faq-content';
+import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
+import { buildMarketingPageJsonLd } from '@/lib/seo/marketing-page-json-ld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-const enfoqueBreadcrumbLd = buildBreadcrumbListJsonLd([
-  { name: 'Inicio', path: '/' },
-  { name: 'Enfoque', path: '/enfoque' },
-]);
+const enfoqueSeoLd = buildMarketingPageJsonLd({
+  path: '/enfoque',
+  name: 'Enfoque terapéutico | Almudena Marchesi — Psicología clínica Madrid',
+  description:
+    'Metodología basada en escucha activa, marco no juzgante y rigor clínico. Psicología en Moncloa-Chamberí, Madrid.',
+  breadcrumb: [
+    { name: 'Inicio', path: '/' },
+    { name: 'Enfoque', path: '/enfoque' },
+  ],
+});
+
+const enfoqueFaqPageUrl: string = new URL('/enfoque', CLINIC_PUBLIC_SITE_URL).href;
+const enfoqueFaqLd = buildFaqPageJsonLd(enfoquePageFaq, enfoqueFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/enfoque',
@@ -48,7 +61,11 @@ export default function EnfoquePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(enfoqueBreadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(enfoqueSeoLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(enfoqueFaqLd) }}
       />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
@@ -151,6 +168,13 @@ export default function EnfoquePage() {
           </ScrollReveal>
         </div>
       </section>
+
+      <PublicFaqSection
+        id="faq-enfoque"
+        className="bg-canvas-alt"
+        heading="Cómo se entiende el proceso terapéutico"
+        items={enfoquePageFaq}
+      />
 
       <CTASection />
     </div>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_GEO_LAT, CLINIC_GEO_LNG, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_GEO_LAT, CLINIC_GEO_LNG, CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
 
 export interface BuildPublicPageMetadataParams {
   /** Ruta absoluta desde la raíz del sitio, p. ej. `/contacto` */
@@ -28,8 +28,10 @@ export function buildPublicPageMetadata(
   const path = params.path.startsWith('/') ? params.path : `/${params.path}`;
   const url = `${base}${path}`;
   /** Imagen social por defecto (misma que layout raíz); mejora previews en OG/Twitter. */
-  const defaultSocialImage = `${base}/images/almudena-profile.avif`;
+  const defaultSocialImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
   const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+  const bingVerification = process.env.NEXT_PUBLIC_BING_WEBMASTER_VERIFICATION?.trim();
+  const twitterSite = process.env.NEXT_PUBLIC_TWITTER_SITE?.trim();
   const ogImage = {
     url: defaultSocialImage,
     width: 1200,
@@ -46,6 +48,7 @@ export function buildPublicPageMetadata(
       canonical: url,
       languages: {
         'es-ES': url,
+        'x-default': url,
       },
     },
     openGraph: {
@@ -62,6 +65,7 @@ export function buildPublicPageMetadata(
       title: params.title,
       description: params.description,
       images: [ogImage],
+      ...(twitterSite ? { site: twitterSite } : {}),
     },
     robots: {
       index: true,
@@ -75,7 +79,19 @@ export function buildPublicPageMetadata(
       },
     },
     category: 'health',
-    ...(googleVerification ? { verification: { google: googleVerification } } : {}),
+    ...((() => {
+      if (!googleVerification && !bingVerification) {
+        return {};
+      }
+      return {
+        verification: {
+          ...(googleVerification ? { google: googleVerification } : {}),
+          ...(bingVerification
+            ? { other: { 'msvalidate.01': bingVerification } }
+            : {}),
+        },
+      };
+    })()),
     ...(params.includeGeoHints !== false
       ? {
           other: {

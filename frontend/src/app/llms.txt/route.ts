@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import {
+  CLINIC_ADDRESS,
+  CLINIC_CONTACT_EMAIL,
+  CLINIC_PUBLIC_PHONE_DISPLAY,
+  CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES,
+  CLINIC_PUBLIC_SITE_URL,
+} from '@/lib/clinic';
 import { clinicPrimaryKeywordsText } from '@/lib/seo/primary-keywords';
 
 export const dynamic = 'force-static';
@@ -24,10 +30,18 @@ export async function GET(): Promise<NextResponse> {
       '# Términos de descubrimiento (no clínico, solo orientación pública):',
       `#   ${clinicPrimaryKeywordsText()}`,
       '',
+      '## NAP (canónico web; alinear con ficha local en Google al verificar)',
+      `Dirección: ${CLINIC_ADDRESS} (CP 28015).`,
+      `Tel: ${CLINIC_PUBLIC_PHONE_DISPLAY}. Email: ${CLINIC_CONTACT_EMAIL}.`,
+      `Presencial: ${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES}`,
+      '',
+      '## JSON-LD',
+      'Todas las URLs públicas incluyen un @graph (WebSite + LocalBusiness + Person) y, por página, Breadcrumb; varias incluyen FAQPage. Coherente con /ai/summary.json.',
+      '',
       '## Canonical',
       `${base}/`,
       '',
-      '## Resumen estructurado (JSON)',
+      '## Resumen estructurado (JSON, GEO/IA)',
       `${base}/ai/summary.json`,
       '',
       '## Sitemap',

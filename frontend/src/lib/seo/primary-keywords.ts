@@ -7,9 +7,17 @@ export const CLINIC_PRIMARY_KEYWORDS = [
   'psicólogo Moncloa Madrid',
   'psicóloga clínica Moncloa',
   'psicología clínica Chamberí',
+  'terapia de pareja Moncloa',
+  'psicóloga Chamberí 28015',
   'terapia psicológica Madrid',
   'consulta psicología Meléndez Valdés',
   'ansiedad y depresión Madrid',
+  'psicólogo barrio de Almagro Madrid',
+  'terapia online psicólogo Madrid',
+  'psicóloga general sanitaria Madrid',
+  'M-38427 psicóloga',
+  'duelo y estrés Madrid',
+  'terapia infanto juvenil Madrid',
 ] as const;
 
 /**

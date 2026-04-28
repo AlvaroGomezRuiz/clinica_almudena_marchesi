@@ -1,17 +1,30 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 
+import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
-import { buildBreadcrumbListJsonLd } from '@/lib/seo/breadcrumb-jsonld';
+import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { sobreMiPageFaq } from '@/lib/seo/clinic-faq-content';
+import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
+import { buildMarketingPageJsonLd } from '@/lib/seo/marketing-page-json-ld';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
-const sobreMiBreadcrumbLd = buildBreadcrumbListJsonLd([
-  { name: 'Inicio', path: '/' },
-  { name: 'Sobre mí', path: '/sobre-mi' },
-]);
+const sobreMiSeoLd = buildMarketingPageJsonLd({
+  path: '/sobre-mi',
+  name: 'Sobre mí | Almudena Marchesi — Psicóloga sanitaria en Madrid',
+  description:
+    'Formación en Psicología Clínica y PGS. Acompañamiento terapéutico desde la consulta en Meléndez Valdés (Moncloa). Trayectoria y valores profesionales.',
+  breadcrumb: [
+    { name: 'Inicio', path: '/' },
+    { name: 'Sobre mí', path: '/sobre-mi' },
+  ],
+});
+
+const sobreMiFaqPageUrl: string = new URL('/sobre-mi', CLINIC_PUBLIC_SITE_URL).href;
+const sobreMiFaqLd = buildFaqPageJsonLd(sobreMiPageFaq, sobreMiFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/sobre-mi',
@@ -63,7 +76,11 @@ export default function SobreMiPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(sobreMiBreadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sobreMiSeoLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sobreMiFaqLd) }}
       />
     <div className="bg-canvas overflow-x-hidden">
       {/* Hero */}
@@ -230,6 +247,13 @@ export default function SobreMiPage() {
           </div>
         </div>
       </section>
+
+      <PublicFaqSection
+        id="faq-sobre-mi"
+        className="bg-canvas"
+        heading="Preguntas frecuentes sobre la profesional y la clínica"
+        items={sobreMiPageFaq}
+      />
 
       <CTASection />
     </div>

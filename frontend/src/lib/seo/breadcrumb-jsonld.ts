@@ -7,14 +7,13 @@ export interface BreadcrumbItem {
 }
 
 /**
- * JSON-LD BreadcrumbList para páginas internas públicas (rich results / GEO de sitio).
+ * Nodo `BreadcrumbList` (sin `@context`) para incrustarlo en un `@graph` con `WebPage`.
  */
-export function buildBreadcrumbListJsonLd(
+export function buildBreadcrumbListNode(
   items: readonly BreadcrumbItem[],
 ): Record<string, unknown> {
   const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
   return {
-    '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: items.map((it, i) => {
       const p = it.path.startsWith('/') ? it.path : `/${it.path}`;
@@ -25,5 +24,17 @@ export function buildBreadcrumbListJsonLd(
         item: `${base}${p}`,
       };
     }),
+  };
+}
+
+/**
+ * JSON-LD BreadcrumbList para páginas internas públicas (rich results / GEO de sitio).
+ */
+export function buildBreadcrumbListJsonLd(
+  items: readonly BreadcrumbItem[],
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    ...buildBreadcrumbListNode(items),
   };
 }
