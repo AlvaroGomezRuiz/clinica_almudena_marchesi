@@ -21,7 +21,8 @@
  * Notas de arquitectura:
  *   - El `client_secret` se pide lazy (al abrir), NO en el server render, para
  *     evitar PIs huérfanos si el usuario nunca abre el drawer.
- *   - Appearance usa variables Tailwind del tema para respetar dark/light mode.
+ *   - Appearance sigue `next-themes` (`resolvedTheme` + `systemTheme` hasta hidratar)
+ *     y remonta `<Elements>` al cambiar claro/oscuro para que Stripe aplique el tema.
  *   - El modal se renderiza con createPortal(..., document.body) para no quedar
  *     atrapado por backdrop-blur/transform de ancestros (p. ej. SurfaceCard) — sin
  *     esto, fixed pegaba a la tarjeta y en escritorio no se podía pulsar Pagar.
@@ -93,8 +94,15 @@ export default function PaymentElementDrawer({
     | { status: 'error'; message: string }
   >({ status: 'idle' });
 
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme, systemTheme } = useTheme();
   const fetchedRef = useRef(false);
+
+  /** Tema efectivo para Stripe: mismo criterio que `class` en `<html>` (next-themes). */
+  const stripeScheme: 'light' | 'dark' =
+    resolvedTheme === 'dark' ||
+    (resolvedTheme === undefined && systemTheme === 'dark')
+      ? 'dark'
+      : 'light';
 
   useEffect(() => {
     if (!open) return;
@@ -139,16 +147,16 @@ export default function PaymentElementDrawer({
       clientSecret: state.clientSecret,
       locale: 'es',
       appearance: {
-        theme: resolvedTheme === 'dark' ? 'night' : 'stripe',
+        theme: stripeScheme === 'dark' ? 'night' : 'stripe',
         variables: {
           fontFamily:
             '"Newsreader", "Inter", system-ui, -apple-system, sans-serif',
           borderRadius: '12px',
-          colorPrimary: resolvedTheme === 'dark' ? '#c8b79e' : '#4b645f',
+          colorPrimary: stripeScheme === 'dark' ? '#c8b79e' : '#4b645f',
         },
       },
     };
-  }, [state, resolvedTheme]);
+  }, [state, stripeScheme]);
 
   if (!open) return null;
   if (typeof document === 'undefined') return null;
@@ -210,7 +218,11 @@ export default function PaymentElementDrawer({
             </div>
           ) : options ? (
             <div className="flex min-h-0 flex-1 flex-col">
-              <Elements stripe={getStripe()} options={options}>
+              <Elements
+                key={`${state.clientSecret}-${stripeScheme}`}
+                stripe={getStripe()}
+                options={options}
+              >
                 <CheckoutForm
                   onCancel={onClose}
                   clientSecret={state.clientSecret}

@@ -78,7 +78,7 @@
 | Índice                                                  | Uso                        |
 |---------------------------------------------------------|----------------------------|
 | `citas(paciente_id, inicio DESC)`                       | Ficha paciente             |
-| `citas(inicio) WHERE estado IN ('confirmada','bloqueo')` | Dashboard agenda          |
+| `citas(inicio) WHERE estado IN ('confirmada','bloqueo')`| Dashboard agenda           |
 | `pagos(paciente_id, fecha_pago DESC)`                   | Historial pagos            |
 | `pagos(estado, fecha_pago DESC)`                        | Export facturación         |
 | `mensajes(conversation_id, created_at DESC)`            | Chat                       |

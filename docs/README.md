@@ -7,7 +7,7 @@ Documentación de producto, técnica y operativa de la plataforma digital.
 | Carpeta            | Contenido                                                       |
 |--------------------|-----------------------------------------------------------------|
 | `00_producto/`     | Qué entrega el sistema, módulos, funcionalidades                |
-| `01_tecnico/`      | Arquitectura, seguridad, base de datos, SEO/GEO                |
+| `01_tecnico/`      | Arquitectura, seguridad, base de datos, SEO/GEO                 |
 | `02_operaciones/`  | Despliegue, Stripe, emails, checklist go-live                   |
 | `03_cliente/`      | Documento ejecutivo para la titular de la clínica               |
 

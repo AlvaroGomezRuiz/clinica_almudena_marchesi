@@ -6,7 +6,7 @@
 
 | Capa         | Tecnología                                                        |
 |--------------|-------------------------------------------------------------------|
-| Frontend     | Next.js 14 (App Router), React 18, Tailwind CSS — Vercel (UE)    |
+| Frontend     | Next.js 14 (App Router), React 18, Tailwind CSS — Vercel (UE)     |
 | Backend      | Supabase: Postgres + RLS, Auth, Storage, Realtime, Edge Functions |
 | Pagos        | Stripe (Checkout + Payment Element embebido)                      |
 | Emails       | Resend vía Edge Functions (DKIM, SPF, templates HTML)             |
@@ -18,8 +18,8 @@
 
 ### Web pública
 
-| Página              | Ruta                | Descripción                                     |
-|---------------------|---------------------|-------------------------------------------------|
+| Página              | Ruta                | Descripción                                      |
+|---------------------|---------------------|--------------------------------------------------|
 | Inicio              | `/`                 | Landing con secciones editoriales y CTA          |
 | Enfoque             | `/enfoque`          | Metodología terapéutica                          |
 | Servicios           | `/servicios`        | Catálogo de terapias y bonos                     |

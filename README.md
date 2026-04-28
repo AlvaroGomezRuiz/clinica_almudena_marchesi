@@ -54,14 +54,14 @@ npm run dev                   # → http://localhost:3000
 
 ## Variables de entorno
 
-| Variable                              | Entorno       | Notas                                      |
+| Variable                              | Entorno       | Notas                                        |
 |---------------------------------------|---------------|----------------------------------------------|
-| `NEXT_PUBLIC_SUPABASE_URL`            | Todas         | Pública, visible en bundle                  |
+| `NEXT_PUBLIC_SUPABASE_URL`            | Todas         | Pública, visible en bundle                   |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | Todas         | Protegida por RLS                            |
 | `SUPABASE_SERVICE_ROLE_KEY`           | Server only   | **NUNCA** exponer al cliente                 |
 | `NEXT_PUBLIC_APP_URL`                 | Todas         | `https://ampsicologia.es`                    |
 | `STRIPE_SECRET_KEY`                   | Server (Edge) | `sk_test_` en pruebas, `sk_live_` en prod    |
-| `STRIPE_WEBHOOK_SECRET`              | Server (Edge) | `whsec_` del endpoint configurado            |
+| `STRIPE_WEBHOOK_SECRET`              | Server (Edge) | `whsec_` del endpoint configurado             |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | Todas         | Debe coincidir con `STRIPE_SECRET_KEY`       |
 
 > **Rotación:** si cualquier secret se expone en un chat, PR o log, **rótalo inmediatamente**.
@@ -75,9 +75,9 @@ npm run dev                   # → http://localhost:3000
 | Geo-gate                | **Solo España, Portugal y Andorra.** Resto del mundo bloqueado en Edge |
 | Auth                    | Cookies httpOnly, MFA TOTP, middleware RBAC                            |
 | RLS                     | Todas las tablas con RLS. Paciente solo ve sus datos                   |
-| Cifrado                 | AES-256-GCM (pgcrypto + Vault). Blind index HMAC-SHA256               |
+| Cifrado                 | AES-256-GCM (pgcrypto + Vault). Blind index HMAC-SHA256                |
 | Auditoría               | Hash-chain tamper-evident + registro de revelación de PII              |
-| CSP                     | `strict-dynamic`, `frame-ancestors 'none'`, HSTS 2 años               |
+| CSP                     | `strict-dynamic`, `frame-ancestors 'none'`, HSTS 2 años                |
 | Rate limiting           | Upstash Redis distribuido (fallback en memoria)                        |
 | File validation         | Magic bytes contra MIME declarado. Path traversal bloqueado            |
 
