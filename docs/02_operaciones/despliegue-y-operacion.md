@@ -3,7 +3,7 @@
 **Web en producción:** [https://ampsicologia.es](https://ampsicologia.es)
 **Última revisión:** 28 de abril de 2026
 
-Este documento es la **lista de proveedores**, **variables que configuran la web** y **comprobaciones antes de dar por cerrado un cambio importante**. La titular puede leer la primera mitad para saber **en qué empresas confiáis**; la segunda mitad es más **técnica**.
+Este documento es la **lista de proveedores**, **variables que configuran la web** y **comprobaciones antes de dar por cerrado un cambio importante**. La titular puede leer la primera mitad para saber **en qué empresas confiáis**; la segunda mitad es más **técnica**. Para **vaciar solo datos** (demo, ensayo antes de presentar) sin tocar migraciones: **`reset-datos-demostracion.md`**. Para pasar **Stripe de test a live**: **`stripe-test-a-live.md`**.
 
 ---
 

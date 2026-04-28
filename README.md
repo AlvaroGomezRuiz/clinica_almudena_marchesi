@@ -23,7 +23,7 @@ Lo que en informática se resume como “Next.js + Supabase + Stripe” en la pr
 
 ```
 ┌──────────────┐    HTTPS    ┌──────────────────────┐   reglas en base de datos   ┌───────────────────────┐
-│  Navegador   │────────────▶│  Vercel (web en UE)  │────────────────────────────▶│  Supabase (UE)       │
+│  Navegador   │────────────▶│  Vercel (web en UE)  │────────────────────────────▶│  Supabase (UE)        │
 │  del usuario │◀────────────│  pantallas + lógica  │◀────────────────────────────│  datos + sesiones     │
 └──────────────┘   cookies   └──────────────────────┘    avisos en tiempo real    └───────────────────────┘
                                       ▲

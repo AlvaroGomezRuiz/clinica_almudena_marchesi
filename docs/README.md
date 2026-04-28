@@ -32,35 +32,40 @@ No hace falta leerlo todo de una sentada. Abajo tenéis **tablas** que indican *
 
 ## Qué leer primero (persona técnica o auditoría)
 
-| Orden |                  Archivo                   |
-|-------|--------------------------------------------|
-| 1     | `00_producto/producto.md`                  |
-| 2     | `01_tecnico/arquitectura-y-seguridad.md`   |
-| 3     | `01_tecnico/base-de-datos.md`              |
-| 4     | `02_operaciones/despliegue-y-operacion.md` |
+| Orden |                           Archivo                                  |
+|-------|--------------------------------------------------------------------|
+| 1     | `00_producto/producto.md`                                          |
+| 2     | `01_tecnico/arquitectura-y-seguridad.md`                           |
+| 3     | `01_tecnico/base-de-datos.md`                                      |
+| 4     | `02_operaciones/despliegue-y-operacion.md`                         |
+| 5     | `02_operaciones/stripe-test-a-live.md` (claves y webhook **live**) |
 
 ---
 
 ## Qué leer primero (día del “puesta en marcha” o cambio de servidor)
 
-| Orden |                                Archivo                                  |
-|-------|-------------------------------------------------------------------------|
-| 1     | `02_operaciones/despliegue-y-operacion.md`                              |
-| 2     | `supabase/BOOTSTRAP.md` (dentro de la carpeta `supabase/` del proyecto) |
+| Orden |                                Archivo                                                 |
+|-------|----------------------------------------------------------------------------------------|
+| 1     | `02_operaciones/despliegue-y-operacion.md`                                             |
+| 2     | `02_operaciones/reset-datos-demostracion.md` (vaciar datos demo; no borra migraciones) |
+| 3     | `02_operaciones/stripe-test-a-live.md` (Stripe live: claves + webhook)                 |
+| 4     | `supabase/BOOTSTRAP.md` (dentro de la carpeta `supabase/` del proyecto)                |
 
 ---
 
 ## Lista de archivos (índice rápido)
 
-|                   Ruta relativa                         |                    Descripción breve                   |
-|---------------------------------------------------------|--------------------------------------------------------|
-| `00_producto/producto.md`                               | Inventario de pantallas y procesos                     |
-| `01_tecnico/arquitectura-y-seguridad.md`                | Seguridad por capas y visibilidad en buscadores        |
-| `01_tecnico/base-de-datos.md`                           | Tablas de información: nombre técnico + qué representa |
-| `02_operaciones/despliegue-y-operacion.md`              | Infraestructura, variables, checklist                  |
-| `03_cliente/manual-plataforma-cliente.md`               | Manual detallado para clínica y pacientes              |
-| `03_cliente/informe-ejecutivo.md`                       | Informe ejecutivo                                      |
-| `03_cliente/valoracion-proyecto.md`                     | Valoración y justificación                             |
+|                   Ruta relativa                         |                    Descripción breve                          |
+|---------------------------------------------------------|---------------------------------------------------------------|
+| `00_producto/producto.md`                               | Inventario de pantallas y procesos                            |
+| `01_tecnico/arquitectura-y-seguridad.md`                | Seguridad por capas y visibilidad en buscadores               |
+| `01_tecnico/base-de-datos.md`                           | Tablas de información: nombre técnico + qué representa        |
+| `02_operaciones/reset-datos-demostracion.md`            | Puesta a cero de datos (SQL + Storage + Auth + roles)         |
+| `02_operaciones/stripe-test-a-live.md`                  | Pasar Stripe de **test** a **live** (claves, webhook, checks) |
+| `02_operaciones/despliegue-y-operacion.md`              | Infraestructura, variables, checklist                         |
+| `03_cliente/manual-plataforma-cliente.md`               | Manual detallado para clínica y pacientes                     |
+| `03_cliente/informe-ejecutivo.md`                       | Informe ejecutivo                                             |
+| `03_cliente/valoracion-proyecto.md`                     | Valoración y justificación                                    |
 
 ---
 
