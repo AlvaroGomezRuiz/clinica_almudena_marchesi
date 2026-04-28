@@ -14,7 +14,7 @@
  *   - Si slot_ocupado → refresca disponibilidad y limpia la selección.
  */
 
-import { addDays, format, startOfDay } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
@@ -45,8 +45,6 @@ interface SlotPickerProps {
   readonly preseleccionadoId?: string;
 }
 
-const HORIZON_DAYS = 60;
-
 function euro(c: number): string {
   return (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
@@ -58,7 +56,6 @@ export default function SlotPicker({
 }: SlotPickerProps) {
   const router = useRouter();
   const today = useMemo(() => startOfDay(new Date()), []);
-  const maxDate = useMemo(() => addDays(today, HORIZON_DAYS), [today]);
 
   const [servicioId, setServicioId] = useState<string>(
     preseleccionadoId && servicios.some((s) => s.id === preseleccionadoId)
@@ -306,7 +303,7 @@ export default function SlotPicker({
               Escoge el día
             </h2>
             <p className="mt-1 font-body text-[0.78rem] text-ink-soft dark:text-white/60">
-              Navega por los próximos {HORIZON_DAYS} días. Selecciona cualquier día y abajo verás los huecos reales.
+              Navega por el calendario (mes a mes). Elige un día y abajo verás los huecos reales.
             </p>
           </div>
         </header>
@@ -315,7 +312,6 @@ export default function SlotPicker({
           selected={fecha}
           onSelect={(d) => setFecha(d)}
           minDate={today}
-          maxDate={maxDate}
         />
       </SurfaceCard>
 
