@@ -228,15 +228,16 @@ function ToggleGroup({
                 aria-checked={value}
                 aria-busy={isSaving}
                 onClick={() => onToggle(t.key, value)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-900 ${
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-900 ${
                   value
                     ? 'bg-primary'
                     : 'bg-ink/20 dark:bg-white/20'
                 } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
+                <span className="sr-only">Activar {t.label}</span>
                 <span
-                  className={`absolute top-0.5 h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform ${
-                    value ? 'translate-x-[1.35rem]' : 'translate-x-0.5'
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out ${
+                    value ? 'translate-x-5' : 'translate-x-[2px]'
                   }`}
                 />
               </button>
