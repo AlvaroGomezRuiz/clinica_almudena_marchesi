@@ -1,6 +1,11 @@
-import type { JSX } from 'react';
+'use client';
+
+import { useId, useState, type JSX } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import { cn } from '@/lib/utils';
 import type { ClinicFaqItem } from '@/lib/seo/clinic-faq-content';
 
 interface PublicFaqSectionProps {
@@ -12,8 +17,8 @@ interface PublicFaqSectionProps {
 }
 
 /**
- * Bloque FAQ accesible (dl/dt/dd) + animación consistente con el resto de landings.
- * El texto debe coincidir con el JSON-LD `FAQPage` inyectado en la misma URL.
+ * Bloque FAQ con acordeón (animación + icono) y texto alineado con JSON-LD `FAQPage`.
+ * Estructura semántica `dl` / `dt` / `dd` con `aria-expanded` y regiones controladas.
  */
 export default function PublicFaqSection({
   id,
@@ -22,9 +27,17 @@ export default function PublicFaqSection({
   eyebrow = 'Preguntas frecuentes',
   className = 'bg-canvas-alt',
 }: PublicFaqSectionProps): JSX.Element {
+  const baseId: string = useId();
+  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+  const prefersReducedMotion: boolean | null = useReducedMotion();
+
+  const handleToggle = (index: number): void => {
+    setActiveIndex((prev) => (prev === index ? null : index));
+  };
+
   return (
     <section
-      className={`py-20 md:py-28 px-6 md:px-12 ${className}`}
+      className={cn('py-20 md:py-28 px-6 md:px-12', className)}
       aria-labelledby={id}
     >
       <div className="max-w-3xl mx-auto">
@@ -39,19 +52,82 @@ export default function PublicFaqSection({
             {heading}
           </h2>
         </ScrollReveal>
-        <dl className="space-y-0 rounded-2xl border border-line bg-canvas/80 dark:bg-canvas-alt/80 overflow-hidden">
-          {items.map((item, i) => (
-            <ScrollReveal key={item.question} delay={0.04 * (i + 1)}>
-              <div className="border-b border-line last:border-0 p-5 md:p-6">
-                <dt className="font-display text-lg text-ink mb-2.5 text-balance">
-                  {item.question}
+        <dl
+          className="h-fit rounded-lg border border-line p-2 bg-[#F2F2F2] dark:bg-[#111111] overflow-hidden"
+        >
+          {items.map((item, index) => {
+            const isOpen: boolean = activeIndex === index;
+            const questionId: string = `${baseId}-q-${index}`;
+            const answerId: string = `${baseId}-a-${index}`;
+
+            return (
+              <motion.div
+                key={item.question}
+                className={cn(
+                  'overflow-hidden',
+                  index !== items.length - 1 && 'border-b border-line',
+                )}
+              >
+                <dt className="m-0">
+                  <button
+                    type="button"
+                    id={questionId}
+                    className={cn(
+                      'p-3 px-2 w-full cursor-pointer sm:text-base text-xs items-center transition-all font-semibold',
+                      'dark:text-white text-ink',
+                      'flex gap-2 text-left font-display',
+                    )}
+                    onClick={() => {
+                      handleToggle(index);
+                    }}
+                    aria-expanded={isOpen}
+                    aria-controls={answerId}
+                  >
+                    <Plus
+                      className={cn(
+                        'shrink-0 transition-transform ease-in-out w-5 h-5',
+                        isOpen ? 'rotate-45' : 'rotate-0',
+                        'dark:text-neutral-200 text-neutral-600',
+                      )}
+                      aria-hidden
+                    />
+                    {item.question}
+                  </button>
                 </dt>
-                <dd className="font-body text-[0.95rem] text-ink-soft leading-relaxed text-pretty m-0">
-                  {item.answer}
-                </dd>
-              </div>
-            </ScrollReveal>
-          ))}
+                <AnimatePresence initial={false} mode="sync">
+                  {isOpen && (
+                    <motion.dd
+                      key="content"
+                      id={answerId}
+                      className="m-0"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={
+                        prefersReducedMotion
+                          ? { duration: 0 }
+                          : {
+                              duration: 0.3,
+                              ease: 'easeInOut',
+                              delay: 0.14,
+                            }
+                      }
+                      aria-labelledby={questionId}
+                    >
+                      <p
+                        className={cn(
+                          'dark:text-white text-ink p-3 xl:text-base sm:text-sm text-xs pt-0 w-11/12',
+                          'font-body leading-relaxed text-pretty m-0',
+                        )}
+                      >
+                        {item.answer}
+                      </p>
+                    </motion.dd>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </dl>
       </div>
     </section>

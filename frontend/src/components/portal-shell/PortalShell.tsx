@@ -123,6 +123,7 @@ export default function PortalShell({
                   className="h-full w-full object-contain object-center p-0.5"
                   sizes="28px"
                   priority
+                  unoptimized
                 />
               </span>
               <span>
