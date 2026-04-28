@@ -35,7 +35,7 @@ export default function PublicFooter() {
               <h3 className="font-display text-2xl text-white font-light tracking-tight group-hover:text-sage-light transition-colors">
                 Almudena Marchesi
               </h3>
-              <p className="font-mono text-label-sm uppercase text-white/40 mt-1">
+              <p className="font-mono text-label-sm uppercase text-white/60 mt-1">
                 Psicología Clínica
               </p>
             </Link>
@@ -47,7 +47,7 @@ export default function PublicFooter() {
 
           {/* Navigation */}
           <div className="md:col-span-3">
-            <h4 className="font-mono text-label-sm uppercase text-white/35 mb-5 tracking-wider">
+            <h4 className="font-mono text-label-sm uppercase text-white/60 mb-5 tracking-wider">
               Navegación
             </h4>
             <nav className="flex flex-col gap-3">
@@ -65,7 +65,7 @@ export default function PublicFooter() {
 
           {/* Contact */}
           <div className="md:col-span-4">
-            <h4 className="font-mono text-label-sm uppercase text-white/35 mb-5 tracking-wider">
+            <h4 className="font-mono text-label-sm uppercase text-white/60 mb-5 tracking-wider">
               Contacto
             </h4>
             <div className="space-y-3 font-body text-[0.9rem] text-white/55">
@@ -94,7 +94,7 @@ export default function PublicFooter() {
         <div className="mt-16 pt-6 border-t border-white/8 flex flex-col items-center gap-4">
           <div className="flex flex-col md:flex-row justify-between items-center w-full gap-4">
             <div className="relative">
-              <p aria-hidden="true" className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider">
+              <p aria-hidden="true" className="font-mono text-[0.65rem] text-white/60 uppercase tracking-wider">
                 &copy; {currentYear} Almudena Marchesi Fernández. Psicología Clínica Moncloa, Madrid.
               </p>
               <span className="sr-only">
@@ -106,7 +106,7 @@ export default function PublicFooter() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="font-mono text-[0.65rem] text-white/30 uppercase tracking-wider hover:text-white/60 transition-colors duration-300 relative"
+                  className="font-mono text-[0.65rem] text-white/60 uppercase tracking-wider hover:text-white/80 transition-colors duration-300 relative"
                 >
                   <span aria-hidden="true">{link.label}</span>
                   <span className="sr-only">{link.label}</span>
@@ -117,29 +117,29 @@ export default function PublicFooter() {
 
           {/* Developer Credit */}
           <div className="flex flex-col items-center gap-1 mt-2">
-            <p className="text-[0.7rem] text-white/25 italic">
+            <p className="text-[0.7rem] text-white/60 italic">
               Web Design by{' '}
               <a
                 href="https://github.com/AlvaroGomezRuiz?tab=repositories"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/35 hover:text-white/60 transition-colors duration-300"
+                className="text-white/60 hover:text-white/80 transition-colors duration-300"
               >
                 Álvaro Gómez Ruiz
               </a>
             </p>
-            <p className="text-[0.6rem] text-white/20 italic">
+            <p className="text-[0.6rem] text-white/60 italic">
               cont:{' '}
               <a
                 href="mailto:alvarogomezz5370@gmail.com"
-                className="hover:text-white/40 transition-colors duration-300"
+                className="hover:text-white/80 transition-colors duration-300"
               >
                 alvarogomezz5370@gmail.com
               </a>
             </p>
           </div>
 
-          <p className="font-mono text-[0.6rem] text-white/15 uppercase tracking-wider mt-1">
+          <p className="font-mono text-[0.6rem] text-white/60 uppercase tracking-wider mt-1">
             {currentYear} | Clínica Almudena Marchesi | All Rights Reserved
           </p>
         </div>
