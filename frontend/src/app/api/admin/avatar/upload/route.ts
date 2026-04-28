@@ -14,6 +14,7 @@ import {
   type AllowedFileKind,
 } from '@/lib/security/file-validation';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 
@@ -86,13 +87,15 @@ export async function POST(req: NextRequest): Promise<Response> {
   const ext = extByMime[file.type] ?? 'png';
   const path = `${user.id}/avatar.${ext}`;
 
-  const { error: uploadErr } = await supabase.storage
-    .from('avatares')
-    .upload(path, bytes, {
-      contentType: file.type,
-      upsert: true,
-      cacheControl: '60',
-    });
+  /* Misma estrategia que /api/mensajes/attach: service_role evita RLS de
+   * storage.objects y de profiles cuando el despliegue tiene la clave. */
+  const db = createAdminClient() ?? supabase;
+
+  const { error: uploadErr } = await db.storage.from('avatares').upload(path, bytes, {
+    contentType: file.type,
+    upsert: true,
+    cacheControl: '60',
+  });
 
   if (uploadErr) {
     return NextResponse.json({ error: uploadErr.message }, { status: 500 });
@@ -102,7 +105,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const { url: supaUrl } = getSupabaseEnv();
   const publicUrl = `${supaUrl}/storage/v1/object/public/avatares/${path}?v=${Date.now()}`;
 
-  const { error: updErr } = await supabase
+  const { error: updErr } = await db
     .from('profiles')
     .update({
       avatar_url: publicUrl,
