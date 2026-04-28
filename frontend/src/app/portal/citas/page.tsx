@@ -103,12 +103,14 @@ export default async function PortalCitasPage(): Promise<JSX.Element | null> {
       .from('v_citas_expandidas')
       .select('id, paciente_id, inicio, fin, estado, servicio_nombre, precio_centimos')
       .eq('paciente_user_id', user.id)
+      .neq('estado', 'bloqueo_temporal')
       .gte('inicio', now)
       .order('inicio'),
     supabase
       .from('v_citas_expandidas')
       .select('id, paciente_id, inicio, fin, estado, servicio_nombre, precio_centimos')
       .eq('paciente_user_id', user.id)
+      .neq('estado', 'bloqueo_temporal')
       .lt('inicio', now)
       .order('inicio', { ascending: false })
       .limit(12),
@@ -160,6 +162,7 @@ export default async function PortalCitasPage(): Promise<JSX.Element | null> {
     const duracion = Math.round(
       (new Date(c.fin).getTime() - new Date(c.inicio).getTime()) / 60000
     );
+    const isCancelada = c.estado === 'cancelada';
 
     return (
       <SurfaceCard
@@ -192,22 +195,21 @@ export default async function PortalCitasPage(): Promise<JSX.Element | null> {
               {format(new Date(c.inicio), "EEEE d 'de' MMMM", { locale: es })} · {duracion} min
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Chip tone={toneForEstado(c.estado)}>{c.estado}</Chip>
-              <Chip tone={metodo.tone}>{metodo.label}</Chip>
+              <Chip tone={isCancelada ? 'critical' : isFuture ? 'positive' : 'info'}>
+                {isCancelada ? 'Cancelada' : isFuture ? 'Confirmada' : 'Terminada'}
+              </Chip>
+              {!isCancelada && isFuture ? (
+                <Chip tone="warning">
+                  Pendiente: faltan {formatDistanceToNow(new Date(c.inicio), { locale: es })}
+                </Chip>
+              ) : null}
               <span className="font-display text-[0.95rem] italic text-ink dark:text-white tabular-nums">
                 {formatImporte(c.precio_centimos)}
               </span>
-              {isFuture && c.estado === 'confirmada' ? (
-                <CountdownCita target={c.inicio} />
-              ) : (
-                <span className="font-body text-[0.72rem] text-ink-muted dark:text-white/55">
-                  {formatDistanceToNow(new Date(c.inicio), { locale: es, addSuffix: true })}
-                </span>
-              )}
             </div>
           </div>
 
-          {isFuture && (c.estado === 'confirmada' || c.estado === 'bloqueo_temporal') ? (
+          {isFuture && c.estado === 'confirmada' ? (
             <CitaCancelButton
               citaId={c.id}
               inicioISO={c.inicio}

@@ -279,7 +279,19 @@ export default async function PortalInicioPage() {
           </div>
 
           <Link href="/portal/pagos" className="mt-7">
-            <Button variant="surface" icon={bono ? 'autorenew' : 'shopping_cart'}>
+            <Button
+              variant="surface"
+              icon={bono ? 'autorenew' : undefined}
+              iconNode={
+                !bono ? (
+                  <img
+                    src="/fonts/ICONO_CARRITO%20_COMPRA.svg"
+                    alt=""
+                    className="h-full w-full object-contain dark:invert"
+                  />
+                ) : undefined
+              }
+            >
               {bono ? 'Renovar bono' : 'Comprar bono'}
             </Button>
           </Link>
