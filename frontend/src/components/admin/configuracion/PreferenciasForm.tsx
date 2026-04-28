@@ -213,7 +213,7 @@ function ToggleGroup({
           const value = Boolean((prefs as unknown as Record<string, boolean>)[t.key]);
           const isSaving = savingKey === String(t.key);
           return (
-            <li key={String(t.key)} className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0 border-none">
+            <li key={String(t.key)} className="flex items-center justify-between gap-4 py-4">
               <div className="pr-4">
                 <p className="font-body text-[0.9rem] font-medium text-ink dark:text-white/90">
                   {t.label}
@@ -228,7 +228,7 @@ function ToggleGroup({
                 aria-checked={value}
                 aria-busy={isSaving}
                 onClick={() => onToggle(t.key, value)}
-                className={`relative mt-1 h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-900 ${
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-ink-900 ${
                   value
                     ? 'bg-primary'
                     : 'bg-ink/20 dark:bg-white/20'
