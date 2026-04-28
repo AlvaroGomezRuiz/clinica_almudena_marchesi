@@ -45,6 +45,7 @@ import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/portal-shell/ui';
 import { formatUserFacingError } from '@/lib/formatUserFacingError';
+import { buildPaymentElementAppearance } from '@/lib/stripe/paymentElementAppearance';
 import {
   crearPaymentIntentBonoAction,
   crearPaymentIntentCitaAction,
@@ -146,15 +147,8 @@ export default function PaymentElementDrawer({
     return {
       clientSecret: state.clientSecret,
       locale: 'es',
-      appearance: {
-        theme: stripeScheme === 'dark' ? 'night' : 'stripe',
-        variables: {
-          fontFamily:
-            '"Newsreader", "Inter", system-ui, -apple-system, sans-serif',
-          borderRadius: '12px',
-          colorPrimary: stripeScheme === 'dark' ? '#c8b79e' : '#4b645f',
-        },
-      },
+      // Misma clave `appearance` que en stripe.elements({ appearance }) (Stripe Dashboard → Aspecto).
+      appearance: buildPaymentElementAppearance(stripeScheme),
     };
   }, [state, stripeScheme]);
 
