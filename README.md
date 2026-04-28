@@ -1,110 +1,116 @@
 # Clínica Almudena Marchesi — Plataforma digital
 
-Sitio público + portal paciente + panel admin con reserva online, pagos Stripe, chat en tiempo real y gestión clínica cifrada.
+**Web en producción:** [https://ampsicologia.es](https://ampsicologia.es)
+**Correo:** contacto@ampsicologia.es
 
-**Stack:** Next.js 14 (App Router) en Vercel + Supabase (Postgres, Auth, Realtime, Storage, Edge Functions).
+Tu **página pública**, el **espacio privado de cada paciente** y **tu panel de gestión** conviven en la misma web. Los pacientes pueden reservar, pagar, escribirte, descargar facturas y ver el material que les envíes; tú gestionas agenda, fichas, facturación y mensajes en un solo sitio.
+
+Lo que en informática se resume como “Next.js + Supabase + Stripe” en la práctica significa: web rápida en Europa, datos alojados en la Unión Europea y cobros con la misma tecnología que usan grandes comercios (sin que la tarjeta pase por un servidor tuyo casero).
 
 ---
 
-## Arquitectura
+## Para la titular (lectura recomendada)
+
+|                                   Documento                                                    |                          Para qué sirve                                |
+|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| [`docs/03_cliente/manual-plataforma-cliente.md`](docs/03_cliente/manual-plataforma-cliente.md) | Manual largo: qué puede hacer cada persona, paso a paso, tablas claras |
+| [`docs/03_cliente/informe-ejecutivo.md`](docs/03_cliente/informe-ejecutivo.md)                 | Resumen de pocas páginas                                               |
+| [`docs/README.md`](docs/README.md)                                                             | Índice de toda la carpeta `docs/`                                      |
+
+---
+
+## Cómo está montado el sistema (visión sencilla)
 
 ```
-┌──────────────┐    HTTPS    ┌──────────────────────┐   RLS + RPC   ┌───────────────────────┐
-│  Navegador   │────────────▶│ Vercel · Next.js 14  │──────────────▶│ Supabase (eu-central) │
-│  (usuario)   │◀────────────│  App Router + SSR    │◀──────────────│ Postgres + Auth + Rt  │
-└──────────────┘   Cookies   └──────────────────────┘    WebSocket  └───────────────────────┘
+┌──────────────┐    HTTPS    ┌──────────────────────┐   reglas en base de datos   ┌───────────────────────┐
+│  Navegador   │────────────▶│  Vercel (web en UE)  │────────────────────────────▶│  Supabase (UE)       │
+│  del usuario │◀────────────│  pantallas + lógica  │◀────────────────────────────│  datos + sesiones     │
+└──────────────┘   cookies   └──────────────────────┘    avisos en tiempo real    └───────────────────────┘
                                       ▲
-                         Stripe webhook │
-                         (vía Edge Fn)  │
+                         avisos de cobro de Stripe │
+                         (servidor seguro)         │
 ```
+
+Cuando alguien paga, **Stripe** avisa a un programa pequeño en el servidor; ese programa marca la cita como pagada y guarda constancia. Tú no tienes que “tocar” la tarjeta ni guardar su número.
 
 ---
 
-## Estructura del monorepo
+## Carpetas del proyecto (quién mira qué)
 
-```
-almudena/
-├─ frontend/                    # Next.js 14 app (Vercel)
-│  └─ src/
-│     ├─ app/                   # Rutas: (public), /admin, /portal, /api
-│     ├─ components/            # UI: chat, booking, auth, pagos, portal-shell
-│     ├─ lib/supabase/          # Clientes: server, browser, middleware, env, types
-│     └─ services/              # Server Actions por dominio
-├─ supabase/
-│  ├─ migrations/               # 0001..0066 (SQL, append-only)
-│  ├─ functions/                # Edge Functions (Deno): send-email, stripe-*, health, rgpd
-│  └─ BOOTSTRAP.md              # Setup paso a paso
-├─ docs/                        # Documentación del producto (ver docs/README.md)
-├─ .gitignore
-└─ README.md                    # Este archivo
-```
+|    Carpeta     |           Qué hay dentro                    | Quién lo usa en el día a día |
+|----------------|---------------------------------------------|------------------------------|
+| `frontend/`    | Pantallas, formularios, colores, textos     | Ingeniería y diseño          |
+| `supabase/`    | Reglas de datos, copias de seguridad SQL    | Ingeniería                   |
+| `docs/`        | Manuales, informes, despliegue              | **Tú y el equipo de apoyo**  |
+| `README.md`    | Este archivo: arranque técnico + enlaces    | Ingeniería + referencia      |
 
 ---
 
-## Puesta en marcha local
+## Puesta en marcha en tu ordenador (solo técnicos)
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local    # Editar con tus URLs + keys
-npm run dev                   # → http://localhost:3000
+cp .env.example .env.local
+npm run dev
 ```
 
----
-
-## Variables de entorno
-
-| Variable                              | Entorno       | Notas                                        |
-|---------------------------------------|---------------|----------------------------------------------|
-| `NEXT_PUBLIC_SUPABASE_URL`            | Todas         | Pública, visible en bundle                   |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | Todas         | Protegida por RLS                            |
-| `SUPABASE_SERVICE_ROLE_KEY`           | Server only   | **NUNCA** exponer al cliente                 |
-| `NEXT_PUBLIC_APP_URL`                 | Todas         | `https://ampsicologia.es`                    |
-| `STRIPE_SECRET_KEY`                   | Server (Edge) | `sk_test_` en pruebas, `sk_live_` en prod    |
-| `STRIPE_WEBHOOK_SECRET`              | Server (Edge) | `whsec_` del endpoint configurado             |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | Todas         | Debe coincidir con `STRIPE_SECRET_KEY`       |
-
-> **Rotación:** si cualquier secret se expone en un chat, PR o log, **rótalo inmediatamente**.
+Después de copiar `.env.example` a `.env.local` hay que rellenar las direcciones y claves que te dé quien mantenga el proyecto. Sin eso la web no puede hablar con la base de datos ni con los cobros.
 
 ---
 
-## Seguridad
+## Claves y variables (nombres que verás en configuración)
 
-| Capa                    | Implementación                                                         |
-|-------------------------|------------------------------------------------------------------------|
-| Geo-gate                | **Solo España, Portugal y Andorra.** Resto del mundo bloqueado en Edge |
-| Auth                    | Cookies httpOnly, MFA TOTP, middleware RBAC                            |
-| RLS                     | Todas las tablas con RLS. Paciente solo ve sus datos                   |
-| Cifrado                 | AES-256-GCM (pgcrypto + Vault). Blind index HMAC-SHA256                |
-| Auditoría               | Hash-chain tamper-evident + registro de revelación de PII              |
-| CSP                     | `strict-dynamic`, `frame-ancestors 'none'`, HSTS 2 años                |
-| Rate limiting           | Upstash Redis distribuido (fallback en memoria)                        |
-| File validation         | Magic bytes contra MIME declarado. Path traversal bloqueado            |
+|         Nombre de variable            |       Dónde se usa        |                      Qué es, en cristiano                      |
+|---------------------------------------|---------------------------|----------------------------------------------------------------|
+| `NEXT_PUBLIC_SUPABASE_URL`            | Web                       | Dirección del “cajón” donde están los datos                    |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | Web                       | Llave pública; igualmente, las reglas impiden ver datos ajenos |
+| `SUPABASE_SERVICE_ROLE_KEY`           | Solo servidor             | Llave muy sensible; **nunca** en un email ni captura           |
+| `NEXT_PUBLIC_APP_URL`                 | Web                       | Debe ser `https://ampsicologia.es`                             |
+| `STRIPE_SECRET_KEY`                   | Servidor / funciones      | Llave de cobros (hay versión de prueba y de real)              |
+| `STRIPE_WEBHOOK_SECRET`               | Servidor                  | Comprueba que los avisos de cobro son auténticos               |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | Web                       | Llave pública de Stripe; debe emparejar con la secreta         |
+
+> Si **cualquier** secreto se filtra (captura, chat, vídeo), hay que **revocarlo y generar uno nuevo** en el panel correspondiente, sin esperar.
 
 ---
 
-## Deploy
+## Medidas de seguridad (qué significan para vosotros)
+
+|               Medida                |                         Qué notáis vosotros / los pacientes                             |
+|-------------------------------------|-----------------------------------------------------------------------------------------|
+| Solo España, Portugal y Andorra     | Desde otro país la web puede no cargar; es intencionado                                 |
+| Contraseña y, en admin, doble paso  | Menos riesgo de que entren en vuestra cuenta                                            |
+| Datos separados por persona         | Un paciente no ve la ficha de otro                                                      |
+| Datos sensibles cifrados            | Si hubiera una fuga de copia de base de datos, lo crítico sigue ilegible sin otra clave |
+| Cobros con Stripe                   | La tarjeta no la procesáis vosotros “a mano”                                            |
+| Registro de accesos sensibles       | En una inspección o duda grave se puede auditar quién abrió qué                         |
+
+---
+
+## Publicar cambios de código (técnicos)
 
 ```bash
 cd frontend
 vercel deploy --prod
 ```
 
-Vercel detecta push a la rama `frontend` y despliega automáticamente.
+Según cómo esté conectado el repositorio, a veces basta con subir cambios a la rama correcta y Vercel publica solo.
 
 ---
 
-## Documentación
+## Documentación en `docs/` (tabla completa)
 
-Toda la documentación está en `docs/`. Ver `docs/README.md` para el índice.
-
-| Documento                                      | Contenido                        |
-|------------------------------------------------|----------------------------------|
-| `docs/00_producto/producto.md`                 | Módulos y funcionalidades        |
-| `docs/01_tecnico/arquitectura-y-seguridad.md`  | 6 capas de seguridad + SEO/GEO   |
-| `docs/01_tecnico/base-de-datos.md`             | Migraciones y tablas             |
-| `docs/02_operaciones/despliegue-y-operacion.md`| Variables, deploy, checklist     |
-| `docs/03_cliente/informe-ejecutivo.md`         | Informe para la titular          |
+|                           Ruta del archivo               |                                    Contenido                                        |
+|----------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `docs/README.md`                                         | Índice: por dónde empezar según si eres titular, técnico o administración           |
+| `docs/03_cliente/manual-plataforma-cliente.md`           | **Manual principal** para la clínica y pacientes                                    |
+| `docs/03_cliente/informe-ejecutivo.md`                   | Resumen ejecutivo                                                                   |
+| `docs/03_cliente/valoracion-proyecto.md`                 | Valor del trabajo y por qué se tomaron decisiones                                   |
+| `docs/00_producto/producto.md`                           | Lista detallada de pantallas y flujos (también útil para formación interna)         |
+| `docs/01_tecnico/arquitectura-y-seguridad.md`            | Seguridad y visibilidad en Google, explicado por capas                              |
+| `docs/01_tecnico/base-de-datos.md`                       | Qué “cajones de información” existen en el sistema (nombres técnicos + explicación) |
+| `docs/02_operaciones/despliegue-y-operacion.md`          | Proveedores, checklist antes de salir a producción, secretos                        |
 
 ---
 

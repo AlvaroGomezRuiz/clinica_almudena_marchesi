@@ -1,211 +1,148 @@
-# Valoración del proyecto — Plataforma Digital Clínica Almudena Marchesi
+# Valoración del proyecto — Clínica Almudena Marchesi
 
-> **Documento confidencial**
-> **Fecha:** 27 de abril de 2026
+> **Confidencial**
+> **Fecha:** 28 de abril de 2026
 > **Elaborado por:** Álvaro Gómez Ruiz, Developed Freelance
-> **Destinatario:** Almudena Marchesi Fernández
+> **Para:** Almudena Marchesi Fernández
+> **Web entregada:** [https://ampsicologia.es](https://ampsicologia.es)
+
+Este documento hace **tres cosas a la vez**: explica **qué se ha construido** en lenguaje cercano; da **cifras de mercado** para que podáis comparar; y cuenta el **“por qué”** de las decisiones más importantes (seguridad, cobros, datos en Europa). No sustituye a un contrato firmado: es **memoria de valoración**.
+
+Para el uso diario de la web, el documento principal es **`manual-plataforma-cliente.md`**.
 
 ---
 
-## 1. Qué se ha construido
+## 1. Qué se ha construido (tres bloques grandes)
 
-No se ha construido "una página web". Se ha desarrollado una **plataforma clínica digital
-completa** con tres módulos integrados:
+|           Bloque        |                 Qué es para el paciente y para la clínica                  |
+|-------------------------|----------------------------------------------------------------------------|
+| Web pública             | Escaparate: servicios, confianza, contacto, textos legales y registro      |
+| Portal del paciente     | Su “área privada”: citas, pagos, mensajes, material y facturas             |
+| Panel de administración | Vuestro “puesto de trabajo digital”: agenda, fichas, facturación, recursos |
 
-### Módulo público (tu escaparate)
+### Por qué van los tres en el mismo dominio
 
-Tu presencia online profesional: páginas de inicio, enfoque terapéutico, servicios,
-sobre ti, contacto y toda la parte legal (aviso legal, política de privacidad, cookies).
-Optimizada para que Google te posicione en búsquedas como "psicóloga Moncloa",
-"psicóloga Chamberí", "terapia individual Madrid". Incluye datos estructurados que
-los buscadores entienden directamente (horarios, dirección, especialidad, colegiación).
-
-### Portal del paciente (su espacio privado)
-
-Cada paciente tiene su propio espacio seguro donde puede:
-
-- **Reservar citas** viendo tus huecos reales y pagando online
-- **Pagar y gestionar bonos** con tarjeta, Apple Pay, Google Pay o Klarna
-- **Escribirte mensajes** en tiempo real (como un WhatsApp privado y seguro)
-- **Acceder a recursos** que tú le asignes (PDFs, audios, vídeos)
-- **Descargar facturas** en PDF de cada pago
-- **Cancelar citas** con las reglas que tú has decidido (más de 48h de antelación)
-- **Gestionar sus preferencias** de notificaciones y privacidad
-
-### Panel de administración (tu centro de control)
-
-Tu herramienta de trabajo diaria:
-
-- **Agenda semanal** con bloqueos horarios y plantillas
-- **Ficha clínica completa** por paciente (diagnósticos, medicación, notas de sesión)
-- **Facturación** con indicadores de negocio, exportación a CSV, asignación manual de bonos
-- **Mensajería** con todos tus pacientes desde una sola bandeja
-- **Recursos** para subir y asignar material terapéutico
-- **Configuración** de seguridad (verificación en dos pasos) y perfil profesional
+|           Alternativa descartada                |                            Inconveniente                         |
+|-------------------------------------------------|------------------------------------------------------------------|
+| Web de marketing en un sitio y “la app” en otro | Confunde al paciente y debilita el posicionamiento en buscadores |
+| Solo web sin portal                             | Sigue habiendo WhatsApp suelto, Excel y errores manuales         |
+| Solo portal sin web pública                     | Perdéis visitas que aún no se animan a registrarse               |
 
 ---
 
-## 2. Lo que no se ve pero es lo más valioso
+## 2. Lo “invisible” que más valor tiene
 
-### Cifrado de datos clínicos (nivel hospitalario)
-
-Todos los datos sensibles de tus pacientes — DNI, nombre completo, teléfono, dirección,
-notas de sesión, diagnósticos, medicación — están **cifrados con AES-256**, el mismo
-estándar que usan los bancos y los hospitales. Esto significa que aunque alguien accediera
-a la base de datos, vería solo texto cifrado ilegible.
-
-### Cumplimiento RGPD (obligatorio para datos de salud)
-
-La plataforma cumple con el Reglamento General de Protección de Datos:
-
-- Consentimiento explícito en el registro
-- Derecho al olvido (borrado técnico)
-- Exportación de datos del paciente
-- Registro inmutable de quién accede a qué dato y cuándo
-- Los datos están en **Alemania (UE)**, no en EEUU
-
-### Pagos seguros (PCI-compliant)
-
-Los datos de tarjeta de tus pacientes **nunca pasan por tu servidor**. Stripe
-(la misma empresa que usan Booking, Amazon, Shopify) gestiona todo el flujo de pago.
-Tú solo recibes la confirmación.
-
-### Restricción geográfica
-
-La plataforma solo es accesible desde España, Portugal y Andorra. Todo el tráfico
-del resto del mundo se bloquea automáticamente. Esto protege contra ataques y
-asegura el rendimiento.
-
-### Auditoría tamper-evident
-
-Cada acción sensible (abrir una ficha, revelar un DNI, editar un diagnóstico) queda
-registrada con una cadena de hashes que hace **imposible alterar el registro** sin
-que se detecte. Si algún día tienes una inspección de la AEPD, puedes demostrar
-exactamente quién vio qué y cuándo.
+|                 Pieza invisible             |                 En qué ayuda a la clínica                     |
+|---------------------------------------------|---------------------------------------------------------------|
+| Cifrado de datos muy sensibles              | Menos daño si hubiera una fuga técnica de copias de seguridad |
+| Reglas estrictas en base de datos           | Un paciente no lista a otros aunque lo intente desde fuera    |
+| Cobros con Stripe                           | No guardáis números de tarjeta “en casa”                      |
+| Solo tráfico desde ES / PT / AD             | Menos ruido malicioso desde el resto del mundo                |
+| Registros de auditoría                      | Podéis demostrar quién consultó datos delicados               |
+| Programas en servidor para cobros y correos | Los secretos no viven en el móvil del paciente                |
 
 ---
 
-## 3. Comparativa de mercado
+## 3. Comparativa de mercado (orden de magnitud)
 
-¿Cuánto cuesta un sistema así en el mercado español en 2026?
+### Presupuestos típicos si se encarga a terceros (España, 2026, referencias sectoriales)
 
-### Presupuestos de referencia (fuentes: Clutch, Sortlist, tarifas publicadas)
+|           Tipo de proveedor          | Banda de precio aproximada | Plazo orientativo |
+|--------------------------------------|----------------------------|-------------------|
+| Profesional autónomo senior          |    15.000 € – 25.000 €     |   2 a 3 meses     |
+| Agencia digital pequeña (ciudad)     |    20.000 € – 35.000 €     |   3 a 4 meses     |
+| Agencia mediana                      |    35.000 € – 55.000 €     |   4 a 6 meses     |
+| Consultora grande                    | 50.000 € – 100.000 € o más |   6 a 12 meses    |
 
-| Proveedor                            | Rango de precio         | Plazo estimado    |
-|--------------------------------------|-------------------------|-------------------|
-| Freelance senior especializado       | €15.000 – €25.000       | 2–3 meses         |
-| Agencia digital pequeña (Madrid)     | €20.000 – €35.000       | 3–4 meses         |
-| Agencia digital mediana              | €35.000 – €55.000       | 4–6 meses         |
-| Consultora tecnológica grande        | €50.000 – €100.000+     | 6–12 meses        |
+### Por qué un sistema así cuesta lo que cuesta (desglose conceptual)
 
-### ¿Por qué estos precios?
-
-Un proyecto con estas características incluye normalmente:
-
-| Componente                                | Coste típico aislado   |
-|-------------------------------------------|------------------------|
-| Web pública con SEO profesional           | €3.000 – €6.000        |
-| Portal de pacientes con reservas          | €5.000 – €10.000       |
-| Panel de administración clínico           | €5.000 – €12.000       |
-| Integración de pagos Stripe               | €2.000 – €5.000        |
-| Chat en tiempo real                       | €3.000 – €6.000        |
-| Cifrado de datos clínicos (AES-256)       | €4.000 – €8.000        |
-| Cumplimiento RGPD para datos de salud     | €3.000 – €7.000        |
-| Sistema de emails transaccionales         | €2.000 – €4.000        |
-| Facturación y generación de PDF           | €1.500 – €3.000        |
-| Auditoría de seguridad y hardening        | €2.000 – €5.000        |
-| **Total sumando componentes**             | **€30.500 – €66.000**  |
-
-El precio final de un proyecto integrado suele ser menor que la suma de componentes
-porque se comparten infraestructura y código. Pero la referencia da idea del **valor
-real** de lo que se ha entregado.
+|     Parte del trabajo       |   Banda de precio si se contratara suelta |                      Por qué cuesta                    |
+|-----------------------------|-------------------------------------------|--------------------------------------------------------|
+| Web pública profesional     |             3.000 € – 6.000 €             | Diseño, textos, SEO técnico, rendimiento               |
+| Portal con reservas y pagos |             5.000 € – 10.000 €            | Estados, cancelaciones, pruebas reales                 |
+| Panel clínico               |             5.000 € – 12.000 €            | Permisos, historias, exportaciones                     |
+| Integración de cobros       |             2.000 € – 5.000 €             | Avisos automáticos, idempotencia, bonos                |
+| Chat en vivo cifrado        |             3.000 € – 6.000 €             | Tiempo real, adjuntos, privacidad                      |
+| Cifrado clínico serio       |             4.000 € – 8.000 €             | Claves, migraciones, pruebas                           |
+| RGPD en salud               |             3.000 € – 7.000 €             | Solicitudes, minimización, trazas                      |
+| Correos transaccionales     |             2.000 € – 4.000 €             | Plantillas, entregas, deduplicación                    |
+| Facturas PDF                |             1.500 € – 3.000 €             | Datos fiscales, numeración                             |
+| Hardening de seguridad      |             2.000 € – 5.000 €             | Cabeceras, límites, revisiones                         |
+| **Suma orientativa**        |          **30.500 € – 66.000 €**          | Un proyecto integrado suele ser algo menor que la suma |
 
 ---
 
-## 4. Datos del desarrollo
+## 4. Esfuerzo de desarrollo (cifras de referencia)
 
-| Concepto                                 | Dato                                                        |
-|------------------------------------------|-------------------------------------------------------------|
-| Fecha de inicio                          | 7 de abril de 2026                                          |
-| Fecha de finalización                    | 27 de abril de 2026                                         |
-| Días de desarrollo                       | 21 días consecutivos                                        |
-| Jornada media diaria                     | 13 horas (sábados y domingos incluidos)                     |
-| Total de horas invertidas                | ~273 horas                                                  |
-| Migraciones de base de datos             | 66                                                          |
-| Páginas y rutas de la aplicación         | 50+                                                         |
-| Funciones Edge desplegadas               | 8 (pagos, email, RGPD, facturas, salud)                     |
-| Herramientas de desarrollo utilizadas    | Cursor Pro (IA), Supabase, Vercel, Stripe, Sentry, Resend   |
+|               Concepto               |             Cifra indicativa               |
+|--------------------------------------|--------------------------------------------|
+| Fecha de inicio (referencia interna) | 7 de abril de 2026                         |
+| Cierre de documentación              | 28 de abril de 2026                        |
+| Intensidad declarada                 | Del orden de **tres semanas** muy cargadas |
+| Horas totales estimadas              | **~273 h**                                 |
+| Migraciones de base de datos         | **66+** ficheros versionados               |
+| Pantallas o rutas de la aplicación   | **50+**                                    |
+| Programas en servidor (Edge)         | **10+** según carpeta del proyecto         |
 
----
+### Por qué importan las horas (más allá del número)
 
-## 5. Valor de reposición
-
-**¿Cuánto costaría rehacer este proyecto desde cero contratando a un tercero?**
-
-Basándome en las tarifas del mercado español y el alcance real del proyecto:
-
-- **Banda baja (freelance con IA):** €12.000 – €18.000
-- **Banda media (agencia pequeña):** €20.000 – €35.000
-- **Banda alta (consultora):** €40.000 – €60.000
-
-Este cálculo no incluye el tiempo de comprensión del dominio clínico, las decisiones
-de arquitectura de seguridad, ni las iteraciones con la titular para ajustar el producto.
+|                    Idea                |                       Explicación                            |
+|----------------------------------------|--------------------------------------------------------------|
+| No es “escribir código” solo           | Hay pruebas, seguridad, despliegue y documentación           |
+| Un proyecto clínico barato sin pruebas | Acaba en incidentes, pérdida de confianza y coste de arreglo |
 
 ---
 
-## 6. Propuesta de precio
+## 5. Valor de reposición (si hubiera que rehacerlo desde cero)
 
-### Precio del proyecto: €5.000
+| Banda |        Rango        |                Cuándo aplicaría                |
+|-------|---------------------|------------------------------------------------|
+| Baja  | 12.000 € – 18.000 € | Freelance muy eficiente, menos formalización   |
+| Media | 20.000 € – 35.000 € | Pequeña agencia con proyecto manager           |
+| Alta  | 40.000 € – 60.000 € | Consultora con redundancia y compliance formal |
 
-Este precio refleja:
-
-- Una **tarifa reducida** respecto al valor de mercado, en reconocimiento a la
-  relación profesional existente
-- Las 273 horas de trabajo especializado invertidas
-- El valor real de una plataforma que en el mercado costaría entre €20.000 y €40.000
-- La entrega de un producto **completo y listo para producción**, no un prototipo
-
-### Forma de pago propuesta
-
-Compensación mediante sesiones de terapia a la tarifa actual (€55/sesión):
-
-| Concepto                    | Cálculo                         |
-|-----------------------------|---------------------------------|
-| Precio del proyecto         | €5.000                          |
-| Ya abonado                  | – €20                           |
-| Pendiente                   | €4.980                          |
-| Equivalencia en sesiones    | €4.980 ÷ €55 = **~91 sesiones** |
-
-Esto equivale aproximadamente a **1 año y 9 meses de terapia semanal**.
-
-### Lo que incluye este precio
-
-- Plataforma completa desplegada y funcionando
-- Código fuente en repositorio privado (propiedad de la titular)
-- Documentación técnica y de producto
-- Soporte y mantenimiento sin coste adicional
-- Actualizaciones de seguridad incluidas
-
-### Lo que NO incluye
-
-- Costes de terceros (Supabase, Vercel, Stripe, dominio) — la titular los paga
-  directamente según uso
-- Desarrollo de funcionalidades nuevas no contempladas en el alcance actual
-- Formación presencial (si se necesita, se acuerda aparte)
+No incluye: tiempo de conocer el **matiz clínico** ni decisiones de contenido con la titular.
 
 ---
 
-## 7. Resumen
+## 6. Precio acordado del proyecto y forma de pago
 
-| Concepto                                     | Valor                  |
-|----------------------------------------------|------------------------|
-| Valor de mercado del proyecto                | €20.000 – €40.000      |
-| Valor de reposición (rehacer desde cero)     | €12.000 – €35.000      |
-| **Precio acordado**                          | **€5.000**             |
-| Ahorro respecto al mercado                   | 75% – 87%              |
-| Forma de pago                                | ~91 sesiones a €55     |
-| Mantenimiento incluido                       | Sí, sin coste extra    |
+### Precio del trabajo de plataforma: 5.000 €
+
+|               Pregunta                |                                                  Respuesta                                                       |
+|---------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| ¿Por qué está por debajo del mercado? | Por la relación profesional previa y porque los costes de terceros (hosting, dominio, comisiones) van **aparte** |
+| ¿Qué representan esas horas?          | Ingeniería senior, arquitectura de datos sensibles y pruebas                                                     |
+
+### Equivalencia en sesiones de terapia (ejemplo a 55 €/sesión)
+
+| Concepto                           | Cálculo    |     Resultado     |
+|------------------------------------|------------|-------------------|
+| Precio total                       | 5.000 €    |                   |
+| Menos abonado (ejemplo documental) | – 20 €     |                   |
+| Pendiente orientativo              | 4.980 €    |                   |
+| Sesiones equivalentes              | 4.980 ÷ 55 | **≈ 91 sesiones** |
+
+### Qué suele incluir el precio cerrado del desarrollo
+
+|                    Incluye                 |      No incluye (salvo acuerdo aparte)     |
+|--------------------------------------------|--------------------------------------------|
+| Código y despliegue en **ampsicologia.es** | Cuotas mensuales de Vercel, Supabase, etc. |
+| Documentación en `docs/`                   | Funcionalidades nuevas no acordadas        |
+| Parches de seguridad según lo acordado     | Formación presencial larga                 |
 
 ---
 
-*Documento generado como referencia de valoración. No constituye factura ni contrato.*
+## 7. Resumen en una tabla
+
+|             Concepto                |          Cifra o texto         |
+|-------------------------------------|--------------------------------|
+| Valor de mercado orientativo        | 20.000 € – 40.000 €            |
+| Valor de reposición orientativo     | 12.000 € – 35.000 €            |
+| Precio acordado del desarrollo      | **5.000 €**                    |
+| Ahorro orientativo frente a mercado | Muy alto (orden 75 % – 87 %)   |
+| Manual para el día a día            | `manual-plataforma-cliente.md` |
+
+---
+
+*Documento de valoración. No es factura ni contrato por sí solo.*

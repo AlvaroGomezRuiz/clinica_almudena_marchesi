@@ -1,120 +1,136 @@
-# Informe ejecutivo — Plataforma Digital Clínica Almudena Marchesi
+# Informe ejecutivo — Plataforma digital Clínica Almudena Marchesi
 
-> **Destinatario:** Almudena Marchesi Fernández, titular de la clínica
-> **Fecha:** 27 de abril de 2026
-> **Propósito:** describir con exactitud qué hay en la plataforma, qué puede hacer cada rol,
-> y qué responsabilidades legales/organizativas siguen siendo de la titular.
+> **Para:** Almudena Marchesi Fernández, titular de la clínica
+> **Fecha:** 28 de abril de 2026
+> **Web:** [https://ampsicologia.es](https://ampsicologia.es)
+> **Correo público:** contacto@ampsicologia.es
 
----
+Este informe resume **qué tenéis hoy en internet**, **qué puede hacer un paciente**, **qué podéis hacer vosotros desde el panel de gestión** y **qué responsabilidades siguen siendo de la clínica** (textos legales, relación terapéutica, asesoramiento jurídico cuando toque).
 
-## 1. Qué es el sistema
-
-Una **aplicación web a medida** con tres áreas:
-
-| Área                  | Acceso                    | Funcionalidad principal                                      |
-|-----------------------|---------------------------|--------------------------------------------------------------|
-| **Web pública**       | España, Portugal, Andorra | Información de la clínica, servicios, registro de pacientes  |
-| **Portal paciente**   | Pacientes registrados     | Reservar citas, pagar, mensajería, recursos, facturas PDF    |
-| **Panel admin**       | Almudena                  | Agenda, ficha clínica cifrada, facturación, mensajes         |
-
-> **Restricción geográfica:** La plataforma solo es accesible desde **España, Portugal y Andorra**.
-> El tráfico desde cualquier otro país se bloquea automáticamente en el perímetro (Edge),
-> como medida de seguridad contra ataques y para garantizar el rendimiento óptimo del servicio.
-
-**Dominio:** `https://ampsicologia.es`
-**Contacto:** `contacto@ampsicologia.es`
-**Alojamiento:** Vercel (UE, Frankfurt) + Supabase (UE, Alemania)
+Si necesitáis **más detalle, captítulos largos y tablas paso a paso**, abrid el archivo **`manual-plataforma-cliente.md`** en la misma carpeta `03_cliente/`: es el documento de referencia diaria.
 
 ---
 
-## 2. Qué puede hacer el paciente
+## 1. Qué es el sistema (en una frase)
 
-| Acción                | Descripción                                                         |
-|-----------------------|---------------------------------------------------------------------|
-| Informarse            | Páginas públicas: inicio, enfoque, servicios, sobre mí, contacto    |
-| Registrarse           | Con verificación de email y aceptación de política de privacidad    |
-| Reservar cita         | Huecos reales, pago online o consumo de bono                        |
-| Pagar                 | Tarjeta, Apple/Google Pay, Klarna (sin datos de tarjeta en servidor)|
-| Gestionar citas       | Ver, cancelar (con más de 48h de antelación)                        |
-| Mensajería            | Chat en tiempo real con adjuntos                                    |
-| Recursos              | Material terapéutico asignado (PDF, audio, vídeo)                   |
-| Ajustes               | Tema visual, notificaciones, solicitudes RGPD                       |
-| Facturas              | Descargar PDF de cada pago realizado                                |
+Es **una sola web** con tres “modos”: la parte **pública** (cualquiera puede leerla), el **portal del paciente** (cada persona ve solo lo suyo) y **vuestro panel de administración** (solo la cuenta de dirección que se haya definido como administradora).
 
----
+### Las tres zonas y sus direcciones
 
-## 3. Qué puede hacer el profesional (Almudena)
+| Zona                     | Dirección típica                    | Para qué sirve |
+|--------------------------|-------------------------------------|----------------|
+| Web pública              | `https://ampsicologia.es/`          | Informar, dar confianza, contacto, registro y legales |
+| Portal del paciente      | `https://ampsicologia.es/portal`    | Citas, pagos, mensajes, recursos, facturas, ajustes |
+| Panel de administración  | `https://ampsicologia.es/admin`     | Agenda, pacientes, ficha, facturación, mensajes, recursos, configuración |
 
-| Acción                | Descripción                                                       |
-|-----------------------|-------------------------------------------------------------------|
-| Agenda                | Vista semanal, bloqueos horarios, plantillas                      |
-| Pacientes             | Ficha clínica completa con datos cifrados                         |
-| Notas de sesión       | Escribir y editar notas cifradas por cada cita                    |
-| Diagnósticos          | Registrar diagnósticos cifrados                                   |
-| Medicación            | Registrar medicación cifrada                                      |
-| Facturación           | KPIs, exportar CSV, asignar bonos manuales                        |
-| Mensajes              | Bandeja de conversaciones con pacientes                           |
-| Recursos              | Subir material y asignarlo a pacientes                            |
-| Configuración         | MFA, preferencias, perfil profesional público                     |
+### Un detalle importante: solo ciertos países
+
+Por seguridad y estabilidad, la web **solo acepta conexiones desde España, Portugal y Andorra**. Si un paciente está de viaje en otro continente, es posible que **no pueda entrar** en el portal hasta volver o hasta conectarse desde una red en zona permitida. Conviene **avisar de esto** cuando expliquéis cómo usar la plataforma.
+
+### Dónde “vive” físicamente la información
+
+| Pieza                         | Proveedor (nombre comercial) | Región aproximada |
+|-------------------------------|------------------------------|-------------------|
+| Lo que se ve en el navegador  | Vercel                       | Unión Europea     |
+| Datos, cuentas y archivos     | Supabase                     | Frankfurt (UE)    |
+| Cobros con tarjeta            | Stripe                       | Cumplimiento internacional PCI |
+| Correos automáticos           | Resend                       | Configuración UE típica |
 
 ---
 
-## 4. Cómo se protege la información
+## 2. Qué puede hacer un paciente (lista clara)
 
-| Capa                       | Qué hace                                                      |
-|----------------------------|---------------------------------------------------------------|
-| **Acceso geográfico**      | Solo España, Portugal y Andorra pueden acceder                |
-| **Transporte**             | Toda la comunicación va cifrada (HTTPS/TLS)                   |
-| **Cuenta**                 | Contraseña segura + verificación MFA posible en admin         |
-| **Base de datos**          | Cada paciente solo ve sus propios datos (Row Level Security)  |
-| **Cifrado**                | DNI, nombre, teléfono y notas clínicas cifrados con AES-256   |
-| **Auditoría**              | Registro inmutable de quién accede a qué dato y cuándo        |
-| **Pagos**                  | Datos de tarjeta nunca pasan por nuestros servidores (Stripe) |
+| Puede hacer…                    | En la práctica significa… |
+|---------------------------------|---------------------------|
+| Leer la web sin registrarse     | Conocer servicios, legales, contacto |
+| Registrarse como paciente     | Formulario + código al correo + contraseña (mínimo **12 caracteres**) |
+| Entrar y recuperar contraseña | Páginas de login y “olvidé mi contraseña” |
+| Reservar cita                 | Ve huecos **reales**; paga en la web o usa un **bono** si le corresponde |
+| Pagar con tarjeta u otros medios | Depende de lo activado en la cuenta Stripe (Apple Pay, Google Pay, etc.) |
+| Ver y cancelar citas          | La cancelación con margen de **más de 48 horas** está pensada para proteger vuestra agenda |
+| Escribiros mensajes           | Chat privado con la clínica, con archivos cuando la pantalla lo permita |
+| Ver material que le enviéis   | PDFs, audios, vídeos o enlaces que asignéis desde el panel |
+| Descargar facturas           | PDF asociado a un pago ya completado |
+| Cambiar preferencias          | Tema claro/oscuro, avisos, y trámites de privacidad (RGPD) desde Ajustes |
+| Seguir la “bienvenida”        | Hasta que haya **pago**, **bono con sesiones** o **cita confirmada**, la web puede guiarle por un primer paso obligatorio |
 
-> **Importante:** La clínica debe mantener revisión legal de avisos y políticas, DPIA si el
-> asesor/DPD lo requiere, y un proceso para atender derechos (exportación, supresión)
-> aunque la plataforma ya tiene la infraestructura técnica.
-
----
-
-## 5. Emails automáticos
-
-| Email                 | Cuándo se envía                                                    |
-|-----------------------|--------------------------------------------------------------------|
-| Confirmación de cita  | Inmediatamente al confirmar reserva                                |
-| Recordatorio 48h      | Dos días antes de la cita                                          |
-| Recordatorio 24h      | Un día antes de la cita                                            |
-| Cancelación           | Al cancelar una cita (admin o paciente)                            |
-| Bienvenida            | Al registrarse un paciente nuevo                                   |
-| Bono comprado         | Al completar la compra de un bono                                  |
+Lo que **no** puede: entrar en el panel de administración, ver datos de otro paciente ni saltarse las reglas de pago o cancelación (las comprueba el servidor, no solo la pantalla).
 
 ---
 
-## 6. Coste operativo orientativo
+## 3. Qué podéis hacer vosotros desde el panel (titular / admin)
 
-| Partida                                  | Comentario                                   |
-|------------------------------------------|----------------------------------------------|
-| Vercel, Supabase, Sentry, Resend         | Planes gratuitos mientras se respeten cuotas |
-| Stripe                                   | Comisiones por cobro (sin coste fijo)        |
-| Dominio y correo                         | Renovación anual                             |
-| Crecimiento                              | Plan Pro necesario al subir tráfico/datos    |
+| Podéis…                    | En la práctica… |
+|----------------------------|-----------------|
+| Ver la agenda semanal      | Huecos libres y ocupados, citas y bloqueos (vacaciones, cierres) |
+| Gestionar pacientes        | Lista, búsqueda, abrir la ficha de cada persona |
+| Documentar la terapia    | Diagnósticos, medicación, notas de sesión (guardados de forma protegida) |
+| Ver facturación y exportar | Números resumidos y exportación para gestoría si la usáis |
+| Enviar y leer mensajes     | Misma conversación que ve el paciente, desde vuestra bandeja |
+| Subir y asignar recursos   | Material terapéutico por paciente |
+| Configurar la cuenta       | Foto, nombre público, datos de colegiación, y **doble verificación** de seguridad |
 
----
-
-## 7. Preguntas frecuentes
-
-| Pregunta                              | Respuesta                                                 |
-|---------------------------------------|-----------------------------------------------------------|
-| ¿Dónde están mis datos?              | En Supabase, región Alemania (UE)                          |
-| ¿Puedo cambiar de proveedor?         | Sí, los datos son exportables (con planificación)          |
-| ¿Quién toca el código?               | Ingeniería, bajo repositorio privado                       |
-| ¿Qué pasa si se cae el sistema?     | Sentry alerta automáticamente + monitor de uptime           |
-| ¿Los pacientes ven datos de otros?   | No. Row Level Security lo impide a nivel de base de datos  |
-| ¿Se pueden imprimir datos clínicos?  | Bloqueado por CSS. Solo admin puede ver la ficha           |
+Cada vez que se consulta información especialmente sensible, el sistema puede **dejar constancia** para cumplimiento y transparencia.
 
 ---
 
-## 8. Contacto y continuidad
+## 4. Cómo se protege la información (sin jerga innecesaria)
 
-Cualquier incidencia de producto, cambio de normativa, o ajuste de clínica → coordinación
-con el **equipo de ingeniería** y, donde corresponda, con el **asesor legal** o **DPD** externo.
+| Capa de protección              | Qué aporta en la vida real |
+|---------------------------------|----------------------------|
+| Conexión cifrada (candado del navegador) | Lo que se envía por internet va codificado |
+| Cuenta con contraseña fuerte    | Menos robos de sesión por prueba y error |
+| Separación estricta por paciente | En la base de datos, las reglas impiden mezclar unos con otros |
+| Cifrado de lo más sensible      | Aunque alguien obtuviera una copia cruda de “tablas”, lo crítico no se lee sin más |
+| Registro de accesos importantes | Se puede demostrar quién consultó qué y cuándo |
+| Cobros con Stripe               | Los datos de tarjeta los trata Stripe, no un Excel vuestro |
+
+**Importante:** la plataforma aplica **medidas técnicas y de organización**. La clínica sigue siendo la **responsable del tratamiento** frente al paciente: textos legales al día, tiempo de conservación de datos y, si hace falta, **asesoramiento de un abogado o delegado de protección de datos** externo.
+
+---
+
+## 5. Correos automáticos que recibirán pacientes y vosotros
+
+| Tipo de correo (resumen) | Cuándo se envía |
+|--------------------------|-----------------|
+| Confirmación de cita     | Cuando la reserva queda firmada (tras pago o bono, según el caso) |
+| Recordatorio (unos días antes) | Programación automática antes de la cita |
+| Recordatorio (víspera) | Igual, más cerca de la hora |
+| Cancelación              | Cuando se anula una cita (desde paciente o desde admin) |
+| Bienvenida               | Cuando se completa un alta nueva |
+| Compra de bono           | Cuando se paga un paquete de sesiones |
+| Nuevo material asignado  | Cuando desde el panel le enviáis un recurso |
+
+Los proveedores de correo y la configuración de dominio los lleva quien mantenga el proyecto; lo relevante para la clínica es saber **que existen** y **qué esperan los pacientes**.
+
+---
+
+## 6. Costes mensuales o anuales (orientativo, no factura)
+
+|             Concepto             |                       Comentario para la clínica                 |
+|----------------------------------|------------------------------------------------------------------|
+| Alojamiento web y base de datos  | Suelen tener **plan gratuito o de pago** según tráfico y espacio |
+| Sentry (registro de errores)     | Ayuda a que un técnico vea fallos antes que los pacientes        |
+| Resend (correos transaccionales) | Depende del volumen de emails                                    |
+| Stripe                           | Normalmente **comisión por cobro**, no cuota fija por usarlo     |
+| Dominio `ampsicologia.es`        | Renovación anual típica de dominio                               |
+
+Los importes exactos cambian cada año y según el uso; el informe de gestión o quien mantenga el proyecto puede daros una **captura de panel** sin mostrar secretos.
+
+---
+
+## 7. Preguntas que suelen hacer al principio
+
+|                     Pregunta                  |                                       Respuesta breve                                   |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------|
+| ¿Los datos están fuera de Estados Unidos?     | La base principal está referenciada como **Frankfurt (UE)** en la documentación técnica |
+| ¿Un paciente puede ver a otro?                | **No**, está impedido por diseño en base de datos                                       |
+| ¿Quién puede cambiar el “código” de la web?   | Quien tenga acceso al repositorio privado acordado                                      |
+| ¿Qué hago si la web da error?                 | Anotar hora y pantalla (sin datos clínicos visibles) y contactar con soporte técnico    |
+| ¿Dónde está el manual largo?                  | `docs/03_cliente/manual-plataforma-cliente.md`                                          |
+
+---
+
+## 8. Continuidad y contacto
+
+Para **cambios de texto**, **nuevas secciones públicas**, **normativa nueva** o **dudas de uso**, coordinad con **quien mantenga el producto**. Para **temas legales puros** (contratos con pacientes, bases de legitimación, plazos de conservación), con vuestro **asesor jurídico** o DPD.
