@@ -113,8 +113,18 @@ export default function PortalShell({
             <span className="inline-flex items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="h-7 w-7 rounded-xl bg-gradient-to-br from-primary to-primary-dim shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_18px_-6px_rgba(75,100,95,0.55)] ring-1 ring-inset ring-white/30"
-              />
+                className="relative flex h-7 w-7 shrink-0 overflow-hidden rounded-xl bg-primary/15 shadow-[0_6px_18px_-6px_rgba(75,100,95,0.45)] ring-1 ring-inset ring-white/30 dark:bg-white/5 dark:ring-white/20"
+              >
+                <Image
+                  src="/images/LOGO-SIN-BORDES.avif"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain object-center p-0.5"
+                  sizes="28px"
+                  priority
+                />
+              </span>
               <span>
                 <span className="block font-display text-[1.05rem] leading-none italic text-primary group-hover:text-primary-dim transition-colors tracking-[-0.01em] dark:text-primary-fixed-dim dark:group-hover:text-white">
                   {brandTitle}
