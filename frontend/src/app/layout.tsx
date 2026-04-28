@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import AnalyticsErrorSuppressor from '@/components/layout/AnalyticsErrorSuppressor';
 
 /* ─────────────────────────────────────────────────────────────
    FUENTES — 100 % self-hosted desde /public/fonts/.
@@ -197,6 +198,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <AnalyticsErrorSuppressor />
         <Analytics />
         <SpeedInsights />
       </body>
