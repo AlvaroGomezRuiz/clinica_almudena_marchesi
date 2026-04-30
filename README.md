@@ -1,7 +1,7 @@
 # Clínica Almudena Marchesi — Plataforma digital
 
 **Web en producción:** [https://ampsicologia.es](https://ampsicologia.es)
-**Correo público:** contacto@ampsicologia.es
+**Correo público:** clinica.almudena.marchesi@outlook.com
 
 Aplicación **full-stack** para una consulta de psicología: **web pública** (marketing, legales, registro), **portal del paciente** (citas, pagos con Stripe, mensajes cifrados, material asignado, facturas, ajustes) y **panel de administración** (agenda, pacientes, ficha clínica con datos sensibles protegidos, facturación, mensajes, recursos, configuración). Todo en el mismo dominio, con **Next.js** (App Router), **Supabase** (PostgreSQL, Auth, Storage, Realtime, Edge Functions) y **Stripe** para cobros.
 
