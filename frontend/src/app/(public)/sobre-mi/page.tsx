@@ -198,16 +198,10 @@ export default function SobreMiPage() {
             <div className="w-16 h-[2px] bg-sage/20 mx-auto" />
           </ScrollReveal>
 
-          {/* Mismo patrón de rejilla y cuerpo de tarjeta que /enfoque (título centrado, texto a la izquierda) */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Tres columnas en escritorio (misma idea que bloques en la home); interior sigue estilo enfoque */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {CREDENTIALS.map((cred, i) => (
-              <ScrollReveal
-                key={cred.title}
-                delay={i * 0.08}
-                className={
-                  i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-12'
-                }
-              >
+              <ScrollReveal key={cred.title} delay={i * 0.08}>
                 <PremiumCard tilt={false} className="h-full">
                   <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10">
                     <h3 className="font-display text-display-3 text-balance text-ink">
