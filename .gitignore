@@ -115,13 +115,8 @@ desktop.ini
 .cursor/
 .cursorignore
 .cursorrules
-.prototipo/
 .geo/
 .rtk/
 .tmp_segunda/
 CLAUDE.md
-.APIS.txt
-.LOGO/
-docs/pdf/
-docs/02_operaciones/reset-datos-demostracion.md
-docs/02_operaciones/stripe-test-a-live.md
+docs/
