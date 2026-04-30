@@ -15,10 +15,19 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import { CLINIC_TARIFAS_SESION_RESUMEN, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
+import {
+  CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES,
+  clinicStripePaymentKeywordsList,
+} from '@/lib/seo/stripe-payment-keywords';
+import type { Metadata } from 'next';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
-export const metadata = { title: `Bonos y pagos | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
+export const metadata: Metadata = {
+  title: `Bonos y pagos | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+  description: `Compra bonos y revisa pagos. Métodos: ${CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES} vía Stripe (EUR).`,
+  keywords: clinicStripePaymentKeywordsList(),
+};
 export const dynamic = 'force-dynamic';
 
 interface PacienteRow {
@@ -272,7 +281,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
           {servicioIndividual ? (
             <SesionSueltaInfoCard
               titulo="Sesión individual"
-              descripcion="Una sesión de terapia individual. Al reservar eliges franja; el pago se realiza con la cita (tarjeta, wallets o métodos habilitados en Stripe)."
+              descripcion={`Una sesión de terapia individual. Al reservar eliges franja; el pago se realiza con la cita (${CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES}, según Stripe).`}
               precioCentimos={servicioIndividual.precio_centimos}
               servicioId={servicioIndividual.id}
             />
@@ -306,9 +315,8 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
       ) : (
         <>
           <p className="mb-5 font-body text-[0.85rem] text-ink-soft dark:text-white/60">
-            Pago con Stripe (tarjeta, Apple Pay, Google Pay, Klarna u otros
-            métodos que tengas activos). Los bonos aplican a la modalidad indicada
-            (individual o pareja).
+            Pago con Stripe: {CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES}. Los bonos aplican a la
+            modalidad indicada (individual o pareja).
           </p>
           {bonosCatalogoIndividual.length > 0 ? (
             <>

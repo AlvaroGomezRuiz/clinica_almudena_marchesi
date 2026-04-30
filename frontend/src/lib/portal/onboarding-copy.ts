@@ -20,7 +20,7 @@ export const PORTAL_NAV_SECTIONS: readonly {
   {
     title: 'Bonos y pagos',
     description:
-      'Compra bonos de sesiones, revisa pagos con Stripe y el estado de tus bonos activos.',
+      'Compra bonos de sesiones y revisa pagos: Stripe (tarjeta, Bizum, Link, SEPA, Klarna, wallets) y estado de bonos activos.',
   },
   {
     title: 'Mensajes',
@@ -51,4 +51,4 @@ export const PORTAL_SUCCESS_NEXT_BONO =
   'Tu bono ya figura en la cuenta. El siguiente paso lógico es reservar una franja.';
 
 export const PORTAL_SUCCESS_EMAIL_TIP =
-  'Si hiciste el pago con tarjeta, puedes recibir en breve un recibo o factura (según corresponda) al correo de la cuenta.';
+  'Si hiciste el pago con tarjeta, Bizum u otro método online, puedes recibir en breve un recibo o factura (según corresponda) al correo de la cuenta.';

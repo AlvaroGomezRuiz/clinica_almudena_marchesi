@@ -40,8 +40,11 @@ export function labelMetodoPago(m: string | null | undefined): string {
     return 'Tarjeta (puede incluir Apple Pay / Google Pay con tarjeta guardada)';
   }
   if (x === 'link') return 'Stripe Link (pago con email)';
+  if (x === 'bizum') return 'Bizum';
   if (x === 'sepa_debit') return 'Domiciliación SEPA';
   if (x === 'klarna') return 'Klarna';
+  if (x === 'apple_pay') return 'Apple Pay';
+  if (x === 'google_pay') return 'Google Pay';
   if (x === 'efectivo') return 'Efectivo';
   if (x === 'tarjeta') return 'Tarjeta';
   if (x === 'transferencia') return 'Transferencia';

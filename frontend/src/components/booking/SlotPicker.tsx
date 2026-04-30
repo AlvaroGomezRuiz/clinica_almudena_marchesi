@@ -618,8 +618,8 @@ export default function SlotPicker({
                 {servicioSeleccionCubiertoBono
                   ? 'Se descontará 1 sesión al confirmar.'
                   : modalidadServicio === 'pareja'
-                    ? 'Importe del servicio de pareja en catálogo. El hueco queda bloqueado ~15 min para completar el pago.'
-                    : 'Se reservará el hueco unos minutos mientras pagas con tarjeta o wallet.'}
+                    ? 'Importe del servicio de pareja en catálogo. El hueco queda bloqueado ~15 min para completar el pago (Stripe: tarjeta, Bizum, Link, SEPA o Klarna).'
+                    : 'Se reservará el hueco unos minutos mientras pagas con Stripe (tarjeta, Bizum, Link, SEPA o Klarna, o wallets).'}
               </p>
             </div>
           </dl>

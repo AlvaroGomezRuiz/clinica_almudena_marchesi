@@ -8,6 +8,7 @@ export function metodoPagoLabel(metodo: string | null | undefined): string {
   if (m === "card" || m === "amex" || m === "visa" || m === "mastercard") {
     return "Tarjeta";
   }
+  if (m === "bizum") return "Bizum";
   if (m === "link") return "Tarjeta o Stripe Link";
   if (m === "sepa_debit") return "Domiciliación SEPA";
   if (m === "klarna") return "Klarna";

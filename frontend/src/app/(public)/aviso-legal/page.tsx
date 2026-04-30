@@ -145,7 +145,7 @@ export default function AvisoLegalPage() {
               <li>
                 <strong className="text-ink">Portal del paciente:</strong> área privada donde el
                 paciente registrado puede reservar citas viendo disponibilidad real, realizar
-                pagos online (tarjeta, Apple Pay, Google Pay, Klarna), gestionar bonos de sesiones,
+                pagos online (tarjeta, Bizum, Stripe Link, domiciliación SEPA, Klarna; también Apple Pay y Google Pay cuando aplique), gestionar bonos de sesiones,
                 comunicarse con la Profesional mediante mensajería en tiempo real, acceder a
                 recursos terapéuticos asignados, descargar facturas en PDF, y gestionar sus
                 preferencias de notificaciones y privacidad.
@@ -218,8 +218,8 @@ export default function AvisoLegalPage() {
               </li>
               <li>
                 Los métodos de pago disponibles dependen de la configuración de la pasarela e
-                incluyen tarjeta de crédito/débito, Apple Pay, Google Pay y, cuando esté
-                habilitado, Klarna y domiciliación SEPA.
+                incluyen tarjeta, Bizum, Stripe Link, domiciliación SEPA y Klarna, además de Apple Pay
+                y Google Pay cuando el dispositivo y la cuenta lo permitan.
               </li>
               <li>
                 La Profesional emitirá factura por cada pago realizado. El paciente puede descargar

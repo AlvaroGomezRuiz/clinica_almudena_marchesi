@@ -3,6 +3,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
+import { clinicStripePaymentKeywordsList } from '@/lib/seo/stripe-payment-keywords';
 import { ThemeProvider } from 'next-themes';
 import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
@@ -90,6 +91,7 @@ export const metadata: Metadata = {
     'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Acompañamiento con rigor. Consulta cerca de Meléndez Valdés, Madrid.',
   keywords: [
     ...clinicPrimaryKeywordsList(),
+    ...clinicStripePaymentKeywordsList(),
     'Almudena Marchesi',
     'Psicóloga Madrid',
     'Terapia Chamberí',

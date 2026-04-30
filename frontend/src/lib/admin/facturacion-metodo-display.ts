@@ -2,6 +2,7 @@ import type { MetodoPagoManual } from '@/services/admin/actions';
 
 const ASIGNAR_ORDER: readonly MetodoPagoManual[] = [
   'tarjeta',
+  'bizum',
   'transferencia',
   'regalo',
   'efectivo',
@@ -10,6 +11,7 @@ const ASIGNAR_ORDER: readonly MetodoPagoManual[] = [
 
 const DETALLE: { readonly [K in MetodoPagoManual]: { label: string; icon: string } } = {
   tarjeta: { label: 'Tarjeta', icon: 'credit_card' },
+  bizum: { label: 'Bizum', icon: 'contactless' },
   transferencia: { label: 'Transferencia', icon: 'account_balance' },
   regalo: { label: 'Regalo', icon: 'card_giftcard' },
   efectivo: { label: 'Efectivo', icon: 'euro' },
@@ -56,6 +58,7 @@ export function getMetodoFacturacionPantalla(params: {
   const m = normalizeMetodo(params.metodo);
   if (
     m === 'tarjeta' ||
+    m === 'bizum' ||
     m === 'transferencia' ||
     m === 'regalo' ||
     m === 'efectivo' ||

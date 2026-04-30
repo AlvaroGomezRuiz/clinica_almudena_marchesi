@@ -160,7 +160,13 @@ export async function listarServiciosCatalogoAction(): Promise<
   return data as readonly ServicioCatalogo[];
 }
 
-export type MetodoPagoManual = 'tarjeta' | 'transferencia' | 'regalo' | 'efectivo' | 'klarna';
+export type MetodoPagoManual =
+  | 'tarjeta'
+  | 'bizum'
+  | 'transferencia'
+  | 'regalo'
+  | 'efectivo'
+  | 'klarna';
 
 export interface AsignarBonoManualInput {
   readonly paciente_id: string;
@@ -203,7 +209,7 @@ export async function asignarBonoManualAction(
       return { ok: false, message: 'importe inválido' };
     }
     if (
-      !['tarjeta', 'transferencia', 'regalo', 'efectivo', 'klarna'].includes(input.metodo)
+      !['tarjeta', 'bizum', 'transferencia', 'regalo', 'efectivo', 'klarna'].includes(input.metodo)
     ) {
       return { ok: false, message: 'método de pago inválido' };
     }

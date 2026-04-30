@@ -737,7 +737,7 @@ export interface Database {
           p_paciente_id: string;
           p_servicio_id: string;
           p_sesiones: number;
-          p_metodo: 'tarjeta' | 'transferencia' | 'regalo' | 'efectivo' | 'klarna';
+          p_metodo: 'tarjeta' | 'bizum' | 'transferencia' | 'regalo' | 'efectivo' | 'klarna';
           p_importe_centimos: number;
           p_validez_dias: number;
           p_notas: string | null;

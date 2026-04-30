@@ -2,7 +2,7 @@
 
 /**
  * AsignarBonoManualButton — modal administrativo para crear bonos fuera
- * de Stripe (tarjeta, transferencia, regalo, efectivo, Klarna).
+ * de Stripe (tarjeta, Bizum, transferencia, regalo, efectivo, Klarna).
  *
  * Flujo:
  *   1. Admin busca paciente (reusa listarPacientesQuickAction).

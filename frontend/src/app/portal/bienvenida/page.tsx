@@ -64,7 +64,8 @@ export default async function PortalBienvenidaPage(): Promise<ReactElement> {
             <li>
               <strong className="text-ink dark:text-white">Referencia de tarifas:</strong>{' '}
               {CLINIC_TARIFAS_SESION_RESUMEN}. <strong className="text-ink dark:text-white">Pago con Stripe</strong> en
-              el portal: bonos en Bonos y pagos, o pago al confirmar cita (si no aplicas bono con sesión libre).
+              el portal (tarjeta, Bizum, Link, SEPA, Klarna, wallets): bonos en Bonos y pagos, o pago al confirmar cita
+              (si no aplicas bono con sesión libre).
             </li>
             <li>
               <strong className="text-ink dark:text-white">Reservar cita</strong> elige servicio, día y hora; con bono

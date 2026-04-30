@@ -4,10 +4,19 @@ import SlotPicker, { type ServicioOption } from '@/components/booking/SlotPicker
 import { PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { CLINIC_TARIFAS_SESION_RESUMEN, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
+import {
+  CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES,
+  clinicStripePaymentKeywordsList,
+} from '@/lib/seo/stripe-payment-keywords';
+import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import type { BonoPaciente } from '@/lib/supabase/types';
 
-export const metadata = { title: `Reservar cita | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
+export const metadata: Metadata = {
+  title: `Reservar cita | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+  description: `Reserva con agenda en vivo. Sin bono: pago con Stripe (${CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES}).`,
+  keywords: clinicStripePaymentKeywordsList(),
+};
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
@@ -133,7 +142,7 @@ export default async function ReservarPage({ searchParams }: PageProps) {
           <li>
             <span className="font-medium text-ink dark:text-white/90">Sin bono</span>: verás el importe del servicio
             elegido; tras aceptar la política de cancelación (48 h) el hueco se bloquea unos minutos para completar el
-            pago con tarjeta o wallet.
+            pago con Stripe ({CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES}).
           </li>
           <li>
             Referencia pública de tarifas:{' '}

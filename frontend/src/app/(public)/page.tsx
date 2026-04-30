@@ -16,6 +16,7 @@ import { homePageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
 import { buildHomePageWebJsonLd } from '@/lib/seo/marketing-page-json-ld';
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
+import { clinicStripePaymentKeywordsList } from '@/lib/seo/stripe-payment-keywords';
 
 const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
@@ -139,6 +140,7 @@ export const metadata: Metadata = {
   },
   keywords: [
     ...clinicPrimaryKeywordsList(),
+    ...clinicStripePaymentKeywordsList(),
     'psicóloga Madrid',
     'terapia Madrid',
     'psicólogo Chamberí',

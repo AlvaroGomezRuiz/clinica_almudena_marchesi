@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 const STEPS: readonly { readonly n: 1 | 2 | 3 | 4; readonly label: string; readonly detail: string }[] = [
   { n: 1, label: PORTAL_BIENVENIDA_PASO_TARIFAS, detail: 'Consulta tarifas en la web y aquí en Bonos y pagos.' },
-  { n: 2, label: PORTAL_BIENVENIDA_PASO_PAGO, detail: 'Stripe: bonos o prepago al confirmar la cita.' },
+  { n: 2, label: PORTAL_BIENVENIDA_PASO_PAGO, detail: 'Stripe: tarjeta, Bizum, Link, SEPA, Klarna; bonos o prepago al confirmar la cita.' },
   { n: 3, label: PORTAL_BIENVENIDA_PASO_CITA, detail: 'Elige servicio, día y hora en Citas → Reservar.' },
   { n: 4, label: PORTAL_BIENVENIDA_PASO_PORTAL, detail: 'Tras activar: Mensajes, Recursos y Ajustes al completo.' },
 ] as const;

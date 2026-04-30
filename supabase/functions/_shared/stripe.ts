@@ -173,19 +173,17 @@ export async function createCheckoutSession(
 // ---------------------------------------------------------------------------
 
 /**
- * Métodos del portal (EUR). El orden visual en Payment Element se controla con
- * `paymentMethodOrder` (front): tarjeta → apple_pay → google_pay → SEPA → Klarna → link.
- * Aquí: mismos `payment_method_types` en el PaymentIntent; el orden de este array
- * no define la UI, pero lo alineamos (link al final) para predecibilidad.
- *
- * - `card` + wallets (Apple Pay / Google Pay) en el elemento de pago.
- * - `link` / `sepa_debit` / `klarna` según dashboard.
+ * Métodos del portal (EUR). El orden visual en Payment Element: `paymentMethodOrder`
+ * (front): tarjeta → wallets → Bizum → Link → SEPA → Klarna.
+ * Mismos `payment_method_types` en PaymentIntent/Checkout; Bizum requiere EUR y
+ * activación en Stripe Dashboard (España).
  */
 export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
   "card",
+  "bizum",
+  "link",
   "sepa_debit",
   "klarna",
-  "link",
 ];
 
 export interface CreatePaymentIntentInput {

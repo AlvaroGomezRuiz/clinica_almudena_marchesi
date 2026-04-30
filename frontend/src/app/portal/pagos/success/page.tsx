@@ -6,6 +6,11 @@ import {
   fetchPaymentIntentResumenForUser,
 } from '@/lib/stripe/paymentIntentLookup.server';
 import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
+import {
+  CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES,
+  clinicStripePaymentKeywordsList,
+} from '@/lib/seo/stripe-payment-keywords';
+import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 
 import PagoSuccessPanel, {
@@ -35,7 +40,11 @@ async function withBonoResumen(
   };
 }
 
-export const metadata = { title: `Pago realizado | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
+export const metadata: Metadata = {
+  title: `Pago realizado | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+  description: `Confirmación de pago. Métodos habituales: ${CLINIC_STRIPE_PAYMENT_ORDER_LABEL_ES}.`,
+  keywords: clinicStripePaymentKeywordsList(),
+};
 export const dynamic = 'force-dynamic';
 
 interface Props {
