@@ -1,10 +1,9 @@
 import Link from 'next/link';
+import Photo3D from '@/components/landing/Photo3D';
 import ScrollReveal from '@/components/landing/ScrollReveal';
-import HeroImage from '@/components/landing/HeroImage';
 
-/* Server Component puro. El único client boundary es ScrollReveal.
-   Esto saca el Hero del bundle inicial y deja sólo los fragmentos
-   animados como islas cliente. */
+/* Misma tarjeta visual que /sobre-mí (Photo3D: marco, fondo cristal, sombra).
+   Photo3D es cliente; el texto del hero sigue animado con ScrollReveal. */
 export default function HeroSection() {
   return (
     <section
@@ -66,9 +65,19 @@ export default function HeroSection() {
           </ScrollReveal>
         </div>
 
-        {/* Imagen — Server Component estático, máxima prioridad LCP */}
+        {/* Misma composición que /sobre-mí: Photo3D + reveal suave */}
         <div className="order-2 flex justify-center">
-          <HeroImage className="max-w-[340px] md:max-w-[440px] lg:max-w-[480px] w-full" />
+          <ScrollReveal delay={0.1} scale={0.96}>
+            <Photo3D
+              src="/images/almudena-principal-home.avif"
+              alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
+              width={580}
+              height={750}
+              priority
+              maxRotation={10}
+              className="max-w-[340px] md:max-w-[440px] lg:max-w-[480px] w-full"
+            />
+          </ScrollReveal>
         </div>
       </div>
     </section>

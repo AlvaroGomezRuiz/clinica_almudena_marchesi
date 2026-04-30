@@ -43,7 +43,6 @@ export const metadata: Metadata = buildPublicPageMetadata({
 
 const CREDENTIALS = [
   {
-    icon: 'school',
     title: 'Formación Académica',
     body: 'Licenciada en Psicología Clínica con especialización en enfoques integradores. Formación continua en las últimas corrientes terapéuticas.',
     items: [
@@ -53,14 +52,12 @@ const CREDENTIALS = [
     accentColor: 'sage',
   },
   {
-    icon: 'medical_services',
     title: 'Recorrido Clínico',
     body: 'Desde 2023 acompañando a adultos y adolescentes en su proceso terapéutico, con una dedicación plena a cada caso desde la consulta de Moncloa.',
     items: ['Práctica privada en Moncloa', 'Colaboración en centros de salud mental'],
     accentColor: 'warm',
   },
   {
-    icon: 'psychology',
     title: 'Metodología',
     body: 'Enfoque humanista integrador, combinando técnicas cognitivo-conductuales con terapias de tercera generación según las necesidades.',
     items: [
@@ -201,39 +198,37 @@ export default function SobreMiPage() {
             <div className="w-16 h-[2px] bg-sage/20 mx-auto" />
           </ScrollReveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {/* Mismo patrón de rejilla y cuerpo de tarjeta que /enfoque (título centrado, texto a la izquierda) */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {CREDENTIALS.map((cred, i) => (
-              <ScrollReveal key={cred.title} delay={i * 0.08}>
+              <ScrollReveal
+                key={cred.title}
+                delay={i * 0.08}
+                className={
+                  i === 0 ? 'md:col-span-7' : i === 1 ? 'md:col-span-5' : 'md:col-span-12'
+                }
+              >
                 <PremiumCard tilt={false} className="h-full">
-                  <div className="p-8 md:p-10 h-full flex flex-col group hover:-translate-y-1 transition-all duration-600 ease-apple">
-                    <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center mb-8 transition-colors duration-400 ease-apple ${
-                        cred.accentColor === 'sage'
-                          ? 'bg-sage-wash group-hover:bg-sage'
-                          : cred.accentColor === 'warm'
-                            ? 'bg-warm-light group-hover:bg-warm'
-                            : 'bg-sage-wash group-hover:bg-sage-mid'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-2xl text-sage group-hover:text-white transition-colors duration-400">
-                        {cred.icon}
-                      </span>
-                    </div>
-                    <h3 className="font-display text-display-3 text-ink mb-4">
+                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10">
+                    <h3 className="font-display text-display-3 text-balance text-ink">
                       {cred.title}
                     </h3>
-                    <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
+                    <p className="text-left font-body text-[0.92rem] leading-relaxed text-ink-soft">
                       {cred.body}
                     </p>
-                    <ul className="space-y-3 mt-auto">
+                    <ul className="mt-auto space-y-3 text-left">
                       {cred.items.map((item) => (
                         <li
                           key={item}
                           className="flex items-center gap-3 text-sm text-ink-soft font-body"
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              cred.accentColor === 'warm' ? 'bg-warm' : 'bg-sage'
+                            className={`w-1.5 h-1.5 shrink-0 rounded-full ${
+                              cred.accentColor === 'warm'
+                                ? 'bg-warm'
+                                : cred.accentColor === 'sage-mid'
+                                  ? 'bg-sage-mid'
+                                  : 'bg-sage'
                             }`}
                           />
                           {item}

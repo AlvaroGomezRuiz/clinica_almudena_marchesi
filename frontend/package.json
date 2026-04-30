@@ -46,6 +46,13 @@
     "zod": "^3.22.4",
     "zxcvbn": "^4.4.2"
   },
+  "browserslist": [
+    "Chrome >= 100",
+    "Firefox >= 100",
+    "Safari >= 15.4",
+    "Edge >= 100",
+    "not dead"
+  ],
   "devDependencies": {
     "@axe-core/playwright": "^4.11.2",
     "@playwright/test": "^1.59.1",

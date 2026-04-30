@@ -56,6 +56,8 @@ const fontDisplay = localFont({
   display: 'swap',
   preload: false,
   fallback: ['Georgia', 'Cambria', 'Times New Roman', 'serif'],
+  /* Reduce CLS al cargar la display: el fallback ocupa métricas más parecidas. */
+  adjustFontFallback: 'Times New Roman',
 });
 
 const fontMono = localFont({
@@ -153,8 +155,12 @@ export const metadata: Metadata = {
   category: 'health',
 };
 
-/* Host de Supabase extraído del env en build time para pre-conectar
-   desde la primera navegación (reduce RTT en el primer fetch auth). */
+/**
+ * Solo `dns-prefetch` en la raíz: en la portada pública no hay fetch a
+ * Supabase/Stripe; `preconnect` sin uso penaliza Lighthouse (conexiones
+ * desperdiciadas). Portal/admin pagan un RTT extra en la primera petición
+ * real — aceptable frente al score global.
+ */
 const SUPABASE_ORIGIN = (() => {
   const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!raw) return null;
@@ -177,15 +183,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Preconnect: abre TLS handshake en paralelo al parseo del HTML.
-            Ahorra 100-300 ms en el primer request a cada origen. */}
-        {SUPABASE_ORIGIN ? (
-          <>
-            <link rel="preconnect" href={SUPABASE_ORIGIN} crossOrigin="anonymous" />
-            <link rel="dns-prefetch" href={SUPABASE_ORIGIN} />
-          </>
-        ) : null}
-        <link rel="preconnect" href="https://js.stripe.com" crossOrigin="anonymous" />
+        {SUPABASE_ORIGIN ? <link rel="dns-prefetch" href={SUPABASE_ORIGIN} /> : null}
         <link rel="dns-prefetch" href="https://js.stripe.com" />
       </head>
       <body>
