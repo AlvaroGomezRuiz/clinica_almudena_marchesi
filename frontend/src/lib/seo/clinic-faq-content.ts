@@ -30,7 +30,7 @@ const siteHost: string = (() => {
 export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Dónde está la consulta de psicología en Madrid?',
-    answer: `La consulta presencial está en ${CLINIC_ADDRESS} (Chamberí / Moncloa–Chamberí, CP 28015). El enlace exacto a mapas se publica en la página de contacto de ${siteHost}.`,
+    answer: `Psicología clínica con consulta presencial en Moncloa–Chamberí (Madrid, CP 28015): ${CLINIC_ADDRESS}. Terapia individual, de pareja e infanto-juvenil; también online con cita. Mapa, cómo llegar y datos de contacto están en la página de contacto de ${siteHost}.`,
   },
   {
     question: '¿Atiende solo en la zona de Moncloa y Chamberí?',

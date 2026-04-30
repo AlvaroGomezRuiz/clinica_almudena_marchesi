@@ -129,8 +129,9 @@ export const CLINIC_BUSINESS_OPENING_DATE_ISO = '2026-04-13' as const;
 export const CLINIC_ENTITY_DESCRIPTION_ES: string =
   'AM Psicología (Clínica Almudena Marchesi): psicoterapia con Almudena Marchesi Fernández en Moncloa, Argüelles y Chamberí, Madrid. Enfoque integrador: ansiedad, depresión, estrés, duelo y dificultades relacionales; individual, pareja, infanto-juvenil y online con criterio. Portal del paciente para citas, pago y mensajería. Cita en Calle de Meléndez Valdés, 1D, 28015. Presencial: jueves; consulta disponibilidad online en portal.';
 
+/** Meta description de la home: orientada a CTR; la dirección detallada queda en FAQ/contacto/JSON-LD de negocio. */
 export const CLINIC_HOME_META_DESCRIPTION_ES: string =
-  'AM Psicología: psicóloga en Moncloa, Argüelles y Chamberí. Terapia individual, pareja e infanto-juvenil (ansiedad, depresión, estrés). Citas y portal del paciente. Calle Meléndez Valdés 22, 28015 Madrid.';
+  'Psicología clínica en Moncloa y Chamberí, Madrid: terapia individual, de pareja e infanto-juvenil. Ansiedad, estado de ánimo, estrés y duelo. Psicóloga colegiada M-38427. Reserva y seguimiento en el portal del paciente.';
 
 /**
  * Perfiles sociales verificados a incluir en `sameAs` si no vienen en env

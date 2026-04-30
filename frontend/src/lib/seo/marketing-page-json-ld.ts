@@ -50,6 +50,8 @@ export function buildMarketingPageJsonLd(
 export interface HomePageWebJsonLdInput {
   readonly name: string;
   readonly description: string;
+  /** Palabras clave para `WebPage.keywords` (schema.org), p. ej. CSV de intención de búsqueda. */
+  readonly keywordsCsv?: string;
 }
 
 /**
@@ -62,26 +64,30 @@ export function buildHomePageWebJsonLd(
   const url = `${base}/`;
   const imageUrl = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 
+  const webPage: Record<string, unknown> = {
+    '@type': 'WebPage',
+    '@id': `${url}#webpage`,
+    url,
+    name: input.name,
+    description: input.description,
+    inLanguage: 'es-ES',
+    isPartOf: { '@id': `${base}/#website` },
+    about: { '@id': `${base}/#localbusiness` },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: imageUrl,
+      width: 1200,
+      height: 630,
+    },
+    publisher: { '@id': `${base}/#localbusiness` },
+  };
+
+  if (input.keywordsCsv?.trim()) {
+    webPage.keywords = input.keywordsCsv.trim();
+  }
+
   return {
     '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'WebPage',
-        '@id': `${url}#webpage`,
-        url,
-        name: input.name,
-        description: input.description,
-        inLanguage: 'es-ES',
-        isPartOf: { '@id': `${base}/#website` },
-        about: { '@id': `${base}/#localbusiness` },
-        primaryImageOfPage: {
-          '@type': 'ImageObject',
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-        },
-        publisher: { '@id': `${base}/#localbusiness` },
-      },
-    ],
+    '@graph': [webPage],
   };
 }

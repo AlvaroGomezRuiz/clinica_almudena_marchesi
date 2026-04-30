@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import HeroSection from '@/components/sections/HeroSection';
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import {
-  CLINIC_ENTITY_DESCRIPTION_ES,
   CLINIC_GEO_LAT,
   CLINIC_GEO_LNG,
   CLINIC_HOME_META_DESCRIPTION_ES,
@@ -15,8 +14,7 @@ import {
 import { homePageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
 import { buildHomePageWebJsonLd } from '@/lib/seo/marketing-page-json-ld';
-import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
-import { clinicStripePaymentKeywordsList } from '@/lib/seo/stripe-payment-keywords';
+import { homeSearchKeywordsCsv, homeSearchKeywordsList } from '@/lib/seo/home-search-keywords';
 
 const ogProfileImage = getClinicAbsoluteImageUrl('/images/almudena-profile.avif');
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
@@ -25,7 +23,8 @@ const homeFaqPageUrl: string = new URL('/', CLINIC_PUBLIC_SITE_URL).href;
 const homeFaqLd = buildFaqPageJsonLd(homePageFaq, homeFaqPageUrl);
 const homeWebPageLd = buildHomePageWebJsonLd({
   name: `Clínica de psicología clínica en Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
-  description: CLINIC_ENTITY_DESCRIPTION_ES,
+  description: CLINIC_HOME_META_DESCRIPTION_ES,
+  keywordsCsv: homeSearchKeywordsCsv(),
 });
 
 /* ── Dynamic imports para secciones below-the-fold ──────────────────
@@ -138,15 +137,7 @@ export const metadata: Metadata = {
     'geo.placename': 'Madrid, Moncloa–Chamberí–Argüelles',
     ICBM: `${CLINIC_GEO_LAT}, ${CLINIC_GEO_LNG}`,
   },
-  keywords: [
-    ...clinicPrimaryKeywordsList(),
-    ...clinicStripePaymentKeywordsList(),
-    'psicóloga Madrid',
-    'terapia Madrid',
-    'psicólogo Chamberí',
-    'Almudena Marchesi',
-    'terapia ansiedad Madrid',
-  ],
+  keywords: homeSearchKeywordsList(),
 };
 
 export default function HomePage() {
