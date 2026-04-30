@@ -8,7 +8,7 @@
  *      o `crearPaymentIntentBonoAction`).
  *   2. Monta <Elements> con appearance y <PaymentElement> con orden fijo (Stripe):
  *      tarjeta → Apple Pay / Google Pay → Bizum → Link → SEPA → Klarna.
- *      `paymentMethodOrder` alineado con `PORTAL_PAYMENT_METHOD_TYPES` (servidor).
+ *      `paymentMethodOrder` alineado con Dashboard + automático en servidor (Edge).
  *   3. Submit → `stripe.confirmPayment` con `return_url = /portal/pagos/success`.
  *   401 en `api.stripe.com/.../elements/sessions` en consola: la clave publicable
  *   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (Vercel) y `STRIPE_SECRET_KEY` (Supabase, Edge

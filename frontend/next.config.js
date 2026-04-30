@@ -234,6 +234,18 @@ const nextConfig = {
       },
     ];
   },
+
+  /** Rutas legacy / raíz → iconos bajo `/public/logotype/`. */
+  async rewrites() {
+    return [
+      { source: '/favicon.ico', destination: '/logotype/favicon.ico' },
+      { source: '/favicon-16x16.png', destination: '/logotype/favicon-16x16.png' },
+      { source: '/favicon-32x32.png', destination: '/logotype/favicon-32x32.png' },
+      { source: '/apple-touch-icon.png', destination: '/logotype/apple-touch-icon.png' },
+      { source: '/android-chrome-192x192.png', destination: '/logotype/android-chrome-192x192.png' },
+      { source: '/android-chrome-512x512.png', destination: '/logotype/android-chrome-512x512.png' },
+    ];
+  },
 };
 
 // ─── SENTRY ───

@@ -27,13 +27,26 @@ function encodeForm(obj: Record<string, unknown>, prefix = ""): string {
     if (value === null || value === undefined) continue;
     const k = prefix ? `${prefix}[${key}]` : key;
     if (Array.isArray(value)) {
-      value.forEach((v, i) => {
-        if (typeof v === "object" && v !== null) {
-          parts.push(encodeForm(v as Record<string, unknown>, `${k}[${i}]`));
-        } else {
-          parts.push(`${encodeURIComponent(`${k}[${i}]`)}=${encodeURIComponent(String(v))}`);
+      const allPrimitive = value.every(
+        (v) =>
+          v !== null &&
+          v !== undefined &&
+          (typeof v === "string" || typeof v === "number" || typeof v === "boolean"),
+      );
+      if (allPrimitive) {
+        for (const v of value) {
+          if (v === null || v === undefined) continue;
+          parts.push(`${encodeURIComponent(`${k}[]`)}=${encodeURIComponent(String(v))}`);
         }
-      });
+      } else {
+        value.forEach((v, i) => {
+          if (typeof v === "object" && v !== null) {
+            parts.push(encodeForm(v as Record<string, unknown>, `${k}[${i}]`));
+          } else if (v !== null && v !== undefined) {
+            parts.push(`${encodeURIComponent(`${k}[${i}]`)}=${encodeURIComponent(String(v))}`);
+          }
+        });
+      }
     } else if (typeof value === "object") {
       parts.push(encodeForm(value as Record<string, unknown>, k));
     } else {
@@ -103,6 +116,8 @@ export interface CreateCheckoutInput {
    */
   payment_method_types?: string[];
   automatic_payment_methods?: boolean;
+  /** Con `automatic_payment_methods`, excluye LPM no deseados (ver `PORTAL_EXCLUDED_*`). */
+  excluded_payment_method_types?: readonly string[];
   locale?: string;
 }
 
@@ -145,10 +160,13 @@ export async function createCheckoutSession(
     })),
   };
 
-  // Métodos de pago: auto (wallets + Klarna) o lista explícita.
+  // Métodos de pago: auto (respeta Dashboard: Bizum, Link…) o lista explícita.
   if (usarAuto) {
     body["automatic_payment_methods[enabled]"] = "true";
     body["automatic_payment_methods[allow_redirects]"] = "always";
+    if (input.excluded_payment_method_types && input.excluded_payment_method_types.length > 0) {
+      body.excluded_payment_method_types = [...input.excluded_payment_method_types];
+    }
   } else if (input.payment_method_types && input.payment_method_types.length > 0) {
     body.payment_method_types = input.payment_method_types;
   }
@@ -173,10 +191,9 @@ export async function createCheckoutSession(
 // ---------------------------------------------------------------------------
 
 /**
- * Métodos del portal (EUR). El orden visual en Payment Element: `paymentMethodOrder`
- * (front): tarjeta → wallets → Bizum → Link → SEPA → Klarna.
- * Mismos `payment_method_types` en PaymentIntent/Checkout; Bizum requiere EUR y
- * activación en Stripe Dashboard (España).
+ * Lista explícita (Checkout legacy / referencia). Para Payment Element el portal usa
+ * `automatic_payment_methods` + {@link PORTAL_EXCLUDED_PAYMENT_METHOD_TYPES}: Stripe
+ * aplica lo habilitado en Dashboard (incl. Bizum) y el Element filtra por país/importe.
  */
 export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
   "card",
@@ -184,6 +201,21 @@ export const PORTAL_PAYMENT_METHOD_TYPES: readonly string[] = [
   "link",
   "sepa_debit",
   "klarna",
+];
+
+/**
+ * LPM que no ofrecemos en portal (EUR); con `automatic_payment_methods` evitan aparecer
+ * Bancontact, MB Way, iDEAL, etc. No incluir card, link, sepa_debit, klarna ni bizum.
+ */
+export const PORTAL_EXCLUDED_PAYMENT_METHOD_TYPES: readonly string[] = [
+  "bancontact",
+  "blik",
+  "eps",
+  "giropay",
+  "ideal",
+  "mb_way",
+  "p24",
+  "sofort",
 ];
 
 export interface CreatePaymentIntentInput {
@@ -194,10 +226,14 @@ export interface CreatePaymentIntentInput {
   metadata: Record<string, string>;
   idempotency_key: string;
   /**
-   * Si se pasa (recomendado: PORTAL_PAYMENT_METHOD_TYPES), no se usan
-   * `automatic_payment_methods` (evita MB Way, Bancontact, EPS, etc.).
+   * Si se omite o está vacío, se usan `automatic_payment_methods` (recomendado para
+   * Bizum y demás LPM según Dashboard) + `excluded_payment_method_types` opcional.
    */
-  payment_method_types?: readonly string[];
+  payment_method_types?: readonly string[] | null;
+  /**
+   * Solo aplica con `automatic_payment_methods` activo (sin lista explícita de tipos).
+   */
+  excluded_payment_method_types?: readonly string[];
   /**
    * Solo aplica si `payment_method_types` está vacío. Por defecto `true` (comportamiento antiguo).
    */
@@ -226,7 +262,7 @@ export async function createPaymentIntent(
     metadata: input.metadata,
   };
 
-  if (input.payment_method_types && input.payment_method_types.length > 0) {
+  if (input.payment_method_types != null && input.payment_method_types.length > 0) {
     body.payment_method_types = [...input.payment_method_types];
   } else {
     if (input.automatic_payment_methods === false) {
@@ -239,11 +275,13 @@ export async function createPaymentIntent(
     if (useAuto) {
       body["automatic_payment_methods[enabled]"] = "true";
       body["automatic_payment_methods[allow_redirects]"] = "always";
+      if (input.excluded_payment_method_types && input.excluded_payment_method_types.length > 0) {
+        body.excluded_payment_method_types = [...input.excluded_payment_method_types];
+      }
     }
   }
 
-  /* Link se habilita incluyendo el tipo `link` en `payment_method_types` (arriba) y
-   * en Stripe Dashboard → Payment methods → Link. */
+  /* Con automático, Link/Bizum/Klarna/etc. dependen de lo activado en Dashboard. */
 
   return await stripeRequest<PaymentIntent>(
     "/payment_intents",
