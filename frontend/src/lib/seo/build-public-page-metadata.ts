@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_GEO_LAT, CLINIC_GEO_LNG, CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
+import { CLINIC_GEO_LAT, CLINIC_GEO_LNG, CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
 
 export interface BuildPublicPageMetadataParams {
   /** Ruta absoluta desde la raíz del sitio, p. ej. `/contacto` */
@@ -40,7 +40,7 @@ export function buildPublicPageMetadata(
   } as const;
 
   return {
-    /* Evita duplicar el sufijo del layout padre (`%s | Almudena Marchesi`). */
+    /* `absolute` evita el template del layout (`%s | <host>`). */
     title: { absolute: params.title },
     description: params.description,
     ...(params.keywords?.length ? { keywords: params.keywords } : {}),
@@ -55,7 +55,7 @@ export function buildPublicPageMetadata(
       title: params.title,
       description: params.description,
       url,
-      siteName: 'Clínica Almudena Marchesi',
+      siteName: CLINIC_PUBLIC_SITE_HOST_LABEL,
       locale: 'es_ES',
       type: params.ogType ?? 'website',
       images: [ogImage],
@@ -96,7 +96,7 @@ export function buildPublicPageMetadata(
       ? {
           other: {
             'geo.region': 'ES-MD',
-            'geo.placename': 'Madrid, Moncloa–Chamberí',
+            'geo.placename': 'Madrid, Moncloa–Chamberí–Argüelles',
             ICBM: `${CLINIC_GEO_LAT}, ${CLINIC_GEO_LNG}`,
           },
         }

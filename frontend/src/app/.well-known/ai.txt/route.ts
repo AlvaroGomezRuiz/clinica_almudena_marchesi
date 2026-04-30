@@ -11,6 +11,7 @@ export async function GET(): Promise<NextResponse> {
     `ai-discovery: ${base}/llms.txt`,
     `ai-discovery: ${base}/llms-full.txt`,
     `ai-discovery: ${base}/ai/summary.json`,
+    `ai-discovery: ${base}/ai/geo-facts.json`,
     '',
   ].join('\n');
 

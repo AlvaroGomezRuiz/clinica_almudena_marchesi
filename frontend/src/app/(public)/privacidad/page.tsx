@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 import { buildLegalWebPageJsonLd } from '@/lib/seo/legal-web-page-json-ld';
 import { LEGAL_DOCUMENT_VERSION, LEGAL_LAST_UPDATED_ES } from '@/lib/seo/legal-version';
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/privacidad',
-  title: 'Política de Privacidad — RGPD y datos de salud | Almudena Marchesi',
+  title: `Política de Privacidad — RGPD y datos de salud | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Tratamiento de datos personales y datos de salud conforme al RGPD (UE) 2016/679 y Ley 41/2002 básica de autonomía del paciente. Responsable: Almudena Marchesi Fernández.',
   keywords: [

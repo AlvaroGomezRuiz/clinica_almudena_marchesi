@@ -6,7 +6,7 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { enfoquePageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
 import { buildMarketingPageJsonLd } from '@/lib/seo/marketing-page-json-ld';
@@ -14,7 +14,7 @@ import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
 const enfoqueSeoLd = buildMarketingPageJsonLd({
   path: '/enfoque',
-  name: 'Enfoque terapéutico | Almudena Marchesi — Psicología clínica Madrid',
+  name: `Enfoque terapéutico — Psicología clínica Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Metodología basada en escucha activa, marco no juzgante y rigor clínico. Psicología en Moncloa-Chamberí, Madrid.',
   breadcrumb: [
@@ -28,7 +28,7 @@ const enfoqueFaqLd = buildFaqPageJsonLd(enfoquePageFaq, enfoqueFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/enfoque',
-  title: 'Enfoque terapéutico | Almudena Marchesi — Psicología clínica Madrid',
+  title: `Enfoque terapéutico — Psicología clínica Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Metodología basada en escucha activa, marco no juzgante y rigor clínico. Psicología en Moncloa-Chamberí, Madrid.',
   keywords: [

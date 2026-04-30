@@ -3,11 +3,11 @@ import Link from 'next/link';
 import SlotPicker, { type ServicioOption } from '@/components/booking/SlotPicker';
 import { PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
-import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
+import { CLINIC_TARIFAS_SESION_RESUMEN, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type { BonoPaciente } from '@/lib/supabase/types';
 
-export const metadata = { title: 'Reservar | Portal Paciente' };
+export const metadata = { title: `Reservar cita | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface PageProps {

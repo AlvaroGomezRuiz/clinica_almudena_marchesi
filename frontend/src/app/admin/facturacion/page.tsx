@@ -15,10 +15,11 @@ import AsignarBonoManualButton from '@/components/admin/facturacion/AsignarBonoM
 import { RedeemGiftIcon } from '@/components/icons/RedeemGiftIcon';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { getMetodoFacturacionPantalla } from '@/lib/admin/facturacion-metodo-display';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type { BonoPaciente } from '@/lib/supabase/types';
 
-export const metadata = { title: 'Facturación | Panel Almudena' };
+export const metadata = { title: `Facturación | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface PagoRow {

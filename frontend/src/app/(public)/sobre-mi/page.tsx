@@ -6,7 +6,7 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
-import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { sobreMiPageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
 import { buildMarketingPageJsonLd } from '@/lib/seo/marketing-page-json-ld';
@@ -14,7 +14,7 @@ import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
 const sobreMiSeoLd = buildMarketingPageJsonLd({
   path: '/sobre-mi',
-  name: 'Sobre mí | Almudena Marchesi — Psicóloga sanitaria en Madrid',
+  name: `Sobre mí — Psicóloga sanitaria en Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Formación en Psicología Clínica y PGS. Acompañamiento terapéutico desde la consulta en Meléndez Valdés (Moncloa). Trayectoria y valores profesionales.',
   breadcrumb: [
@@ -28,7 +28,7 @@ const sobreMiFaqLd = buildFaqPageJsonLd(sobreMiPageFaq, sobreMiFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/sobre-mi',
-  title: 'Sobre mí | Almudena Marchesi — Psicóloga sanitaria en Madrid',
+  title: `Sobre mí — Psicóloga sanitaria en Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Formación en Psicología Clínica y PGS. Acompañamiento terapéutico desde la consulta en Meléndez Valdés (Moncloa). Trayectoria y valores profesionales.',
   keywords: [

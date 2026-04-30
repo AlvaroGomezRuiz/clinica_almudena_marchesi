@@ -15,6 +15,7 @@ import {
   CLINIC_PUBLIC_PHONE_E164,
   CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES,
   CLINIC_PUBLIC_PRESENCIAL_SCHEDULE_ROWS,
+  CLINIC_PUBLIC_SITE_HOST_LABEL,
   CLINIC_PUBLIC_SITE_URL,
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
@@ -25,7 +26,7 @@ import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 
 const contactoSeoLd = buildMarketingPageJsonLd({
   path: '/contacto',
-  name: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
+  name: `Contacto — Moncloa, Meléndez Valdés | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa–Chamberí, Madrid). Presencial: de momento solo jueves (franjas publicadas en la página). Teléfono, correo ${CLINIC_CONTACT_EMAIL} y cómo llegar.`,
   breadcrumb: [
     { name: 'Inicio', path: '/' },
@@ -38,7 +39,7 @@ const contactoFaqLd = buildFaqPageJsonLd(contactoPageFaq, contactoFaqPageUrl);
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/contacto',
-  title: 'Contacto | Almudena Marchesi — Psicología Clínica Madrid · Moncloa',
+  title: `Contacto — Moncloa, Meléndez Valdés | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: `Consulta de psicología en Calle Meléndez Valdés (Moncloa–Chamberí, Madrid). Presencial: de momento solo jueves (franjas publicadas en la página). Teléfono, correo ${CLINIC_CONTACT_EMAIL} y cómo llegar.`,
   keywords: [
     'contacto psicóloga Madrid',

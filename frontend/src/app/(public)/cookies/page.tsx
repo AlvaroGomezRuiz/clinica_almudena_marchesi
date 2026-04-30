@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
 import { buildLegalWebPageJsonLd } from '@/lib/seo/legal-web-page-json-ld';
 import { LEGAL_DOCUMENT_VERSION, LEGAL_LAST_UPDATED_ES } from '@/lib/seo/legal-version';
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/cookies',
-  title: 'Política de Cookies — Almudena Marchesi Fernández (Madrid)',
+  title: `Política de Cookies — RGPD (Madrid) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Cookies técnicas y de sesión en ampsicologia.es: Supabase Auth, Stripe, Next.js y mediciones agregadas. Sin cookies publicitarias ni analíticas de perfilado.',
   keywords: ['cookies', 'política cookies', 'LSSI', 'sesión segura', 'ampsicologia.es'],

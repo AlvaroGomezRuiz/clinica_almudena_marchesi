@@ -4,10 +4,11 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import ChatPanel from '@/components/chat/ChatPanel';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import { enrichMensajesWithAdjuntos } from '@/services/mensajes/fetch-adjuntos';
 
-export const metadata = { title: 'Mensajes | Portal Paciente' };
+export const metadata = { title: `Mensajes | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface MensajeRow {

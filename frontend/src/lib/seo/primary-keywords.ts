@@ -7,6 +7,7 @@ export const CLINIC_PRIMARY_KEYWORDS = [
   'psicólogo Moncloa Madrid',
   'psicóloga clínica Moncloa',
   'psicología clínica Chamberí',
+  'psicóloga Argüelles Madrid',
   'terapia de pareja Moncloa',
   'psicóloga Chamberí 28015',
   'terapia psicológica Madrid',
@@ -18,6 +19,9 @@ export const CLINIC_PRIMARY_KEYWORDS = [
   'M-38427 psicóloga',
   'duelo y estrés Madrid',
   'terapia infanto juvenil Madrid',
+  'psicóloga Tetuán Madrid',
+  'psicoterapia distrito Centro Madrid',
+  'AM Psicología Madrid',
 ] as const;
 
 /**

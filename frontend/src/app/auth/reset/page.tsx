@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import ResetPasswordForm from '@/components/auth/ResetPasswordForm';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Nueva contraseña | Almudena Marchesi',
+  title: `Nueva contraseña | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: 'Elige una nueva contraseña para tu cuenta.',
   robots: { index: false, follow: false },
 };

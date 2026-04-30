@@ -16,9 +16,10 @@ import {
   SurfaceCard,
 } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Mis citas | Portal Paciente' };
+export const metadata = { title: `Mis citas | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface CitaRow {

@@ -30,7 +30,7 @@ export const CLINIC_EMAIL_FOOTER_ADDRESS =
   'Calle de Meléndez Valdés número 22, piso 1D, Madrid';
 
 /** Mismo valor que `frontend/src/lib/clinic.ts` (visible en pie de correo). */
-export const CLINIC_PUBLIC_PHONE_DISPLAY = '+34 646 445 991' as const;
+export const CLINIC_PUBLIC_PHONE_DISPLAY = '+34 646 44 59 91' as const;
 
 /** Solo dígitos y + para `href="tel:"`. */
 export const CLINIC_PUBLIC_PHONE_TEL = '+34646445991' as const;

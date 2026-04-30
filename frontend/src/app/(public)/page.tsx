@@ -4,8 +4,11 @@ import dynamic from 'next/dynamic';
 import HeroSection from '@/components/sections/HeroSection';
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import {
+  CLINIC_ENTITY_DESCRIPTION_ES,
   CLINIC_GEO_LAT,
   CLINIC_GEO_LNG,
+  CLINIC_HOME_META_DESCRIPTION_ES,
+  CLINIC_PUBLIC_SITE_HOST_LABEL,
   CLINIC_PUBLIC_SITE_URL,
   getClinicAbsoluteImageUrl,
 } from '@/lib/clinic';
@@ -20,9 +23,8 @@ const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.tri
 const homeFaqPageUrl: string = new URL('/', CLINIC_PUBLIC_SITE_URL).href;
 const homeFaqLd = buildFaqPageJsonLd(homePageFaq, homeFaqPageUrl);
 const homeWebPageLd = buildHomePageWebJsonLd({
-  name: 'Almudena Marchesi | Clínica de psicología clínica en Moncloa, Madrid',
-  description:
-    'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Terapia basada en evidencia. Consulta cerca de Calle Meléndez Valdés. Primera sesión exploratoria bajo cita.',
+  name: `Clínica de psicología clínica en Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+  description: CLINIC_ENTITY_DESCRIPTION_ES,
 });
 
 /* ── Dynamic imports para secciones below-the-fold ──────────────────
@@ -90,15 +92,13 @@ const CTASection = dynamic(
 /* ── Metadata enriquecida (SEO + OpenGraph + Twitter) ─────────────── */
 export const metadata: Metadata = {
   metadataBase: new URL(CLINIC_PUBLIC_SITE_URL),
-  title: 'Almudena Marchesi | Clínica de psicología clínica en Moncloa, Madrid',
-  description:
-    'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Terapia basada en evidencia. Consulta cerca de Calle Meléndez Valdés. Primera sesión exploratoria bajo cita.',
+  title: `Clínica de psicología clínica en Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+  description: CLINIC_HOME_META_DESCRIPTION_ES,
   openGraph: {
-    title: 'Almudena Marchesi — Clínica de psicología en Moncloa, Madrid',
-    description:
-      'Psicología clínica en Moncloa y Chamberí, Madrid. Atención individual, de pareja e infanto-juvenil. Consulta: Meléndez Valdés 22, 1D.',
+    title: `AM Psicología — Moncloa, Argüelles, Chamberí | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+    description: CLINIC_HOME_META_DESCRIPTION_ES,
     url: CLINIC_PUBLIC_SITE_URL,
-    siteName: 'Clínica Almudena Marchesi',
+    siteName: CLINIC_PUBLIC_SITE_HOST_LABEL,
     images: [
       {
         url: ogProfileImage,
@@ -112,8 +112,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Almudena Marchesi | Psicología Clínica Madrid',
-    description: 'Acompañamiento profesional en el corazón de Moncloa.',
+    title: `AM Psicología, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+    description: CLINIC_HOME_META_DESCRIPTION_ES,
     images: [ogProfileImage],
   },
   robots: {
@@ -134,7 +134,7 @@ export const metadata: Metadata = {
   ...(googleVerification ? { verification: { google: googleVerification } } : {}),
   other: {
     'geo.region': 'ES-MD',
-    'geo.placename': 'Madrid, Moncloa–Chamberí',
+    'geo.placename': 'Madrid, Moncloa–Chamberí–Argüelles',
     ICBM: `${CLINIC_GEO_LAT}, ${CLINIC_GEO_LNG}`,
   },
   keywords: [

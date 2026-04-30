@@ -20,7 +20,7 @@ import { labelAdminLookupCampo } from '@/components/admin/ficha/admin-lookup-cam
 import FichaPacienteHeaderActions from '@/components/admin/ficha/FichaPacienteHeaderActions';
 import PacienteAdjuntosCard from '@/components/admin/ficha/PacienteAdjuntosCard';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
-import { CLINIC_PUBLIC_PHONE_DISPLAY } from '@/lib/clinic';
+import { CLINIC_PUBLIC_PHONE_DISPLAY, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type { FichaSensiblesBulk } from '@/services/admin/ficha-actions';
 import type {
@@ -39,7 +39,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<{ title: string }> {
   const { id } = await params;
-  return { title: `Ficha #${id.slice(0, 6)} | Panel Almudena` };
+  return { title: `Ficha #${id.slice(0, 6)} | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 }
 
 interface PacienteFichaRow {

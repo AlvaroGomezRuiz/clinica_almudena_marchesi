@@ -43,6 +43,10 @@ const CRAWLER_UA_SUBSTR: readonly string[] = [
   'ccbot',
   'perplexitybot',
   'amazonbot',
+  // PageSpeed Insights / Lighthouse (laboratorio): no son Googlebot; sin esto, GEO devuelve 403 y el informe SEO es inválido.
+  'chrome-lighthouse',
+  'lighthouse',
+  'pagespeed',
 ] as const;
 
 /**

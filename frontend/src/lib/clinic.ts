@@ -9,6 +9,22 @@ export const CLINIC_PUBLIC_SITE_URL: string =
   process.env.NEXT_PUBLIC_APP_URL ??
   'https://ampsicologia.es';
 
+/**
+ * Host público sin `www.` para `<title>`, PWA y Open Graph `siteName`
+ * (p. ej. `ampsicologia.es` si la canónica es `https://www.ampsicologia.es/`).
+ */
+export const CLINIC_PUBLIC_SITE_HOST_LABEL: string = ((): string => {
+  try {
+    const h = new URL(CLINIC_PUBLIC_SITE_URL).hostname.toLowerCase();
+    if (h === '') {
+      return 'ampsicologia.es';
+    }
+    return h.startsWith('www.') ? h.slice(4) : h;
+  } catch {
+    return 'ampsicologia.es';
+  }
+})();
+
 /** Contacto único clínico (público, RGPD, facturación manual referida). */
 export const CLINIC_CONTACT_EMAIL = 'clinica.almudena.marchesi@outlook.com' as const;
 
@@ -101,6 +117,30 @@ export const CLINIC_ADDRESS = `${CLINIC_ADDRESS_LINE1}, ${CLINIC_ADDRESS_LINE2}`
 export const CLINIC_POSTAL_CODE = '28015' as const;
 
 /**
+ * Fecha de apertura del negocio (NAP/entidad; AAAA-MM-DD) — alinear con ficha
+ * pública (p. ej. Google Business) cuando se actualice.
+ */
+export const CLINIC_BUSINESS_OPENING_DATE_ISO = '2026-04-13' as const;
+
+/**
+ * Descripción canónica de entidad (JSON-LD, GEO) — informativa, alineable con
+ * ficha; no sustituye consentimiento clínico ni cita.
+ */
+export const CLINIC_ENTITY_DESCRIPTION_ES: string =
+  'AM Psicología (Clínica Almudena Marchesi): psicoterapia con Almudena Marchesi Fernández en Moncloa, Argüelles y Chamberí, Madrid. Enfoque integrador: ansiedad, depresión, estrés, duelo y dificultades relacionales; individual, pareja, infanto-juvenil y online con criterio. Portal del paciente para citas, pago y mensajería. Cita en Calle de Meléndez Valdés, 1D, 28015. Presencial: jueves; consulta disponibilidad online en portal.';
+
+export const CLINIC_HOME_META_DESCRIPTION_ES: string =
+  'AM Psicología: psicóloga en Moncloa, Argüelles y Chamberí. Terapia individual, pareja e infanto-juvenil (ansiedad, depresión, estrés). Citas y portal del paciente. Calle Meléndez Valdés 22, 28015 Madrid.';
+
+/**
+ * Perfiles sociales verificados a incluir en `sameAs` si no vienen en env
+ * (deduplicado por URL en `getClinicSameAsUrls`).
+ */
+const CLINIC_SAME_AS_BUILTIN: readonly [string, ...string[]] = [
+  'https://es.linkedin.com/in/almudena-marchesi-fern%C3%A1ndez-06448817b',
+] as const;
+
+/**
  * Coordenadas aproximadas de la consulta (Moncloa–Chamberí) para JSON-LD, ICBM y señales GEO.
  * Ajustar si la ubicación exacta cambia.
  */
@@ -110,8 +150,8 @@ export const CLINIC_GEO_LNG = -3.7049;
 /** Número de colegiación oficial (pie de correo, RGPD, cabeceras clínicas). */
 export const CLINIC_PROFESSIONAL_LICENSE = 'M-38427' as const;
 
-/** Teléfono de contacto público (NAP, JSON-LD, pie de página). */
-export const CLINIC_PUBLIC_PHONE_DISPLAY = '+34 646 445 991' as const;
+/** Teléfono de contacto público (NAP, JSON-LD, pie de página; alineado con GMB). */
+export const CLINIC_PUBLIC_PHONE_DISPLAY = '+34 646 44 59 91' as const;
 
 /** Mismo número en formato E.164 para `tel:` y schema.org `telephone`. */
 export const CLINIC_PUBLIC_PHONE_E164 = '+34646445991' as const;
@@ -154,19 +194,27 @@ export function getClinicGoogleMapsHref(): string {
  */
 export function getClinicSameAsUrls(): readonly string[] {
   const raw = process.env.NEXT_PUBLIC_CLINIC_SAME_AS;
-  if (raw == null || raw.trim() === '') {
-    return [];
+  const fromEnv: string[] = [];
+  if (raw != null && raw.trim() !== '') {
+    const parts = raw
+      .split(/[,;]/u)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    const urlSchema = z.string().url();
+    for (const p of parts) {
+      const parsed = urlSchema.safeParse(p);
+      if (parsed.success) {
+        fromEnv.push(parsed.data);
+      }
+    }
   }
-  const parts = raw
-    .split(/[,;]/u)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
-  const urlSchema = z.string().url();
+  const merged = [...fromEnv, ...CLINIC_SAME_AS_BUILTIN] as const;
+  const seen = new Set<string>();
   const out: string[] = [];
-  for (const p of parts) {
-    const parsed = urlSchema.safeParse(p);
-    if (parsed.success) {
-      out.push(parsed.data);
+  for (const u of merged) {
+    if (!seen.has(u)) {
+      seen.add(u);
+      out.push(u);
     }
   }
   return out;

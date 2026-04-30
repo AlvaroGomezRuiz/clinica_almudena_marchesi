@@ -5,6 +5,7 @@ import {
   fetchCheckoutSessionResumenForUser,
   fetchPaymentIntentResumenForUser,
 } from '@/lib/stripe/paymentIntentLookup.server';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 
 import PagoSuccessPanel, {
@@ -34,7 +35,7 @@ async function withBonoResumen(
   };
 }
 
-export const metadata = { title: 'Pago realizado | Portal Paciente' };
+export const metadata = { title: `Pago realizado | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface Props {

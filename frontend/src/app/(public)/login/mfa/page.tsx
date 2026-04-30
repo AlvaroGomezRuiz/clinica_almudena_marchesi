@@ -3,9 +3,10 @@ import Image from 'next/image';
 
 import MfaCodeForm from '@/components/auth/MfaCodeForm';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
 export const metadata: Metadata = {
-  title: 'Código de seguridad | Inicio de sesión',
+  title: `Código de seguridad (2FA) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: 'Verificación en dos pasos para acceder al portal de la clínica.',
   robots: {
     index: false,

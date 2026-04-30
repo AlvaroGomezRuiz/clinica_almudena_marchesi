@@ -13,8 +13,9 @@ import { RecursoAssignButton } from '@/components/recursos/RecursoAssignButton';
 import UploadRecursoButton from '@/components/admin/recursos/UploadRecursoButton';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
-export const metadata = { title: 'Recursos | Panel Almudena' };
+export const metadata = { title: `Recursos | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface RecursoRow {

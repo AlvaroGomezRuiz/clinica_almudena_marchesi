@@ -11,10 +11,11 @@ import {
 } from '@/components/portal-shell/ui';
 import MarcarCompletadoButton from '@/components/portal/recursos/MarcarCompletadoButton';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type { RecursoCategoria, RecursoTipo } from '@/lib/supabase/types';
 
-export const metadata = { title: 'Recursos | Portal Paciente' };
+export const metadata = { title: `Recursos | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface PageProps {

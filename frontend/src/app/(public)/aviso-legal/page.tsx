@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 
 const canonicalBase = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
 import { buildPublicPageMetadata } from '@/lib/seo/build-public-page-metadata';
@@ -9,7 +9,7 @@ import { LEGAL_DOCUMENT_VERSION, LEGAL_LAST_UPDATED_ES } from '@/lib/seo/legal-v
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/aviso-legal',
-  title: 'Aviso Legal — Almudena Marchesi Fernández, Psicóloga (Madrid)',
+  title: `Aviso Legal — LSSI, titular y condiciones de uso | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Identificación del titular, condiciones de uso del sitio ampsicologia.es, portal del paciente, política de cancelación y cumplimiento de la Ley 34/2002 (LSSI-CE).',
   keywords: [

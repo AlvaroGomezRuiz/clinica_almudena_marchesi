@@ -10,8 +10,9 @@ import AgendaClient, {
 import { PageHeader } from '@/components/portal-shell/ui';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
-export const metadata = { title: 'Agenda | Panel Almudena' };
+export const metadata = { title: `Agenda | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface AdminAgendaPageProps {

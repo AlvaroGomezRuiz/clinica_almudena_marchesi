@@ -16,9 +16,10 @@ import {
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { primerNombre, saludoDiurnoEs } from '@/lib/greeting-es';
 import { getPreferredProfileFullName } from '@/lib/profile-display-name';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Inicio | Panel Almudena' };
+export const metadata = { title: `Inicio | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface CitaHoyRow {

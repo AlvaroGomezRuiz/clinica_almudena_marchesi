@@ -5,13 +5,13 @@ import BienvenidaFirstPaintRefresh from '@/components/portal/BienvenidaFirstPain
 import PortalBienvenidaNavGuide from '@/components/portal/PortalBienvenidaNavGuide';
 import PortalBienvenidaStepper from '@/components/portal/PortalBienvenidaStepper';
 import { PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
-import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
+import { CLINIC_TARIFAS_SESION_RESUMEN, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { primerNombre } from '@/lib/greeting-es';
 import { getPreferredProfileFullName } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import { completePortalWelcomeAction } from '@/services/portal/actions';
 
-export const metadata = { title: 'Bienvenida | Portal' };
+export const metadata = { title: `Bienvenida — portal | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 
 export const dynamic = 'force-dynamic';
 

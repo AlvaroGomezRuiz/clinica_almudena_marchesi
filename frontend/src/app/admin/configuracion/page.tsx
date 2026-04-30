@@ -23,7 +23,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
-import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
   AdminLookup,
@@ -31,7 +31,7 @@ import type {
   AdminLookupCampo,
 } from '@/lib/supabase/types';
 
-export const metadata = { title: 'Configuración | Panel Almudena' };
+export const metadata = { title: `Configuración | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface ProfileRow {

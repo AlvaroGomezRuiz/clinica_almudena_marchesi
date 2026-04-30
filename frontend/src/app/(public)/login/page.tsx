@@ -3,9 +3,10 @@ import Image from 'next/image';
 
 import LoginForm from '@/components/auth/LoginForm';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
 export const metadata: Metadata = {
-  title: 'Portal del Paciente | Almudena Marchesi',
+  title: `Inicio de sesión — portal del paciente | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: 'Accede a tu espacio seguro para gestionar tus citas y documentos.',
   robots: {
     index: false,

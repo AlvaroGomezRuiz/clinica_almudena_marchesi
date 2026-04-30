@@ -1,9 +1,11 @@
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
+
 import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Almudena Marchesi | Clínica de psicología (Moncloa, Madrid)',
-    short_name: 'Almudena Marchesi',
+    name: `AM Psicología — Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+    short_name: CLINIC_PUBLIC_SITE_HOST_LABEL,
     description:
       'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Acompañamiento con rigor basado en evidencia.',
     start_url: '/',

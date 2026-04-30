@@ -13,6 +13,7 @@ import {
   CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS,
   CLINIC_PRICE_INDIVIDUAL_CENTIMOS,
   CLINIC_PRICE_PAREJA_CENTIMOS,
+  CLINIC_PUBLIC_SITE_HOST_LABEL,
   CLINIC_PUBLIC_SITE_URL,
   CLINIC_SESSION_DURATION_MIN,
   CLINIC_TARIFAS_SESION_RESUMEN,
@@ -31,7 +32,7 @@ const serviciosFaqLd = buildFaqPageJsonLd(serviciosPageFaq, serviciosFaqPageUrl)
 
 export const metadata: Metadata = buildPublicPageMetadata({
   path: '/servicios',
-  title: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
+  title: `Servicios — Terapia individual, pareja y online (Madrid) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
     'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas y bonos: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
   keywords: [
@@ -125,7 +126,7 @@ const BONOS = [
 
 const serviciosSeoRichLd = buildServiciosPageSeoJsonLd({
   path: '/servicios',
-  pageName: 'Servicios | Almudena Marchesi — Terapia individual, pareja y online (Madrid)',
+  pageName: `Servicios — Terapia individual, pareja y online (Madrid) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   pageDescription:
     'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas y bonos: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
   breadcrumb: [

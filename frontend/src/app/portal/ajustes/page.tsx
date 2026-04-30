@@ -27,7 +27,7 @@ import {
   SectionDivider,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
-import { CLINIC_CONTACT_EMAIL } from '@/lib/clinic';
+import { CLINIC_CONTACT_EMAIL, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { resolveProfileDisplayNameForShell } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import type {
@@ -37,7 +37,7 @@ import type {
   RgpdTipo,
 } from '@/lib/supabase/types';
 
-export const metadata = { title: 'Ajustes | Portal Paciente' };
+export const metadata = { title: `Ajustes | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface ProfileRow {

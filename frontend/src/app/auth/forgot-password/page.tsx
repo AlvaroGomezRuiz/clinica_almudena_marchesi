@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 
 import ForgotPasswordForm from '@/components/auth/ForgotPasswordForm';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
 export const metadata: Metadata = {
-  title: 'Recuperar contraseña | Almudena Marchesi',
+  title: `Recuperar contraseña | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: 'Solicita un enlace para restablecer tu contraseña.',
   robots: { index: false, follow: false },
 };

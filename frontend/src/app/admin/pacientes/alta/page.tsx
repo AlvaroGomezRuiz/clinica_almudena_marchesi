@@ -2,8 +2,9 @@ import Link from 'next/link';
 
 import { Button, PageHeader } from '@/components/portal-shell/ui';
 import AltaManualForm from '@/components/admin/pacientes/AltaManualForm';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
-export const metadata = { title: 'Alta manual de paciente | Panel Almudena' };
+export const metadata = { title: `Alta manual de paciente | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 
 export const dynamic = 'force-dynamic';
 

@@ -14,11 +14,11 @@ import {
   StatCard,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
-import { CLINIC_TARIFAS_SESION_RESUMEN } from '@/lib/clinic';
+import { CLINIC_TARIFAS_SESION_RESUMEN, CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import RealtimeRefresh from '@/components/realtime/RealtimeRefresh';
 import { createServerClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Bonos y pagos | Portal Paciente' };
+export const metadata = { title: `Bonos y pagos | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface PacienteRow {

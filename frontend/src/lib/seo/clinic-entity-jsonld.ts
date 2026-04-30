@@ -3,7 +3,9 @@
  * para SEO local y Knowledge Graph. Una sola fuente de verdad con `lib/clinic.ts`.
  */
 import {
+  CLINIC_BUSINESS_OPENING_DATE_ISO,
   CLINIC_CONTACT_EMAIL,
+  CLINIC_ENTITY_DESCRIPTION_ES,
   CLINIC_GEO_LAT,
   CLINIC_GEO_LNG,
   CLINIC_POSTAL_CODE,
@@ -47,9 +49,40 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
     '@type': ['LocalBusiness', 'MedicalBusiness'],
     '@id': localBusinessId,
     name: 'Clínica Almudena Marchesi',
-    alternateName: 'Almudena Marchesi — Psicología Clínica Moncloa Madrid',
-    description:
-      'Clínica de psicología en Moncloa y Chamberí, Madrid. Terapia individual, de pareja e infanto-juvenil; presencial y online con enlace seguro.',
+    alternateName: 'AM Psicología · Moncloa, Argüelles y Chamberí, Madrid',
+    description: CLINIC_ENTITY_DESCRIPTION_ES,
+    foundingDate: CLINIC_BUSINESS_OPENING_DATE_ISO,
+    publicAccess: true,
+    additionalProperty: [
+      {
+        '@type': 'PropertyValue',
+        name: 'Establecimiento liderado por mujeres (women-owned, señal de ficha pública)',
+        value: 'true',
+      },
+      { '@type': 'PropertyValue', name: 'Requiere cita previa', value: 'true' },
+      {
+        '@type': 'PropertyValue',
+        name: 'Bucle magnético (hearing loop) asistencial',
+        value: 'Señalado en ficha pública; verificar con la clínica al reservar',
+      },
+      {
+        '@type': 'PropertyValue',
+        name: 'Aparcamiento en propiedad',
+        value: 'false',
+      },
+    ],
+    amenityFeature: [
+      {
+        '@type': 'LocationFeatureSpecification',
+        name: 'Entrada accesible con silla de ruedas',
+        value: true,
+      },
+      {
+        '@type': 'LocationFeatureSpecification',
+        name: 'Aparcamiento accesible en el edificio',
+        value: true,
+      },
+    ],
     keywords: clinicPrimaryKeywordsText(),
     url: base,
     telephone: CLINIC_PUBLIC_PHONE_E164,
@@ -127,10 +160,14 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
         containedInPlace: { '@type': 'Country', name: 'España' },
       },
       { '@type': 'AdministrativeArea', name: 'Comunidad de Madrid' },
-      { '@type': 'Place', name: 'Moncloa – Aravaca' },
+      { '@type': 'Place', name: 'Argüelles (Moncloa – Aravaca)' },
       { '@type': 'Place', name: 'Chamberí' },
+      { '@type': 'Place', name: 'Tetuán' },
+      { '@type': 'Place', name: 'Centro' },
+      { '@type': 'Place', name: 'Moncloa – Aravaca' },
       { '@type': 'Place', name: 'Chamartín' },
-      { '@type': 'Place', name: 'Almagro (Madrid), barrio de Chamartín' },
+      { '@type': 'Place', name: 'Almagro (Madrid, entorno Chamberí; ver NAP 28015)' },
+      { '@type': 'Place', name: 'Gaztambide · Trafalgar · Ríos Rosas' },
     ],
     openingHoursSpecification: [
       {
@@ -150,15 +187,19 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
       'clínica psicología Moncloa',
       'psicólogo Moncloa Madrid',
       'psicología clínica Chamberí',
+      'psicóloga Argüelles',
       'consulta de psicología cerca de Moncloa',
       'Psicología clínica',
       'Terapia cognitivo-conductual',
       'Ansiedad',
       'Depresión',
+      'Estrés',
+      'Dificultades relacionales',
       'Trauma',
       'Terapia individual',
       'Terapia de pareja',
       'Terapia infanto-juvenil',
+      'Duelo',
     ],
     founder: { '@id': personId },
   };
@@ -174,9 +215,8 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
         '@type': 'WebSite',
         '@id': websiteId,
         name: 'Clínica Almudena Marchesi',
-        alternateName: 'Psicología clínica Moncloa | Almudena Marchesi',
-        description:
-          'Clínica de psicología en Moncloa y Chamberí, Madrid. Sitio informativo; atención clínica bajo cita. Sin datos de pacientes en el contenido indexable.',
+        alternateName: 'AM Psicología · Moncloa, Argüelles y Chamberí, Madrid',
+        description: CLINIC_ENTITY_DESCRIPTION_ES,
         url: base,
         inLanguage: 'es-ES',
         publisher: { '@id': localBusinessId },

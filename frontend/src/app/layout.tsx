@@ -1,7 +1,7 @@
 import './globals.css';
 
 import type { Metadata, Viewport } from 'next';
-import { CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL, getClinicAbsoluteImageUrl } from '@/lib/clinic';
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
 import { ThemeProvider } from 'next-themes';
 import localFont from 'next/font/local';
@@ -81,10 +81,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(CLINIC_PUBLIC_SITE_URL),
-  applicationName: 'Clínica Almudena Marchesi',
+  applicationName: CLINIC_PUBLIC_SITE_HOST_LABEL,
   title: {
-    template: '%s | Almudena Marchesi',
-    default: 'Almudena Marchesi | Clínica de psicología clínica en Moncloa, Madrid',
+    template: `%s | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
+    default: `Psicología clínica Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   },
   description:
     'Clínica de psicología clínica en Moncloa y Chamberí, Madrid. Acompañamiento con rigor. Consulta cerca de Meléndez Valdés, Madrid.',
@@ -107,11 +107,11 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.webmanifest',
   openGraph: {
-    title: 'Almudena Marchesi — Psicología clínica Moncloa, Madrid',
+    title: `Psicología clínica — Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
     description:
       'Clínica de psicología en Moncloa y Chamberí, Madrid. Terapia individual, de pareja e infanto-juvenil. Consulta: Meléndez Valdés.',
     url: CLINIC_PUBLIC_SITE_URL,
-    siteName: 'Clínica Almudena Marchesi',
+    siteName: CLINIC_PUBLIC_SITE_HOST_LABEL,
     locale: 'es_ES',
     type: 'website',
     images: [
@@ -125,7 +125,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Almudena Marchesi | Psicología clínica Moncloa, Madrid',
+    title: `Psicología clínica Moncloa, Madrid | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
     description:
       'Clínica de psicología en Moncloa y Chamberí, Madrid. Terapia y acompañamiento con rigor. Consulta: Meléndez Valdés.',
     images: [getClinicAbsoluteImageUrl('/images/almudena-profile.avif')],

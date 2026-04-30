@@ -14,6 +14,7 @@ import { ContactFichaIcon } from '@/components/icons/ContactFichaIcon';
 import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Chip, PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
 import { enrichMensajesWithAdjuntos } from '@/services/mensajes/fetch-adjuntos';
 
@@ -59,7 +60,7 @@ interface FichaRow {
 
 export async function generateMetadata({ params }: Params): Promise<{ title: string }> {
   const { id } = await params;
-  return { title: `Conversación #${id.slice(0, 8)} | Panel Almudena` };
+  return { title: `Conversación #${id.slice(0, 8)} | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 }
 
 export default async function AdminConversacionPage({

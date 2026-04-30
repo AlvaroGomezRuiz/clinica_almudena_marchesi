@@ -5,9 +5,11 @@ import {
   CLINIC_CONTACT_EMAIL,
   CLINIC_PUBLIC_PHONE_DISPLAY,
   CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES,
+  CLINIC_PUBLIC_SITE_HOST_LABEL,
   CLINIC_PUBLIC_SITE_URL,
 } from '@/lib/clinic';
 import { clinicPrimaryKeywordsText } from '@/lib/seo/primary-keywords';
+import { GEO_KNOWLEDGE_VERSION } from '@/lib/seo/geo-knowledge-v1';
 
 export const dynamic = 'force-static';
 
@@ -26,7 +28,8 @@ export async function GET(): Promise<NextResponse> {
   return text(
     [
       '# llms.txt — Superficie de descubrimiento para motores generativos',
-      '# Sitio: Clínica Almudena Marchesi · psicología clínica (Moncloa, Chamberí, Madrid)',
+      `# Conocimiento canónico: geo_knowledge v${GEO_KNOWLEDGE_VERSION} (ver /ai/summary.json).`,
+      `# Marca y <title> del sitio: ${CLINIC_PUBLIC_SITE_HOST_LABEL} (AM Psicología / Clínica Almudena Marchesi) · Moncloa, Chamberí, Madrid`,
       '# Términos de descubrimiento (no clínico, solo orientación pública):',
       `#   ${clinicPrimaryKeywordsText()}`,
       '',
@@ -36,12 +39,15 @@ export async function GET(): Promise<NextResponse> {
       `Presencial: ${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES}`,
       '',
       '## JSON-LD',
-      'Todas las URLs públicas incluyen un @graph (WebSite + LocalBusiness + Person) y, por página, Breadcrumb; varias incluyen FAQPage. Coherente con /ai/summary.json.',
+      'Todas las URLs públicas incluyen un @graph (WebSite + LocalBusiness + Person) y, por página, Breadcrumb; varias incluyen FAQPage. Coherente con /ai/summary.json y /ai/geo-facts.json.',
       '',
       '## Canonical',
       `${base}/`,
       '',
-      '## Resumen estructurado (JSON, GEO/IA)',
+      '## Ficha de hechos mínima (RAG, JSON, GEO/IA)',
+      `${base}/ai/geo-facts.json`,
+      '',
+      '## Resumen estructurado (JSON, GEO/IA ampliado)',
       `${base}/ai/summary.json`,
       '',
       '## Sitemap',

@@ -9,6 +9,7 @@ import {
   CLINIC_CONTACT_EMAIL,
   CLINIC_PROFESSIONAL_LICENSE,
   CLINIC_PUBLIC_PHONE_DISPLAY,
+  CLINIC_PUBLIC_SITE_HOST_LABEL,
   CLINIC_PUBLIC_SITE_URL,
 } from '@/lib/clinic';
 import { createServerClient } from '@/lib/supabase/server';
@@ -16,7 +17,7 @@ import type { FichaSensiblesBulk } from '@/services/admin/ficha-actions';
 import type { Profile } from '@/lib/supabase/types';
 
 export const metadata = {
-  title: 'Imprimir ficha | Panel Almudena',
+  title: `Imprimir ficha | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   robots: { index: false, follow: false },
 };
 

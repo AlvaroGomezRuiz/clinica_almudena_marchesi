@@ -5,8 +5,9 @@ import {
   PageHeader,
   SurfaceCard,
 } from '@/components/portal-shell/ui';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
-export const metadata = { title: 'Pago cancelado | Portal Paciente' };
+export const metadata = { title: `Pago cancelado | ${CLINIC_PUBLIC_SITE_HOST_LABEL}` };
 export const dynamic = 'force-dynamic';
 
 interface Props {

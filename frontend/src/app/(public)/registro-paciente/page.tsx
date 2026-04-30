@@ -3,9 +3,10 @@ import Image from 'next/image';
 
 import { SignupForm } from '@/components/auth/SignupForm';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
 
 export const metadata: Metadata = {
-  title: 'Crear cuenta | Portal del Paciente',
+  title: `Crear cuenta — portal del paciente | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description: 'Regístrate como paciente para acceder al portal de reservas y recursos.',
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
