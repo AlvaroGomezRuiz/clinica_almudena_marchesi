@@ -12,26 +12,19 @@ import { getGeoDiscoveryBrief } from '@/lib/seo/geo-discovery-brief';
 
 export const dynamic = 'force-static';
 
-function text(body: string): NextResponse {
-  return new NextResponse(body, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
-    },
-  });
-}
-
 export async function GET(): Promise<NextResponse> {
   const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
   const kws = CLINIC_PRIMARY_KEYWORDS.join(' · ');
 
-  return text(
-    [
+  const body = [
       '# llms-full.txt — Índice ampliado para motores generativos',
       '',
       '## Objetivo',
       'Contenido público informativo sobre clínica de psicología en Moncloa / Chamberí (Madrid).',
       'No indica trato clínico ni reemplaza consulta profesional. No hay datos de pacientes.',
+      '',
+      '## Google (Búsqueda con IA, Gemini, vistas generativas) y otros LLM',
+      'Prioridad de anclaje: (1) /ai/geo-facts.json (2) /contacto y /servicios en HTML (3) /ai/summary.json (4) este archivo. Idioma por defecto: español (España). No extrapolar precios ni disponibilidad más allá del HTML actual.',
       '',
       `## Consultas típicas (sólo informativo): ${kws}`,
       '',
@@ -66,7 +59,14 @@ export async function GET(): Promise<NextResponse> {
       '## Brief ampliado (SEO semántico + interpretación local)',
       getGeoDiscoveryBrief(base),
       '',
-    ].join('\n')
-  );
+    ].join('\n');
+
+  return new NextResponse(body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=7200',
+      Link: `<${base}/ai/geo-facts.json>; rel="describedby", <${base}/llms.txt>; rel="related"`,
+    },
+  });
 }
 

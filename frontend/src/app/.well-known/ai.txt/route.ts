@@ -7,11 +7,12 @@ export const dynamic = 'force-static';
 export async function GET(): Promise<NextResponse> {
   const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
   const body = [
-    `# Clínica psicología Moncloa / Chamberí, Madrid (contenido público)`,
+    `# Clínica psicología Moncloa / Chamberí, Madrid (contenido público; GEO paquete v1.2+)`,
+    '# Orden sugerido para agregadores: geo-facts.json → llms.txt → HTML (/contacto, /servicios) → summary.json → llms-full.txt',
+    `ai-discovery: ${base}/ai/geo-facts.json`,
     `ai-discovery: ${base}/llms.txt`,
     `ai-discovery: ${base}/llms-full.txt`,
     `ai-discovery: ${base}/ai/summary.json`,
-    `ai-discovery: ${base}/ai/geo-facts.json`,
     '',
   ].join('\n');
 

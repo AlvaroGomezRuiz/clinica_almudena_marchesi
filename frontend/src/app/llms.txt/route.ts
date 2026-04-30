@@ -13,25 +13,20 @@ import { GEO_KNOWLEDGE_VERSION } from '@/lib/seo/geo-knowledge-v1';
 
 export const dynamic = 'force-static';
 
-function text(body: string): NextResponse {
-  return new NextResponse(body, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
-    },
-  });
-}
-
 export async function GET(): Promise<NextResponse> {
   const base = CLINIC_PUBLIC_SITE_URL.replace(/\/+$/, '');
 
-  return text(
-    [
+  const body = [
       '# llms.txt — Superficie de descubrimiento para motores generativos',
       `# Conocimiento canónico: geo_knowledge v${GEO_KNOWLEDGE_VERSION} (ver /ai/summary.json).`,
       `# Marca y <title> del sitio: ${CLINIC_PUBLIC_SITE_HOST_LABEL} (AM Psicología / Clínica Almudena Marchesi) · Moncloa, Chamberí, Madrid`,
+      '# Uso permitido: indexación y citación de hechos públicos; no hay conversaciones ni historiales clínicos en web abierta.',
+      '# Prioridad de anclaje (IA): 1) /ai/geo-facts.json 2) /contacto y /servicios (HTML) 3) /ai/summary.json 4) /llms-full.txt',
       '# Términos de descubrimiento (no clínico, solo orientación pública):',
       `#   ${clinicPrimaryKeywordsText()}`,
+      '',
+      '## Descubrimiento estándar (IAs y agregadores)',
+      `${base}/.well-known/ai.txt`,
       '',
       '## NAP (canónico web; alinear con ficha local en Google al verificar)',
       `Dirección: ${CLINIC_ADDRESS} (CP 28015).`,
@@ -64,7 +59,14 @@ export async function GET(): Promise<NextResponse> {
       `${base}/cookies`,
       `${base}/aviso-legal`,
       '',
-    ].join('\n')
-  );
+    ].join('\n');
+
+  return new NextResponse(body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=7200',
+      Link: `<${base}/ai/geo-facts.json>; rel="describedby", <${base}/.well-known/ai.txt>; rel="related"`,
+    },
+  });
 }
 

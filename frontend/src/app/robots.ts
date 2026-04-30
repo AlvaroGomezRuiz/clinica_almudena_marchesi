@@ -33,6 +33,7 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: 'ClaudeBot', allow: '/', disallow: disallows },
       { userAgent: 'PerplexityBot', allow: '/', disallow: disallows },
       { userAgent: 'Google-Extended', allow: '/', disallow: disallows },
+      { userAgent: 'GoogleOther', allow: '/', disallow: disallows },
       { userAgent: 'CCBot', allow: '/', disallow: disallows },
       { userAgent: 'OAI-SearchBot', allow: '/', disallow: disallows },
       { userAgent: 'Applebot-Extended', allow: '/', disallow: disallows },

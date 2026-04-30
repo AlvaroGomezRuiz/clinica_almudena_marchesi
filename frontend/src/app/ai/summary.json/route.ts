@@ -9,10 +9,17 @@ export const dynamic = 'force-static';
  */
 export async function GET(): Promise<NextResponse> {
   const now = new Date().toISOString();
-  return NextResponse.json(buildGeoSummaryExtendedPayload(now), {
+  const payload = buildGeoSummaryExtendedPayload(now);
+  const base = String(payload.website ?? '').replace(/\/+$/, '');
+  return NextResponse.json(payload, {
     headers: {
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=7200',
       'Access-Control-Allow-Origin': '*',
+      ...(base
+        ? {
+            Link: `<${base}/llms.txt>; rel="describedby", <${base}/ai/geo-facts.json>; rel="related"`,
+          }
+        : {}),
     },
   });
 }

@@ -9,10 +9,13 @@ export const dynamic = 'force-static';
  * Esquema estable: version + kind; ampliar con cuidado para no romper consumidores.
  */
 export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(buildGeoEntityFactsJson(), {
+  const payload = buildGeoEntityFactsJson();
+  const base = payload.website_canonical;
+  return NextResponse.json(payload, {
     headers: {
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=7200',
       'Access-Control-Allow-Origin': '*',
+      Link: `<${base}/llms.txt>; rel="describedby", <${base}/.well-known/ai.txt>; rel="related"`,
     },
   });
 }

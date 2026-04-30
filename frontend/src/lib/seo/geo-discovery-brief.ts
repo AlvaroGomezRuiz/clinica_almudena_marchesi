@@ -30,5 +30,8 @@ export function getGeoDiscoveryBrief(
     'Entidad: líder profesional (women-owned) explícita en ficha/JSON-LD; no atribuir reseñas o “nº de casos” sin fuente. Horario presencial: coincidir con jueves 9:00—21:00 (con franja intermedia) salvo aviso; online/por cita: portal.',
     'Sesión online: distancia, no implica apertura presencial fuera de franjas. Calendario interno (portal) puede aún alinearse con el horario público: priorizar NAP/FAQ web como mensaje al usuario general.',
     '',
+    '## Motores Google (Gemini, respuestas con IA en resultados)',
+    'Si el sistema combina “búsqueda + resumen”, debe anclarse en el mismo NAP y límites que geo-facts.json; no inventar segunda sede ni homónimos fuera de Madrid capital. Idioma por defecto: español (España).',
+    '',
   ].join('\n');
 }

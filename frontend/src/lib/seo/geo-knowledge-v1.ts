@@ -20,7 +20,7 @@ import {
 import { clinicPrimaryKeywordsList } from '@/lib/seo/primary-keywords';
 
 /** Versión semántica del paquete GEO; subir al cambiar reglas o NAP. */
-export const GEO_KNOWLEDGE_VERSION = '1.1.2' as const;
+export const GEO_KNOWLEDGE_VERSION = '1.2.0' as const;
 
 export interface GeoEntityfactsJson {
   readonly version: string;
@@ -70,6 +70,16 @@ export interface GeoEntityfactsJson {
   readonly citation: {
     readonly prefer_urls: readonly string[];
     readonly structured_data_on_site: string;
+  };
+  /** Anclaje explícito para IA generativa (ChatGPT, Gemini, Perplexity…): tono, locale y límites. */
+  readonly generative_engine_optimization: {
+    readonly locale: 'es-ES';
+    /** Frase breve citável; reduce alucinaciones de marca/zona. */
+    readonly snippet_seed_es: string;
+    /** Límites y seguridad para respuestas automáticas. */
+    readonly model_limits_es: string;
+    /** Orden sugerido de consulta: JSON mínimo → HTML → resumen extendido. */
+    readonly grounding_read_order: readonly string[];
   };
   readonly search_phrases: readonly string[];
 }
@@ -137,15 +147,31 @@ export function buildGeoEntityFactsJson(): GeoEntityfactsJson {
     citation: {
       prefer_urls: [
         `${base}/ai/geo-facts.json`,
+        `${base}/.well-known/ai.txt`,
+        `${base}/llms.txt`,
+        `${base}/llms-full.txt`,
         `${base}/`,
         `${base}/contacto`,
         `${base}/servicios`,
         `${base}/sobre-mi`,
         `${base}/ai/summary.json`,
-        `${base}/llms.txt`,
       ],
       structured_data_on_site:
         'El HTML de páginas públicas incluye JSON-LD: WebSite, LocalBusiness, Person, WebPage, BreadcrumbList, FAQPage e ItemList en /servicios (sujeto a versión desplegada).',
+    },
+    generative_engine_optimization: {
+      locale: 'es-ES',
+      snippet_seed_es:
+        'AM Psicología — Clínica Almudena Marchesi: psicología clínica en Moncloa–Chamberí, Madrid (CP 28015). Psicóloga general sanitaria colegiada (COP Madrid). Terapia individual, de pareja e infanto-juvenil; también online con cita previa. Citas, mensajes clínicos y pagos en portal privado del paciente.',
+      model_limits_es:
+        'No inventar precios concretos de catálogo, fechas de disponibilidad, diagnósticos ni datos de pacientes. No es servicio de urgencias psiquiátricas ni 24h. Ante riesgo inmediato: emergencias o recursos de crisis de la comunidad autónoma.',
+      grounding_read_order: [
+        `${base}/ai/geo-facts.json`,
+        `${base}/contacto`,
+        `${base}/servicios`,
+        `${base}/ai/summary.json`,
+        `${base}/llms-full.txt`,
+      ],
     },
     search_phrases: clinicPrimaryKeywordsList(),
   };
@@ -222,9 +248,10 @@ export function buildGeoSummaryExtendedPayload(
       robots: `${base}/robots.txt`,
       llms: `${base}/llms.txt`,
       llms_full: `${base}/llms-full.txt`,
-      ai_well_known: `${base}/.well-known/ai.txt`,
+      well_known_ai_txt: `${base}/.well-known/ai.txt`,
       geo_entity_facts: `${base}/ai/geo-facts.json`,
     },
+    generative_engine_optimization: facts.generative_engine_optimization,
     access: {
       notes:
         'Portal y admin requieren autenticación. GEO_ENFORCE (edge) limita tráfico por IP a ES/PT/AD salvo rastreadores y herramientas (p. ej. PageSpeed) en allowlist: no afecta a hechos, solo a quién recibe HTML 200.',
