@@ -111,12 +111,10 @@ desktop.ini
 # -----------------------------------------------------------------------------
 # HERRAMIENTAS INTERNAS / PROTOTIPOS / ARTEFACTOS PRIVADOS
 # -----------------------------------------------------------------------------
-# Cursor: ignorar todo bajo .cursor (reglas internas, no publicar en repo)
 .cursor/
 .cursorignore
 .cursorrules
-.geo/
 .rtk/
-.tmp_segunda/
 CLAUDE.md
+.geo/
 docs/

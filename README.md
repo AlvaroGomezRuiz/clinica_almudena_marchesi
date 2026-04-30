@@ -1,118 +1,131 @@
 # Clínica Almudena Marchesi — Plataforma digital
 
 **Web en producción:** [https://ampsicologia.es](https://ampsicologia.es)
-**Correo:** contacto@ampsicologia.es
+**Correo público:** contacto@ampsicologia.es
 
-Tu **página pública**, el **espacio privado de cada paciente** y **tu panel de gestión** conviven en la misma web. Los pacientes pueden reservar, pagar, escribirte, descargar facturas y ver el material que les envíes; tú gestionas agenda, fichas, facturación y mensajes en un solo sitio.
-
-Lo que en informática se resume como “Next.js + Supabase + Stripe” en la práctica significa: web rápida en Europa, datos alojados en la Unión Europea y cobros con la misma tecnología que usan grandes comercios (sin que la tarjeta pase por un servidor tuyo casero).
+Aplicación **full-stack** para una consulta de psicología: **web pública** (marketing, legales, registro), **portal del paciente** (citas, pagos con Stripe, mensajes cifrados, material asignado, facturas, ajustes) y **panel de administración** (agenda, pacientes, ficha clínica con datos sensibles protegidos, facturación, mensajes, recursos, configuración). Todo en el mismo dominio, con **Next.js** (App Router), **Supabase** (PostgreSQL, Auth, Storage, Realtime, Edge Functions) y **Stripe** para cobros.
 
 ---
 
-## Para la titular (lectura recomendada)
 
-|                                   Documento                                                    |                          Para qué sirve                                |
-|------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| [`docs/03_cliente/manual-plataforma-cliente.md`](docs/03_cliente/manual-plataforma-cliente.md) | Manual largo: qué puede hacer cada persona, paso a paso, tablas claras |
-| [`docs/03_cliente/informe-ejecutivo.md`](docs/03_cliente/informe-ejecutivo.md)                 | Resumen de pocas páginas                                               |
-| [`docs/README.md`](docs/README.md)                                                             | Índice de toda la carpeta `docs/`                                      |
+
+## Stack y proveedores
+
+|           Capa       |        Tecnología / servicio       |                                            Nota breve                                                 |
+|----------------------|------------------------------------|-------------------------------------------------------------------------------------------------------|
+| Frontend             | **Next.js 14**, React 18, Tailwind | Despliegue habitual en **Vercel** (UE)                                                                |
+| Backend de datos     | **Supabase**                       | Base en **Frankfurt (UE)**; **RLS** en tablas; parte del contenido clínico **cifrado** en aplicación  |
+| Cobros               | **Stripe**                         | PCI delegado; webhooks en **Edge Function**                                                           |
+| Correo transaccional | **Resend**                         | Plantillas y envío desde funciones servidor                                                           |
+| Errores              | **Sentry**                         | Diagnóstico en **navegador** y en funciones servidor                                                  |
+| Límite de abuso      | **Upstash Redis**                  | Rate limiting donde esté cableado                                                                     |
 
 ---
 
-## Cómo está montado el sistema (visión sencilla)
+
+
+## Arquitectura (visión rápida)
 
 ```
 ┌──────────────┐    HTTPS    ┌──────────────────────┐   reglas en base de datos   ┌───────────────────────┐
 │  Navegador   │────────────▶│  Vercel (web en UE)  │────────────────────────────▶│  Supabase (UE)        │
 │  del usuario │◀────────────│  pantallas + lógica  │◀────────────────────────────│  datos + sesiones     │
-└──────────────┘   cookies   └──────────────────────┘    avisos en tiempo real    └───────────────────────┘
+└──────────────┘   cookies   └──────────────────────┘    Realtime / Storage       └───────────────────────┘
                                       ▲
-                         avisos de cobro de Stripe │
-                         (servidor seguro)         │
+                         webhooks Stripe (Edge) │
 ```
 
-Cuando alguien paga, **Stripe** avisa a un programa pequeño en el servidor; ese programa marca la cita como pagada y guarda constancia. Tú no tienes que “tocar” la tarjeta ni guardar su número.
+Los pagos los confirma **Stripe** contra una función en **Supabase Edge**; la web no almacena números de tarjeta.
 
 ---
 
-## Carpetas del proyecto (quién mira qué)
 
-|    Carpeta     |           Qué hay dentro                    | Quién lo usa en el día a día |
-|----------------|---------------------------------------------|------------------------------|
-| `frontend/`    | Pantallas, formularios, colores, textos     | Ingeniería y diseño          |
-| `supabase/`    | Reglas de datos, copias de seguridad SQL    | Ingeniería                   |
-| `docs/`        | Manuales, informes, despliegue              | **Tú y el equipo de apoyo**  |
-| `README.md`    | Este archivo: arranque técnico + enlaces    | Ingeniería + referencia      |
+
+## Estructura del repositorio
+
+|      Ruta   |                                                Contenido                                                                |
+|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| `frontend/` | App Next.js: rutas públicas, `/portal`, `/admin`, integración Supabase/Stripe, tests E2E (Playwright)                   |
+| `supabase/` | Migraciones SQL, **Edge Functions** (`send-email`, `stripe-webhook`, cron de recordatorios, etc.), configuración local  |
+| Raíz        |`package.json` con utilidades (p. ej. CLI Supabase); este **README**                                                     |
 
 ---
 
-## Puesta en marcha en tu ordenador (solo técnicos)
+
+
+## Desarrollo local (técnicos)
 
 ```bash
 cd frontend
-npm install
-cp .env.example .env.local
-npm run dev
+rtk npm install
+copy .env.example .env.local
 ```
 
-Después de copiar `.env.example` a `.env.local` hay que rellenar las direcciones y claves que te dé quien mantenga el proyecto. Sin eso la web no puede hablar con la base de datos ni con los cobros.
+Editad `.env.local` con URL y claves de Supabase, Stripe, Sentry, etc. (quien mantenga el proyecto las proporciona).
+
+```bash
+rtk npm run dev
+```
+
+Otros scripts útiles en `frontend/package.json`: `build`, `lint`, `test:e2e`, `test:e2e:smoke`.
 
 ---
 
-## Claves y variables (nombres que verás en configuración)
 
-|         Nombre de variable            |       Dónde se usa        |                      Qué es, en cristiano                      |
-|---------------------------------------|---------------------------|----------------------------------------------------------------|
-| `NEXT_PUBLIC_SUPABASE_URL`            | Web                       | Dirección del “cajón” donde están los datos                    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | Web                       | Llave pública; igualmente, las reglas impiden ver datos ajenos |
-| `SUPABASE_SERVICE_ROLE_KEY`           | Solo servidor             | Llave muy sensible; **nunca** en un email ni captura           |
-| `NEXT_PUBLIC_APP_URL`                 | Web                       | Debe ser `https://ampsicologia.es`                             |
-| `STRIPE_SECRET_KEY`                   | Servidor / funciones      | Llave de cobros (hay versión de prueba y de real)              |
-| `STRIPE_WEBHOOK_SECRET`               | Servidor                  | Comprueba que los avisos de cobro son auténticos               |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | Web                       | Llave pública de Stripe; debe emparejar con la secreta         |
 
-> Si **cualquier** secreto se filtra (captura, chat, vídeo), hay que **revocarlo y generar uno nuevo** en el panel correspondiente, sin esperar.
+## Variables de entorno (nombres habituales)
 
----
+|           Variable                                                                   |                                 Uso                                  |
+|--------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| `NEXT_PUBLIC_SUPABASE_URL`                                                           | URL del proyecto Supabase                                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                                      | Cliente público; el acceso real lo limita **RLS**                    |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                          | Solo servidor/CI; **no** compartir ni commitear                      |
+| `NEXT_PUBLIC_APP_URL`                                                                | Base de la app (p. ej. `https://ampsicologia.es`)                    |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` / `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Stripe público, secreto y firma de webhooks                          |
+| `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_AUTH_TOKEN`                                       | Trazas de error (según entorno)                                      |
+| `RESEND_*` / `CRON_SECRET` / `FRONTEND_URL`                                          | Correo, protección del cron y URLs en plantillas                     |
 
-## Medidas de seguridad (qué significan para vosotros)
-
-|               Medida                |                         Qué notáis vosotros / los pacientes                             |
-|-------------------------------------|-----------------------------------------------------------------------------------------|
-| Solo España, Portugal y Andorra     | Desde otro país la web puede no cargar; es intencionado                                 |
-| Contraseña y, en admin, doble paso  | Menos riesgo de que entren en vuestra cuenta                                            |
-| Datos separados por persona         | Un paciente no ve la ficha de otro                                                      |
-| Datos sensibles cifrados            | Si hubiera una fuga de copia de base de datos, lo crítico sigue ilegible sin otra clave |
-| Cobros con Stripe                   | La tarjeta no la procesáis vosotros “a mano”                                            |
-| Registro de accesos sensibles       | En una inspección o duda grave se puede auditar quién abrió qué                         |
+Cualquier **secreto** filtrado debe **revocarse** y regenerarse en el panel del proveedor.
 
 ---
 
-## Publicar cambios de código (técnicos)
+
+
+## Seguridad y cumplimiento (resumen)
+
+|     Tema       |                                  Implementación orientativa                                         |
+|----------------|-----------------------------------------------------------------------------------------------------|
+| Perímetro geo  | Restricción de tráfico a **ES / PT / AD** cuando está activa la variable de entorno correspondiente |
+| Sesiones       | Cookies **httpOnly**; refresh con Supabase SSR                                                      |
+| Roles          | **Paciente** vs **admin**; rutas y middleware acotan zonas                                          |
+| Datos clínicos | Cifrado en capa de aplicación; consultas sensibles auditables                                       |
+| Cobros         | Stripe; eventos registrados para conciliación y soporte                                             |
+
+---
+
+
+
+## Supabase: migraciones y funciones
+
+- Las **migraciones** versionan el esquema PostgreSQL (`supabase/migrations/`).
+- Las **Edge Functions** cubren correo transaccional, webhooks de Stripe, crons (p. ej. recordatorios 24 h / 48 h antes de la cita), PDFs de factura donde aplique, etc. El inventario exacto está en `supabase/functions/`.
+
+---
+
+
+
+## Despliegue
 
 ```bash
 cd frontend
 vercel deploy --prod
 ```
 
-Según cómo esté conectado el repositorio, a veces basta con subir cambios a la rama correcta y Vercel publica solo.
+Las funciones Edge de Supabase se despliegan con la CLI de Supabase (`supabase functions deploy …`) cuando cambien.
 
 ---
 
-## Documentación en `docs/` (tabla completa)
 
-|                           Ruta del archivo               |                                    Contenido                                        |
-|----------------------------------------------------------|-------------------------------------------------------------------------------------|
-| `docs/README.md`                                         | Índice: por dónde empezar según si eres titular, técnico o administración           |
-| `docs/03_cliente/manual-plataforma-cliente.md`           | **Manual principal** para la clínica y pacientes                                    |
-| `docs/03_cliente/informe-ejecutivo.md`                   | Resumen ejecutivo                                                                   |
-| `docs/03_cliente/valoracion-proyecto.md`                 | Valor del trabajo y por qué se tomaron decisiones                                   |
-| `docs/00_producto/producto.md`                           | Lista detallada de pantallas y flujos (también útil para formación interna)         |
-| `docs/01_tecnico/arquitectura-y-seguridad.md`            | Seguridad y visibilidad en Google, explicado por capas                              |
-| `docs/01_tecnico/base-de-datos.md`                       | Qué “cajones de información” existen en el sistema (nombres técnicos + explicación) |
-| `docs/02_operaciones/despliegue-y-operacion.md`          | Proveedores, checklist antes de salir a producción, secretos                        |
-
----
 
 ## Licencia
 
