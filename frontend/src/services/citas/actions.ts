@@ -35,6 +35,7 @@ type ReservaErrorCode =
   | 'slot_invalido'
   | 'slot_ocupado'
   | 'fuera_horario'
+  | 'sin_bono'
   | 'unknown';
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -42,7 +43,7 @@ const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{
 
 // ---------------------------------------------------------------------------
 // Listar slots disponibles de un servicio en una fecha
-// (RPC: solo oculta citas confirmada/completada; bloqueo_temporal no quita el hueco.)
+// (RPC cuadrícula: solo citas confirmada/completada marcan hueco ocupado.)
 // ---------------------------------------------------------------------------
 export async function getDisponibilidadAction(
   fechaISO: string,
@@ -84,7 +85,8 @@ export async function getCuadriculaReservaAction(
 }
 
 // ---------------------------------------------------------------------------
-// Reservar cita (bono → confirmada; sin bono → bloqueo_temporal 15 min)
+// Reservar cita: solo con bono activo para ese servicio (inserta confirmada).
+// Sin bono: el portal abre pago Stripe con slot en metadata; la cita nace en el webhook.
 // ---------------------------------------------------------------------------
 export async function reservarCitaAction(
   servicioId: string,
@@ -135,6 +137,14 @@ export async function reservarCitaAction(
           'Ese horario no está disponible según la plantilla de agenda activa. Elige otro día u otra franja.',
       };
     }
+    if (/reserva_requiere_bono_o_pago/i.test(msg)) {
+      return {
+        ok: false,
+        code: 'sin_bono',
+        message:
+          'Para este servicio necesitas un bono activo o completar el pago en el paso de tarjeta.',
+      };
+    }
     return { ok: false, code: 'unknown', message: msg };
   }
 
@@ -146,8 +156,8 @@ export async function reservarCitaAction(
   const citaId = String(row.cita_id);
   const confirmada = row.estado === 'confirmada';
 
-  // Fire-and-forget email de confirmación solo si la cita queda CONFIRMADA
-  // (bono consumido). Para bloqueo_temporal esperamos al webhook de Stripe.
+  // Fire-and-forget email de confirmación solo si la cita queda CONFIRMADA (bono).
+  // Con pago tarjeta el email lo dispara el webhook al crear la cita.
   if (confirmada) {
     void dispatchBookingConfirmedEmail(supabase, citaId);
   }

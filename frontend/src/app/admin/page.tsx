@@ -90,7 +90,7 @@ export default async function AdminInicioPage() {
       .select('id, inicio, fin, estado, servicio_nombre, paciente_user_id', { count: 'exact' })
       .gte('inicio', hoyStart)
       .lte('inicio', hoyEnd)
-      .in('estado', ['confirmada', 'bloqueo_temporal'])
+      .in('estado', ['confirmada'])
       .order('inicio'),
     supabase
       .from('pagos')
@@ -294,12 +294,12 @@ export default async function AdminInicioPage() {
                         {cita.servicio_nombre}
                       </p>
                       <p className="mt-1 font-body text-[0.8rem] text-ink-soft">
-                        {cita.estado === 'confirmada' ? 'Paciente confirmado · Recordatorio enviado' : 'Pre-reserva en curso'}
+                        Paciente confirmado · Recordatorio enviado
                       </p>
                     </div>
 
                     <Chip tone={cita.estado === 'confirmada' ? 'positive' : 'warning'}>
-                      {cita.estado === 'confirmada' ? 'Confirmada' : 'Pre-reserva'}
+                      Confirmada
                     </Chip>
                   </SurfaceCard>
                 </li>

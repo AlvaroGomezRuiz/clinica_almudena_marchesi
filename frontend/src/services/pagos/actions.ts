@@ -119,7 +119,10 @@ export type PaymentIntentResult =
   | { readonly ok: false; readonly error: string };
 
 async function invokePaymentIntent(
-  body: { kind: 'cita'; cita_id: string } | { kind: 'bono'; bono_config_id: string }
+  body:
+    | { kind: 'cita'; cita_id: string }
+    | { kind: 'cita'; servicio_id: string; slot_inicio: string }
+    | { kind: 'bono'; bono_config_id: string }
 ): Promise<PaymentIntentResult> {
   const env = getSupabaseEnv();
   const supabase = createServerClient();
@@ -183,6 +186,20 @@ export async function crearPaymentIntentCitaAction(
     return { ok: false, error: 'Cita inválida.' };
   }
   return invokePaymentIntent({ kind: 'cita', cita_id: citaId });
+}
+
+/** Pago de sesión sin fila previa en `citas`: la cita se crea al confirmar el pago (webhook). */
+export async function crearPaymentIntentCitaSlotAction(
+  servicioId: string,
+  slotInicio: string
+): Promise<PaymentIntentResult> {
+  if (!UUID_RE.test(servicioId)) {
+    return { ok: false, error: 'Servicio inválido.' };
+  }
+  if (!slotInicio || slotInicio.trim().length < 8) {
+    return { ok: false, error: 'Horario inválido.' };
+  }
+  return invokePaymentIntent({ kind: 'cita', servicio_id: servicioId, slot_inicio: slotInicio });
 }
 
 export async function crearPaymentIntentBonoAction(

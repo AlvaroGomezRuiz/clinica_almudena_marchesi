@@ -10,8 +10,8 @@
 //
 // Security:
 //   * Valida JWT del usuario (authenticated).
-//   * Reutiliza las RPCs `preparar_checkout_cita` / `preparar_checkout_bono`
-//     para validar ownership y obtener el contexto.
+//   * Cita: `preparar_checkout_cita` (fila legacy) o `preparar_checkout_cita_slot` (pago primero).
+//   * Bono: `preparar_checkout_bono`.
 //   * Idempotency-Key → `pi-<kind>-<id>-<user_id>`.
 // -----------------------------------------------------------------------------
 
@@ -29,7 +29,11 @@ const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 interface PaymentIntentRequest {
   kind: "cita" | "bono";
+  /** Pago de cita ya existente (legacy bloqueo_temporal / checkout antiguo). */
   cita_id?: string;
+  /** Pago antes de crear la cita: validado en BBDD, metadata en Stripe. */
+  servicio_id?: string;
+  slot_inicio?: string;
   bono_config_id?: string;
 }
 
@@ -97,30 +101,88 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
 
   try {
     if (payload.kind === "cita") {
-      if (!payload.cita_id || !UUID_RE.test(payload.cita_id)) {
-        return json({ error: "missing_cita_id" }, 400, cors);
+      const hasSlot =
+        Boolean(payload.servicio_id && UUID_RE.test(payload.servicio_id)) &&
+        typeof payload.slot_inicio === "string" &&
+        payload.slot_inicio.length > 0;
+      const hasLegacyCita =
+        Boolean(payload.cita_id && UUID_RE.test(payload.cita_id));
+
+      if (hasSlot === hasLegacyCita) {
+        return json(
+          { error: "invalid_cita_payload", detail: "Envía cita_id XOR (servicio_id + slot_inicio)" },
+          400,
+          cors,
+        );
       }
 
-      const { data, error } = await admin.rpc("preparar_checkout_cita", {
-        p_cita_id: payload.cita_id,
+      if (hasLegacyCita) {
+        const { data, error } = await admin.rpc("preparar_checkout_cita", {
+          p_cita_id: payload.cita_id as string,
+          p_user_id: user.id,
+        });
+        if (error) return json({ error: "rpc_failed", detail: error.message }, 500, cors);
+
+        const ctx = (Array.isArray(data) ? data[0] : data) as CitaCtx | null;
+        if (!ctx) return json({ error: "cita_not_found_or_not_owned" }, 404, cors);
+
+        const pi = await createPaymentIntent({
+          amount_centimos: ctx.importe_centimos,
+          customer_email: ctx.email,
+          description: `Sesión — ${ctx.servicio_nombre} — ${new Date(ctx.inicio).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Madrid" })}`,
+          metadata: {
+            kind: "cita",
+            cita_id: ctx.cita_id,
+            user_id: user.id,
+          },
+          excluded_payment_method_types: PORTAL_EXCLUDED_PAYMENT_METHOD_TYPES,
+          idempotency_key: `pi-cita-${ctx.cita_id}-${user.id}`,
+        });
+
+        return json(
+          {
+            client_secret: pi.client_secret,
+            payment_intent_id: pi.id,
+            amount: pi.amount,
+            currency: pi.currency,
+          },
+          200,
+          cors,
+        );
+      }
+
+      const { data, error } = await admin.rpc("preparar_checkout_cita_slot", {
+        p_servicio_id: payload.servicio_id as string,
+        p_slot_inicio: payload.slot_inicio as string,
         p_user_id: user.id,
       });
       if (error) return json({ error: "rpc_failed", detail: error.message }, 500, cors);
 
-      const ctx = (Array.isArray(data) ? data[0] : data) as CitaCtx | null;
-      if (!ctx) return json({ error: "cita_not_found_or_not_owned" }, 404, cors);
+      const slotCtx = (Array.isArray(data) ? data[0] : data) as {
+        inicio: string;
+        servicio_nombre: string;
+        importe_centimos: number;
+        email: string;
+        display_name: string | null;
+      } | null;
+      if (!slotCtx) {
+        return json({ error: "slot_not_available_or_invalid" }, 404, cors);
+      }
 
+      const sid = payload.servicio_id as string;
+      const slotIso = payload.slot_inicio as string;
       const pi = await createPaymentIntent({
-        amount_centimos: ctx.importe_centimos,
-        customer_email: ctx.email,
-        description: `Sesión — ${ctx.servicio_nombre} — ${new Date(ctx.inicio).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Madrid" })}`,
+        amount_centimos: slotCtx.importe_centimos,
+        customer_email: slotCtx.email,
+        description: `Sesión — ${slotCtx.servicio_nombre} — ${new Date(slotCtx.inicio).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Madrid" })}`,
         metadata: {
           kind: "cita",
-          cita_id: ctx.cita_id,
           user_id: user.id,
+          servicio_id: sid,
+          slot_inicio: slotIso,
         },
         excluded_payment_method_types: PORTAL_EXCLUDED_PAYMENT_METHOD_TYPES,
-        idempotency_key: `pi-cita-${ctx.cita_id}-${user.id}`,
+        idempotency_key: `pi-cita-slot-${user.id}-${sid}-${slotIso}`,
       });
 
       return json(
@@ -131,7 +193,7 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
           currency: pi.currency,
         },
         200,
-        cors
+        cors,
       );
     }
 

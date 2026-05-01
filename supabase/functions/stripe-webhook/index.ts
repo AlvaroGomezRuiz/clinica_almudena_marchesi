@@ -169,13 +169,19 @@ async function handleCheckoutCompleted(
     bono_creado: boolean;
     bono_id: string | null;
     ya_procesado: boolean;
+    cita_afectada_id?: string | null;
   } | null;
 
   if (!result || result.ya_procesado) return;
 
+  const citaIdParaEmail =
+    kind === "cita"
+      ? (metadata.cita_id ?? result.cita_afectada_id ?? null)
+      : null;
+
   // Disparar email de confirmación (fire-and-forget, no bloqueamos el webhook)
-  if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
-    await triggerBookingEmail(userId, metadata.cita_id, result.pago_id);
+  if (kind === "cita" && result.cita_confirmada && citaIdParaEmail) {
+    await triggerBookingEmail(userId, citaIdParaEmail, result.pago_id);
   }
   if (kind === "bono" && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
@@ -207,7 +213,7 @@ async function handlePaymentIntentSucceeded(
   // por `pago_id` y no duplica envíos reales.
   const { data: pagoExistente } = await admin
     .from("pagos")
-    .select("id, bono_id, stripe_session_id")
+    .select("id, bono_id, cita_id, stripe_session_id")
     .eq("stripe_payment_intent", pi.id)
     .maybeSingle();
   if (pagoExistente) {
@@ -215,12 +221,16 @@ async function handlePaymentIntentSucceeded(
       await triggerBonoCompradoEmail(userId, pagoExistente.id, pagoExistente.bono_id);
     } else if (
       kind === "cita" &&
-      metadata.cita_id &&
+      (metadata.cita_id ?? pagoExistente.cita_id) &&
       (pagoExistente.stripe_session_id == null || pagoExistente.stripe_session_id === "")
     ) {
       // Solo re-disparo si el pago nació del Payment Element (sin Session): evita
       // duplicar el mail que ya manda `checkout.session.completed`.
-      await triggerBookingEmail(userId, metadata.cita_id, pagoExistente.id);
+      await triggerBookingEmail(
+        userId,
+        String(metadata.cita_id ?? pagoExistente.cita_id),
+        pagoExistente.id,
+      );
     }
     return;
   }
@@ -252,6 +262,7 @@ async function handlePaymentIntentSucceeded(
     bono_creado: boolean;
     bono_id: string | null;
     ya_procesado: boolean;
+    cita_afectada_id?: string | null;
   } | null;
 
   if (!result) return;
@@ -259,7 +270,7 @@ async function handlePaymentIntentSucceeded(
   if (result.ya_procesado) {
     const { data: row } = await admin
       .from("pagos")
-      .select("id, bono_id, stripe_session_id")
+      .select("id, bono_id, cita_id, stripe_session_id")
       .eq("stripe_payment_intent", pi.id)
       .maybeSingle();
     if (row?.id) {
@@ -267,17 +278,18 @@ async function handlePaymentIntentSucceeded(
         await triggerBonoCompradoEmail(userId, row.id, row.bono_id);
       } else if (
         kind === "cita" &&
-        metadata.cita_id &&
+        (metadata.cita_id ?? row.cita_id) &&
         (row.stripe_session_id == null || row.stripe_session_id === "")
       ) {
-        await triggerBookingEmail(userId, metadata.cita_id, row.id);
+        await triggerBookingEmail(userId, String(metadata.cita_id ?? row.cita_id), row.id);
       }
     }
     return;
   }
 
-  if (kind === "cita" && result.cita_confirmada && metadata.cita_id) {
-    await triggerBookingEmail(userId, metadata.cita_id, result.pago_id);
+  const citaIdNueva = metadata.cita_id ?? result.cita_afectada_id ?? null;
+  if (kind === "cita" && result.cita_confirmada && citaIdNueva) {
+    await triggerBookingEmail(userId, citaIdNueva, result.pago_id);
   }
   if (kind === "bono" && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);

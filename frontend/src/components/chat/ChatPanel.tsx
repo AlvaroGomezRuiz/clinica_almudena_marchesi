@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation';
 
 import AudioRecorderButton from '@/components/chat/AudioRecorderButton';
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
+import ChatImagePreviewModal from '@/components/chat/ChatImagePreviewModal';
 import {
   CHAT_AUDIO_MESSAGE_BODY,
   CHAT_TEXT_PLACEHOLDER,
@@ -1024,6 +1025,7 @@ function Burbuja({
   otherAvatarUrl?: string | null;
   otherInitial: string;
 }) {
+  const [previewImg, setPreviewImg] = useState<{ src: string; alt: string } | null>(null);
   const base =
     'max-w-[min(78%,calc(100%-2.75rem))] rounded-2xl px-4 py-2.5 font-body text-[0.92rem] leading-[1.5] whitespace-pre-wrap break-words shadow-[0_6px_20px_-14px_rgba(28,28,25,0.3)]';
   const own = mensaje.failed
@@ -1077,7 +1079,14 @@ function Burbuja({
                     fallbackLetter={esMio ? '' : otherInitial}
                   />
                 ) : a.tipo === 'imagen' && a.signed_url ? (
-                  <a href={a.signed_url} target="_blank" rel="noreferrer" title={label(a.nombre)}>
+                  <button
+                    type="button"
+                    title={label(a.nombre)}
+                    onClick={() =>
+                      setPreviewImg({ src: a.signed_url as string, alt: label(a.nombre) })
+                    }
+                    className="block w-full cursor-zoom-in rounded-xl border-0 bg-transparent p-0 text-left ring-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={a.signed_url}
@@ -1086,7 +1095,7 @@ function Burbuja({
                       decoding="async"
                       className="max-h-56 max-w-full rounded-xl object-cover ring-1 ring-inset ring-white/40"
                     />
-                  </a>
+                  </button>
                 ) : a.signed_url ? (
                   <a
                     href={a.signed_url}
@@ -1156,6 +1165,12 @@ function Burbuja({
       {esMio ? (
         <ChatThumb url={selfAvatarUrl} fallbackLetter="" align="right" />
       ) : null}
+      <ChatImagePreviewModal
+        open={previewImg !== null}
+        src={previewImg?.src ?? ''}
+        alt={previewImg?.alt ?? ''}
+        onClose={() => setPreviewImg(null)}
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@
  *     de política 48h; desde ahí se llama a `reservarCitaAction`.
  *   - Bono: cada fila de `bonos_pacientes` apunta a un `servicio_id`; solo en esas
  *     modalidades se oculta el precio (bono con sesión disponible). El resto paga.
- *   - Sin bono: tras confirmar → pre-reserva + drawer de pago Stripe.
+ *   - Sin bono: no se crea cita hasta el pago; se abre el drawer Stripe (PI con slot en metadata).
  *   - Si slot_ocupado → refresca disponibilidad y limpia la selección.
  */
 
@@ -69,8 +69,9 @@ export default function SlotPicker({
   const [reservando, startReserva] = useTransition();
   const [selectedSlot, setSelectedSlot] = useState<SlotCuadricula | null>(null);
   const policyDialogRef = useRef<HTMLDialogElement>(null);
-  const [pendingPayment, setPendingPayment] = useState<{
-    citaId: string;
+  const [pendingPagoSlot, setPendingPagoSlot] = useState<{
+    servicioId: string;
+    slotInicio: string;
     amount: number;
     titulo: string;
   } | null>(null);
@@ -146,6 +147,20 @@ export default function SlotPicker({
     if (!servicioId || !slot.permite_reserva) return;
     setError(null);
 
+    if (!servicioSeleccionCubiertoBono) {
+      closePolicyDialog();
+      const titulo = servicio
+        ? `${servicio.nombre} · ${format(new Date(slot.slot_inicio), "EEEE d MMM HH:mm", { locale: es })}`
+        : 'Reserva de sesión';
+      setPendingPagoSlot({
+        servicioId,
+        slotInicio: slot.slot_inicio,
+        amount: servicio?.precio_centimos ?? 0,
+        titulo,
+      });
+      return;
+    }
+
     startReserva(async () => {
       const res = await reservarCitaAction(servicioId, slot.slot_inicio);
       if (!res.ok) {
@@ -167,17 +182,7 @@ export default function SlotPicker({
         return;
       }
 
-      // Sin bono → pre-reserva creada (bloqueo_temporal 15 min). Abrimos el
-      // drawer con Payment Element embebido. Si el usuario cierra sin pagar
-      // el bloqueo caducará solo por TTL servidor.
-      const titulo = servicio
-        ? `${servicio.nombre} · ${format(new Date(slot.slot_inicio), "EEEE d MMM HH:mm", { locale: es })}`
-        : 'Reserva de sesión';
-      setPendingPayment({
-        citaId: res.citaId,
-        amount: servicio?.precio_centimos ?? 0,
-        titulo,
-      });
+      setError('La reserva con bono debería quedar confirmada. Contacta con la consulta.');
     });
   };
 
@@ -618,24 +623,28 @@ export default function SlotPicker({
                 {servicioSeleccionCubiertoBono
                   ? 'Se descontará 1 sesión al confirmar.'
                   : modalidadServicio === 'pareja'
-                    ? 'Importe del servicio de pareja en catálogo. El hueco queda bloqueado ~15 min para completar el pago (Stripe: tarjeta, Bizum, Link, SEPA o Klarna).'
-                    : 'Se reservará el hueco unos minutos mientras pagas con Stripe (tarjeta, Bizum, Link, SEPA o Klarna, o wallets).'}
+                    ? 'Importe del servicio de pareja en catálogo. La cita se registra solo cuando el pago se completa en Stripe (tarjeta, Bizum, Link, SEPA o Klarna).'
+                    : 'La cita se registra solo cuando el pago se completa en Stripe (tarjeta, Bizum, Link, SEPA o Klarna, o wallets).'}
               </p>
             </div>
           </dl>
         </SurfaceCard>
       ) : null}
 
-      {pendingPayment ? (
+      {pendingPagoSlot ? (
         <PaymentElementDrawer
           open
           onClose={() => {
-            setPendingPayment(null);
+            setPendingPagoSlot(null);
             router.refresh();
           }}
-          target={{ kind: 'cita', citaId: pendingPayment.citaId }}
-          amountHint={pendingPayment.amount}
-          titleHint={pendingPayment.titulo}
+          target={{
+            kind: 'cita_slot',
+            servicioId: pendingPagoSlot.servicioId,
+            slotInicio: pendingPagoSlot.slotInicio,
+          }}
+          amountHint={pendingPagoSlot.amount}
+          titleHint={pendingPagoSlot.titulo}
         />
       ) : null}
     </div>

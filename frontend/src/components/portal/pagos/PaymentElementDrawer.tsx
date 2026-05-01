@@ -48,6 +48,7 @@ import { buildPaymentElementAppearance } from '@/lib/stripe/paymentElementAppear
 import {
   crearPaymentIntentBonoAction,
   crearPaymentIntentCitaAction,
+  crearPaymentIntentCitaSlotAction,
   type PaymentIntentResult,
 } from '@/services/pagos/actions';
 
@@ -60,15 +61,19 @@ function getStripe(): Promise<Stripe | null> {
       // Fail-fast: si no hay publishable key, el componente muestra error.
       return Promise.resolve(null);
     }
-    stripePromise = loadStripe(pk);
+    stripePromise = loadStripe(pk, { locale: 'es' });
   }
   return stripePromise;
 }
 
+export type PaymentDrawerCitaTarget =
+  | { readonly kind: 'cita'; readonly citaId: string }
+  | { readonly kind: 'cita_slot'; readonly servicioId: string; readonly slotInicio: string };
+
 export interface PaymentElementDrawerProps {
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly target: { kind: 'cita'; citaId: string } | { kind: 'bono'; bonoConfigId: string };
+  readonly target: PaymentDrawerCitaTarget | { readonly kind: 'bono'; readonly bonoConfigId: string };
   /** Importe en céntimos para mostrar antes del fetch. */
   readonly amountHint?: number;
   readonly titleHint?: string;
@@ -126,7 +131,9 @@ export default function PaymentElementDrawer({
       const res: PaymentIntentResult =
         target.kind === 'cita'
           ? await crearPaymentIntentCitaAction(target.citaId)
-          : await crearPaymentIntentBonoAction(target.bonoConfigId);
+          : target.kind === 'cita_slot'
+            ? await crearPaymentIntentCitaSlotAction(target.servicioId, target.slotInicio)
+            : await crearPaymentIntentBonoAction(target.bonoConfigId);
       if (!res.ok) {
         setState({ status: 'error', message: formatUserFacingError(res.error) });
         return;
@@ -265,6 +272,8 @@ function CheckoutForm({
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Aviso en español junto a Bizum (Stripe puede mostrar texto en inglés dentro del iframe). */
+  const [bizumActivo, setBizumActivo] = useState(false);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -410,6 +419,9 @@ function CheckoutForm({
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-6 pb-3 [scrollbar-gutter:stable]">
         <div className="space-y-4">
           <PaymentElement
+            onChange={(ev) => {
+              setBizumActivo(ev.value?.type === 'bizum');
+            }}
             options={{
               /* Orden: tarjeta → wallets → Bizum → Link → SEPA → Klarna. */
               layout: {
@@ -429,6 +441,15 @@ function CheckoutForm({
               wallets: { applePay: 'auto', googlePay: 'auto' },
             }}
           />
+
+          {bizumActivo ? (
+            <p
+              className="rounded-xl border border-primary/25 bg-primary/10 px-3 py-2.5 font-body text-[0.78rem] leading-relaxed text-ink dark:border-primary-fixed-dim/40 dark:bg-primary-fixed-dim/15 dark:text-white/90"
+              role="note"
+            >
+              Tras pulsar «Pagar», abre la aplicación de tu banco en el móvil y autoriza el cobro con Bizum.
+            </p>
+          ) : null}
 
           {error ? (
             <p role="alert" className="font-body text-[0.85rem] text-red-700 dark:text-red-400">
