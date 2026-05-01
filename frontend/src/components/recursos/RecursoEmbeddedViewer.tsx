@@ -65,7 +65,7 @@ export default function RecursoEmbeddedViewer({
       <a
         href={signedUrl}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
         className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-body text-[0.85rem] text-on-primary transition hover:bg-primary-dim"
       >
         Abrir en pestaña nueva

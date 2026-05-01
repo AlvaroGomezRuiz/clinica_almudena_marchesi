@@ -61,7 +61,7 @@ export default async function AdminRecursoVerPage({
         <a
           href={rec.external_url}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 font-body text-[0.85rem] text-on-primary"
         >
           Abrir enlace

@@ -503,7 +503,7 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
                         <a
                           href={`/api/portal/factura/${p.id}/pdf`}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-2 font-body text-[0.74rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
                           title="Descargar factura PDF"
                         >

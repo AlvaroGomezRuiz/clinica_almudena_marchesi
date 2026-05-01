@@ -367,7 +367,7 @@ export default async function PortalRecursosPage({
                         <a
                           href={`/api/portal/recursos/download/${r.id}`}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 font-body text-[0.78rem] text-ink ring-1 ring-inset ring-ink/12 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
                         >
                           <span
@@ -457,7 +457,7 @@ export default async function PortalRecursosPage({
                     <a
                       href={`/api/portal/recursos/download/${r.id}`}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1.5 font-body text-[0.78rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
                     >
                       <span
@@ -523,7 +523,7 @@ export default async function PortalRecursosPage({
                       <a
                         href={`/api/portal/recursos/download/${r.id}`}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 font-body text-[0.72rem] text-ink ring-1 ring-inset ring-ink/10 transition hover:bg-white dark:bg-white/10 dark:text-white dark:ring-white/15 dark:hover:bg-white/15"
                       >
                         <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
