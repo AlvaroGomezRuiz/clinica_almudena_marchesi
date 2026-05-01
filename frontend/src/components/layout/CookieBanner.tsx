@@ -88,7 +88,7 @@ export default function CookieBanner() {
                 </h2>
               </div>
               <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                Utilizamos cookies propias y de terceros para garantizar el correcto funcionamiento de la clínica digital, analizar nuestro tráfico y mejorar tu experiencia. Al hacer clic en "Aceptar todas", consientes el uso de todas las cookies. También puedes configurarlas a tu medida o rechazarlas.{' '}
+                Utilizamos cookies propias y de terceros para garantizar el correcto funcionamiento de la clínica digital, analizar nuestro tráfico y mejorar tu experiencia. Al hacer clic en &quot;Aceptar todas&quot;, consientes el uso de todas las cookies. También puedes configurarlas a tu medida o rechazarlas.{' '}
                 <Link href="/cookies" className="underline underline-offset-2 hover:text-stone-900 dark:hover:text-stone-200">
                   Leer política
                 </Link>.
