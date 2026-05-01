@@ -52,12 +52,12 @@ export default function LoginMfaPage({
         <PremiumCard tilt={false} className="w-full max-w-md mx-auto">
           <div className="p-8 md:p-12">
             <div className="mb-10">
-              <h1 className="font-display text-[2rem] text-ink italic mb-2 text-balance leading-tight">
-                Código de verificación
+              <h1 className="mb-2 font-display text-[1.75rem] font-normal leading-tight text-ink text-balance sm:text-[2rem]">
+                Revisa tu aplicación de autenticación
               </h1>
-              <p className="font-display text-[1rem] text-ink-soft leading-relaxed">
-                Introduce el código de 6 dígitos de tu aplicación de autenticación. Solo
-                con este paso se completa el inicio de sesión.
+              <p className="font-body text-[0.95rem] leading-relaxed text-ink-soft dark:text-ink-muted">
+                Introduce el código de 6 dígitos que muestra la app (Google Authenticator,
+                1Password, etc.) vinculada a esta clínica. Con esto se completa el acceso.
               </p>
             </div>
 
