@@ -31,7 +31,9 @@ import { useRouter } from 'next/navigation';
 
 import AudioRecorderButton from '@/components/chat/AudioRecorderButton';
 import ChatAttachButton from '@/components/chat/ChatAttachButton';
-import ChatImagePreviewModal from '@/components/chat/ChatImagePreviewModal';
+import ChatImagePreviewModal, {
+  type ChatImagePreviewSlide,
+} from '@/components/chat/ChatImagePreviewModal';
 import {
   CHAT_AUDIO_MESSAGE_BODY,
   CHAT_TEXT_PLACEHOLDER,
@@ -1025,7 +1027,10 @@ function Burbuja({
   otherAvatarUrl?: string | null;
   otherInitial: string;
 }) {
-  const [previewImg, setPreviewImg] = useState<{ src: string; alt: string } | null>(null);
+  const [previewImg, setPreviewImg] = useState<{
+    readonly slides: readonly ChatImagePreviewSlide[];
+    readonly initialIndex: number;
+  } | null>(null);
   const base =
     'max-w-[min(78%,calc(100%-2.75rem))] rounded-2xl px-4 py-2.5 font-body text-[0.92rem] leading-[1.5] whitespace-pre-wrap break-words shadow-[0_6px_20px_-14px_rgba(28,28,25,0.3)]';
   const own = mensaje.failed
@@ -1082,9 +1087,19 @@ function Burbuja({
                   <button
                     type="button"
                     title={label(a.nombre)}
-                    onClick={() =>
-                      setPreviewImg({ src: a.signed_url as string, alt: label(a.nombre) })
-                    }
+                    onClick={() => {
+                      const imgs: ChatImagePreviewSlide[] = adjuntos
+                        .filter((x) => x.tipo === 'imagen' && x.signed_url)
+                        .map((x) => ({
+                          src: x.signed_url as string,
+                          alt: label(x.nombre),
+                        }));
+                      const idx = imgs.findIndex((x) => x.src === (a.signed_url as string));
+                      setPreviewImg({
+                        slides: imgs,
+                        initialIndex: idx >= 0 ? idx : 0,
+                      });
+                    }}
                     className="block w-full cursor-zoom-in rounded-xl border-0 bg-transparent p-0 text-left ring-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1165,12 +1180,14 @@ function Burbuja({
       {esMio ? (
         <ChatThumb url={selfAvatarUrl} fallbackLetter="" align="right" />
       ) : null}
-      <ChatImagePreviewModal
-        open={previewImg !== null}
-        src={previewImg?.src ?? ''}
-        alt={previewImg?.alt ?? ''}
-        onClose={() => setPreviewImg(null)}
-      />
+      {previewImg ? (
+        <ChatImagePreviewModal
+          open
+          slides={previewImg.slides}
+          initialIndex={previewImg.initialIndex}
+          onClose={() => setPreviewImg(null)}
+        />
+      ) : null}
     </div>
   );
 }
