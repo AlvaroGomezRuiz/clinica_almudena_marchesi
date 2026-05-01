@@ -9,6 +9,7 @@ import localFont from 'next/font/local';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AnalyticsErrorSuppressor from '@/components/layout/AnalyticsErrorSuppressor';
+import CookieBanner from '@/components/layout/CookieBanner';
 import Script from 'next/script';
 
 /* ─────────────────────────────────────────────────────────────
@@ -184,6 +185,24 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Google Consent Mode v2 Default */}
+        <Script
+          id="google-consent-default"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', {
+                'analytics_storage': 'denied',
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'wait_for_update': 500
+              });
+            `,
+          }}
+        />
         {/* Google tag (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-ZWWW41MQ2H"
@@ -221,6 +240,7 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <CookieBanner />
         <AnalyticsErrorSuppressor />
         <Analytics />
         <SpeedInsights />

@@ -5,6 +5,7 @@ import {
   getClinicGoogleMapsHref,
 } from '@/lib/clinic';
 import Link from 'next/link';
+import CookieSettingsTrigger from './CookieSettingsTrigger';
 
 const FOOTER_LINKS = [
   { href: '/enfoque', label: 'Enfoque' },
@@ -112,6 +113,7 @@ export default function PublicFooter() {
                   <span className="sr-only">{link.label}</span>
                 </a>
               ))}
+              <CookieSettingsTrigger />
             </div>
           </div>
 
