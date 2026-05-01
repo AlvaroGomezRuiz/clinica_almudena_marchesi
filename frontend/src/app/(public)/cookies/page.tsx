@@ -9,7 +9,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
   path: '/cookies',
   title: `Política de Cookies — RGPD (Madrid) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
-    'Cookies técnicas y de sesión en ampsicologia.es: Supabase Auth, Stripe, Next.js y mediciones agregadas. Sin cookies publicitarias ni analíticas de perfilado.',
+    'Información sobre cookies técnicas, analíticas y de marketing en ampsicologia.es. Gestión transparente con Consent Mode v2 y cumplimiento RGPD.',
   keywords: ['cookies', 'política cookies', 'LSSI', 'sesión segura', 'ampsicologia.es'],
   ogType: 'article',
   includeGeoHints: false,
@@ -39,8 +39,8 @@ export default function CookiesPage() {
           </h1>
           <p className="text-body-lg text-ink-soft leading-relaxed">
             Este sitio utiliza cookies estrictamente necesarias para la seguridad y el funcionamiento del
-            servicio. No empleamos cookies de publicidad comportamental ni paneles analíticos de terceros
-            con fines de perfilado comercial.
+            servicio. Además, con su consentimiento explícito, empleamos cookies analíticas y de marketing 
+            (Google Analytics) gestionadas de forma respetuosa mediante el Modo de Consentimiento (Consent Mode v2).
           </p>
         </header>
 
@@ -62,8 +62,7 @@ export default function CookiesPage() {
               2. Cookies que utilizamos
             </h2>
             <p className="mb-4">
-              Se emplean cookies <strong className="text-ink">técnicas y de sesión</strong>, necesarias para
-              autenticación segura y para la aplicación web:
+              Se emplean cookies <strong className="text-ink">técnicas y de sesión</strong>, necesarias para el funcionamiento, y cookies de <strong className="text-ink">terceros (analítica y marketing)</strong> sujetas a su consentimiento:
             </p>
 
             <div className="overflow-x-auto rounded-apple border border-line">
@@ -122,6 +121,17 @@ export default function CookiesPage() {
                       del portal del paciente.
                     </td>
                   </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-mono text-xs text-ink">
+                      _ga / _ga_*
+                    </td>
+                    <td className="px-4 py-3">Analítica / Marketing (Google)</td>
+                    <td className="px-4 py-3">Hasta 2 años</td>
+                    <td className="px-4 py-3">
+                      Se usan para distinguir usuarios únicos y generar datos estadísticos anónimos sobre cómo 
+                      utilizan el sitio web (Google Analytics). Solo se instalan si usted hace clic en &quot;Aceptar&quot;.
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -146,26 +156,29 @@ export default function CookiesPage() {
 
           <div>
             <h2 className="font-display text-xl text-ink mb-4">
-              4. Cookies de terceros con fines comerciales
+              4. Analítica y Modo de Consentimiento
             </h2>
             <p>
-              Este sitio <strong className="text-ink">no utiliza cookies de terceros</strong> para analítica
-              publicitaria (redes de display), remarketing, píxeles de seguimiento masivo ni redes sociales.
-              La navegación no se monetiza mediante intercambio de datos con brokers de publicidad.
+              Utilizamos Google Analytics para medir el tráfico y mejorar la web. Para garantizar su privacidad,
+              hemos implementado el <strong>Modo de Consentimiento (Consent Mode v2)</strong> de Google. 
+              Esto significa que, por defecto, toda la recopilación de datos está bloqueada. Google Analytics 
+              solo instala cookies en su dispositivo y recopila información si usted interactúa con el banner de 
+              cookies y otorga su consentimiento explícito.
             </p>
           </div>
 
           <div>
             <h2 className="font-display text-xl text-ink mb-4">
-              5. Gestión de cookies
+              5. Gestión de cookies y revocación
             </h2>
             <p>
-              Puede configurar su navegador para rechazar cookies o para que le avise antes de almacenarlas.
-              Si bloquea las cookies técnicas necesarias para la sesión, el acceso al portal de pacientes o
-              al área privada puede resultar imposible o inseguro.
+              En cualquier momento, usted puede cambiar de opinión y revocar su consentimiento. Para ello, 
+              simplemente haga clic en el enlace <strong>&quot;Configurar Cookies&quot;</strong> situado en la parte inferior 
+              (pie de página) de nuestra web. Esto abrirá nuevamente el panel de preferencias donde podrá desactivar 
+              las cookies analíticas o de marketing al instante.
             </p>
             <p className="mt-3">
-              Ayuda oficial por navegador:
+              Adicionalmente, puede configurar su navegador para rechazar todas las cookies por defecto:
             </p>
             <ul className="list-disc pl-6 space-y-1 text-sm mt-2">
               <li>
