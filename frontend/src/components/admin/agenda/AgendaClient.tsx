@@ -40,6 +40,7 @@ import {
   crearBloqueoAction,
   eliminarBloqueoAction,
 } from '@/services/admin/agenda-actions';
+import { useNuevaCitaAdmin } from '@/components/admin/NuevaCitaAdminContext';
 
 export type { CitaRow } from '@/components/admin/agenda/types';
 
@@ -525,6 +526,7 @@ function DayView({
   const estado = computeDiaEstado(fecha, citas, bloqueos, aplicaciones, plantillas);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { open } = useNuevaCitaAdmin();
 
   const bloquearDiaCompleto = () => {
     const ini = new Date(fecha); ini.setHours(0, 0, 0, 0);
@@ -582,9 +584,9 @@ function DayView({
           >
             Bloquear día
           </Button>
-          <Link href={`/admin/agenda?nuevo=1&d=${format(fecha, 'yyyy-MM-dd')}`}>
-            <Button variant="primary" size="sm" icon="add">Nueva cita</Button>
-          </Link>
+          <Button variant="primary" size="sm" icon="add" onClick={() => open(format(fecha, 'yyyy-MM-dd'))}>
+            Nueva cita
+          </Button>
         </div>
       </header>
 

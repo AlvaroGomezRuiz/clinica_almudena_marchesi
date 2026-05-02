@@ -12,6 +12,7 @@ import {
 import PacienteListContactReveal from '@/components/admin/pacientes/PacienteListContactReveal';
 import { ContactFichaIcon } from '@/components/icons/ContactFichaIcon';
 import PacienteListAvatar from '@/components/admin/pacientes/PacienteListAvatar';
+import AgendarCitaBoton from '@/components/admin/mensajes/AgendarCitaBoton';
 import ChatPanel from '@/components/chat/ChatPanel';
 import { Chip, PageHeader, SurfaceCard } from '@/components/portal-shell/ui';
 import { CLINIC_PUBLIC_SITE_HOST_LABEL } from '@/lib/clinic';
@@ -278,15 +279,7 @@ export default async function AdminConversacionPage({
               Acciones rápidas
             </h2>
             <div className="flex flex-col gap-1.5">
-              <Link
-                href={`/admin/agenda?vista=dia&paciente=${convTyped.paciente_id}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/50 px-3 py-2 font-body text-[0.82rem] text-ink transition hover:bg-white/70 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-              >
-                <span className="material-symbols-outlined text-[1rem]" aria-hidden="true">
-                  event
-                </span>
-                Agendar cita
-              </Link>
+              <AgendarCitaBoton />
               <Link
                 href={`/admin/recursos?paciente=${convTyped.paciente_id}`}
                 className="inline-flex items-center gap-2 rounded-xl bg-white/50 px-3 py-2 font-body text-[0.82rem] text-ink transition hover:bg-white/70 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"

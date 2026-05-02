@@ -33,16 +33,18 @@ export function resumenFromPaymentIntentJson(
     return null;
   }
 
-  const mid = (pi.metadata ?? {}) as { user_id?: string; kind?: string };
-  if (mid.user_id !== userId) return null;
-  if (mid.kind !== 'cita' && mid.kind !== 'bono') return null;
+  const mid = pi.metadata;
+  if (mid && Object.keys(mid).length > 0) {
+    if (mid.user_id !== userId) return null;
+    if (mid.kind !== 'cita' && mid.kind !== 'bono') return null;
+  }
 
   const amount = typeof pi.amount === 'number' ? pi.amount : 0;
   const moneda = (pi.currency ?? 'eur').toUpperCase();
   const descripcion =
     pi.description && pi.description.length > 0
       ? pi.description
-      : mid.kind === 'cita'
+      : mid?.kind === 'cita'
         ? 'Cita'
         : 'Bono';
 
@@ -50,7 +52,7 @@ export function resumenFromPaymentIntentJson(
     importeCentimos: amount,
     moneda,
     descripcion,
-    kind: mid.kind,
+    kind: (mid?.kind as 'cita' | 'bono') ?? 'bono',
     estadosStripe: status,
   };
 }

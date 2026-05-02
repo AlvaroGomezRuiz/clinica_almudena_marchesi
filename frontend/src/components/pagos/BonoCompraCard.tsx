@@ -50,7 +50,11 @@ export default function BonoCompraCard({ bono }: Props) {
       <div className="flex min-h-0 flex-1 flex-col">
         <header className="mb-4 flex shrink-0 items-start justify-between gap-3">
           <Chip tone={bono.destacado ? 'positive' : 'info'}>
-            {bono.destacado ? 'Más elegido' : `${bono.sesiones} sesiones`}
+            {bono.destacado
+              ? bono.sesiones >= 10
+                ? '+ AHORRO'
+                : 'Más elegido'
+              : `${bono.sesiones} sesiones`}
           </Chip>
           <p className="font-display text-[1.5rem] italic text-primary tabular-nums tracking-[-0.01em] dark:text-primary-fixed-dim">
             {euro(bono.precio_centimos)}

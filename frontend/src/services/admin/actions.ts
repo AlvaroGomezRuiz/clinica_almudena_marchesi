@@ -180,7 +180,7 @@ export interface AsignarBonoManualInput {
 }
 
 export type AsignarBonoManualResult =
-  | { ok: true; bono_id: string; pago_id: string }
+  | { ok: true; bono_id: string; pago_id: string | null }
   | { ok: false; message: string };
 
 /**
@@ -233,7 +233,7 @@ export async function asignarBonoManualAction(
     }
 
     const row = Array.isArray(data) ? data[0] : data;
-    if (!row?.bono_id || !row?.pago_id) {
+    if (!row?.bono_id) {
       return { ok: false, message: 'respuesta inválida del servidor' };
     }
 
@@ -241,7 +241,7 @@ export async function asignarBonoManualAction(
     revalidatePath('/admin/pacientes');
     revalidatePath(`/admin/pacientes/${input.paciente_id}`);
 
-    return { ok: true, bono_id: row.bono_id as string, pago_id: row.pago_id as string };
+    return { ok: true, bono_id: row.bono_id as string, pago_id: row.pago_id as string | null };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'error_desconocido';
     return { ok: false, message };
