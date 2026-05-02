@@ -19,6 +19,7 @@
     "fonts:all": "node scripts/vendor-fonts.mjs && node scripts/fetch-icons-font.mjs"
   },
   "dependencies": {
+    "@next/third-parties": "^14.2.35",
     "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^8.55.1",

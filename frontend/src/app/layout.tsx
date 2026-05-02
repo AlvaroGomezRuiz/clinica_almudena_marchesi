@@ -11,6 +11,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import AnalyticsErrorSuppressor from '@/components/layout/AnalyticsErrorSuppressor';
 import CookieBanner from '@/components/layout/CookieBanner';
 import Script from 'next/script';
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 /* ─────────────────────────────────────────────────────────────
    FUENTES — 100 % self-hosted desde /public/fonts/.
@@ -202,24 +203,6 @@ export default function RootLayout({
             `,
           }}
         />
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-ZWWW41MQ2H"
-          strategy="lazyOnload"
-        />
-        <Script
-          id="google-analytics"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-
-              gtag('config', 'G-ZWWW41MQ2H');
-            `,
-          }}
-        />
         {SUPABASE_ORIGIN ? <link rel="dns-prefetch" href={SUPABASE_ORIGIN} /> : null}
         <link rel="dns-prefetch" href="https://js.stripe.com" />
       </head>
@@ -243,6 +226,7 @@ export default function RootLayout({
         <AnalyticsErrorSuppressor />
         <Analytics />
         <SpeedInsights />
+        <GoogleAnalytics gaId="G-ZWWW41MQ2H" />
       </body>
     </html>
   );
