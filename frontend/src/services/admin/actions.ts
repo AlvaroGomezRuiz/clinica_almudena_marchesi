@@ -202,8 +202,8 @@ export async function asignarBonoManualAction(
     if (!input.paciente_id || !input.servicio_id) {
       return { ok: false, message: 'paciente y servicio son obligatorios' };
     }
-    if (!Number.isInteger(input.sesiones) || input.sesiones < 1 || input.sesiones > 50) {
-      return { ok: false, message: 'sesiones fuera de rango (1-50)' };
+    if (!Number.isInteger(input.sesiones) || input.sesiones < 1 || input.sesiones > 100) {
+      return { ok: false, message: 'sesiones fuera de rango (1-100)' };
     }
     if (!Number.isInteger(input.importe_centimos) || input.importe_centimos < 0) {
       return { ok: false, message: 'importe inválido' };

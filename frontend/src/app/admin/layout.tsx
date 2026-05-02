@@ -10,6 +10,7 @@ import { SSH_KEYS } from '@/lib/supabase/middleware';
 import { resolveProfileDisplayNameForShell } from '@/lib/profile-display-name';
 import { createServerClient } from '@/lib/supabase/server';
 import type { Profile } from '@/lib/supabase/types';
+import NuevaCitaAdminWrapper from '@/components/admin/NuevaCitaAdminWrapper';
 
 type ProfileLite = Pick<Profile, 'id' | 'role' | 'display_name' | 'avatar_url' | 'email'>;
 
@@ -104,7 +105,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     ) ?? 0;
 
   return (
-    <>
+    <NuevaCitaAdminWrapper>
       <PortalShell
         tone="admin"
         brandTitle="Almudena Marchesi"
@@ -122,6 +123,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {children}
       </PortalShell>
       <RefreshOnVisibility />
-    </>
+    </NuevaCitaAdminWrapper>
   );
 }

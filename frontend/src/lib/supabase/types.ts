@@ -15,7 +15,8 @@ export type CitaEstado =
   | 'confirmada'
   | 'completada'
   | 'cancelada'
-  | 'no_asistio';
+  | 'no_asistio'
+  | 'pendiente_pago';
 
 export type PagoEstado =
   | 'pendiente'
@@ -24,7 +25,7 @@ export type PagoEstado =
   | 'fallido'
   | 'reembolsado';
 
-export type BonoEstado = 'activo' | 'agotado' | 'expirado' | 'cancelado';
+export type BonoEstado = 'activo' | 'agotado' | 'expirado' | 'cancelado' | 'pendiente_pago';
 
 export type ConversacionEstado = 'abierta' | 'archivada' | 'bloqueada';
 

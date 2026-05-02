@@ -115,7 +115,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
     const raw = sesionesStr.trim();
     const n = Number.parseInt(raw, 10);
     if (!Number.isFinite(n) || n < 1) return 1;
-    return Math.min(50, n);
+    return Math.min(100, n);
   }, [sesionesStr]);
 
   // Auto-calcular importe cuando cambia servicio × sesiones (si el admin
@@ -301,7 +301,7 @@ export default function AsignarBonoManualButton(): JSX.Element {
                         if (!Number.isFinite(n) || n < 1) {
                           setSesionesStr('1');
                         } else {
-                          setSesionesStr(String(Math.min(50, n)));
+                          setSesionesStr(String(Math.min(100, n)));
                         }
                       }}
                       className="w-full rounded-lg border border-ink/10 bg-white px-3 py-2.5 font-body text-[0.9rem] text-ink outline-none tabular-nums focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/15 dark:bg-white/5 dark:text-white"

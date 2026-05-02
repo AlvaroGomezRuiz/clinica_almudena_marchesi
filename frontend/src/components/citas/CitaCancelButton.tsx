@@ -8,7 +8,7 @@
  *   - citaId:       id de la cita a cancelar
  *   - inicioISO:    ISO timestamp para calcular ventana 48h (política paciente)
  *   - compact:      si true, usa variant="ghost" size="sm" (para listados)
- *   - isAdmin:      muestra toggle "forzar refund" y oculta advertencia de ventana 48h
+ *   - isAdmin:      muestra toggle "forzar cancelación" y oculta advertencia de ventana 48h
  *   - onCancelled:  callback opcional tras éxito (para optimistic refresh)
  */
 
@@ -138,8 +138,7 @@ export function CitaCancelButton({
                 </p>
                 <p className="mt-1 font-body text-[0.8rem] leading-relaxed text-[#6E4530] dark:text-[#d4b8a8]">
                   Solo se admite cancelar desde el portal con al menos 48 horas de
-                  antelación. Para cambios urgentes, escribe a la consulta; el importe
-                  abonado no se reembolsa automáticamente por la web.
+                  antelación. Para cambios urgentes, escribe a la consulta.
                 </p>
               </div>
             ) : null}
@@ -169,9 +168,16 @@ export function CitaCancelButton({
                   disabled={pending}
                   className="size-4 accent-primary"
                 />
-                Forzar reembolso total (override política 48h)
+                Forzar cancelación (override política 48h)
               </label>
-            ) : null}
+            ) : (
+              <div className="mt-4 rounded-2xl bg-primary/5 p-4 ring-1 ring-primary/10 dark:bg-primary/10 dark:ring-primary/20">
+                <p className="font-body text-[0.8rem] leading-relaxed text-ink-soft dark:text-white/70">
+                  Al cancelar, tu sesión se devolverá a tu saldo para utilizarla en otro
+                  momento. No se realizan reembolsos monetarios.
+                </p>
+              </div>
+            )}
 
             {err ? (
               <p role="alert" className="mt-4 font-body text-[0.85rem] text-[#b2675e]">

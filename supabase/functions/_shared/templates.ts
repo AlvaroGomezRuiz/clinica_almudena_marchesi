@@ -441,3 +441,193 @@ export function renderRgpdExportReady(
   );
   return { subject: "Tu copia de datos RGPD está lista", html, text };
 }
+
+// ---------------------------------------------------------------------------
+// Cita pendiente de pago — aviso inicial
+// ---------------------------------------------------------------------------
+
+export interface CitaPendientePagoData {
+  display_name?: string | null;
+  servicio: string;
+  inicio: string;
+  duracion_min: number;
+  app_url: string;
+}
+
+export function renderCitaPendientePago(
+  data: CitaPendientePagoData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const fecha = formatDateEs(data.inicio);
+  const hora  = formatTimeEs(data.inicio);
+  const html = shell(
+    `${eyebrow("Sesión reservada · Pendiente de pago")}
+     ${h1(name ? `Hola, ${name}` : "Tu sesión está reservada")}
+     <p style="margin:0 0 20px 0;">Almudena ha reservado una sesión para ti. Para que quede confirmada es necesario completar el pago. Puedes hacerlo desde el portal en cualquier momento antes de la cita.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Servicio", data.servicio)}
+       ${detailRow("Fecha", fecha)}
+       ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
+       ${detailRow("Estado", "Pendiente de pago")}
+     </table>
+     <p style="margin:20px 0 4px 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Tienes dos opciones:</p>
+     <ul style="margin:8px 0 20px 0;padding-left:20px;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:${COLORS.inkSoft};line-height:1.7;">
+       <li>Pagar una sesión suelta directamente al reservar desde el portal.</li>
+       <li>Adquirir un bono de sesiones en la sección de pagos.</li>
+     </ul>
+     ${button("Ir al portal", `${data.app_url}/portal/pagos`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si no puedes asistir, cancela con al menos 48 horas de antelación para que la sesión vuelva a tu saldo. Pasado ese plazo se considerará consumida.</p>`,
+    { preheader: `Sesión reservada · ${data.servicio} · ${fecha} · ${hora}. Pendiente de pago.`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `${name ? `Hola, ${name}.\n\n` : ""}Almudena ha reservado una sesión para ti. Completa el pago para confirmarla.\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\nEstado: Pendiente de pago\n\nPortal de pagos: ${data.app_url}/portal/pagos\n\nSi no puedes asistir, cancela con al menos 48h de antelación.`,
+    data.app_url
+  );
+  return { subject: `Sesión pendiente de pago · ${data.servicio} · ${fecha}`, html, text };
+}
+
+// ---------------------------------------------------------------------------
+// Cita pendiente de pago — recordatorio periódico
+// ---------------------------------------------------------------------------
+
+export interface CitaPendienteRecordatorioData {
+  display_name?: string | null;
+  servicio: string;
+  inicio: string;
+  duracion_min: number;
+  app_url: string;
+}
+
+export function renderCitaPendienteRecordatorio(
+  data: CitaPendienteRecordatorioData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const fecha = formatDateEs(data.inicio);
+  const hora  = formatTimeEs(data.inicio);
+  const html = shell(
+    `${eyebrow("Recordatorio · Pago pendiente")}
+     ${h1(name ? `${name}, tu sesión sigue sin confirmar` : "Tu sesión sigue pendiente de pago")}
+     <p style="margin:0 0 20px 0;">Te recordamos que tienes una sesión reservada que aún no está confirmada por falta de pago. Puedes completarlo desde el portal cuando lo necesites.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Servicio", data.servicio)}
+       ${detailRow("Fecha", fecha)}
+       ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
+     </table>
+     ${button("Completar el pago", `${data.app_url}/portal/pagos`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si no puedes asistir, cancela con al menos 48 horas de antelación desde el portal. Pasado ese plazo, la sesión se cancelará automáticamente.</p>`,
+    { preheader: `Recordatorio: ${data.servicio} · ${fecha} · ${hora}. Completa el pago.`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `Recordatorio · Pago pendiente\n\n${name ? `Hola, ${name}.\n\n` : ""}Tu sesión del ${fecha} a las ${hora} sigue pendiente de pago.\n\nServicio: ${data.servicio}\n\nCompleta el pago: ${data.app_url}/portal/pagos\n\nSi no puedes asistir, cancela con al menos 48h de antelación.`,
+    data.app_url
+  );
+  return { subject: `Recordatorio: sesión sin confirmar · ${data.servicio}`, html, text };
+}
+
+// ---------------------------------------------------------------------------
+// Cita confirmada tras pago (estaba pendiente_pago, ahora confirmada)
+// ---------------------------------------------------------------------------
+
+export interface CitaConfirmadaAdminData {
+  display_name?: string | null;
+  servicio: string;
+  inicio: string;
+  duracion_min: number;
+  app_url: string;
+}
+
+export function renderCitaConfirmadaAdmin(
+  data: CitaConfirmadaAdminData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const fecha = formatDateEs(data.inicio);
+  const hora  = formatTimeEs(data.inicio);
+  const html = shell(
+    `${eyebrow("Pago recibido · Cita confirmada")}
+     ${h1(name ? `Confirmado, ${name}` : "Tu sesión queda confirmada")}
+     <p style="margin:0 0 20px 0;">Hemos recibido tu pago. Tu sesión queda confirmada en la agenda de Almudena.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Servicio", data.servicio)}
+       ${detailRow("Fecha", fecha)}
+       ${detailRow("Hora", `${hora} (${data.duracion_min} min)`)}
+       ${detailRow("Estado", "Confirmada")}
+     </table>
+     ${button("Ver mis citas", `${data.app_url}/portal/citas`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si necesitas modificar la cita, puedes cancelarla desde el portal con al menos 48 horas de antelación y la sesión volverá a tu saldo para usarla en otro momento.</p>`,
+    { preheader: `Cita confirmada · ${data.servicio} · ${fecha} · ${hora}`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `${name ? `Hola, ${name}.\n\n` : ""}Pago recibido. Tu sesión queda confirmada.\n\n${data.servicio}\n${fecha} a las ${hora} (${data.duracion_min} min)\n\nVer citas: ${data.app_url}/portal/citas`,
+    data.app_url
+  );
+  return { subject: `Sesión confirmada · ${data.servicio} · ${fecha}`, html, text };
+}
+
+// ---------------------------------------------------------------------------
+// Pre-bono asignado por Almudena — pendiente de pago
+// ---------------------------------------------------------------------------
+
+export interface PreBonoAsignadoData {
+  display_name?: string | null;
+  servicio: string;
+  sesiones: number;
+  validez_label: string;
+  app_url: string;
+}
+
+export function renderPreBonoAsignado(
+  data: PreBonoAsignadoData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const sLabel = data.sesiones === 1 ? "sesión" : "sesiones";
+  const html = shell(
+    `${eyebrow("Bono asignado · Pendiente de activación")}
+     ${h1(name ? `Hola, ${name}` : "Tienes un bono pendiente de activar")}
+     <p style="margin:0 0 20px 0;">Almudena te ha asignado un bono de sesiones. En cuanto completes el pago, quedará activo y podrás utilizarlo para reservar cuando quieras.</p>
+     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 8px 0;">
+       ${detailRow("Servicio", data.servicio)}
+       ${detailRow(`${data.sesiones} ${sLabel}`, "incluidas en el bono")}
+       ${detailRow("Validez", data.validez_label)}
+       ${detailRow("Estado", "Pendiente de pago")}
+     </table>
+     ${button("Activar bono", `${data.app_url}/portal/pagos`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si tienes alguna duda sobre el importe o la forma de pago, responde a este correo o escribe a la consulta directamente.</p>`,
+    { preheader: `Bono de ${data.sesiones} ${sLabel} asignado por Almudena. Actívalo completando el pago.`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `${name ? `Hola, ${name}.\n\n` : ""}Almudena te ha asignado un bono de sesiones.\n\nServicio: ${data.servicio}\nSesiones: ${data.sesiones}\nValidez: ${data.validez_label}\nEstado: Pendiente de pago\n\nActiva el bono: ${data.app_url}/portal/pagos`,
+    data.app_url
+  );
+  return { subject: `Bono pendiente de activación · ${data.sesiones} ${sLabel} · ${data.servicio}`, html, text };
+}
+
+// ---------------------------------------------------------------------------
+// Pre-bono — recordatorio cada 3 días
+// ---------------------------------------------------------------------------
+
+export interface PreBonoRecordatorioData {
+  display_name?: string | null;
+  servicio: string;
+  sesiones: number;
+  app_url: string;
+}
+
+export function renderPreBonoRecordatorio(
+  data: PreBonoRecordatorioData
+): { subject: string; html: string; text: string } {
+  const name = data.display_name?.split(" ")[0] ?? "";
+  const sLabel = data.sesiones === 1 ? "sesión" : "sesiones";
+  const html = shell(
+    `${eyebrow("Recordatorio · Bono sin activar")}
+     ${h1(name ? `${name}, tu bono sigue pendiente` : "Tu bono sigue pendiente de pago")}
+     <p style="margin:0 0 20px 0;">Tienes un bono de <strong>${data.sesiones} ${sLabel}</strong> de <strong>${escapeHtml(data.servicio)}</strong> asignado por Almudena que aún no ha sido activado. Una vez abonado, las sesiones estarán disponibles en tu portal de inmediato.</p>
+     ${button("Activar mi bono", `${data.app_url}/portal/pagos`)}
+     <p style="margin:16px 0 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:${COLORS.inkSoft};">Si crees que has recibido este mensaje por error, o quieres cancelar el bono, escribe a la consulta y Almudena te atenderá directamente.</p>`,
+    { preheader: `Bono de ${data.sesiones} ${sLabel} pendiente de activación. Accede al portal para completar el pago.`, appUrl: data.app_url },
+  );
+  const text = appendPlainTextEmailFooter(
+    `Recordatorio · Bono sin activar\n\n${name ? `Hola, ${name}.\n\n` : ""}Tu bono de ${data.sesiones} ${sLabel} de ${data.servicio} sigue sin pagar.\n\nActívalo: ${data.app_url}/portal/pagos\n\nSi quieres cancelarlo, escribe a la consulta.`,
+    data.app_url
+  );
+  return { subject: `Recordatorio: bono de ${data.sesiones} ${sLabel} sin activar · ${data.servicio}`, html, text };
+}

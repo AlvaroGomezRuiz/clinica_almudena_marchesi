@@ -15,16 +15,18 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNuevaCitaAdmin } from '@/components/admin/NuevaCitaAdminContext';
 
 interface QuickAction {
   readonly label: string;
-  readonly href: string;
+  readonly href?: string;
   readonly icon: string;
   readonly tone?: 'primary' | 'accent';
+  readonly isNuevaCita?: boolean;
 }
 
 const ACTIONS: readonly QuickAction[] = [
-  { label: 'Nueva cita',    href: '/admin/agenda?nuevo=1',         icon: 'event_available',  tone: 'primary' },
+  { label: 'Nueva cita',    icon: 'event_available',  tone: 'primary', isNuevaCita: true },
   { label: 'Nuevo mensaje', href: '/admin/mensajes?nuevo=1',       icon: 'forum',            tone: 'primary' },
   { label: 'Alta paciente', href: '/admin/pacientes?alta=1',       icon: 'person_add',       tone: 'accent' },
   { label: 'Nuevo bono',    href: '/admin/facturacion?bono=1',     icon: 'card_membership',  tone: 'accent' },
@@ -33,7 +35,8 @@ const ACTIONS: readonly QuickAction[] = [
 export default function AdminFab() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const firstItemRef = useRef<HTMLAnchorElement | null>(null);
+  const firstItemRef = useRef<HTMLButtonElement | HTMLAnchorElement | null>(null);
+  const { open: openNuevaCita } = useNuevaCitaAdmin();
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -73,30 +76,57 @@ export default function AdminFab() {
           aria-label="Acciones rápidas"
           className="absolute right-0 bottom-16 w-[240px] rounded-2xl overflow-hidden bg-white/95 ring-1 ring-ink/10 shadow-[0_24px_60px_-24px_rgba(28,28,25,0.45)] backdrop-blur-xl dark:bg-[#181818] dark:ring-white/10"
         >
-          {ACTIONS.map((action, idx) => (
-            <Link
-              key={action.href}
-              ref={idx === 0 ? firstItemRef : undefined}
-              href={action.href}
-              role="menuitem"
-              onClick={close}
-              className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-ink/5 transition-colors dark:text-white dark:hover:bg-white/5"
-            >
-              <span
-                className={`grid h-9 w-9 place-items-center rounded-xl ${
-                  action.tone === 'accent'
-                    ? 'bg-[#c89b5a]/15 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:text-[#e9c88a]'
-                    : 'bg-primary/12 text-primary dark:bg-primary/30 dark:text-white'
-                }`}
-                aria-hidden="true"
+          {ACTIONS.map((action, idx) => {
+            const classes = "flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-ink/5 transition-colors dark:text-white dark:hover:bg-white/5 w-full";
+            const iconEl = (
+              <>
+                <span
+                  className={`grid h-9 w-9 place-items-center rounded-xl ${
+                    action.tone === 'accent'
+                      ? 'bg-[#c89b5a]/15 text-[#8a6530] dark:bg-[#c89b5a]/30 dark:text-[#e9c88a]'
+                      : 'bg-primary/12 text-primary dark:bg-primary/30 dark:text-white'
+                  }`}
+                  aria-hidden="true"
+                >
+                  <span className="material-symbols-outlined text-[1.15rem]">{action.icon}</span>
+                </span>
+                <span className="font-body text-[0.88rem] tracking-tight font-medium">
+                  {action.label}
+                </span>
+              </>
+            );
+
+            if (action.isNuevaCita) {
+              return (
+                <button
+                  key="nueva-cita"
+                  ref={idx === 0 ? (el) => { firstItemRef.current = el; } : undefined}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    close();
+                    openNuevaCita();
+                  }}
+                  className={classes}
+                >
+                  {iconEl}
+                </button>
+              );
+            }
+
+            return (
+              <Link
+                key={action.href}
+                ref={idx === 0 ? (el) => { firstItemRef.current = el; } : undefined}
+                href={action.href ?? '#'}
+                role="menuitem"
+                onClick={close}
+                className={classes}
               >
-                <span className="material-symbols-outlined text-[1.15rem]">{action.icon}</span>
-              </span>
-              <span className="font-body text-[0.88rem] tracking-tight font-medium">
-                {action.label}
-              </span>
-            </Link>
-          ))}
+                {iconEl}
+              </Link>
+            );
+          })}
         </div>
       ) : null}
 

@@ -160,11 +160,11 @@ export default function AvisoLegalPage() {
 
           <div>
             <h2 className="font-display text-xl text-ink mb-4">
-              4. Condiciones de reserva y cancelación de citas
+              4. Condiciones de reserva, cancelación y pagos no reembolsables
             </h2>
             <p className="mb-3">
-              Al reservar una cita a través del portal del paciente, el usuario acepta las
-              siguientes condiciones:
+              Al reservar una cita o adquirir un bono a través del portal del paciente, el usuario
+              acepta las siguientes condiciones:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
@@ -173,28 +173,46 @@ export default function AvisoLegalPage() {
                 genera automáticamente un correo de confirmación al paciente.
               </li>
               <li>
+                <strong className="text-ink">Pagos no reembolsables:</strong> los importes abonados
+                a través de la plataforma{' '}
+                <strong className="text-ink">no son reembolsables en ningún caso</strong>. Una vez
+                realizado el pago, el importe queda como saldo a favor del paciente para utilizar
+                en futuras sesiones. No se realizan devoluciones monetarias.
+              </li>
+              <li>
                 <strong className="text-ink">Cancelación por el paciente:</strong> el paciente podrá
                 cancelar una cita confirmada únicamente cuando falten{' '}
                 <strong className="text-ink">más de 48 horas</strong> para el inicio de la sesión.
-                Pasado ese plazo, la cancelación no estará disponible a través del portal.
+                En caso de cancelación dentro de dicho plazo, la sesión se restituye automáticamente
+                al saldo del paciente para ser utilizada en otro momento.{' '}
+                <strong className="text-ink">No se realiza reembolso monetario</strong> en ningún
+                caso.
               </li>
               <li>
-                <strong className="text-ink">Política de reembolso:</strong> la cancelación realizada
-                por el paciente a través del portal{' '}
-                <strong className="text-ink">no genera reembolso automático</strong> del importe
-                abonado. Cualquier devolución será gestionada directamente por la Profesional según
-                las circunstancias de cada caso y a su exclusivo criterio.
+                <strong className="text-ink">Inasistencia:</strong> en caso de no asistir a una
+                sesión programada sin cancelación previa dentro del plazo permitido, la sesión{' '}
+                <strong className="text-ink">
+                  se considerará consumida y perdida
+                </strong>
+                . La clínica no se hace responsable de la restitución de la sesión ni del reembolso
+                del importe, salvo acuerdo expreso y directo con la Profesional.
+              </li>
+              <li>
+                <strong className="text-ink">Saldo no retirable:</strong> el saldo acumulado en la
+                plataforma (sesiones de bonos o sesiones sueltas) no es convertible a dinero y no
+                puede ser retirado bajo ningún concepto. Únicamente puede ser utilizado para reservar
+                sesiones de los servicios ofrecidos.
               </li>
               <li>
                 <strong className="text-ink">Cancelación por la Profesional:</strong> la Profesional
                 podrá cancelar o reprogramar citas por causa justificada, ofreciendo al paciente la
-                posibilidad de reprogramar o, cuando proceda, el reembolso del importe.
+                posibilidad de reprogramar la sesión.
               </li>
               <li>
                 <strong className="text-ink">Bonos de sesiones:</strong> los bonos adquiridos tienen
                 una validez limitada indicada en el momento de la compra. Las sesiones consumidas
                 de un bono no son reembolsables. En caso de cancelación dentro del plazo permitido,
-                la sesión del bono se restituye automáticamente.
+                la sesión del bono se restituye automáticamente al saldo del paciente.
               </li>
               <li>
                 <strong className="text-ink">Recordatorios:</strong> se envían recordatorios

@@ -29,6 +29,11 @@ import {
   renderBookingCancelled,
   renderNuevaAsignacion,
   renderBonoComprado,
+  renderCitaPendientePago,
+  renderCitaPendienteRecordatorio,
+  renderCitaConfirmadaAdmin,
+  renderPreBonoAsignado,
+  renderPreBonoRecordatorio,
 } from "../_shared/templates.ts";
 
 type EmailType =
@@ -38,7 +43,12 @@ type EmailType =
   | "reminder_48h"
   | "booking_cancelled"
   | "nueva_asignacion"
-  | "bono_comprado";
+  | "bono_comprado"
+  | "cita_pendiente_pago"
+  | "cita_pendiente_pago_recordatorio"
+  | "cita_confirmada_admin_notif"
+  | "pre_bono_asignado"
+  | "pre_bono_recordatorio";
 
 interface SendEmailRequest {
   type: EmailType;
@@ -116,9 +126,14 @@ function prefsOptInForType(
   type: EmailType,
   opts?: { readonly pagoId?: string | null },
 ): boolean {
-  if (type === "bono_comprado") return true; /* comprobante de pago: siempre */
-  /* Reserva pagada en Stripe: comprobante operativo; no silenciar por preferencias. */
+  /* Tipos de pago / operativos: siempre enviar */
+  if (type === "bono_comprado") return true;
   if (type === "booking_confirmed" && opts?.pagoId) return true;
+  if (type === "cita_pendiente_pago") return true;
+  if (type === "cita_pendiente_pago_recordatorio") return true;
+  if (type === "cita_confirmada_admin_notif") return true;
+  if (type === "pre_bono_asignado") return true;
+  if (type === "pre_bono_recordatorio") return true;
   if (!prefs) return true;
   if (type === "welcome") return prefs.welcome;
   if (type === "booking_confirmed") return prefs.booking_confirmed;
@@ -177,6 +192,40 @@ function renderFor(type: EmailType, data: Record<string, unknown>, profile: Prof
         validez_label: String(data.validez_label ?? "—"),
         app_url:       String(data.app_url ?? APP_URL),
       });
+    case "cita_pendiente_pago":
+      return renderCitaPendientePago({
+        ...base,
+        servicio:     String(data.servicio ?? ""),
+        inicio:       String(data.inicio ?? ""),
+        duracion_min: Number(data.duracion_min ?? 60),
+      });
+    case "cita_pendiente_pago_recordatorio":
+      return renderCitaPendienteRecordatorio({
+        ...base,
+        servicio:     String(data.servicio ?? ""),
+        inicio:       String(data.inicio ?? ""),
+        duracion_min: Number(data.duracion_min ?? 60),
+      });
+    case "cita_confirmada_admin_notif":
+      return renderCitaConfirmadaAdmin({
+        ...base,
+        servicio:     String(data.servicio ?? ""),
+        inicio:       String(data.inicio ?? ""),
+        duracion_min: Number(data.duracion_min ?? 60),
+      });
+    case "pre_bono_asignado":
+      return renderPreBonoAsignado({
+        ...base,
+        servicio:      String(data.servicio ?? ""),
+        sesiones:      Number(data.sesiones ?? 0),
+        validez_label: String(data.validez_label ?? "—"),
+      });
+    case "pre_bono_recordatorio":
+      return renderPreBonoRecordatorio({
+        ...base,
+        servicio: String(data.servicio ?? ""),
+        sesiones: Number(data.sesiones ?? 0),
+      });
   }
 }
 
@@ -231,11 +280,12 @@ Deno.serve(async (req) => {
 
   // Opt-in check
   if (toUserId) {
-    const { data: prefs } = await admin
+    const { data: prefsRaw } = await admin
       .from("notificaciones_prefs")
       .select("welcome, booking_confirmed, booking_cancelled, reminder_24h, reminder_48h, nueva_asignacion")
       .eq("user_id", toUserId)
-      .maybeSingle<PrefsRow>();
+      .maybeSingle();
+    const prefs = prefsRaw as PrefsRow | null;
 
     if (!prefsOptInForType(prefs, payload.type, { pagoId: payload.pago_id })) {
       await admin.from("emails_log").insert({

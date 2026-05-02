@@ -12,6 +12,7 @@ const ETIQUETA: { readonly [K in CitaEstado]: string } = {
   completada: 'Completada',
   cancelada: 'Cancelada',
   no_asistio: 'No asistió',
+  pendiente_pago: 'Pendiente de pago',
 };
 
 const CHIP: { readonly [K in CitaEstado]: CitaEstadoAgendaChipTone } = {
@@ -20,6 +21,7 @@ const CHIP: { readonly [K in CitaEstado]: CitaEstadoAgendaChipTone } = {
   completada: 'neutral',
   cancelada: 'warning',
   no_asistio: 'critical',
+  pendiente_pago: 'warning',
 };
 
 function esCitaEstado(valor: string): valor is CitaEstado {
@@ -28,7 +30,8 @@ function esCitaEstado(valor: string): valor is CitaEstado {
     valor === 'confirmada' ||
     valor === 'completada' ||
     valor === 'cancelada' ||
-    valor === 'no_asistio'
+    valor === 'no_asistio' ||
+    valor === 'pendiente_pago'
   );
 }
 
@@ -54,6 +57,7 @@ const BORDE_L: { readonly [K in CitaEstado]: string } = {
   completada: 'border-l-ink/25 dark:border-l-white/30',
   cancelada: 'border-l-[#c89b5a]/90',
   no_asistio: 'border-l-[#b2675e]/90',
+  pendiente_pago: 'border-l-[#c89b5a]/60',
 };
 
 /** Clase `border-l-*` (2px) para tarjetas de cita en la rejilla. */

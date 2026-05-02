@@ -3,9 +3,11 @@
 // Orquesta la cancelación de una cita:
 //   1. Valida JWT del usuario autenticado.
 //   2. Llama RPC `cancelar_cita` (SECURITY DEFINER) con auth.uid() automática.
-//   3. Si la RPC pide refund Stripe → llama /v1/refunds con idempotency key.
-//   4. Actualiza pagos.refund_id y pagos.estado='reembolsado' via service_role.
-//   5. Dispara email `booking_cancelled` (fire-and-forget).
+//   3. Dispara email `booking_cancelled` (fire-and-forget).
+//
+// POLÍTICA MAYO 2026: No se realizan reembolsos Stripe automáticos.
+// Si la cita se pagó con bono → se restaura la sesión al bono.
+// Si la cita se pagó con sesión suelta → se crea mini-bono de 1 sesión.
 //
 // El cliente puede invocar esta Fn tanto desde portal paciente como desde admin.
 // La diferenciación (override ventana 48h, cancelar citas de terceros) la decide la RPC
@@ -16,12 +18,11 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { buildCorsHeaders, handleOptions } from "../_shared/cors.ts";
-import { createRefund, StripeApiError } from "../_shared/stripe.ts";
 
 interface CancelRequest {
   cita_id: string;
   motivo?: string;
-  force?: boolean;  // admin puede setear true para forzar refund total
+  force?: boolean;  // admin puede forzar cancelación fuera de ventana 48h
 }
 
 interface CancelRpcRow {
@@ -58,12 +59,11 @@ Deno.serve(async (req) => {
   const anonKey     = Deno.env.get("SUPABASE_ANON_KEY")!;
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Cliente con JWT del caller → la RPC security-definer usa auth.uid() real
+  // Cliente con JWT del caller
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
-  const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   let body: CancelRequest;
   try {
@@ -93,46 +93,7 @@ Deno.serve(async (req) => {
   const row = (Array.isArray(rpcRows) ? rpcRows[0] : rpcRows) as CancelRpcRow | null;
   if (!row?.ok) return json({ error: "cancel_failed" }, 500, cors);
 
-  // 2. Stripe refund si procede (idempotency key = cita_id previene dobles refunds)
-  let refundResult: { id: string; status: string } | null = null;
-  let refundError: string | null = null;
-
-  if (row.needs_stripe_refund && row.stripe_payment_intent && row.refund_amount_centimos) {
-    try {
-      const refund = await createRefund({
-        payment_intent:  row.stripe_payment_intent,
-        amount_centimos: row.refund_amount_centimos,
-        reason:          "requested_by_customer",
-        idempotency_key: `cancel-${body.cita_id}`,
-        metadata: {
-          cita_id: body.cita_id,
-          motivo:  (body.motivo ?? "").slice(0, 200),
-        },
-      });
-
-      refundResult = { id: refund.id, status: refund.status };
-
-      if (row.pago_id) {
-        await admin.from("pagos")
-          .update({
-            estado:             refund.status === "succeeded" ? "reembolsado" : "procesando",
-            refund_id:          refund.id,
-            refunded_amount:    refund.amount,
-            cancelacion_motivo: body.motivo ?? null,
-            updated_at:         new Date().toISOString(),
-          })
-          .eq("id", row.pago_id);
-      }
-    } catch (err) {
-      refundError = err instanceof StripeApiError
-        ? `${err.code ?? "stripe_error"}: ${err.message}`
-        : (err as Error).message;
-      // No revertimos la cancelación — la cita queda cancelada,
-      // el admin deberá reembolsar manualmente desde Stripe Dashboard.
-    }
-  }
-
-  // 3. Email fire-and-forget
+  // 2. Email fire-and-forget (no hay refund Stripe — política mayo 2026)
   if (row.email_to_user_id && row.email_inicio && row.email_servicio) {
     await fireEmail(supabaseUrl, serviceKey, {
       type: "booking_cancelled",
@@ -148,8 +109,6 @@ Deno.serve(async (req) => {
   return json({
     ok: true,
     bono_restaurado: row.bono_restaurado,
-    refund: refundResult,
-    refund_error: refundError,
   }, 200, cors);
 });
 

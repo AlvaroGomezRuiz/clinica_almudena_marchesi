@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import RefreshOnVisibility from '@/components/layout/RefreshOnVisibility';
+import PendientePagoBanner from '@/components/portal/PendientePagoBanner';
 import PortalShell from '@/components/portal-shell/PortalShell';
 import type { NavItem } from '@/components/portal-shell/types';
 import { unpackDisplayNameFromRequestHeader } from '@/lib/supabase/header-display-name';
@@ -146,6 +147,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           role: 'paciente',
         }}
       >
+        <PendientePagoBanner />
         {children}
       </PortalShell>
       <RefreshOnVisibility />

@@ -227,6 +227,54 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
   );
   const bonoActivo = bonosConSaldo[0];
 
+  // Separar bonos grandes (sesiones_totales > 1) de mini-bonos/sueltas (sesiones_totales = 1)
+  const bonosGrandes = bonosConSaldo.filter((b) => b.sesiones_totales > 1);
+  const sesionesSueltas = bonosConSaldo.filter((b) => b.sesiones_totales === 1);
+
+  const sesionesBonosGrandes = bonosGrandes.reduce(
+    (sum, b) => sum + (b.sesiones_totales - b.sesiones_consumidas),
+    0
+  );
+  const sesionesSueltasCount = sesionesSueltas.length;
+
+  // Desglose para footnote
+  const desgloseLineas: string[] = [];
+  if (bonosGrandes.length > 0) {
+    // Agrupar bonos grandes por servicio
+    const bonosPorServicio = new Map<string, { count: number; sesiones: number }>();
+    for (const b of bonosGrandes) {
+      const nombre = servicioNombre(b.servicio_id);
+      const prev = bonosPorServicio.get(nombre) ?? { count: 0, sesiones: 0 };
+      bonosPorServicio.set(nombre, {
+        count: prev.count + 1,
+        sesiones: prev.sesiones + (b.sesiones_totales - b.sesiones_consumidas),
+      });
+    }
+    for (const [nombre, { count, sesiones }] of bonosPorServicio) {
+      desgloseLineas.push(
+        `${count} bono${count > 1 ? 's' : ''} · ${sesiones} sesión${sesiones > 1 ? 'es' : ''} (${nombre})`
+      );
+    }
+  }
+  if (sesionesSueltasCount > 0) {
+    // Agrupar sueltas por servicio
+    const sueltasPorServicio = new Map<string, number>();
+    for (const b of sesionesSueltas) {
+      const nombre = servicioNombre(b.servicio_id);
+      sueltasPorServicio.set(nombre, (sueltasPorServicio.get(nombre) ?? 0) + 1);
+    }
+    for (const [nombre, count] of sueltasPorServicio) {
+      desgloseLineas.push(
+        `${count} sesión${count > 1 ? 'es' : ''} suelta${count > 1 ? 's' : ''} (${nombre})`
+      );
+    }
+  }
+
+  const footnoteText =
+    desgloseLineas.length > 0
+      ? desgloseLineas.join(' + ')
+      : 'Sin bono activo';
+
   const totalGastado = pagos
     .filter((p) => p.estado === 'completado')
     .reduce((acc, p) => acc + p.importe_centimos, 0);
@@ -248,20 +296,13 @@ export default async function PortalPagosPage(): Promise<JSX.Element | null> {
         description="Compra sesiones, consulta tus bonos activos y descarga tus facturas."
       />
 
+      {/* ── Stat Cards ── */}
       <section className="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           label="Sesiones disponibles"
           value={sesionesDisponibles}
           icon="account_balance_wallet"
-          footnote={
-            bonosConSaldo.length > 0
-              ? `${bonosConSaldo.length} bono(s) con saldo · ${sesionesDisponibles} sesión(es) en total${
-                  bonoActivo
-                    ? ` (principal: ${servicioNombre(bonoActivo.servicio_id)})`
-                    : ''
-                }`
-              : 'Sin bono activo'
-          }
+          footnote={footnoteText}
         />
         <StatCard label="Total invertido" value={euro(totalGastado)} icon="euro" />
         <StatCard

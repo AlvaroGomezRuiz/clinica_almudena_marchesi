@@ -11,7 +11,8 @@ function esCitaEstado(val: string): val is CitaEstado {
     val === 'confirmada' ||
     val === 'completada' ||
     val === 'cancelada' ||
-    val === 'no_asistio'
+    val === 'no_asistio' ||
+    val === 'pendiente_pago'
   );
 }
 
@@ -39,7 +40,8 @@ export function lineaTarifaCitaFicha(
     confirmada: `Cita activa. Tarifa de referencia: ${ref} (cobro según pago, bono o criterio de consulta).`,
     completada: `Sesión realizada. Tarifa de referencia: ${ref}.`,
     cancelada: 'Cancelada. Cargos según ventana 48h y política de consulta.',
-    no_asistio: 'No asistió. Revisar criterio de sesión y política de consulta.',
+    no_asistio: 'No asistió. Sesión consumida según política de no reembolso.',
+    pendiente_pago: `Pendiente de pago. Tarifa: ${ref}. Se enviará recordatorio al paciente.`,
   };
   return map[estado];
 }

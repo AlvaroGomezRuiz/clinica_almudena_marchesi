@@ -21,7 +21,12 @@ export type EmailType =
   | 'reminder_48h'
   | 'booking_cancelled'
   | 'nueva_asignacion'
-  | 'bono_comprado';
+  | 'bono_comprado'
+  | 'cita_pendiente_pago'
+  | 'cita_pendiente_pago_recordatorio'
+  | 'cita_confirmada_admin_notif'
+  | 'pre_bono_asignado'
+  | 'pre_bono_recordatorio';
 
 interface SendEmailInput {
   readonly type: EmailType;

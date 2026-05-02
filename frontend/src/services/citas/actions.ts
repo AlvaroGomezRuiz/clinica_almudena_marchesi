@@ -291,8 +291,6 @@ export type CancelarCitaResult =
   | {
       readonly ok: true;
       readonly bonoRestaurado: boolean;
-      readonly refund: { readonly id: string; readonly status: string } | null;
-      readonly refundError: string | null;
     }
   | { readonly ok: false; readonly code: CancelarErrorCode; readonly message: string };
 
@@ -370,11 +368,6 @@ export async function cancelarCitaAction(
     return {
       ok: true,
       bonoRestaurado: Boolean(raw.bono_restaurado),
-      refund:
-        raw.refund && typeof raw.refund === 'object'
-          ? (raw.refund as { id: string; status: string })
-          : null,
-      refundError: typeof raw.refund_error === 'string' ? raw.refund_error : null,
     };
   } catch (err) {
     return {
