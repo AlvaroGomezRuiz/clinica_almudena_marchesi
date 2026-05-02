@@ -26,6 +26,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+  const auth = req.headers.get("authorization") ?? "";
+  const provided = auth.replace(/^Bearer\s+/i, "");
+  if (provided !== serviceKey) {
+    return json({ error: "forbidden" }, 403);
+  }
+
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
   });

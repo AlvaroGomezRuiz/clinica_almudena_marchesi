@@ -62,7 +62,7 @@ async function processBatch(
       .from("notificaciones_prefs")
       .select(prefKey)
       .eq("user_id", c.user_id)
-      .maybeSingle<Record<PrefKey, boolean | null>>();
+      .maybeSingle() as { data: Record<PrefKey, boolean | null> | null };
 
     if (prefs && prefs[prefKey] === false) {
       await admin.from("emails_log").insert({
@@ -136,8 +136,8 @@ async function processBatch(
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  const expected = Deno.env.get("CRON_SECRET");
-  if (!expected) return json({ error: "cron_secret_not_configured" }, 500);
+  const expected = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!expected) return json({ error: "service_role_key_not_configured" }, 500);
 
   const auth = req.headers.get("authorization") ?? "";
   const provided = auth.replace(/^Bearer\s+/i, "");
