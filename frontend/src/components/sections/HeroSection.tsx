@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Photo3D from '@/components/landing/Photo3D';
 import ScrollReveal from '@/components/landing/ScrollReveal';
-import heroImage from '../../../../public/images/almudena-principal-home.avif';
+import heroImage from '../../../public/images/almudena-principal-home.avif';
 
 /* Misma tarjeta visual que /sobre-mí (Photo3D: marco, fondo cristal, sombra).
    Photo3D es cliente; el texto del hero sigue animado con ScrollReveal. */
