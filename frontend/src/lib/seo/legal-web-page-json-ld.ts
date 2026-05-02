@@ -1,6 +1,7 @@
 import { CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 
 import { LEGAL_LAST_UPDATED_ISO } from './legal-version';
+import { buildBreadcrumbListNode } from './breadcrumb-jsonld';
 
 export interface LegalWebPageJsonLdInput {
   path: string;
@@ -18,8 +19,7 @@ export function buildLegalWebPageJsonLd(
   const path = input.path.startsWith('/') ? input.path : `/${input.path}`;
   const url = `${base}${path}`;
 
-  return {
-    '@context': 'https://schema.org',
+  const webPage = {
     '@type': 'WebPage',
     '@id': `${url}#webpage`,
     url,
@@ -35,5 +35,15 @@ export function buildLegalWebPageJsonLd(
     about: { '@id': `${base}/#localbusiness` },
     dateModified: LEGAL_LAST_UPDATED_ISO,
     publisher: { '@id': `${base}/#localbusiness` },
+  };
+
+  const breadcrumb = [
+    { name: 'Inicio', path: '/' },
+    { name: input.name, path: input.path },
+  ];
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [webPage, buildBreadcrumbListNode(breadcrumb)],
   };
 }

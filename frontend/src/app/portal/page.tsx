@@ -35,6 +35,7 @@ interface BonoRow {
   sesiones_consumidas: number;
   estado: 'activo' | 'agotado' | 'expirado' | 'cancelado';
   fecha_expiracion: string | null;
+  servicios?: { nombre: string } | null;
 }
 
 interface RecursoAsignado {
@@ -75,12 +76,10 @@ export default async function PortalInicioPage() {
     supabase
       .from('bonos_pacientes')
       .select(
-        'id, sesiones_totales, sesiones_consumidas, estado, fecha_expiracion'
+        'id, sesiones_totales, sesiones_consumidas, estado, fecha_expiracion, servicios(nombre)'
       )
       .eq('estado', 'activo')
-      .order('fecha_compra', { ascending: false })
-      .limit(1)
-      .maybeSingle<BonoRow>(),
+      .order('fecha_compra', { ascending: false }),
     supabase
       .from('recurso_asignaciones')
       .select('id, assigned_at, recurso:recursos(id, titulo, tipo)')
@@ -127,7 +126,9 @@ export default async function PortalInicioPage() {
   const ultimoMensajeEsMio = ultimoMensaje?.sender_user_id === user.id;
 
   const proxima = proximaRaw;
-  const bono = bonoActivoRaw;
+  const bonosData = bonoActivoRaw as unknown as BonoRow[] | null;
+  const bonos = bonosData?.filter(b => b.sesiones_consumidas < b.sesiones_totales) ?? [];
+  const bono = bonos.length > 0 ? bonos[0] : null;
   const sesionesRestantes = bono
     ? Math.max(0, bono.sesiones_totales - bono.sesiones_consumidas)
     : 0;
@@ -224,8 +225,10 @@ export default async function PortalInicioPage() {
         {/* ── Bono con anillo SVG editorial ── */}
         <SurfaceCard className="flex flex-col justify-between">
           <div>
-            <Chip tone="info">Bono activo</Chip>
-            {bono ? (
+            <Chip tone="info">
+              {bonos.length > 1 ? 'Bonos activos' : 'Bono activo'}
+            </Chip>
+            {bonos.length === 1 && bono ? (
               <div className="mt-6 flex items-center gap-5">
                 {/* Anillo SVG */}
                 <div className="relative h-24 w-24 flex-shrink-0">
@@ -260,7 +263,7 @@ export default async function PortalInicioPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-display text-[0.95rem] text-ink leading-tight">
-                    Sesiones restantes
+                    {bono.servicios?.nombre ?? 'Sesiones restantes'}
                   </p>
                   <p className="mt-1 font-body text-[0.8rem] text-ink-soft tabular-nums">
                     de {bono.sesiones_totales} totales
@@ -271,6 +274,38 @@ export default async function PortalInicioPage() {
                     </p>
                   ) : null}
                 </div>
+              </div>
+            ) : bonos.length > 1 ? (
+              <div className="mt-6 flex flex-col gap-3 max-h-[11rem] overflow-y-auto pr-2">
+                {bonos.map(b => {
+                  const rest = Math.max(0, b.sesiones_totales - b.sesiones_consumidas);
+                  return (
+                    <div key={b.id} className="flex items-center gap-4 rounded-xl border border-ink/5 bg-ink/[0.02] p-3 dark:border-white/5 dark:bg-white/[0.02]">
+                      <div className="relative h-12 w-12 flex-shrink-0">
+                        <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90" aria-hidden="true">
+                          <circle cx="48" cy="48" r="42" fill="none" stroke="currentColor" strokeWidth="8" className="text-ink/8 dark:text-white/12" />
+                          <circle cx="48" cy="48" r="42" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${(1 - b.sesiones_consumidas / b.sesiones_totales) * 264} 264`} className="text-primary" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <p className="text-center font-display text-[1.1rem] leading-none text-primary tabular-nums tracking-tight">{rest}</p>
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-[0.85rem] text-ink leading-tight truncate">
+                          {b.servicios?.nombre ?? 'Bono'}
+                        </p>
+                        <p className="mt-0.5 font-body text-[0.75rem] text-ink-soft tabular-nums">
+                          de {b.sesiones_totales} totales
+                        </p>
+                        {b.fecha_expiracion ? (
+                          <p className="mt-1 font-body text-[0.65rem] text-ink-muted tracking-tight">
+                            Vence {format(new Date(b.fecha_expiracion), "d MMM yy", { locale: es })}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-6 font-body text-[0.92rem] leading-[1.6] text-ink-soft">
