@@ -123,6 +123,7 @@ async function invokePaymentIntent(
     | { kind: 'cita'; cita_id: string }
     | { kind: 'cita'; servicio_id: string; slot_inicio: string }
     | { kind: 'bono'; bono_config_id: string }
+    | { kind: 'activar_bono'; bono_paciente_id: string }
 ): Promise<PaymentIntentResult> {
   const env = getSupabaseEnv();
   const supabase = createServerClient();
@@ -209,4 +210,13 @@ export async function crearPaymentIntentBonoAction(
     return { ok: false, error: 'Bono inválido.' };
   }
   return invokePaymentIntent({ kind: 'bono', bono_config_id: bonoConfigId });
+}
+
+export async function crearPaymentIntentActivarBonoAction(
+  bonoPacienteId: string
+): Promise<PaymentIntentResult> {
+  if (!UUID_RE.test(bonoPacienteId)) {
+    return { ok: false, error: 'Bono asignado inválido.' };
+  }
+  return invokePaymentIntent({ kind: 'activar_bono', bono_paciente_id: bonoPacienteId });
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { createServerClient } from '@/lib/supabase/server';
+import ActivarBonoDialog, { type PendingBonoData } from './pagos/ActivarBonoDialog';
 
 /**
  * PendientePagoBanner — Banner server component que muestra alertas de:
@@ -20,7 +21,8 @@ interface CitaPendiente {
 interface BonoPrePendiente {
   readonly id: string;
   readonly sesiones_totales: number;
-  readonly servicio_id: string;
+  readonly precio_centimos: number;
+  readonly servicio: { readonly nombre: string } | { readonly nombre: string }[];
 }
 
 export default async function PendientePagoBanner(): Promise<JSX.Element | null> {
@@ -44,7 +46,7 @@ export default async function PendientePagoBanner(): Promise<JSX.Element | null>
   // Buscar pre-bonos pendientes de pago
   const { data: bonosPendientes } = await supabase
     .from('bonos_pacientes')
-    .select('id, sesiones_totales, servicio_id')
+    .select('id, sesiones_totales, precio_centimos, servicio:servicios!inner(nombre)')
     .eq('estado', 'pendiente_pago')
     .eq('activo', false)
     .limit(5);
@@ -116,12 +118,14 @@ export default async function PendientePagoBanner(): Promise<JSX.Element | null>
               <p className="mt-1 font-body text-[0.8rem] leading-relaxed text-ink-soft dark:text-white/60">
                 Almudena te ha asignado un bono. Completa el pago para activarlo y poder usar las sesiones.
               </p>
-              <Link
-                href="/portal/pagos"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 font-body text-[0.78rem] font-medium text-on-primary transition-colors hover:bg-primary-dim"
-              >
-                Activar bono
-              </Link>
+              <ActivarBonoDialog
+                bonos={bonos.map((b) => ({
+                  id: b.id,
+                  sesiones_totales: b.sesiones_totales,
+                  precio_centimos: b.precio_centimos,
+                  servicio_nombre: Array.isArray(b.servicio) ? b.servicio[0].nombre : b.servicio.nombre,
+                }))}
+              />
             </div>
           </div>
         </div>

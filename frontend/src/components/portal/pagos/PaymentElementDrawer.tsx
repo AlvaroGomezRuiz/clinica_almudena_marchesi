@@ -49,6 +49,7 @@ import {
   crearPaymentIntentBonoAction,
   crearPaymentIntentCitaAction,
   crearPaymentIntentCitaSlotAction,
+  crearPaymentIntentActivarBonoAction,
   type PaymentIntentResult,
 } from '@/services/pagos/actions';
 
@@ -73,7 +74,10 @@ export type PaymentDrawerCitaTarget =
 export interface PaymentElementDrawerProps {
   readonly open: boolean;
   readonly onClose: () => void;
-  readonly target: PaymentDrawerCitaTarget | { readonly kind: 'bono'; readonly bonoConfigId: string };
+  readonly target:
+    | PaymentDrawerCitaTarget
+    | { readonly kind: 'bono'; readonly bonoConfigId: string }
+    | { readonly kind: 'activar_bono'; readonly bonoPacienteId: string };
   /** Importe en céntimos para mostrar antes del fetch. */
   readonly amountHint?: number;
   readonly titleHint?: string;
@@ -133,7 +137,9 @@ export default function PaymentElementDrawer({
           ? await crearPaymentIntentCitaAction(target.citaId)
           : target.kind === 'cita_slot'
             ? await crearPaymentIntentCitaSlotAction(target.servicioId, target.slotInicio)
-            : await crearPaymentIntentBonoAction(target.bonoConfigId);
+            : target.kind === 'activar_bono'
+              ? await crearPaymentIntentActivarBonoAction(target.bonoPacienteId)
+              : await crearPaymentIntentBonoAction(target.bonoConfigId);
       if (!res.ok) {
         setState({ status: 'error', message: formatUserFacingError(res.error) });
         return;

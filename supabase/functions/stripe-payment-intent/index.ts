@@ -28,13 +28,14 @@ import { captureEdgeError, wrapEdgeHandler } from "../_shared/sentry.ts";
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
 interface PaymentIntentRequest {
-  kind: "cita" | "bono";
+  kind: "cita" | "bono" | "activar_bono";
   /** Pago de cita ya existente (legacy bloqueo_temporal / checkout antiguo). */
   cita_id?: string;
   /** Pago antes de crear la cita: validado en BBDD, metadata en Stripe. */
   servicio_id?: string;
   slot_inicio?: string;
   bono_config_id?: string;
+  bono_paciente_id?: string;
 }
 
 interface CitaCtx {
@@ -48,6 +49,16 @@ interface CitaCtx {
 
 interface BonoCtx {
   bono_config_id: string;
+  nombre: string;
+  descripcion: string | null;
+  sesiones: number;
+  importe_centimos: number;
+  email: string;
+  display_name: string | null;
+}
+
+interface ActivarBonoCtx {
+  bono_paciente_id: string;
   nombre: string;
   descripcion: string | null;
   sesiones: number;
@@ -236,6 +247,45 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
       );
     }
 
+    if (payload.kind === "activar_bono") {
+      if (!payload.bono_paciente_id || !UUID_RE.test(payload.bono_paciente_id)) {
+        return json({ error: "missing_bono_paciente_id" }, 400, cors);
+      }
+
+      const { data, error } = await admin.rpc("preparar_checkout_activar_bono", {
+        p_bono_paciente_id: payload.bono_paciente_id,
+        p_user_id: user.id,
+      });
+      if (error) return json({ error: "rpc_failed", detail: error.message }, 500, cors);
+
+      const ctx = (Array.isArray(data) ? data[0] : data) as ActivarBonoCtx | null;
+      if (!ctx) return json({ error: "bono_not_found_or_not_owned" }, 404, cors);
+
+      const pi = await createPaymentIntent({
+        amount_centimos: ctx.importe_centimos,
+        customer_email: ctx.email,
+        description: `${ctx.nombre} — ${ctx.sesiones} sesiones`,
+        metadata: {
+          kind: "activar_bono",
+          bono_paciente_id: ctx.bono_paciente_id,
+          user_id: user.id,
+        },
+        excluded_payment_method_types: PORTAL_EXCLUDED_PAYMENT_METHOD_TYPES,
+        idempotency_key: `pi-activar-bono-${ctx.bono_paciente_id}-${user.id}-${Date.now()}`,
+      });
+
+      return json(
+        {
+          client_secret: pi.client_secret,
+          payment_intent_id: pi.id,
+          amount: pi.amount,
+          currency: pi.currency,
+        },
+        200,
+        cors
+      );
+    }
+
     return json({ error: "unknown_kind" }, 400, cors);
   } catch (err) {
     captureEdgeError(err, {
@@ -243,7 +293,7 @@ Deno.serve(wrapEdgeHandler("stripe-payment-intent", async (req) => {
       event_type: payload.kind,
       user_id: user.id,
       entity_id:
-        payload.kind === "cita" ? payload.cita_id ?? "" : payload.bono_config_id ?? "",
+        payload.kind === "cita" ? payload.cita_id ?? "" : payload.kind === "bono" ? payload.bono_config_id ?? "" : payload.bono_paciente_id ?? "",
       fingerprint: ["stripe-payment-intent", payload.kind ?? "unknown"],
     });
     if (err instanceof StripeApiError) {

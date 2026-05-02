@@ -129,7 +129,7 @@ async function handleCheckoutCompleted(
   const kind = metadata.kind;
   const userId = metadata.user_id;
 
-  if (!userId || (kind !== "cita" && kind !== "bono")) {
+  if (!userId || (kind !== "cita" && kind !== "bono" && kind !== "activar_bono")) {
     throw new Error(`metadata inválido: kind=${kind} user_id=${userId}`);
   }
 
@@ -183,7 +183,7 @@ async function handleCheckoutCompleted(
   if (kind === "cita" && result.cita_confirmada && citaIdParaEmail) {
     await triggerBookingEmail(userId, citaIdParaEmail, result.pago_id);
   }
-  if (kind === "bono" && result.bono_creado && result.bono_id) {
+  if ((kind === "bono" || kind === "activar_bono") && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
   }
 }
@@ -203,7 +203,7 @@ async function handlePaymentIntentSucceeded(
   const kind = metadata.kind;
   const userId = metadata.user_id;
 
-  if (!userId || (kind !== "cita" && kind !== "bono")) {
+  if (!userId || (kind !== "cita" && kind !== "bono" && kind !== "activar_bono")) {
     // Sin metadata nuestra → no es un pago del portal, ignorar.
     return;
   }
@@ -217,7 +217,7 @@ async function handlePaymentIntentSucceeded(
     .eq("stripe_payment_intent", pi.id)
     .maybeSingle();
   if (pagoExistente) {
-    if (kind === "bono" && pagoExistente.bono_id) {
+    if ((kind === "bono" || kind === "activar_bono") && pagoExistente.bono_id) {
       await triggerBonoCompradoEmail(userId, pagoExistente.id, pagoExistente.bono_id);
     } else if (
       kind === "cita" &&
@@ -274,7 +274,7 @@ async function handlePaymentIntentSucceeded(
       .eq("stripe_payment_intent", pi.id)
       .maybeSingle();
     if (row?.id) {
-      if (kind === "bono" && row.bono_id) {
+      if ((kind === "bono" || kind === "activar_bono") && row.bono_id) {
         await triggerBonoCompradoEmail(userId, row.id, row.bono_id);
       } else if (
         kind === "cita" &&
@@ -291,7 +291,7 @@ async function handlePaymentIntentSucceeded(
   if (kind === "cita" && result.cita_confirmada && citaIdNueva) {
     await triggerBookingEmail(userId, citaIdNueva, result.pago_id);
   }
-  if (kind === "bono" && result.bono_creado && result.bono_id) {
+  if ((kind === "bono" || kind === "activar_bono") && result.bono_creado && result.bono_id) {
     await triggerBonoCompradoEmail(userId, result.pago_id, result.bono_id);
   }
 }
