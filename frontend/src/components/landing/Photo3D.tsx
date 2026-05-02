@@ -1,10 +1,10 @@
 'use client';
 
 
-import Image from 'next/image';
+import Image, { type StaticImageData } from 'next/image';
 
 type Photo3DProps = {
-  src: string;
+  src: string | StaticImageData;
   alt: string;
   width?: number;
   height?: number;
