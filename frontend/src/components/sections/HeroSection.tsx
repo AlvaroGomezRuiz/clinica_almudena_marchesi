@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import Photo3D from '@/components/landing/Photo3D';
 import ScrollReveal from '@/components/landing/ScrollReveal';
-import heroImage from '../../../public/images/almudena-principal-home.avif';
 
 /* Misma tarjeta visual que /sobre-mí (Photo3D: marco, fondo cristal, sombra).
    Photo3D es cliente; el texto del hero sigue animado con ScrollReveal. */
@@ -70,8 +69,8 @@ export default function HeroSection() {
         <div className="order-2 flex justify-center">
           <ScrollReveal delay={0.1} scale={0.96}>
             <Photo3D
-              src={heroImage}
-              alt="Almudena Marchesi, psicóloga clínica, en su consulta de Moncloa, Madrid"
+              src="/images/almudena-principal-home.avif"
+              alt="logo coorporativo, de la clinica de Almudena Marchesi Fernandez."
               width={580}
               height={750}
               priority
