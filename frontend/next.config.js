@@ -81,7 +81,7 @@ function buildCsp() {
     `img-src 'self' data: blob: https://lh3.googleusercontent.com https://images.unsplash.com https://*.stripe.com https://www.googletagmanager.com https://www.google-analytics.com ${supabaseHost}`.trim(),
     /* connect-src: self + Supabase (HTTPS REST + WSS Realtime) + Stripe API +
        Vercel Insights + Sentry tunnel propio (evita /monitoring externo). */
-    `connect-src 'self' ${supabaseHost} ${supabaseWss} https://api.stripe.com https://r.stripe.com https://q.stripe.com https://errors.stripe.com https://m.stripe.network https://vitals.vercel-insights.com https://vercel.live https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net`.trim(),
+    `connect-src 'self' ${supabaseHost} ${supabaseWss} https://api.stripe.com https://r.stripe.com https://q.stripe.com https://errors.stripe.com https://m.stripe.network https://vitals.vercel-insights.com https://vercel.live https://www.googletagmanager.com https://*.google-analytics.com https://www.google-analytics.com https://*.analytics.google.com https://analytics.google.com https://stats.g.doubleclick.net`.trim(),
     /* frame-src: Stripe 3DS, hooks, iframes internos Stripe.js (wallets / PR API) + Vercel Live. */
     'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://m.stripe.network https://vercel.live',
     /* worker-src: solo blob (para Service Workers generados por Next). */
