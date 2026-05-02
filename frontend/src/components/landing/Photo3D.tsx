@@ -55,7 +55,6 @@ export default function Photo3D({
           className="w-full h-auto object-cover rounded-apple"
           priority={priority}
           fetchPriority={priority ? 'high' : undefined}
-          unoptimized={true}
           sizes="(max-width: 768px) 100vw, 50vw"
         />
       </div>

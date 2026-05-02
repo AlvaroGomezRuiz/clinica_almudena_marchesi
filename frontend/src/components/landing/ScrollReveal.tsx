@@ -47,7 +47,6 @@ export default function ScrollReveal({
   as = 'div',
 }: ScrollRevealProps) {
   const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -58,27 +57,38 @@ export default function ScrollReveal({
     return () => mql.removeEventListener('change', handler);
   }, []);
 
+  const dir = directionMap[direction] ?? directionMap.up;
+  const initialTransform = `translate3d(${dir.x * offset}px, ${dir.y * offset}px, 0) scale(${scale < 1 ? scale : 1})`;
+  const visibleTransform = 'translate3d(0,0,0) scale(1)';
+
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
     /* Si el navegador no soporta IntersectionObserver (muy raro) → se muestra sin animar. */
     if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
+      node.style.opacity = '1';
+      node.style.transform = visibleTransform;
+      node.style.filter = 'blur(0px)';
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          setVisible(entry.isIntersecting && entry.intersectionRatio >= amount);
+          const isVisible = entry.isIntersecting && entry.intersectionRatio >= amount;
+          if (node) {
+            node.style.opacity = isVisible ? '1' : '0';
+            node.style.transform = isVisible ? visibleTransform : initialTransform;
+            node.style.filter = isVisible ? 'blur(0px)' : 'blur(4px)';
+          }
         }
       },
       { threshold: [0, amount, 1] },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [amount]);
+  }, [amount, initialTransform, visibleTransform]);
 
   const Tag = as as React.ElementType;
 
@@ -87,20 +97,16 @@ export default function ScrollReveal({
     return <Tag className={className}>{children}</Tag>;
   }
 
-  const dir = directionMap[direction] ?? directionMap.up;
-
-  const style: CSSProperties = {
-    opacity: visible ? 1 : 0,
-    transform: visible
-      ? 'translate3d(0,0,0) scale(1)'
-      : `translate3d(${dir.x * offset}px, ${dir.y * offset}px, 0) scale(${scale < 1 ? scale : 1})`,
-    filter: visible ? 'blur(0px)' : 'blur(4px)',
+  const initialStyle: CSSProperties = {
+    opacity: 0,
+    transform: initialTransform,
+    filter: 'blur(4px)',
     transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
     willChange: 'opacity, transform',
   };
 
   return (
-    <Tag ref={ref as never} className={className} style={style}>
+    <Tag ref={ref as never} className={className} style={initialStyle}>
       {children}
     </Tag>
   );
