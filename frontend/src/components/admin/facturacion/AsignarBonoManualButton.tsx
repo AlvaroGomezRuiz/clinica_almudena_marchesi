@@ -28,6 +28,64 @@ import {
   type ServicioCatalogo,
   type MetodoPagoManual,
 } from '@/services/admin/actions';
+import {
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS,
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS,
+  CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS,
+  CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS,
+  CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS,
+} from '@/lib/clinic';
+
+function extrapolar(x: number, pts: { x: number; y: number }[]): number {
+  const exact = pts.find((p) => p.x === x);
+  if (exact) return exact.y;
+
+  let p1 = pts[0];
+  let p2 = pts[pts.length - 1];
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (x > pts[i].x && x < pts[i + 1].x) {
+      p1 = pts[i];
+      p2 = pts[i + 1];
+      break;
+    }
+  }
+
+  if (x > p2.x) {
+    const unitPrice = p2.y / p2.x;
+    return x * unitPrice;
+  }
+
+  const m = (p2.y - p1.y) / (p2.x - p1.x);
+  return p1.y + m * (x - p1.x);
+}
+
+function calcularImporteRecomendado(servicio: ServicioCatalogo, sesiones: number): number {
+  const base = servicio.precio_centimos;
+  const nombre = servicio.nombre.toLowerCase();
+
+  if (nombre.includes('individual')) {
+    const pts = [
+      { x: 1, y: base },
+      { x: 3, y: CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS },
+      { x: 5, y: CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS },
+      { x: 10, y: CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS },
+    ];
+    return Math.round(extrapolar(sesiones, pts));
+  }
+
+  if (nombre.includes('pareja')) {
+    const pts = [
+      { x: 1, y: base },
+      { x: 3, y: CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS },
+      { x: 5, y: CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS },
+    ];
+    return Math.round(extrapolar(sesiones, pts));
+  }
+
+  return base * sesiones;
+}
+
 
 interface Paciente {
   readonly id: string;
@@ -125,7 +183,8 @@ export default function AsignarBonoManualButton(): JSX.Element {
     if (importeTocado) return;
     const s = servicios.find((x) => x.id === servicioId);
     if (!s) return;
-    const total = (s.precio_centimos * sesiones) / 100;
+    const centimos = calcularImporteRecomendado(s, sesiones);
+    const total = centimos / 100;
     setImporteEuros(total.toFixed(2));
   }, [servicioId, sesiones, servicios, importeTocado]);
 
@@ -275,7 +334,10 @@ export default function AsignarBonoManualButton(): JSX.Element {
                 <Campo label="Servicio">
                   <select
                     value={servicioId}
-                    onChange={(e) => setServicioId(e.target.value)}
+                    onChange={(e) => {
+                      setServicioId(e.target.value);
+                      setImporteTocado(false);
+                    }}
                     className="w-full rounded-lg border border-ink/10 bg-white px-3 py-2.5 font-body text-[0.9rem] text-ink outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/15 dark:bg-white/5 dark:text-white"
                   >
                     {servicios.map((s) => (
@@ -295,7 +357,10 @@ export default function AsignarBonoManualButton(): JSX.Element {
                       pattern="[0-9]*"
                       autoComplete="off"
                       value={sesionesStr}
-                      onChange={(e) => setSesionesStr(e.target.value.replace(/[^\d]/g, ''))}
+                      onChange={(e) => {
+                        setSesionesStr(e.target.value.replace(/[^\d]/g, ''));
+                        setImporteTocado(false);
+                      }}
                       onBlur={() => {
                         const n = Number.parseInt(sesionesStr, 10);
                         if (!Number.isFinite(n) || n < 1) {
