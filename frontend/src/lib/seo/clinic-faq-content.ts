@@ -39,7 +39,7 @@ export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
   },
   {
     question: '¿Cómo pido cita o consulto tarifas al día?',
-    answer: `Todas las reservas y la gestión (citas, bonos, pagos y mensajería con la consulta) se hacen a través del Portal del Paciente en ${siteHost}, previo registro. Así se mantiene la confidencialidad y los precios publicados alineados con el catálogo activo.`,
+    answer: `Para pedir cita o consultar cualquier duda sobre tarifas, escríbeme o llámame directamente utilizando los datos de la página de contacto en ${siteHost}.`,
   },
   {
     question: '¿Ofrece terapia online además de presencial?',
@@ -53,7 +53,7 @@ export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
   },
   {
     question: '¿Cómo contacto por teléfono o correo?',
-    answer: `Puedes llamar o escribir al ${CLINIC_PUBLIC_PHONE_DISPLAY} y al correo ${CLINIC_CONTACT_EMAIL}. Las citas confirmadas y la documentación clínica siguen centralizadas en el portal para proteger tu privacidad.`,
+    answer: `Puedes llamar o escribir al ${CLINIC_PUBLIC_PHONE_DISPLAY} y al correo ${CLINIC_CONTACT_EMAIL}. Tus datos y consultas se tratarán con total privacidad y confidencialidad.`,
   },
   {
     question: '¿Atiende urgencias psiquiátricas o crisis 24 h?',
@@ -66,7 +66,7 @@ export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
 export const serviciosPageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Cuáles son las tarifas por sesión?',
-    answer: `En el sitio público se resume como «${CLINIC_TARIFAS_SESION_RESUMEN}» (importes orientativos; el catálogo y los bonos actualizados están en el Portal del Paciente en ${siteHost}).`,
+    answer: `En el sitio público se resume como «${CLINIC_TARIFAS_SESION_RESUMEN}». Si tienes cualquier duda, consúltame directamente.`,
   },
   {
     question: '¿Cuánto dura una sesión?',
@@ -78,18 +78,13 @@ export const serviciosPageFaq: ReadonlyArray<ClinicFaqItem> = [
       'La terapia individual se centra en la persona adulta; la de pareja en la relación y la comunicación entre miembros; el enfoque infanto-juvenil adapta el marco a la edad y el contexto familiar. En todos los casos se prioriza un marco clínico basado en evidencia y ajustado a tu situación.',
   },
   {
-    question: '¿Qué son los bonos y cuándo compensan?',
-    answer:
-      'Los bonos agrupan varias sesiones a precio reducido frente al pago suelto, para favorecer la continuidad terapéutica. El detalle (sesiones, importe, validez y servicio al que aplican) figura en el portal y puede actualizarse; en la landing de servicios se muestran ejemplos orientativos.',
-  },
-  {
     question: '¿Cómo funciona la cancelación o el cambio de cita?',
     answer:
-      'Tras reservar por el portal aceptas la política de la consulta: la cancelación online desde el propio portal solo está disponible cuando faltan más de 48 horas para el inicio de la sesión (salvo otras condiciones excepcionales descritas en el aviso legal y en el flujo de pago).',
+      'La cancelación o el cambio de cita debe comunicarse con más de 48 horas de antelación al inicio de la sesión, salvo condiciones excepcionales.',
   },
   {
-    question: '¿Puedo pagar con tarjeta o bono en el portal?',
-    answer: `Sí. Pagos y bonos se gestionan de forma centralizada en el portal con los métodos habilitados en el checkout (ver condiciones en ${siteHost} y en el aviso legal).`,
+    question: '¿Cuáles son las formas de pago?',
+    answer: `El pago se realizará según lo acordemos en nuestro primer contacto (efectivo, transferencia, etc.).`,
   },
 ];
 
@@ -118,7 +113,7 @@ export const enfoquePageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Cómo se garantiza la confidencialidad?',
     answer:
-      'El contenido de las sesiones y los datos de salud se tratan según la normativa vigente (LOPDGDD y RGPD) y el portal centraliza la información con medidas técnicas y de acceso restringido. Más detalle: política de privacidad y aviso legal en el sitio web.',
+      'El contenido de las sesiones y los datos de salud se tratan según la normativa vigente (LOPDGDD y RGPD) aplicando las medidas técnicas y organizativas necesarias. Más detalle: política de privacidad y aviso legal en el sitio web.',
   },
 ];
 
@@ -154,7 +149,7 @@ export const sobreMiPageFaq: ReadonlyArray<ClinicFaqItem> = [
 export const contactoPageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Cuál es el horario de atención publicado en la web?',
-    answer: `${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES} En la sección de horario de la página de contacto (${siteHost}) verás el cuadro resumido; las horas concretas de cada cita se eligen al reservar en el portal.`,
+    answer: `${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES} En la sección de horario de la página de contacto (${siteHost}) verás el cuadro resumido; las horas concretas de cada cita se acuerdan de forma directa.`,
   },
   {
     question: '¿Cuál es la dirección exacta y el teléfono de contacto?',
@@ -178,6 +173,6 @@ export const contactoPageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Puedo escribir por WhatsApp o solo por el portal?',
     answer:
-      'El canal de mensajería clínica y la documentación de citas están integrados en el Portal del Paciente. El contacto general por correo o teléfono sirve para dudas administrativas; la información sanitaria sensible se canaliza de forma segura a través del portal, conforme a privacidad.',
+      'Puedes escribirme por WhatsApp, correo electrónico o teléfono para cualquier duda administrativa o para gestionar tu primera cita. Toda la información sanitaria y clínica se tratará de forma segura conforme a la normativa de privacidad.',
   },
 ];

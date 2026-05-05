@@ -27,8 +27,6 @@ const MOBILE_NAV_ITEMS = [
   { href: '/servicios', label: 'Servicios', icon: 'medical_services' },
   { href: '/sobre-mi', label: 'Sobre Mí', icon: 'person' },
   { href: '/contacto', label: 'Contacto', icon: 'mail' },
-  { href: '/registro-paciente', label: 'Reservar Cita', icon: 'calendar_month' },
-  { href: '/login', label: 'Portal del Paciente', icon: 'badge' },
 ] as const;
 
 export default function PublicHeader() {
@@ -126,16 +124,9 @@ export default function PublicHeader() {
                 ))}
               </div>
 
-              {/* Desktop: ThemeToggle + CTA Portal del Paciente */}
+              {/* Desktop: ThemeToggle */}
               <div className="hidden md:flex items-center gap-1 ml-2">
                 <ThemeToggle />
-                <Link
-                  href="/login"
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-pill bg-sage px-5 py-2.5 text-[0.82rem] font-medium text-white transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97]"
-                  style={{ boxShadow: '0 2px 10px rgba(74,99,85,0.18)' }}
-                >
-                  Portal del Paciente
-                </Link>
               </div>
 
               {/* Mobile: ThemeToggle + Hamburger (SVG inline, sin material-symbols) */}

@@ -39,23 +39,22 @@ export const CLINIC_SESSION_DURATION_MIN = 50;
  */
 
 /** Tarifa sesión individual (céntimos). = `services` "Sesión individual" activo. */
-export const CLINIC_PRICE_INDIVIDUAL_CENTIMOS = 5500;
+export const CLINIC_PRICE_INDIVIDUAL_CENTIMOS = 6500;
 
 /** Tarifa terapia de pareja (céntimos). = "Terapia de pareja" activo. */
-export const CLINIC_PRICE_PAREJA_CENTIMOS = 9000;
+export const CLINIC_PRICE_PAREJA_CENTIMOS = 7500;
 
 /** Packs = `bonos_config` nombres "Bono N sesiones · Individual" / "· Pareja". */
-export const CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS = 16500;
+export const CLINIC_CATALOGO_BONO_INDIVIDUAL_3_CENTIMOS = 19500;
 
-export const CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS = 27000;
-export const CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS = 51000;
+export const CLINIC_CATALOGO_BONO_INDIVIDUAL_5_CENTIMOS = 32000;
+export const CLINIC_CATALOGO_BONO_INDIVIDUAL_10_CENTIMOS = 61000;
 
 /**
- * Tras `0058` (90 €/sesión pareja): 30500→26143, 49500→42429
- * (proporcional, coherentes con catálogo).
+ * Tras reescala a 75 €/sesión pareja (desde 90 € y 105 € históricos): proporcionales.
  */
-export const CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS = 26143;
-export const CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS = 42429;
+export const CLINIC_CATALOGO_BONO_PAREJA_3_CENTIMOS = 21786;
+export const CLINIC_CATALOGO_BONO_PAREJA_5_CENTIMOS = 35357;
 
 export function formatClinicPrecioEUR(centimos: number): string {
   return (centimos / 100).toLocaleString('es-ES', {
@@ -99,7 +98,7 @@ export function formatClinicBonoAhorroVsSueltoPareja(
 }
 
 /** Texto compacto para hero, pies y copy legal. */
-export const CLINIC_TARIFAS_SESION_RESUMEN = 'Individual 55 € · Pareja 90 €' as const;
+export const CLINIC_TARIFAS_SESION_RESUMEN = 'Individual 65 € · Pareja 75 € · Infanto-Juvenil 65 €' as const;
 
 /**
  * @deprecated Prefer `formatClinicPrecioEUR` o `CLINIC_TARIFAS_SESION_RESUMEN`.
@@ -108,7 +107,7 @@ export const CLINIC_TARIFAS_SESION_RESUMEN = 'Individual 55 € · Pareja 90 €
 export const CLINIC_SESSION_PRICE_LABEL = CLINIC_TARIFAS_SESION_RESUMEN;
 
 export const CLINIC_ADDRESS_LINE1 =
-  'Calle de Meléndez Valdés número 22, piso 1D';
+  'Calle de Meléndez Valdés';
 export const CLINIC_ADDRESS_LINE2 = 'Madrid';
 
 export const CLINIC_ADDRESS = `${CLINIC_ADDRESS_LINE1}, ${CLINIC_ADDRESS_LINE2}`;

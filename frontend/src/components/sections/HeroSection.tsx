@@ -55,8 +55,8 @@ export default function HeroSection() {
 
           <ScrollReveal delay={0.24} offset={30}>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/registro-paciente" className="btn-primary text-center">
-                Reserva tu primera cita
+              <Link href="/contacto" className="btn-primary text-center">
+                Contactar
               </Link>
               <Link href="/enfoque" className="btn-secondary text-center">
                 Conoce mi enfoque

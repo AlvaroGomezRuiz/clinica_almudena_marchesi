@@ -160,9 +160,9 @@ export default function HomePage() {
         <div className="cv-auto">
           <PhilosophySection />
         </div>
-        <div className="cv-auto">
+        {/* <div className="cv-auto">
           <BunkerSection />
-        </div>
+        </div> */}
         <div className="cv-auto">
           <MoncloaSection />
         </div>

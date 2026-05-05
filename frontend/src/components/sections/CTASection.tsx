@@ -34,17 +34,11 @@ export default function CTASection() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
-                    href="/registro-paciente"
+                    href="/contacto"
                     className="bg-sage text-white dark:bg-white dark:text-[#111111] font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:-translate-y-px active:scale-[0.97] text-center"
                     style={{ boxShadow: '0 10px 30px rgba(74, 99, 85, 0.18)' }}
                   >
-                    Reservar cita
-                  </Link>
-                  <Link
-                    href="/contacto"
-                    className="border border-line text-ink dark:border-white/20 dark:text-white font-body font-medium px-8 py-4 rounded-pill transition-all duration-400 ease-apple hover:bg-sage/10 dark:hover:bg-white/10 hover:-translate-y-px text-center"
-                  >
-                    Contactar
+                    Contactar ahora
                   </Link>
                 </div>
               </div>
