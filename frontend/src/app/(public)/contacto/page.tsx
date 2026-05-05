@@ -3,8 +3,7 @@ import Link from 'next/link';
 
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
-import MoncloaSection from '@/components/sections/MoncloaSection';
-import CTASection from '@/components/sections/CTASection';
+
 import PremiumCard from '@/components/ui/PremiumCard';
 import {
   CLINIC_ADDRESS,
@@ -269,8 +268,7 @@ export default function ContactoPage() {
         items={contactoPageFaq}
       />
 
-      <MoncloaSection />
-      <CTASection />
+
     </div>
     </>
   );

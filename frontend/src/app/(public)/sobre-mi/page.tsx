@@ -44,25 +44,33 @@ export const metadata: Metadata = buildPublicPageMetadata({
 const CREDENTIALS = [
   {
     title: 'Formación Académica',
-    body: 'Licenciada en Psicología Clínica con especialización en enfoques integradores. Formación continua en las últimas corrientes terapéuticas.',
+    body: 'Formación especializada en psicología clínica, psicoterapia y sistemas familiares. Actualización continua en los enfoques terapéuticos más rigurosos.',
     items: [
-      'Universidad Complutense de Madrid',
-      'Máster en Psicología General Sanitaria',
+      'Licenciada en Psicología. Universidad Francisco de Vitoria',
+      'Máster en Psicología General Sanitaria. Universidad Francisco de Vitoria',
+      'Experta en Terapia Sistémica: familiar y de pareja. Universidad Francisco de Vitoria',
+      'Experta en Psicoterapia Integradora: Trauma, Apego y EMDR. Instituto Español de Psicoterapia Integradora',
+      'Formación en Terapia Basada en la Mentalización',
     ],
     accentColor: 'sage',
   },
   {
     title: 'Recorrido Clínico',
     body: 'Desde 2023 acompañando a adultos y adolescentes en su proceso terapéutico, con una dedicación plena a cada caso desde la consulta de Moncloa.',
-    items: ['Práctica privada en Moncloa', 'Colaboración en centros de salud mental'],
+    items: [
+      'Práctica privada en Moncloa',
+      'Colaboración en centros de salud mental',
+      'Colaboración en recursos sociales de atención a la salud mental',
+    ],
     accentColor: 'warm',
   },
   {
     title: 'Metodología',
-    body: 'Enfoque humanista integrador, combinando técnicas cognitivo-conductuales con terapias de tercera generación según las necesidades.',
+    body: 'Enfoque integrador y sistémico: una terapia adaptada a ti, que tiene en cuenta tanto tu mundo interno como tus relaciones y tu contexto.',
     items: [
-      'Terapia de Aceptación y Compromiso',
-      'Mindfulness aplicado a la clínica',
+      'Terapia Sistémica y familiar',
+      'Psicoterapia Integradora: Trauma y Apego',
+      'EMDR y Mentalización',
     ],
     accentColor: 'sage-mid',
   },
@@ -95,11 +103,12 @@ export default function SobreMiPage() {
                 <span className="italic text-sage">camino</span> del cambio.
               </h1>
             </ScrollReveal>
-            <ScrollReveal delay={0.16}>
+            <ScrollReveal delay={0.1}>
               <p className="text-body-lg text-ink-soft leading-relaxed text-pretty max-w-lg">
-                Licenciada en Psicología con una profunda vocación por el bienestar
-                humano. Mi consulta en el corazón de Moncloa es un espacio seguro
-                diseñado para la introspección y el crecimiento personal.
+                Acompaño a personas en sus procesos de cambio y crecimiento
+                personal. Soy psicóloga y en mi consulta de Moncloa
+                encontrarás un espacio seguro, tranquilo y confidencial, donde
+                poder parar, escucharte y trabajar en tu bienestar.
               </p>
             </ScrollReveal>
           </div>
@@ -160,15 +169,15 @@ export default function SobreMiPage() {
             <ScrollReveal delay={0.1}>
               <div className="space-y-6 text-ink-soft text-body-lg leading-relaxed">
                 <p>
-                  Entiendo la terapia no como un proceso directivo, sino como una
-                  travesía compartida. Mi papel no es el de una experta distante
-                  que da soluciones, sino el de una{' '}
-                  <strong className="text-ink font-medium">compañera de viaje</strong>{' '}
-                  que aporta herramientas y luz en los momentos de incertidumbre.
+                  Entiendo la terapia como un proceso compartido. Mi papel no
+                  es darte respuestas desde fuera, sino{' '}
+                  <strong className="text-ink font-medium">acompañarte</strong>,
+                  ayudándote a entender lo que te ocurre y ofreciéndote
+                  herramientas para afrontarlo.
                 </p>
                 <p>
-                  En mi consulta en Moncloa, Madrid, priorizo la autenticidad y la
-                  calidez. Creo firmemente que el vínculo terapéutico es la
+                  En mi consulta en Moncloa, Madrid, priorizo la autenticidad y
+                  la calidez. Creo firmemente que el vínculo terapéutico es la
                   herramienta más poderosa para la sanación. Cada persona es un
                   universo único, y mi enfoque se adapta a la singularidad de tu
                   historia.

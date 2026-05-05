@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 
-import HeroSection from '@/components/sections/HeroSection';
+import VideoHero from '@/components/sections/VideoHero';
+import EnfoqueSummarySection from '@/components/sections/EnfoqueSummarySection';
+import ServiciosSummarySection from '@/components/sections/ServiciosSummarySection';
+import SobreMiSummarySection from '@/components/sections/SobreMiSummarySection';
+import ContactoSummarySection from '@/components/sections/ContactoSummarySection';
+
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import {
   CLINIC_GEO_LAT,
@@ -26,68 +31,6 @@ const homeWebPageLd = buildHomePageWebJsonLd({
   description: CLINIC_HOME_META_DESCRIPTION_ES,
   keywordsCsv: homeSearchKeywordsCsv(),
 });
-
-/* ── Dynamic imports para secciones below-the-fold ──────────────────
-   ssr: true  → Google los indexa en el HTML inicial (SEO intacto)
-   loading    → placeholder visible con la misma altura de sección
-                para evitar saltos de layout (CLS = 0) mientras el
-                JS de la sección se descarga en su chunk separado.
-   ─────────────────────────────────────────────────────────────────── */
-const PhilosophySection = dynamic(
-  () => import('@/components/sections/PhilosophySection'),
-  {
-    ssr: true,
-    loading: () => (
-      <div
-        className="py-28 md:py-40 bg-canvas-alt cv-auto"
-        aria-hidden="true"
-        style={{ minHeight: '600px' }}
-      />
-    ),
-  },
-);
-
-const BunkerSection = dynamic(
-  () => import('@/components/sections/BunkerSection'),
-  {
-    ssr: true,
-    loading: () => (
-      <div
-        className="py-28 md:py-40 bg-canvas cv-auto"
-        aria-hidden="true"
-        style={{ minHeight: '500px' }}
-      />
-    ),
-  },
-);
-
-const MoncloaSection = dynamic(
-  () => import('@/components/sections/MoncloaSection'),
-  {
-    ssr: true,
-    loading: () => (
-      <div
-        className="py-24 md:py-36 bg-canvas-alt cv-auto"
-        aria-hidden="true"
-        style={{ minHeight: '480px' }}
-      />
-    ),
-  },
-);
-
-const CTASection = dynamic(
-  () => import('@/components/sections/CTASection'),
-  {
-    ssr: true,
-    loading: () => (
-      <div
-        className="py-28 md:py-40 bg-canvas cv-auto-sm"
-        aria-hidden="true"
-        style={{ minHeight: '380px' }}
-      />
-    ),
-  },
-);
 
 /* ── Metadata enriquecida (SEO + OpenGraph + Twitter) ─────────────── */
 export const metadata: Metadata = {
@@ -151,31 +94,27 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeFaqLd) }}
       />
-      <div className="bg-canvas overflow-x-hidden">
-        {/* Hero: importación estática — carga inmediata, máxima prioridad */}
-        <HeroSection />
+      
+      {/* 
+        El nuevo layout para la landing tiene secciones Sticky (top-0). 
+        Cada sección ocupa el 100% de la pantalla (h-screen/h-[100dvh]) y tiene border-radius top 
+        para que se vaya apilando visualmente sobre la anterior mediante scroll. 
+      */}
+      <div className="bg-canvas w-full overflow-hidden relative">
+        <VideoHero />
+        <EnfoqueSummarySection />
+        <ServiciosSummarySection />
+        <SobreMiSummarySection />
+        <ContactoSummarySection />
 
-        {/* Below-the-fold: dynamic chunks + content-visibility. El navegador
-            omite layout/paint hasta que entran en viewport. */}
-        <div className="cv-auto">
-          <PhilosophySection />
-        </div>
-        {/* <div className="cv-auto">
-          <BunkerSection />
-        </div> */}
-        <div className="cv-auto">
-          <MoncloaSection />
-        </div>
-        <div className="cv-auto">
+        {/* FAQ final */}
+        <div className="relative z-50 bg-canvas rounded-t-3xl pt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)]">
           <PublicFaqSection
             id="faq-inicio"
             className="bg-canvas"
             heading="Dudas frecuentes antes de reservar"
             items={homePageFaq}
           />
-        </div>
-        <div className="cv-auto-sm">
-          <CTASection />
         </div>
       </div>
     </>

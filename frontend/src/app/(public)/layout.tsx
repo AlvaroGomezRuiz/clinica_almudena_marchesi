@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 import PublicFooter from '@/components/layout/PublicFooter';
 import PublicHeader from '@/components/layout/PublicHeader';
+import LenisProvider from '@/components/landing/LenisProvider';
 import { buildClinicEntityJsonLd } from '@/lib/seo/clinic-entity-jsonld';
 
 const clinicEntityJsonLd = buildClinicEntityJsonLd();
@@ -18,9 +19,11 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <a href="#main" className="skip-link">
         Saltar al contenido principal
       </a>
-      <PublicHeader />
-      <main id="main">{children}</main>
-      <PublicFooter />
+      <LenisProvider>
+        <PublicHeader />
+        <main id="main">{children}</main>
+        <PublicFooter />
+      </LenisProvider>
     </>
   );
 }

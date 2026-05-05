@@ -39,17 +39,16 @@ export default function HeroSection() {
           </span>
 
           <h1 className="font-display text-display-1 text-ink text-balance mb-8 italic">
-            Un espacio donde{' '}
-            <span className="not-italic font-medium">ser</span>,
-            <br className="hidden md:block" />
-            sin ser juzgado.
+            Un espacio para acompañarte{' '}
+            <span className="not-italic font-medium">en tu proceso</span>.
           </h1>
 
           <ScrollReveal delay={0.16} offset={35}>
             <p className="text-body-lg text-ink-soft max-w-lg mb-10 leading-relaxed text-pretty">
-              Acompañamiento profesional en el corazón de Moncloa. Una
-              invitación a la pausa, al entendimiento y a la reconstrucción
-              propia.
+              Acompaño a personas en sus procesos de cambio y crecimiento
+              personal. Soy psicóloga y en mi consulta de Moncloa encontrarás
+              un espacio seguro, tranquilo y confidencial, donde poder parar,
+              escucharte y trabajar en tu bienestar.
             </p>
           </ScrollReveal>
 
