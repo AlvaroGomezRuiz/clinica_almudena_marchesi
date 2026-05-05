@@ -136,57 +136,36 @@ export default function AvisoLegalPage() {
 
           <div>
             <h2 className="font-display text-xl text-ink mb-4">
-              4. Condiciones de reserva, cancelación y pagos no reembolsables
+              4. Condiciones de reserva y cancelación
             </h2>
             <p className="mb-3">
-              Al reservar una cita, el usuario
-              acepta las siguientes condiciones:
+              Al reservar una cita, el usuario acepta las siguientes condiciones:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
                 <strong className="text-ink">Reserva:</strong> la reserva de cita queda confirmada
-                una vez completado el pago. Se genera automáticamente un correo de confirmación al paciente.
-              </li>
-              <li>
-                <strong className="text-ink">Pagos no reembolsables:</strong> los importes abonados
-                a través de la plataforma{' '}
-                <strong className="text-ink">no son reembolsables en ningún caso</strong>. Una vez
-                realizado el pago, el importe queda como saldo a favor del paciente para utilizar
-                en futuras sesiones. No se realizan devoluciones monetarias.
+                tras acuerdo directo con la Profesional (teléfono, correo o WhatsApp).
               </li>
               <li>
                 <strong className="text-ink">Cancelación por el paciente:</strong> el paciente podrá
                 cancelar una cita confirmada únicamente cuando falten{' '}
                 <strong className="text-ink">más de 48 horas</strong> para el inicio de la sesión.
-                En caso de cancelación dentro de dicho plazo, la sesión se restituye automáticamente
-                al saldo del paciente para ser utilizada en otro momento.{' '}
-                <strong className="text-ink">No se realiza reembolso monetario</strong> en ningún
-                caso.
+                Las cancelaciones fuera de plazo podrán ser consideradas como sesión consumida,
+                salvo acuerdo expreso con la Profesional.
               </li>
               <li>
                 <strong className="text-ink">Inasistencia:</strong> en caso de no asistir a una
                 sesión programada sin cancelación previa dentro del plazo permitido, la sesión{' '}
                 <strong className="text-ink">
-                  se considerará consumida y perdida
+                  se considerará consumida
                 </strong>
-                . La clínica no se hace responsable de la restitución de la sesión ni del reembolso
-                del importe, salvo acuerdo expreso y directo con la Profesional.
-              </li>
-              <li>
-                <strong className="text-ink">Saldo no retirable:</strong> el saldo acumulado no es convertible a dinero y no
-                puede ser retirado bajo ningún concepto. Únicamente puede ser utilizado para reservar
-                sesiones de los servicios ofrecidos.
+                . La clínica no se hace responsable de la restitución de la sesión,
+                salvo acuerdo expreso y directo con la Profesional.
               </li>
               <li>
                 <strong className="text-ink">Cancelación por la Profesional:</strong> la Profesional
                 podrá cancelar o reprogramar citas por causa justificada, ofreciendo al paciente la
                 posibilidad de reprogramar la sesión.
-              </li>
-              <li>
-                <strong className="text-ink">Recordatorios:</strong> se envían recordatorios
-                automáticos por correo electrónico aproximadamente 48 horas y 24 horas antes de cada
-                cita. La no recepción de un recordatorio no exime al paciente de su compromiso con
-                la cita reservada.
               </li>
             </ul>
           </div>
@@ -197,15 +176,10 @@ export default function AvisoLegalPage() {
             </h2>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
-                Los pagos se procesan a través de{' '}
-                <strong className="text-ink">Stripe</strong>, pasarela de pago certificada PCI DSS.
-                En ningún momento los datos completos de la tarjeta del paciente pasan por los
-                servidores de la Profesional ni se almacenan en la plataforma.
-              </li>
-              <li>
-                Los métodos de pago disponibles dependen de la configuración de la pasarela e
-                incluyen tarjeta, Bizum, Stripe Link, domiciliación SEPA y Klarna, además de Apple Pay
-                y Google Pay cuando el dispositivo y la cuenta lo permitan.
+                El pago de las sesiones se realiza según lo acordado directamente con la Profesional.
+                Los métodos de pago aceptados son{' '}
+                <strong className="text-ink">efectivo</strong> y{' '}
+                <strong className="text-ink">transferencia bancaria</strong>.
               </li>
               <li>
                 La Profesional emitirá factura por cada pago realizado. Las facturas están
@@ -283,10 +257,10 @@ export default function AvisoLegalPage() {
               conforme a la normativa sanitaria aplicable.
             </p>
             <p className="mt-3">
-              La plataforma utiliza servicios de terceros (Supabase, Vercel, Stripe, Resend, Sentry)
-              cuya disponibilidad depende de dichos proveedores. La Profesional se compromete a
-              mantener la plataforma operativa en la medida de lo razonablemente posible, pero no
-              garantiza disponibilidad ininterrumpida.
+              El sitio web utiliza servicios de terceros (Vercel para alojamiento) cuya disponibilidad
+              depende de dichos proveedores. La Profesional se compromete a mantener el sitio
+              operativo en la medida de lo razonablemente posible, pero no garantiza disponibilidad
+              ininterrumpida.
             </p>
           </div>
 

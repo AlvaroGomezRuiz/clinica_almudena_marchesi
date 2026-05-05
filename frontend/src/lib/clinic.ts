@@ -179,7 +179,6 @@ export const CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES: string =
 export const CLINIC_PAYMENT_METHODS = [
   'Efectivo',
   'Transferencia',
-  'Stripe',
 ] as const;
 
 export const CLINIC_GOOGLE_MAPS_QUERY = 'Calle de Meléndez Valdés, Madrid';

@@ -86,20 +86,6 @@ export default function CookiesPage() {
                 <tbody className="divide-y divide-line">
                   <tr>
                     <td className="px-4 py-3 font-mono text-xs text-ink">
-                      sb-&lt;ref&gt;-auth-token (fragmentos)
-                    </td>
-                    <td className="px-4 py-3">Técnica / necesaria</td>
-                    <td className="px-4 py-3">Sesión / renovación automática</td>
-                    <td className="px-4 py-3">
-                      Sesión Supabase Auth (JWT): autenticación con
-                      cookies <strong className="text-ink">HttpOnly</strong>,{' '}
-                      <strong className="text-ink">Secure</strong> en producción y{' '}
-                      <strong className="text-ink">SameSite=Lax</strong>. Estos atributos impiden que
-                      scripts externos o sitios de terceros accedan al contenido de la cookie.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-3 font-mono text-xs text-ink">
                       Preferencias de tema (localStorage)
                     </td>
                     <td className="px-4 py-3">Técnica / funcional</td>
@@ -107,17 +93,6 @@ export default function CookiesPage() {
                     <td className="px-4 py-3">
                       Almacenamiento local para recordar modo claro u oscuro. No se envía a ningún
                       servidor ni se comparte con terceros.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-3 font-mono text-xs text-ink">
-                      __stripe_mid / __stripe_sid
-                    </td>
-                    <td className="px-4 py-3">Técnica / necesaria</td>
-                    <td className="px-4 py-3">Sesión / 1 año</td>
-                    <td className="px-4 py-3">
-                      Cookies establecidas por Stripe durante el proceso de pago para la prevención
-                      de fraude y la seguridad de la transacción. Solo se activan en las páginas de pago.
                     </td>
                   </tr>
                   <tr>
