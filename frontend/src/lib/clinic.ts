@@ -126,11 +126,11 @@ export const CLINIC_BUSINESS_OPENING_DATE_ISO = '2026-04-13' as const;
  * ficha; no sustituye consentimiento clínico ni cita.
  */
 export const CLINIC_ENTITY_DESCRIPTION_ES: string =
-  'AM Psicología (Clínica Almudena Marchesi): psicoterapia con Almudena Marchesi Fernández en Moncloa, Argüelles y Chamberí, Madrid. Enfoque integrador: ansiedad, depresión, estrés, duelo y dificultades relacionales; individual, pareja, infanto-juvenil y online con criterio. Portal del paciente para citas, pago y mensajería. Cita en Calle de Meléndez Valdés, 1D, 28015. Presencial: jueves; consulta disponibilidad online en portal.';
+  'AM Psicología (Clínica Almudena Marchesi): psicoterapia con Almudena Marchesi Fernández en Moncloa, Argüelles y Chamberí, Madrid. Enfoque integrador: ansiedad, depresión, estrés, duelo y dificultades relacionales; individual, pareja, infanto-juvenil y online con criterio. Cita en Calle de Meléndez Valdés, 28015 Madrid. Presencial: jueves; consulta disponibilidad.';
 
 /** Meta description de la home: orientada a CTR; la dirección detallada queda en FAQ/contacto/JSON-LD de negocio. */
 export const CLINIC_HOME_META_DESCRIPTION_ES: string =
-  'Psicología clínica en Moncloa y Chamberí, Madrid: terapia individual, de pareja e infanto-juvenil. Ansiedad, estado de ánimo, estrés y duelo. Psicóloga colegiada M-38427. Reserva y seguimiento en el portal del paciente.';
+  'Psicología clínica en Moncloa y Chamberí, Madrid: terapia individual, de pareja e infanto-juvenil. Ansiedad, estado de ánimo, estrés y duelo. Psicóloga colegiada M-38427. Contacta para reservar tu cita.';
 
 /**
  * Perfiles sociales verificados a incluir en `sameAs` si no vienen en env
@@ -171,10 +171,10 @@ export const CLINIC_PUBLIC_PRESENCIAL_SCHEDULE_ROWS: ReadonlyArray<{
 ] as const;
 
 /**
- * Resumen en prosa para metadatos y FAQ (no afecta a lógica de reservas del portal).
+ * Resumen en prosa para metadatos y FAQ (no afecta a lógica de reservas).
  */
 export const CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES: string =
-  'Atención presencial en el consultorio: de momento solo los jueves, en franja de mañana (9:00—15:00) y de tarde (16:00—21:00). El resto de días el consultorio permanece cerrado en lo presencial. El calendario de huecos en el portal y otras modalidades (p. ej. online) siguen su propia disponibilidad hasta alinear criterios operativos.';
+  'Atención presencial en el consultorio: de momento solo los jueves, en franja de mañana (9:00—15:00) y de tarde (16:00—21:00). El resto de días el consultorio permanece cerrado en lo presencial. Otras modalidades (p. ej. online) tienen su propia disponibilidad; consúltame directamente.';
 
 export const CLINIC_PAYMENT_METHODS = [
   'Efectivo',
@@ -182,7 +182,7 @@ export const CLINIC_PAYMENT_METHODS = [
   'Stripe',
 ] as const;
 
-export const CLINIC_GOOGLE_MAPS_QUERY = 'Calle de Meléndez Valdés 22, Madrid';
+export const CLINIC_GOOGLE_MAPS_QUERY = 'Calle de Meléndez Valdés, Madrid';
 
 export function getClinicGoogleMapsHref(): string {
   return `https://maps.google.com/?q=${encodeURIComponent(CLINIC_GOOGLE_MAPS_QUERY)}`;

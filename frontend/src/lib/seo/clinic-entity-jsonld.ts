@@ -142,7 +142,7 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
     ],
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Calle de Meléndez Valdés 22, 1D',
+      streetAddress: 'Calle de Meléndez Valdés',
       addressLocality: 'Madrid',
       addressRegion: 'Madrid',
       addressCountry: 'ES',
@@ -224,10 +224,10 @@ export function buildClinicEntityJsonLd(): Record<string, unknown> {
         mainEntity: { '@id': localBusinessId },
         potentialAction: {
           '@type': 'ReserveAction',
-          name: 'Registro y reserva en el portal del paciente',
+          name: 'Contacto y reserva de cita',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${base}/registro-paciente`,
+            urlTemplate: `${base}/contacto`,
           },
         },
       },

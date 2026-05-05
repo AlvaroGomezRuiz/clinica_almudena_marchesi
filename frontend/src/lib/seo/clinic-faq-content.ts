@@ -24,7 +24,7 @@ const siteHost: string = (() => {
 })();
 
 /**
- * FAQs de la home: visión general, acceso, cobertura geográfica y portal.
+ * FAQs de la home: visión general, acceso, cobertura geográfica.
  * Horarios y NAP detallados: página Contacto.
  */
 export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
@@ -62,11 +62,11 @@ export const homePageFaq: ReadonlyArray<ClinicFaqItem> = [
   },
 ];
 
-/** Tarifas, duración, modalidades y política alineada con el portal. */
+/** Tarifas, duración, modalidades y política. */
 export const serviciosPageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Cuáles son las tarifas por sesión?',
-    answer: `En el sitio público se resume como «${CLINIC_TARIFAS_SESION_RESUMEN}». Si tienes cualquier duda, consúltame directamente.`,
+    answer: `Las tarifas orientativas son: ${CLINIC_TARIFAS_SESION_RESUMEN}. Si tienes cualquier duda, consúltame directamente.`,
   },
   {
     question: '¿Cuánto dura una sesión?',
@@ -152,8 +152,8 @@ export const contactoPageFaq: ReadonlyArray<ClinicFaqItem> = [
     answer: `${CLINIC_PUBLIC_PRESENCIAL_HOURS_SUMMARY_ES} En la sección de horario de la página de contacto (${siteHost}) verás el cuadro resumido; las horas concretas de cada cita se acuerdan de forma directa.`,
   },
   {
-    question: '¿Cuál es la dirección exacta y el teléfono de contacto?',
-    answer: `La consulta presencial está en ${CLINIC_ADDRESS}. Teléfono: ${CLINIC_PUBLIC_PHONE_DISPLAY}. Correo: ${CLINIC_CONTACT_EMAIL}. El mapa con enlace a Google Maps está en la tarjeta de ubicación de esta página.`,
+    question: '¿Cómo puedo contactar para pedir cita?',
+    answer: `Puedes llamar al ${CLINIC_PUBLIC_PHONE_DISPLAY} o escribir a ${CLINIC_CONTACT_EMAIL}. También tienes un enlace a Google Maps en la tarjeta de ubicación de esta página para localizar la consulta.`,
   },
   {
     question: '¿Cómo llego en transporte público?',
@@ -163,7 +163,7 @@ export const contactoPageFaq: ReadonlyArray<ClinicFaqItem> = [
   {
     question: '¿Hay aparcamiento cerca de la consulta?',
     answer:
-      'En la zona predominan plazas de aparcamiento en vía pública (regulación según franja y día). Si te desplasas en coche, revisa señalización y tarifas locales. Si necesitas aparcamiento con requisitos concretos, indícalo al reservar.',
+      'En la zona predominan plazas de aparcamiento en vía pública (regulación según franja y día). Si te desplazas en coche, revisa señalización y tarifas locales. Si necesitas aparcamiento con requisitos concretos, indícalo al reservar.',
   },
   {
     question: '¿La consulta es accesible para movilidad reducida?',
@@ -171,7 +171,7 @@ export const contactoPageFaq: ReadonlyArray<ClinicFaqItem> = [
       'El acceso a la finca y a la planta de la consulta dispone de medidas de accesibilidad en edificio residencial. Si requieres asistencia específica o adaptaciones, coméntalo al reservar para orientarte con la mayor precisión posible.',
   },
   {
-    question: '¿Puedo escribir por WhatsApp o solo por el portal?',
+    question: '¿Puedo escribir por WhatsApp?',
     answer:
       'Puedes escribirme por WhatsApp, correo electrónico o teléfono para cualquier duda administrativa o para gestionar tu primera cita. Toda la información sanitaria y clínica se tratará de forma segura conforme a la normativa de privacidad.',
   },

@@ -100,12 +100,20 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const isPagosZone   = pathname.startsWith('/pagos');
   const isLoginPage   = pathname === '/login';
   const isMfaPage     = pathname === '/login/mfa';
+  const isRegisterPage = pathname === '/registro-paciente';
   const isProtected   = isAdminZone || isPortalZone;
 
-  // Público sin tocar Supabase, salvo bajo /login/... (MFA: cookies + AAL).
+  /* ── Portal oculto: redirigir /login, /login/mfa y /registro-paciente
+     a /contacto. El código del portal se mantiene intacto pero no es
+     accesible desde la web pública. Accesos directos a /admin y /portal
+     siguen funcionando para usuarios autenticados. ─────────────────── */
+  if (isLoginPage || isMfaPage || isRegisterPage) {
+    return applyRuntimeHeaders(NextResponse.redirect(new URL('/contacto', request.url)));
+  }
+
+  // Público sin tocar Supabase.
   if (
     !isProtected &&
-    !isLoginPage &&
     !isPagosZone &&
     isPublicPath(pathname) &&
     !pathname.startsWith('/login/')

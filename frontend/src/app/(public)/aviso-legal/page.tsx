@@ -11,7 +11,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
   path: '/aviso-legal',
   title: `Aviso Legal — LSSI, titular y condiciones de uso | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
-    'Identificación del titular, condiciones de uso del sitio ampsicologia.es, portal del paciente, política de cancelación y cumplimiento de la Ley 34/2002 (LSSI-CE).',
+    'Identificación del titular, condiciones de uso del sitio ampsicologia.es, política de cancelación y cumplimiento de la Ley 34/2002 (LSSI-CE).',
   keywords: [
     'aviso legal',
     'LSSI',
@@ -19,7 +19,6 @@ export const metadata: Metadata = buildPublicPageMetadata({
     'psicóloga Madrid',
     'ampsicologia.es',
     'condiciones uso',
-    'portal paciente',
     'cancelación citas',
   ],
   ogType: 'article',
@@ -30,7 +29,7 @@ const webPageJsonLd = buildLegalWebPageJsonLd({
   path: '/aviso-legal',
   name: 'Aviso Legal',
   description:
-    'Identificación del titular del sitio web, condiciones de uso del portal del paciente y política de cancelación conforme a la Ley 34/2002 (LSSI-CE).',
+    'Identificación del titular del sitio web, condiciones de uso y política de cancelación conforme a la Ley 34/2002 (LSSI-CE).',
 });
 
 export default function AvisoLegalPage() {
@@ -76,8 +75,8 @@ export default function AvisoLegalPage() {
                 sanitaria conforme a la normativa vigente.
               </li>
               <li>
-                <strong className="text-ink">Domicilio profesional:</strong> Calle de Meléndez Valdés 22,
-                1D, 28015 Madrid, España
+                <strong className="text-ink">Domicilio profesional:</strong> Calle de Meléndez Valdés,
+                28015 Madrid, España
               </li>
               <li>
                 <strong className="text-ink">Correo electrónico:</strong>{' '}
@@ -108,11 +107,8 @@ export default function AvisoLegalPage() {
             </h2>
             <p>
               El presente aviso legal regula el uso del sitio web, incluyendo la{' '}
-              <strong className="text-ink">web pública informativa</strong>, el{' '}
-              <strong className="text-ink">portal del paciente</strong> (área privada accesible
-              tras registro y autenticación) y el{' '}
-              <strong className="text-ink">panel de administración</strong> (uso exclusivo de la
-              Profesional), así como los servicios profesionales de psicología ofrecidos por
+              <strong className="text-ink">web pública informativa</strong> y los
+              servicios profesionales de psicología ofrecidos por
               Almudena Marchesi Fernández (en adelante, «la Profesional»).
             </p>
             <p className="mt-3">
@@ -133,27 +129,7 @@ export default function AvisoLegalPage() {
             <ul className="list-disc pl-6 space-y-1 text-sm">
               <li>
                 <strong className="text-ink">Web pública:</strong> información sobre la
-                Profesional, su enfoque terapéutico, servicios ofrecidos, datos de contacto y
-                formulario de registro de pacientes.
-              </li>
-              <li>
-                <strong className="text-ink">Registro de pacientes:</strong> proceso de
-                auto-registro con verificación de identidad mediante código OTP enviado al
-                correo electrónico, aceptación explícita de la política de privacidad y
-                consentimiento para el tratamiento de datos de salud.
-              </li>
-              <li>
-                <strong className="text-ink">Portal del paciente:</strong> área privada donde el
-                paciente registrado puede reservar citas viendo disponibilidad real, realizar
-                pagos online (tarjeta, Bizum, Stripe Link, domiciliación SEPA, Klarna; también Apple Pay y Google Pay cuando aplique), gestionar bonos de sesiones,
-                comunicarse con la Profesional mediante mensajería en tiempo real, acceder a
-                recursos terapéuticos asignados, descargar facturas en PDF, y gestionar sus
-                preferencias de notificaciones y privacidad.
-              </li>
-              <li>
-                <strong className="text-ink">Panel de administración:</strong> área de uso exclusivo
-                de la Profesional para la gestión de agenda, fichas clínicas cifradas, facturación,
-                mensajería con pacientes, asignación de recursos y configuración del sistema.
+                Profesional, su enfoque terapéutico, servicios ofrecidos y datos de contacto.
               </li>
             </ul>
           </div>
@@ -163,14 +139,13 @@ export default function AvisoLegalPage() {
               4. Condiciones de reserva, cancelación y pagos no reembolsables
             </h2>
             <p className="mb-3">
-              Al reservar una cita o adquirir un bono a través del portal del paciente, el usuario
+              Al reservar una cita, el usuario
               acepta las siguientes condiciones:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
                 <strong className="text-ink">Reserva:</strong> la reserva de cita queda confirmada
-                una vez completado el pago online o consumida una sesión de bono activo. El sistema
-                genera automáticamente un correo de confirmación al paciente.
+                una vez completado el pago. Se genera automáticamente un correo de confirmación al paciente.
               </li>
               <li>
                 <strong className="text-ink">Pagos no reembolsables:</strong> los importes abonados
@@ -198,8 +173,7 @@ export default function AvisoLegalPage() {
                 del importe, salvo acuerdo expreso y directo con la Profesional.
               </li>
               <li>
-                <strong className="text-ink">Saldo no retirable:</strong> el saldo acumulado en la
-                plataforma (sesiones de bonos o sesiones sueltas) no es convertible a dinero y no
+                <strong className="text-ink">Saldo no retirable:</strong> el saldo acumulado no es convertible a dinero y no
                 puede ser retirado bajo ningún concepto. Únicamente puede ser utilizado para reservar
                 sesiones de los servicios ofrecidos.
               </li>
@@ -207,12 +181,6 @@ export default function AvisoLegalPage() {
                 <strong className="text-ink">Cancelación por la Profesional:</strong> la Profesional
                 podrá cancelar o reprogramar citas por causa justificada, ofreciendo al paciente la
                 posibilidad de reprogramar la sesión.
-              </li>
-              <li>
-                <strong className="text-ink">Bonos de sesiones:</strong> los bonos adquiridos tienen
-                una validez limitada indicada en el momento de la compra. Las sesiones consumidas
-                de un bono no son reembolsables. En caso de cancelación dentro del plazo permitido,
-                la sesión del bono se restituye automáticamente al saldo del paciente.
               </li>
               <li>
                 <strong className="text-ink">Recordatorios:</strong> se envían recordatorios
@@ -240,8 +208,7 @@ export default function AvisoLegalPage() {
                 y Google Pay cuando el dispositivo y la cuenta lo permitan.
               </li>
               <li>
-                La Profesional emitirá factura por cada pago realizado. El paciente puede descargar
-                sus facturas en formato PDF desde el portal del paciente. Las facturas están
+                La Profesional emitirá factura por cada pago realizado. Las facturas están
                 exentas de IVA conforme al artículo 20.Uno.3.º de la Ley 37/1992 del Impuesto
                 sobre el Valor Añadido.
               </li>
@@ -250,12 +217,12 @@ export default function AvisoLegalPage() {
 
           <div>
             <h2 className="font-display text-xl text-ink mb-4">
-              6. Mensajería y comunicaciones
+              6. Comunicaciones
             </h2>
             <p>
-              El portal del paciente incluye un sistema de mensajería en tiempo real para la
-              comunicación entre el paciente y la Profesional. Los mensajes están{' '}
-              <strong className="text-ink">cifrados</strong> conforme a las medidas de seguridad
+              La comunicación entre el paciente y la Profesional se realiza a través de los
+              canales indicados en la página de contacto (teléfono, correo, WhatsApp). Los mensajes
+              se tratan conforme a las medidas de seguridad
               descritas en la{' '}
               <a href="/privacidad" className="text-sage underline underline-offset-2">
                 política de privacidad
@@ -328,11 +295,11 @@ export default function AvisoLegalPage() {
               10. Derecho de exclusión
             </h2>
             <p>
-              La Profesional se reserva el derecho a denegar o retirar el acceso al portal del
-              paciente, sin necesidad de preaviso, a todo aquel usuario que incumpla las presentes
-              condiciones o que haga un uso indebido de la plataforma, incluyendo pero no limitado
-              a intentos de acceso no autorizado, uso abusivo de la mensajería o cualquier
-              actividad que comprometa la seguridad o el funcionamiento del sistema.
+              La Profesional se reserva el derecho a denegar o retirar el acceso a los servicios,
+              sin necesidad de preaviso, a todo aquel usuario que incumpla las presentes
+              condiciones o que haga un uso indebido de los canales de comunicación, incluyendo pero no limitado
+              a intentos de acceso no autorizado o cualquier
+              actividad que comprometa la seguridad del sistema.
             </p>
           </div>
 

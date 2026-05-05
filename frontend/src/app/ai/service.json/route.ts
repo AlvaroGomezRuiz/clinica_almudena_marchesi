@@ -21,7 +21,7 @@ export async function GET(): Promise<NextResponse> {
       telephone: CLINIC_PUBLIC_PHONE_E164,
       address: {
         '@type': 'PostalAddress',
-        streetAddress: 'Calle de Meléndez Valdés 22, 1D',
+        streetAddress: 'Calle de Meléndez Valdés',
         addressLocality: 'Madrid',
         addressRegion: 'Madrid',
         postalCode: CLINIC_POSTAL_CODE,

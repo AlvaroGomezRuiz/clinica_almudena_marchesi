@@ -147,7 +147,7 @@ export default function ContactoPage() {
               </ScrollReveal>
             ))}
 
-            {/* Portal Advisory */}
+            {/* Reserva Advisory */}
             <ScrollReveal delay={0.2}>
               <PremiumCard tilt={false}>
                 <div className="p-6 md:p-8 bg-sage-wash/50 dark:bg-sage-wash/10 rounded-3xl overflow-hidden h-full">
@@ -160,17 +160,17 @@ export default function ContactoPage() {
                         Reserva de Citas
                       </h3>
                       <p className="text-ink-soft text-[0.9rem] leading-relaxed mb-4">
-                        Para garantizar la confidencialidad y la gestión eficiente
-                        de tu historial clínico, todas las reservas se realizan a
-                        través de nuestro portal seguro.
+                        Para reservar tu primera cita o consultar disponibilidad,
+                        ponte en contacto conmigo directamente por teléfono,
+                        correo o WhatsApp. Estaré encantada de atenderte.
                       </p>
                       <Link
-                        href="/login"
+                        href={`tel:${CLINIC_PUBLIC_PHONE_E164}`}
                         className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
                       >
-                        Ir al Portal del Paciente
+                        Llamar ahora
                         <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
-                          arrow_forward
+                          call
                         </span>
                       </Link>
                     </div>

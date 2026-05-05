@@ -27,7 +27,7 @@ export const metadata: Metadata = buildPublicPageMetadata({
   path: '/servicios',
   title: `Servicios — Terapia individual, pareja y online (Madrid) | ${CLINIC_PUBLIC_SITE_HOST_LABEL}`,
   description:
-    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas y bonos: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
+    'Terapia individual, de pareja, infanto-juvenil y online (enlace seguro acordado). Tarifas: consulta clínica en Moncloa / Chamberí, Madrid (Meléndez Valdés).',
   keywords: [
     ...clinicPrimaryKeywordsList(),
     'terapia individual Madrid',

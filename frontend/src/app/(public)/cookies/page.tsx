@@ -91,7 +91,7 @@ export default function CookiesPage() {
                     <td className="px-4 py-3">Técnica / necesaria</td>
                     <td className="px-4 py-3">Sesión / renovación automática</td>
                     <td className="px-4 py-3">
-                      Sesión Supabase Auth (JWT): autenticación del portal de pacientes y administración con
+                      Sesión Supabase Auth (JWT): autenticación con
                       cookies <strong className="text-ink">HttpOnly</strong>,{' '}
                       <strong className="text-ink">Secure</strong> en producción y{' '}
                       <strong className="text-ink">SameSite=Lax</strong>. Estos atributos impiden que
@@ -117,8 +117,7 @@ export default function CookiesPage() {
                     <td className="px-4 py-3">Sesión / 1 año</td>
                     <td className="px-4 py-3">
                       Cookies establecidas por Stripe durante el proceso de pago para la prevención
-                      de fraude y la seguridad de la transacción. Solo se activan en las páginas de pago
-                      del portal del paciente.
+                      de fraude y la seguridad de la transacción. Solo se activan en las páginas de pago.
                     </td>
                   </tr>
                   <tr>

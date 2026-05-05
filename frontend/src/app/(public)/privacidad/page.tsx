@@ -64,7 +64,7 @@ export default function PrivacidadPage() {
               <li><strong className="text-ink">NIF:</strong> 04850571D</li>
               <li><strong className="text-ink">Colegiación:</strong> Col. M-40804 (Colegio Oficial de Psicólogos de Madrid)</li>
               <li><strong className="text-ink">Titulación sanitaria:</strong> Psicología General Sanitaria (habilitación y ejercicio conforme a la normativa vigente y registro colegial).</li>
-              <li><strong className="text-ink">Dirección:</strong> Calle de Meléndez Valdés 22, 1D, 28015 Madrid</li>
+              <li><strong className="text-ink">Dirección:</strong> Calle de Meléndez Valdés, 28015 Madrid</li>
               <li>
                 <strong className="text-ink">Contacto:</strong>{' '}
                 <a className="text-sage underline underline-offset-2" href={`mailto:${CLINIC_CONTACT_EMAIL}`}>
@@ -80,7 +80,7 @@ export default function PrivacidadPage() {
             </h2>
             <p className="mb-3">
               Recogemos los datos estrictamente necesarios para la prestación del servicio y la gestión
-              del consultorio, a través del registro en el portal, la reserva de citas, la mensajería
+              del consultorio, a través de la reserva de citas, la comunicación directa
               y la relación terapéutica:
             </p>
             <ul className="list-disc pl-6 space-y-1 text-sm">
@@ -101,8 +101,7 @@ export default function PrivacidadPage() {
               <li>Prestación del servicio de psicología clínica y sanitaria.</li>
               <li>Gestión de citas (reserva, confirmación, cancelación, recordatorios automáticos por email), comunicación clínica y seguimiento asistencial.</li>
               <li>Facturación, cobro mediante pasarela de pago y cumplimiento de obligaciones contables y fiscales.</li>
-              <li>Gestión de bonos de sesiones (compra, consumo, expiración).</li>
-              <li>Comunicación profesional a través del sistema de mensajería del portal.</li>
+              <li>Comunicación profesional con el paciente.</li>
               <li>Asignación y acceso a recursos terapéuticos (documentos, audios, vídeos).</li>
               <li>Cumplimiento de obligaciones legales en materia sanitaria y de documentación clínica.</li>
               <li>Seguridad de la plataforma digital: registro de accesos a datos sensibles, trazabilidad de operaciones y prevención de accesos no autorizados.</li>
@@ -174,10 +173,7 @@ export default function PrivacidadPage() {
             <p className="mt-3">
               Puede ejercer sus derechos dirigiendo un correo a{' '}
               <strong className="text-ink">{CLINIC_CONTACT_EMAIL}</strong> indicando la petición y acreditando
-              su identidad. Se responderá en los plazos legales (máximo un mes). Adicionalmente, el portal
-              del paciente incluye una sección de <strong className="text-ink">Ajustes</strong> desde la
-              que puede gestionar sus preferencias de notificaciones y solicitar el ejercicio de derechos
-              RGPD de forma digital.
+              su identidad. Se responderá en los plazos legales (máximo un mes).
             </p>
             <p className="mt-3">
               Si no queda satisfecho, puede presentar reclamación ante la{' '}
