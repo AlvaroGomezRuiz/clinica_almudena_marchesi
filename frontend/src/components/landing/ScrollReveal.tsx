@@ -73,19 +73,14 @@ export default function ScrollReveal({
       return;
     }
 
-    /* Flag para evitar que el elemento se oculte de nuevo tras revelarse. */
-    let revealed = false;
-
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (revealed) continue;
-          if (entry.isIntersecting) {
-            revealed = true;
-            node.style.opacity = '1';
-            node.style.transform = visibleTransform;
-            node.style.filter = 'blur(0px)';
-            observer.unobserve(node);
+          const isVisible = entry.isIntersecting && entry.intersectionRatio >= amount;
+          if (node) {
+            node.style.opacity = isVisible ? '1' : '0';
+            node.style.transform = isVisible ? visibleTransform : initialTransform;
+            node.style.filter = isVisible ? 'blur(0px)' : 'blur(4px)';
           }
         }
       },
