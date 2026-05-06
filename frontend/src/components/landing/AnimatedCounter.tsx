@@ -13,12 +13,13 @@ type AnimatedCounterProps = {
   suffix?: string;
   /** CSS class for the number text */
   className?: string;
+  /** If true, the animation starts immediately on mount without IntersectionObserver */
+  autoStart?: boolean;
 };
 
 /**
  * Contador con easeOutQuart en requestAnimationFrame.
- * Antes dependía de framer-motion (useInView). Ahora usa IntersectionObserver
- * nativo para cero coste extra en el bundle público.
+ * Usa IntersectionObserver + fallback setTimeout para sticky sections.
  */
 export default function AnimatedCounter({
   target,
@@ -26,6 +27,7 @@ export default function AnimatedCounter({
   prefix = '',
   suffix = '',
   className = '',
+  autoStart = false,
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [count, setCount] = useState(0);
@@ -40,42 +42,62 @@ export default function AnimatedCounter({
       return;
     }
 
+    const startAnimation = () => {
+      animatingRef.current = true;
+      const startTime = performance.now();
+      const step = (now: number) => {
+        if (!animatingRef.current) return;
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 4);
+        setCount(Math.round(eased * target));
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      };
+      requestAnimationFrame(step);
+    };
+
+    if (autoStart) {
+      startAnimation();
+      return () => {
+        animatingRef.current = false;
+      };
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const inView = entry.isIntersecting && entry.intersectionRatio >= 0.5;
-
-          if (!inView) {
-            /* Reset al salir de viewport para re-animar al volver */
+          if (entry.isIntersecting) {
+            startAnimation();
+          } else {
             setCount(0);
             animatingRef.current = false;
-            continue;
           }
-
-          if (animatingRef.current) continue;
-          animatingRef.current = true;
-
-          const startTime = performance.now();
-          const step = (now: number) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 4);
-            setCount(Math.round(eased * target));
-            if (progress < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
         }
       },
-      { threshold: [0, 0.5, 1] },
+      { threshold: [0, 0.1] },
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
-  }, [target, duration]);
+
+    const fallbackTimer = setTimeout(() => {
+      if (animatingRef.current) return;
+      const rect = node.getBoundingClientRect();
+      const inViewport = rect.top < window.innerHeight && rect.bottom > 0;
+      if (inViewport) startAnimation();
+    }, 500);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(fallbackTimer);
+      animatingRef.current = false;
+    };
+  }, [target, duration, autoStart]);
 
   return (
     <span ref={ref} className={className}>
-      {prefix}{count}{suffix}
+      {prefix}{autoStart ? target : count}{suffix}
     </span>
   );
 }

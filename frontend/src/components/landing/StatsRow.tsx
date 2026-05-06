@@ -5,6 +5,8 @@ import AnimatedCounter from '@/components/landing/AnimatedCounter';
 interface StatsRowProps {
   /** 'default' para fondos canvas, 'light' para fondos oscuros (vídeo) */
   variant?: 'default' | 'light';
+  /** Auto-start counters without waiting for IntersectionObserver (for sticky/hero sections) */
+  autoStart?: boolean;
 }
 
 /**
@@ -12,7 +14,7 @@ interface StatsRowProps {
  * Extracted as a Client Component so it can use AnimatedCounter
  * (which relies on useInView) inside Server Component pages.
  */
-export default function StatsRow({ variant = 'default' }: StatsRowProps) {
+export default function StatsRow({ variant = 'default', autoStart = false }: StatsRowProps) {
   const isLight = variant === 'light';
 
   const numberClass = isLight
@@ -30,7 +32,7 @@ export default function StatsRow({ variant = 'default' }: StatsRowProps) {
   return (
     <div className="flex max-w-5xl flex-col items-stretch justify-center gap-8 px-2 sm:flex-row sm:items-center sm:gap-10 sm:px-0 md:gap-20">
       <div className="flex flex-col items-center">
-        <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} />
+        <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />
         <span className={labelClass}>
           Años de<br />Experiencia
         </span>
@@ -41,6 +43,7 @@ export default function StatsRow({ variant = 'default' }: StatsRowProps) {
           target={50}
           prefix="+"
           className={numberClass}
+          autoStart={autoStart}
         />
         <span className={labelClass}>
           Pacientes<br />Atendidos
