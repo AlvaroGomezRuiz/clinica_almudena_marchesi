@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import TextAnimation from '@/components/ui/scroll-text';
 import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 
@@ -10,14 +11,34 @@ export default function ContactoSummarySection() {
       
       <div className="max-w-4xl mx-auto w-full relative z-10 text-center">
         <ScrollReveal delay={0}>
-          <h2 className="font-display text-5xl md:text-7xl leading-tight mb-8 text-white">
-            Tu bienestar empieza aquí.
-          </h2>
+          <TextAnimation
+            as="h2"
+            text="Tu bienestar empieza aquí."
+            classname="font-display text-5xl md:text-7xl leading-tight mb-8 text-white"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { ease: 'linear' },
+              },
+            }}
+          />
         </ScrollReveal>
         <ScrollReveal delay={0.1}>
-          <p className="text-white/80 text-lg mb-12 max-w-2xl mx-auto">
-            Reserva una primera sesión para explorar cómo este enfoque puede ayudarte en tu momento actual.
-          </p>
+          <TextAnimation
+            as="p"
+            text="Da el primer paso hacia tu cuidado emocional. Si tienes dudas o quieres concertar una cita, escríbeme."
+            classname="text-white/80 text-lg mb-12 max-w-2xl mx-auto"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: { duration: 0.2 },
+              },
+            }}
+          />
         </ScrollReveal>
 
         <ScrollReveal delay={0.2} className="flex flex-col sm:flex-row gap-6 justify-center">

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import TextAnimation from '@/components/ui/scroll-text';
 import Image from 'next/image';
 import PremiumCard from '@/components/ui/PremiumCard';
 import Link from 'next/link';
@@ -36,14 +37,34 @@ export default function SobreMiSummarySection() {
               </span>
             </ScrollReveal>
             <ScrollReveal delay={0.2}>
-              <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-8">
-                Metodología integradora adaptada a tu historia.
-              </h2>
+              <TextAnimation
+                as="h2"
+                text="Metodología integradora adaptada a tu historia."
+                classname="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-8"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
             </ScrollReveal>
             <ScrollReveal delay={0.3}>
-              <p className="text-body-lg text-ink-soft dark:text-white/80 mb-8 leading-relaxed">
-                Enfoque integrador y sistémico: una terapia adaptada a ti, que tiene en cuenta tanto tu mundo interno como tus relaciones y tu contexto.
-              </p>
+              <TextAnimation
+                as="p"
+                text="Mi enfoque clínico se basa en un modelo integrador, donde utilizo diferentes herramientas avaladas científicamente para entender tu problema desde todas sus perspectivas."
+                classname="text-body-lg text-ink-soft dark:text-white/80 mb-8 leading-relaxed"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+              />
             </ScrollReveal>
 
             <ScrollReveal delay={0.4}>
