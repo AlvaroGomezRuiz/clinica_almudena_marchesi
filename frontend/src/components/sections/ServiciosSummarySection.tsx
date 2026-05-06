@@ -30,13 +30,13 @@ export default function ServiciosSummarySection() {
     <section className="w-full bg-transparent overflow-hidden flex flex-col justify-center px-6 md:px-12 py-16 md:py-24 z-30">
 
       <div className="max-w-7xl mx-auto w-full relative z-10 text-center">
-        <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block">
+        <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid dark:text-white/70 mb-4 block">
           Áreas de Intervención
         </span>
         <TextAnimation
           as="h2"
           text="Un espacio a medida de tu proceso."
-          classname="font-display text-4xl md:text-5xl text-ink leading-tight mb-16 italic"
+          classname="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-16 italic"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-center">
@@ -56,7 +56,7 @@ export default function ServiciosSummarySection() {
 
         {/* Stats Row */}
         <div className="mb-12 flex justify-center">
-          <StatsRow />
+          <StatsRow variant="light" />
         </div>
 
         <Link href="/servicios" className="btn-primary inline-flex">

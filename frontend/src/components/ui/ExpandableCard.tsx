@@ -120,17 +120,17 @@ export default function ExpandableCard({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 onClick={() => setIsOpen(false)}
               />
               
               <motion.div
                 layoutId={`card-${id}`}
-                className="relative w-full max-w-3xl max-h-[90vh] bg-canvas rounded-3xl shadow-2xl overflow-y-auto z-10 flex flex-col"
+                className="relative w-full max-w-3xl max-h-[90vh] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-y-auto z-10 flex flex-col"
               >
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-canvas-alt/80 hover:bg-canvas-alt rounded-full text-ink transition-colors"
+                  className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
                   aria-label="Cerrar modal"
                 >
                   <span className="material-symbols-outlined">close</span>
@@ -140,7 +140,7 @@ export default function ExpandableCard({
                   {subtitle && (
                     <motion.span
                       layoutId={`subtitle-${id}`}
-                      className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block"
+                      className="font-mono text-label-sm uppercase tracking-[0.14em] text-white/70 mb-4 block"
                     >
                       {subtitle}
                     </motion.span>
@@ -148,14 +148,14 @@ export default function ExpandableCard({
                   
                   <motion.h3
                     layoutId={`title-${id}`}
-                    className="font-display text-4xl md:text-5xl text-ink text-balance mb-8"
+                    className="font-display text-4xl md:text-5xl text-white text-balance mb-8"
                   >
                     {title}
                   </motion.h3>
 
                   <motion.div
                     layoutId={`content-preview-${id}`}
-                    className="font-body text-lg leading-relaxed text-ink-soft space-y-4 text-left max-w-2xl"
+                    className="font-body text-lg leading-relaxed text-white/90 space-y-4 text-left max-w-2xl"
                   >
                     {description}
                   </motion.div>
@@ -168,7 +168,7 @@ export default function ExpandableCard({
                       className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line"
                     >
                       {tags.map((tag) => (
-                        <span key={tag} className="text-sm bg-sage-wash text-sage px-3 py-1.5 rounded-md">
+                        <span key={tag} className="text-sm bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-md">
                           {tag}
                         </span>
                       ))}

@@ -45,13 +45,13 @@ export default function VideoHero() {
       
       {/* Contenido (Letras) que sí hace scroll de forma natural */}
       <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full">
+        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full pt-32 md:pt-0">
             {/* Elementos del hero con CSS animation (portal-rise) — NO ScrollReveal */}
-            <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/80 dark:text-[#1C1C19]/80 px-4 py-1.5 rounded-pill border border-white/20 dark:border-[#1C1C19]/20 bg-black/20 dark:bg-white/20 backdrop-blur-sm mb-8">
+            <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/90 px-4 py-1.5 rounded-pill border border-white/20 bg-white/10 backdrop-blur-md mb-8 shadow-sm">
               Psicología Clínica · Moncloa
             </span>
 
-            <h1 className="portal-rise portal-rise-delay-1 font-display text-display-1 text-white dark:text-[#1C1C19] text-balance mb-6 drop-shadow-lg dark:drop-shadow-none">
+            <h1 className="portal-rise portal-rise-delay-1 font-display text-display-1 text-white text-balance mb-6 drop-shadow-lg">
               Un espacio para acompañarte{' '}
               <span className="italic">en tu proceso</span>.
             </h1>
@@ -61,10 +61,10 @@ export default function VideoHero() {
             </p>
 
             <div className="portal-rise portal-rise-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/contacto" className="bg-black/30 dark:bg-white/20 backdrop-blur-md text-white dark:text-[#1C1C19] font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 dark:border-[#1C1C19]/20 hover:bg-black/40 dark:hover:bg-white/30 transition-colors">
+              <Link href="/contacto" className="bg-white/10 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-white/20 transition-all shadow-lg hover:shadow-xl">
                 Contactar
               </Link>
-              <Link href="/enfoque" className="bg-black/30 dark:bg-white/20 backdrop-blur-md text-white dark:text-[#1C1C19] font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 dark:border-[#1C1C19]/20 hover:bg-black/40 dark:hover:bg-white/30 transition-colors">
+              <Link href="/enfoque" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-black/50 transition-all shadow-lg hover:shadow-xl">
                 Conoce mi enfoque
               </Link>
             </div>

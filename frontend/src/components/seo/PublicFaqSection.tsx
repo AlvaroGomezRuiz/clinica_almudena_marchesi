@@ -42,18 +42,18 @@ export default function PublicFaqSection({
     >
       <div className="max-w-3xl mx-auto">
         <ScrollReveal>
-          <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block text-center">
+          <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid dark:text-white/70 mb-4 block text-center">
             {eyebrow}
           </span>
           <h2
             id={id}
-            className="font-display text-display-2 text-ink mb-10 text-balance text-center"
+            className="font-display text-display-2 text-ink dark:text-white mb-10 text-balance text-center"
           >
             {heading}
           </h2>
         </ScrollReveal>
         <dl
-          className="h-fit rounded-lg border border-line p-2 bg-[#F2F2F2] dark:bg-[#111111] overflow-hidden"
+          className="h-fit rounded-lg border border-line dark:border-white/10 p-2 bg-[#F2F2F2] dark:bg-black/20 dark:backdrop-blur-md overflow-hidden"
         >
           {items.map((item, index) => {
             const isOpen: boolean = activeIndex === index;
@@ -65,7 +65,7 @@ export default function PublicFaqSection({
                 key={item.question}
                 className={cn(
                   'overflow-hidden',
-                  index !== items.length - 1 && 'border-b border-line',
+                  index !== items.length - 1 && 'border-b border-line dark:border-white/10',
                 )}
               >
                 <dt className="m-0">

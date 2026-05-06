@@ -30,19 +30,19 @@ export default function SobreMiSummarySection() {
 
           {/* Texto */}
           <div className="order-1 lg:order-2">
-            <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage mb-4 block">
+            <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage dark:text-white/70 mb-4 block">
               Sobre Mí
             </span>
             <TextAnimation
               as="h2"
               text="Metodología integradora adaptada a tu historia."
-              classname="font-display text-4xl md:text-5xl text-ink leading-tight mb-8"
+              classname="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-8"
               variants={{
-                hidden: { filter: 'blur(8px)', opacity: 0, y: 20 },
-                visible: { filter: 'blur(0px)', opacity: 1, y: 0, transition: { duration: 0.5 } }
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
               }}
             />
-            <p className="text-body-lg text-ink-soft mb-8 leading-relaxed">
+            <p className="text-body-lg text-ink-soft dark:text-white/80 mb-8 leading-relaxed">
               Enfoque integrador y sistémico: una terapia adaptada a ti, que tiene en cuenta tanto tu mundo interno como tus relaciones y tu contexto.
             </p>
 

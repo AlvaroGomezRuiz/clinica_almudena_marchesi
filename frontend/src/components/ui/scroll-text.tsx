@@ -27,13 +27,11 @@ export default function TextAnimation({
 
   const defaultVariants: Variants = {
     hidden: { 
-      filter: 'blur(10px)', 
       opacity: 0, 
       y: direction === 'up' ? 20 : direction === 'down' ? -20 : 0,
       x: direction === 'left' ? 20 : direction === 'right' ? -20 : 0
     },
     visible: {
-      filter: 'blur(0px)',
       opacity: 1,
       y: 0,
       x: 0,

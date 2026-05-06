@@ -25,8 +25,6 @@ export function BlurVignette({
       className={cn('relative', classname)}
       style={{
         borderRadius: radius,
-        maskImage: `linear-gradient(to bottom, transparent, black ${transitionLength}, black calc(100% - ${transitionLength}), transparent), linear-gradient(to right, transparent, black ${transitionLength}, black calc(100% - ${transitionLength}), transparent)`,
-        maskComposite: 'intersect',
       }}
     >
       <div

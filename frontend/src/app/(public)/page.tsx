@@ -109,10 +109,10 @@ export default function HomePage() {
         <ContactoSummarySection />
 
         {/* FAQ final */}
-        <div className="relative z-50 bg-canvas rounded-t-3xl pt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)]">
+        <div className="relative z-50 bg-transparent rounded-t-3xl pt-10">
           <PublicFaqSection
             id="faq-inicio"
-            className="bg-canvas"
+            className="bg-transparent"
             heading="Dudas frecuentes antes de reservar"
             items={homePageFaq}
           />

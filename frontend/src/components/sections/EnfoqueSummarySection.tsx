@@ -31,16 +31,16 @@ export default function EnfoqueSummarySection() {
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
         <div className="mb-12 md:mb-16 text-center max-w-4xl mx-auto">
-          <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block">
+          <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid dark:text-white/70 mb-4 block">
             Filosofía del acompañamiento
           </span>
           <TextAnimation
             as="h2"
             text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
-            classname="font-display text-3xl md:text-5xl text-ink leading-tight text-balance italic"
+            classname="font-display text-3xl md:text-5xl text-ink dark:text-white leading-tight text-balance italic"
             variants={{
-              hidden: { filter: 'blur(8px)', opacity: 0, y: 20 },
-              visible: { filter: 'blur(0px)', opacity: 1, y: 0, transition: { duration: 0.5 } }
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
             }}
           />
         </div>
