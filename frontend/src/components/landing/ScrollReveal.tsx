@@ -87,6 +87,22 @@ export default function ScrollReveal({
       { threshold: [0, amount, 1] },
     );
     observer.observe(node);
+
+    /* Verificación inmediata: si el elemento ya está en viewport al montar
+       (ej. hero, primer fold), lo revelamos sin esperar al callback del IO. */
+    const rect = node.getBoundingClientRect();
+    const inViewport = rect.top < window.innerHeight && rect.bottom > 0;
+    if (inViewport) {
+      /* Defer para que la transición CSS arranque tras el primer frame. */
+      requestAnimationFrame(() => {
+        if (node) {
+          node.style.opacity = '1';
+          node.style.transform = visibleTransform;
+          node.style.filter = 'blur(0px)';
+        }
+      });
+    }
+
     return () => observer.disconnect();
   }, [amount, initialTransform, visibleTransform]);
 

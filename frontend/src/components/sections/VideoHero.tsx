@@ -24,9 +24,9 @@ export default function VideoHero() {
           preload="metadata"
           className="w-full h-full object-cover"
         >
-          {/* Vídeo de naturaleza serena — Pixabay License (libre de derechos) */}
+          {/* Vídeo de naturaleza serena — Pexels License (libre de derechos), self-hosted */}
           <source
-            src="https://cdn.pixabay.com/video/2024/09/04/229585_large.mp4"
+            src="/videos/hero-nature.mp4"
             type="video/mp4"
           />
         </video>
