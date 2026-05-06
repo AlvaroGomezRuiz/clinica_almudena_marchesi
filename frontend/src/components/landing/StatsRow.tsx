@@ -31,14 +31,14 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
 
   return (
     <div className="flex max-w-5xl flex-col items-stretch justify-center gap-8 px-2 sm:flex-row sm:items-center sm:gap-10 sm:px-0 md:gap-20">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '0s' }}>
         <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />
         <span className={labelClass}>
           Años de<br />Experiencia
         </span>
       </div>
       <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '1.5s' }}>
         <AnimatedCounter
           target={50}
           prefix="+"
@@ -50,7 +50,7 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
         </span>
       </div>
       <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '3s' }}>
         <span className={numberClass}>&#8734;</span>
         <span className={labelClass}>
           Compromiso<br />Ético

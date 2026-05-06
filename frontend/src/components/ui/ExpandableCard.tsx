@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PremiumCard from './PremiumCard';
 
@@ -9,6 +10,7 @@ interface ExpandableCardProps {
   title: string;
   subtitle?: string;
   description: React.ReactNode;
+  previewText?: React.ReactNode;
   tags?: string[];
   className?: string;
 }
@@ -18,11 +20,17 @@ export default function ExpandableCard({
   title,
   subtitle,
   description,
+  previewText,
   tags,
   className = '',
 }: ExpandableCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -77,7 +85,7 @@ export default function ExpandableCard({
               layoutId={`content-preview-${id}`}
               className="font-body text-[0.95rem] leading-relaxed text-ink-soft line-clamp-3 mb-6"
             >
-              {description}
+              {previewText || description}
             </motion.div>
 
             <div className="mt-auto flex justify-center items-center pt-4 border-t border-line w-full">
@@ -103,73 +111,76 @@ export default function ExpandableCard({
         </PremiumCard>
       </motion.div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsOpen(false)}
-            />
-            
-            <motion.div
-              layoutId={`card-${id}`}
-              className="relative w-full max-w-3xl max-h-[90vh] bg-surface dark:bg-surface-alt rounded-3xl shadow-2xl overflow-y-auto z-10 flex flex-col"
-            >
-              <button
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 md:p-12">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-canvas-alt/80 hover:bg-canvas-alt rounded-full text-ink transition-colors"
-                aria-label="Cerrar modal"
+              />
+              
+              <motion.div
+                layoutId={`card-${id}`}
+                className="relative w-full max-w-3xl max-h-[90vh] bg-canvas rounded-3xl shadow-2xl overflow-y-auto z-10 flex flex-col"
               >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-
-              <div className="p-8 md:p-12 flex flex-col items-center text-center">
-                {subtitle && (
-                  <motion.span
-                    layoutId={`subtitle-${id}`}
-                    className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block"
-                  >
-                    {subtitle}
-                  </motion.span>
-                )}
-                
-                <motion.h3
-                  layoutId={`title-${id}`}
-                  className="font-display text-4xl md:text-5xl text-ink text-balance mb-8"
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-canvas-alt/80 hover:bg-canvas-alt rounded-full text-ink transition-colors"
+                  aria-label="Cerrar modal"
                 >
-                  {title}
-                </motion.h3>
+                  <span className="material-symbols-outlined">close</span>
+                </button>
 
-                <motion.div
-                  layoutId={`content-preview-${id}`}
-                  className="font-body text-lg leading-relaxed text-ink-soft space-y-4 text-left max-w-2xl"
-                >
-                  {description}
-                </motion.div>
-                
-                {tags && tags.length > 0 && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line"
+                <div className="p-8 md:p-12 flex flex-col items-center text-center">
+                  {subtitle && (
+                    <motion.span
+                      layoutId={`subtitle-${id}`}
+                      className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block"
+                    >
+                      {subtitle}
+                    </motion.span>
+                  )}
+                  
+                  <motion.h3
+                    layoutId={`title-${id}`}
+                    className="font-display text-4xl md:text-5xl text-ink text-balance mb-8"
                   >
-                    {tags.map((tag) => (
-                      <span key={tag} className="text-sm bg-sage-wash text-sage px-3 py-1.5 rounded-md">
-                        {tag}
-                      </span>
-                    ))}
+                    {title}
+                  </motion.h3>
+
+                  <motion.div
+                    layoutId={`content-preview-${id}`}
+                    className="font-body text-lg leading-relaxed text-ink-soft space-y-4 text-left max-w-2xl"
+                  >
+                    {description}
                   </motion.div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                  
+                  {tags && tags.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line"
+                    >
+                      {tags.map((tag) => (
+                        <span key={tag} className="text-sm bg-sage-wash text-sage px-3 py-1.5 rounded-md">
+                          {tag}
+                        </span>
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }

@@ -22,7 +22,7 @@ export default function SobreMiSummarySection() {
                   alt="Almudena Marchesi, psicóloga clínica en su consulta de Moncloa, Madrid"
                   width={500}
                   height={650}
-                  className="w-full object-cover aspect-[3/4]"
+                  className="w-full object-cover aspect-[3/4] object-top"
                   loading="lazy"
                   sizes="(min-width: 1024px) 30vw, 80vw"
                 />

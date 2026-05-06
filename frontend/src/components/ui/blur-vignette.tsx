@@ -30,10 +30,11 @@ export function BlurVignette({
       }}
     >
       <div
-        className="absolute inset-0 z-10 pointer-events-none"
+        className="absolute inset-0 z-10 pointer-events-none shadow-[inset_0_0_15px_0px_var(--color-canvas)] md:shadow-[inset_0_0_var(--bv-blur)_var(--bv-inset)_var(--color-canvas)]"
         style={{
-          boxShadow: `inset 0 0 ${blur} ${inset} var(--color-canvas)`,
-        }}
+          '--bv-blur': blur,
+          '--bv-inset': inset,
+        } as React.CSSProperties}
       />
       {children}
     </div>

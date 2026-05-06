@@ -6,6 +6,7 @@ import ScrollReveal from '@/components/landing/ScrollReveal';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
+import ExpandableCard from '@/components/ui/ExpandableCard';
 import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { sobreMiPageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
@@ -208,38 +209,36 @@ export default function SobreMiPage() {
           </ScrollReveal>
 
           {/* Tres columnas en escritorio (misma idea que bloques en la home); interior sigue estilo enfoque */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 h-auto items-stretch">
             {CREDENTIALS.map((cred, i) => (
-              <ScrollReveal key={cred.title} delay={i * 0.08}>
-                <PremiumCard tilt={false} className="h-full">
-                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10 items-center justify-center">
-                    <h3 className="font-display text-display-3 text-balance text-ink">
-                      {cred.title}
-                    </h3>
-                    <p className="text-left font-body text-[0.92rem] leading-relaxed text-ink-soft">
-                      {cred.body}
-                    </p>
-                    <ul className="mt-auto space-y-3 text-left">
-                      {cred.items.map((item) => (
-                        <li
-                          key={item}
-                          className="flex items-center gap-3 text-sm text-ink-soft font-body"
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 shrink-0 rounded-full ${
-                              cred.accentColor === 'warm'
-                                ? 'bg-warm'
-                                : cred.accentColor === 'sage-mid'
-                                  ? 'bg-sage-mid'
-                                  : 'bg-sage'
-                            }`}
-                          />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </PremiumCard>
+              <ScrollReveal key={cred.title} delay={i * 0.08} className="h-full">
+                <ExpandableCard
+                  id={`cred-${i}`}
+                  title={cred.title}
+                  previewText={cred.body}
+                  description={
+                    <div className="text-left w-full">
+                      <p className="mb-6 leading-relaxed">{cred.body}</p>
+                      <ul className="space-y-4">
+                        {cred.items.map((item) => (
+                          <li key={item} className="flex items-start gap-3 text-ink-soft">
+                            <span 
+                              className={`mt-1.5 w-1.5 h-1.5 shrink-0 rounded-full ${
+                                cred.accentColor === 'warm'
+                                  ? 'bg-warm'
+                                  : cred.accentColor === 'sage-mid'
+                                    ? 'bg-sage-mid'
+                                    : 'bg-sage'
+                              }`}
+                            />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  }
+                  className="h-full"
+                />
               </ScrollReveal>
             ))}
           </div>
