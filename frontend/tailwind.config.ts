@@ -126,7 +126,7 @@ const config: Config = {
       },
 
       fontSize: {
-        'display-1': ['clamp(3rem, 7vw, 6.5rem)', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '300' }],
+        'display-1': ['clamp(2.5rem, 7vw, 6.5rem)', { lineHeight: '1.05', letterSpacing: '-0.02em', fontWeight: '300' }],
         'display-2': ['clamp(2.2rem, 4.5vw, 4rem)', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '300' }],
         'display-3': ['clamp(1.6rem, 3vw, 2.5rem)', { lineHeight: '1.15', letterSpacing: '-0.01em', fontWeight: '400' }],
         'body-lg': ['clamp(1.05rem, 1.2vw, 1.25rem)', { lineHeight: '1.7', fontWeight: '300' }],

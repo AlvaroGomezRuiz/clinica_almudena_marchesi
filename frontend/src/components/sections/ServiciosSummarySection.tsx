@@ -57,8 +57,32 @@ export default function ServiciosSummarySection() {
             <ScrollReveal key={i} delay={0.2 + (i * 0.1)} className="h-full">
               <PremiumCard tilt={false} className="h-full">
                 <div className="p-8 flex flex-col h-full items-center justify-center group">
-                  <h3 className="font-display text-2xl text-ink mb-3">{service.title}</h3>
-                  <p className="text-ink-soft font-body text-sm leading-relaxed mb-6">{service.desc}</p>
+                  <TextAnimation
+                    as="h3"
+                    text={service.title}
+                    classname="font-display text-2xl text-ink mb-3"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { ease: 'linear' },
+                      },
+                    }}
+                  />
+                  <TextAnimation
+                    as="p"
+                    text={service.desc}
+                    classname="text-ink-soft font-body text-sm leading-relaxed mb-6"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { duration: 0.2 },
+                      },
+                    }}
+                  />
                   
                   <Link href="/servicios" className="mt-auto font-body text-sm font-medium text-sage flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
                     Saber más <span className="material-symbols-outlined text-lg">arrow_forward</span>

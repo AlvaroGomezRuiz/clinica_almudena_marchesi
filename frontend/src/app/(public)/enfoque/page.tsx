@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import TextAnimation from '@/components/ui/scroll-text';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
@@ -78,18 +79,34 @@ export default function EnfoquePage() {
               </span>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
-              <h1 className="font-display text-display-1 text-ink text-balance mb-8">
-                Enfoque integrador y sistémico: una terapia{' '}
-                <span className="italic">adaptada a ti</span>.
-              </h1>
+              <TextAnimation
+                as="h1"
+                text="Enfoque integrador y sistémico: una terapia adaptada a ti."
+                classname="font-display text-display-1 text-ink text-balance mb-8"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
             </ScrollReveal>
             <ScrollReveal delay={0.16}>
-              <p className="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty">
-                Una terapia que tiene en cuenta tanto tu mundo interno como tus
-                relaciones y tu contexto. Entiendo la terapia como un proceso
-                compartido donde el rigor académico se pone al servicio de tu
-                bienestar emocional.
-              </p>
+              <TextAnimation
+                as="p"
+                text="Una terapia que tiene en cuenta tanto tu mundo interno como tus relaciones y tu contexto. Entiendo la terapia como un proceso compartido donde el rigor académico se pone al servicio de tu bienestar emocional."
+                classname="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+              />
             </ScrollReveal>
           </div>
           <div className="lg:col-span-5">
@@ -124,12 +141,32 @@ export default function EnfoquePage() {
               >
                 <PremiumCard tilt={false} className="h-full">
                   <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10 items-center justify-center">
-                    <h2 className="font-display text-display-3 text-balance text-ink">
-                      {card.title}
-                    </h2>
-                    <p className="font-body text-[0.95rem] leading-relaxed text-ink-soft max-w-lg">
-                      {card.body}
-                    </p>
+                    <TextAnimation
+                      as="h2"
+                      text={card.title}
+                      classname="font-display text-display-3 text-balance text-ink"
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { ease: 'linear' },
+                        },
+                      }}
+                    />
+                    <TextAnimation
+                      as="p"
+                      text={card.body}
+                      classname="font-body text-[0.95rem] leading-relaxed text-ink-soft max-w-lg"
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.2 },
+                        },
+                      }}
+                    />
                   </div>
                 </PremiumCard>
               </ScrollReveal>
@@ -142,25 +179,46 @@ export default function EnfoquePage() {
       <section className="py-24 md:py-36 px-6 md:px-12">
         <div className="max-w-3xl mx-auto text-center">
           <ScrollReveal>
-            <h2 className="font-display text-display-2 text-ink mb-10 italic text-balance">
-              Un puente entre la ciencia y la sensibilidad
-            </h2>
+            <TextAnimation
+              as="h2"
+              text="Un puente entre la ciencia y la sensibilidad"
+              classname="font-display text-display-2 text-ink mb-10 italic text-balance"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
             <div className="space-y-6 text-body-lg text-ink-soft leading-relaxed text-left md:text-justify">
-              <p>
-                Entiendo la terapia como un proceso compartido. Mi papel no es
-                darte respuestas desde fuera, sino acompañarte, ayudándote a
-                entender lo que te ocurre y ofreciéndote herramientas para
-                afrontarlo.
-              </p>
-              <p>
-                Ubicada en el corazón de Moncloa, mi consulta está diseñada para
-                ser ese refugio urbano donde el ruido exterior cesa, permitiendo
-                que emerja tu propia voz. Un enfoque integrador donde el rigor
-                académico de la Psicología Clínica se pone al servicio de tu
-                bienestar emocional.
-              </p>
+              <TextAnimation
+                as="p"
+                text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+              />
+              <TextAnimation
+                as="p"
+                text="Ubicada en el corazón de Moncloa, mi consulta está diseñada para ser ese refugio urbano donde el ruido exterior cesa, permitiendo que emerja tu propia voz. Un enfoque integrador donde el rigor académico de la Psicología Clínica se pone al servicio de tu bienestar emocional."
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+              />
             </div>
           </ScrollReveal>
 

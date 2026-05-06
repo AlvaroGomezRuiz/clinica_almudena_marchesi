@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import TextAnimation from '@/components/ui/scroll-text';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
@@ -120,16 +121,34 @@ export default function ServiciosPage() {
             </span>
           </ScrollReveal>
           <ScrollReveal delay={0.08}>
-            <h1 className="font-display text-display-1 text-ink max-w-4xl text-balance mb-6">
-              Un espacio a <span className="italic">medida</span> de tu proceso.
-            </h1>
+            <TextAnimation
+              as="h1"
+              text="Un espacio a medida de tu proceso."
+              classname="font-display text-display-1 text-ink max-w-4xl text-balance mb-6"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
           </ScrollReveal>
           <ScrollReveal delay={0.16}>
-            <p className="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty">
-              Cada proceso es único. Ofrezco diferentes modalidades de terapia
-              adaptadas a tus necesidades actuales, con el rigor clínico y la
-              calidez que tu bienestar requiere.
-            </p>
+            <TextAnimation
+              as="p"
+              text="Cada proceso es único. Ofrezco diferentes modalidades de terapia adaptadas a tus necesidades actuales, con el rigor clínico y la calidez que tu bienestar requiere."
+              classname="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.2 },
+                },
+              }}
+            />
           </ScrollReveal>
           <ScrollReveal delay={0.24}>
             <p className="mt-8 max-w-2xl rounded-2xl border border-line bg-canvas-sage/40 px-5 py-4 font-body text-[0.95rem] leading-relaxed text-ink-soft text-pretty dark:bg-canvas-alt/60">
@@ -164,12 +183,32 @@ export default function ServiciosPage() {
                     <span className="inline-block font-mono text-label-sm uppercase tracking-[0.1em] text-sage bg-sage-wash px-3 py-1 rounded-pill mb-5">
                       {service.tag}
                     </span>
-                    <h2 className="font-display text-display-3 text-ink mb-3">
-                      {service.title}
-                    </h2>
-                    <p className="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6">
-                      {service.body}
-                    </p>
+                    <TextAnimation
+                      as="h2"
+                      text={service.title}
+                      classname="font-display text-display-3 text-ink mb-3"
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { ease: 'linear' },
+                        },
+                      }}
+                    />
+                    <TextAnimation
+                      as="p"
+                      text={service.body}
+                      classname="text-ink-soft leading-relaxed font-body text-[0.92rem] mb-6"
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: {
+                          opacity: 1,
+                          y: 0,
+                          transition: { duration: 0.2 },
+                        },
+                      }}
+                    />
                   </div>
                   <div className="flex flex-col items-center gap-3 pt-4 border-t border-line">
                     <div>
@@ -209,13 +248,32 @@ export default function ServiciosPage() {
       <section className="py-16 md:py-20 px-6 md:px-12">
         <div className="max-w-screen-xl mx-auto text-center">
           <ScrollReveal>
-            <h2 className="font-display text-display-3 text-ink mb-4 italic text-balance">
-              ¿No sabes qué modalidad es la mejor para ti?
-            </h2>
-            <p className="text-ink-soft mb-8 max-w-lg mx-auto text-pretty">
-              Escríbeme sin compromiso y valoraremos juntos tu caso para encontrar
-              el camino que mejor se adapte a tu situación.
-            </p>
+            <TextAnimation
+              as="h2"
+              text="¿No sabes qué modalidad es la mejor para ti?"
+              classname="font-display text-display-3 text-ink mb-4 italic text-balance"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
+            <TextAnimation
+              as="p"
+              text="Escríbeme sin compromiso y valoraremos juntos tu caso para encontrar el camino que mejor se adapte a tu situación."
+              classname="text-ink-soft mb-8 max-w-lg mx-auto text-pretty"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.2 },
+                },
+              }}
+            />
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/contacto" className="btn-primary text-center">
                 Contactar ahora

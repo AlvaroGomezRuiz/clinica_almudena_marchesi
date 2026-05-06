@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PremiumCard from './PremiumCard';
+import TextAnimation from './scroll-text';
 
 interface ExpandableCardProps {
   id: string;
@@ -73,20 +74,34 @@ export default function ExpandableCard({
               </motion.span>
             )}
             
-            <motion.h3
-              layoutId={`title-${id}`}
-              className="font-display text-display-3 text-ink text-balance mb-4"
-            >
-              {title}
-            </motion.h3>
+            <TextAnimation
+              as="h3"
+              text={title}
+              classname="font-display text-display-3 text-ink text-balance mb-4"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
 
             {/* Preview texto cortado */}
-            <motion.div
-              layoutId={`content-preview-${id}`}
-              className="font-body text-[0.95rem] leading-relaxed text-ink-soft line-clamp-3 mb-6"
-            >
-              {previewText || description}
-            </motion.div>
+            <TextAnimation
+              as="div"
+              text={typeof previewText === 'string' ? previewText : typeof description === 'string' ? description : ''}
+              classname="font-body text-[0.95rem] leading-relaxed text-ink-soft line-clamp-3 mb-6"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.2 },
+                },
+              }}
+            />
 
             <div className="mt-auto flex justify-center items-center pt-4 border-t border-line w-full">
               {tags && tags.length > 0 && (

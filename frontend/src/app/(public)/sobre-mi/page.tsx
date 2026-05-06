@@ -3,6 +3,7 @@ import Image from 'next/image';
 
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import TextAnimation from '@/components/ui/scroll-text';
 import Photo3D from '@/components/landing/Photo3D';
 import CTASection from '@/components/sections/CTASection';
 import PremiumCard from '@/components/ui/PremiumCard';
@@ -99,18 +100,34 @@ export default function SobreMiPage() {
               </span>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
-              <h1 className="font-display text-display-1 text-ink text-balance">
-                Un espacio para acompañarte{' '}
-                <span className="italic text-sage">en tu proceso</span>.
-              </h1>
+              <TextAnimation
+                as="h1"
+                text="Un espacio para acompañarte en tu proceso."
+                classname="font-display text-display-1 text-ink text-balance"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
-              <p className="text-body-lg text-ink-soft leading-relaxed text-pretty max-w-lg">
-                Acompaño a personas en sus procesos de cambio y crecimiento
-                personal. Soy psicóloga y en mi consulta de Moncloa
-                encontrarás un espacio seguro, tranquilo y confidencial, donde
-                poder parar, escucharte y trabajar en tu bienestar.
-              </p>
+              <TextAnimation
+                as="p"
+                text="Acompaño a personas en sus procesos de cambio y crecimiento personal. Soy psicóloga y en mi consulta de Moncloa encontrarás un espacio seguro, tranquilo y confidencial, donde poder parar, escucharte y trabajar en tu bienestar."
+                classname="text-body-lg text-ink-soft leading-relaxed text-pretty max-w-lg"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+              />
             </ScrollReveal>
           </div>
           <div className="lg:col-span-7 flex justify-center">
@@ -163,26 +180,46 @@ export default function SobreMiPage() {
 
           <div className="order-1 lg:order-2 space-y-8">
             <ScrollReveal>
-              <h2 className="font-display text-display-2 text-ink text-balance">
-                La Filosofía del Acompañamiento
-              </h2>
+              <TextAnimation
+                as="h2"
+                text="La Filosofía del Acompañamiento"
+                classname="font-display text-display-2 text-ink text-balance"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
               <div className="space-y-6 text-ink-soft text-body-lg leading-relaxed">
-                <p>
-                  Entiendo la terapia como un proceso compartido. Mi papel no
-                  es darte respuestas desde fuera, sino{' '}
-                  <strong className="text-ink font-medium">acompañarte</strong>,
-                  ayudándote a entender lo que te ocurre y ofreciéndote
-                  herramientas para afrontarlo.
-                </p>
-                <p>
-                  En mi consulta en Moncloa, Madrid, priorizo la autenticidad y
-                  la calidez. Creo firmemente que el vínculo terapéutico es la
-                  herramienta más poderosa para la sanación. Cada persona es un
-                  universo único, y mi enfoque se adapta a la singularidad de tu
-                  historia.
-                </p>
+                <TextAnimation
+                  as="p"
+                  text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.2 },
+                    },
+                  }}
+                />
+                <TextAnimation
+                  as="p"
+                  text="En mi consulta en Moncloa, Madrid, priorizo la autenticidad y la calidez. Creo firmemente que el vínculo terapéutico es la herramienta más poderosa para la sanación. Cada persona es un universo único, y mi enfoque se adapta a la singularidad de tu historia."
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.2 },
+                    },
+                  }}
+                />
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
@@ -202,9 +239,19 @@ export default function SobreMiPage() {
       <section className="py-24 md:py-36 px-6 md:px-12">
         <div className="max-w-screen-xl mx-auto">
           <ScrollReveal className="text-center mb-16">
-            <h2 className="font-display text-display-2 text-ink mb-4">
-              Formación y Experiencia
-            </h2>
+            <TextAnimation
+              as="h2"
+              text="Formación y Experiencia"
+              classname="font-display text-display-2 text-ink mb-4"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
             <div className="w-16 h-[2px] bg-sage/20 mx-auto" />
           </ScrollReveal>
 

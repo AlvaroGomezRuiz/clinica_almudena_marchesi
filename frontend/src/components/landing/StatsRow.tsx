@@ -18,27 +18,29 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
   const isLight = variant === 'light';
 
   const numberClass = isLight
-    ? 'font-display text-4xl text-white/95 font-light drop-shadow-md'
-    : 'font-display text-4xl text-sage font-light';
+    ? 'font-display text-3xl md:text-4xl text-white/95 font-light drop-shadow-md'
+    : 'font-display text-3xl md:text-4xl text-sage font-light';
 
   const labelClass = isLight
-    ? 'font-mono text-label-sm uppercase text-white/70 mt-1 text-center drop-shadow-sm'
-    : 'font-mono text-label-sm uppercase text-ink-muted mt-1 text-center';
+    ? 'font-mono text-[0.65rem] md:text-label-sm uppercase text-white/70 mt-1 text-center drop-shadow-sm'
+    : 'font-mono text-[0.65rem] md:text-label-sm uppercase text-ink-muted mt-1 text-center';
 
   const dividerClass = isLight
     ? 'hidden h-12 w-px bg-white/20 sm:block'
     : 'hidden h-12 w-px bg-line sm:block';
 
   return (
-    <div className="flex max-w-5xl flex-col items-stretch justify-center gap-8 px-2 sm:flex-row sm:items-center sm:gap-10 sm:px-0 md:gap-20">
-      <div className="flex flex-col items-center animate-float">
+    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 px-4">
+      {/* Años de Experiencia */}
+      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/20 bg-transparent backdrop-blur-sm animate-float">
         <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />
         <span className={labelClass}>
           Años de<br />Experiencia
         </span>
       </div>
-      <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center animate-float">
+
+      {/* Pacientes Atendidos */}
+      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm animate-float [animation-delay:0.2s]">
         <AnimatedCounter
           target={50}
           prefix="+"
@@ -49,8 +51,9 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
           Pacientes<br />Atendidos
         </span>
       </div>
-      <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center animate-float">
+
+      {/* Compromiso Ético */}
+      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm animate-float [animation-delay:0.4s]">
         <span className={numberClass}>&#8734;</span>
         <span className={labelClass}>
           Compromiso<br />Ético

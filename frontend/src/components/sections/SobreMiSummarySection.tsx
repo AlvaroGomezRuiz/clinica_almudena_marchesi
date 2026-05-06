@@ -70,7 +70,19 @@ export default function SobreMiSummarySection() {
             <ScrollReveal delay={0.4}>
               <PremiumCard tilt={false} className="mb-6">
                 <div className="p-6 md:p-8">
-                  <h3 className="font-display text-xl text-ink mb-4 text-center">Formación Académica</h3>
+                  <TextAnimation
+                    as="h3"
+                    text="Formación Académica"
+                    classname="font-display text-xl text-ink mb-4 text-center"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { ease: 'linear' },
+                      },
+                    }}
+                  />
                   <ul className="space-y-3 text-ink-soft font-body text-sm">
                     <li className="flex items-start gap-3"><span className="text-sage mt-1 shrink-0">•</span> Licenciada en Psicología. Universidad Francisco de Vitoria</li>
                     <li className="flex items-start gap-3"><span className="text-sage mt-1 shrink-0">•</span> Máster En Psicologia General Sanitaria. Universidad Francisco de Vitoria</li>
@@ -85,7 +97,19 @@ export default function SobreMiSummarySection() {
             <ScrollReveal delay={0.5}>
               <PremiumCard tilt={false}>
                 <div className="p-6 md:p-8">
-                  <h3 className="font-display text-xl text-ink mb-4 text-center">Recorrido Clínico</h3>
+                  <TextAnimation
+                    as="h3"
+                    text="Recorrido Clínico"
+                    classname="font-display text-xl text-ink mb-4 text-center"
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { ease: 'linear' },
+                      },
+                    }}
+                  />
                   <ul className="space-y-3 text-ink-soft font-body text-sm">
                     <li className="flex items-start gap-3"><span className="text-warm mt-1 shrink-0">•</span> Práctica privada en Moncloa</li>
                     <li className="flex items-start gap-3"><span className="text-warm mt-1 shrink-0">•</span> Colaboración en centros de salud mental</li>

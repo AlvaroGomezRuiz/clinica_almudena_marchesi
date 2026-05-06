@@ -34,7 +34,7 @@ export default function VideoHero() {
   }, []);
 
   return (
-    <section className="relative h-[100dvh] w-full bg-transparent">
+    <section className="relative min-h-[100dvh] h-auto w-full bg-transparent py-12 md:py-0">
       {/* 
         Vídeo fijo en el fondo de la pantalla.
         Al no tener clip-path y estar en un contenedor transparente,
@@ -57,9 +57,8 @@ export default function VideoHero() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
       </div>
       
-      {/* Contenido (Letras) que sí hace scroll de forma natural */}
-      <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full mt-28 md:mt-0">
+      <div className="relative min-h-full w-full z-10 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full pt-44 md:pt-0">
             {/* Elementos del hero con CSS animation (portal-rise) para la píldora, pero TextAnimation para los textos */}
             <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/90 px-4 py-1.5 rounded-pill border border-white/20 bg-white/10 backdrop-blur-md mb-8 shadow-sm">
               Psicología Clínica · Moncloa
@@ -102,7 +101,7 @@ export default function VideoHero() {
               </Link>
             </div>
 
-            <div className="portal-rise portal-rise-delay-4">
+            <div className="portal-rise portal-rise-delay-4 pb-20 md:pb-0">
               <StatsRow variant="light" autoStart={true} />
             </div>
           </div>

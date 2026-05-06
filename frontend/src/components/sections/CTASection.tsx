@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 import PremiumCard from '@/components/ui/PremiumCard';
+import TextAnimation from '@/components/ui/scroll-text';
 
 /* Server Component. Animación via ScrollReveal (client island). */
 
@@ -25,13 +28,32 @@ export default function CTASection() {
                 <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-ink-muted dark:text-sage-light/60 mb-6 block">
                   Tu bienestar empieza aquí
                 </span>
-                <h2 className="font-display text-display-2 text-ink dark:text-white mb-6 text-balance italic">
-                  Inicia tu camino
-                </h2>
-                <p className="font-body text-ink-soft dark:text-white/55 text-lg max-w-md mx-auto mb-10 leading-relaxed">
-                  Reserva una primera sesión para explorar cómo este enfoque
-                  puede ayudarte en tu momento actual.
-                </p>
+                <TextAnimation
+                  as="h2"
+                  text="Inicia tu camino"
+                  classname="font-display text-display-2 text-ink dark:text-white mb-6 text-balance italic"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { ease: 'linear' },
+                    },
+                  }}
+                />
+                <TextAnimation
+                  as="p"
+                  text="Reserva una primera sesión para explorar cómo este enfoque puede ayudarte en tu momento actual."
+                  classname="font-body text-ink-soft dark:text-white/55 text-lg max-w-md mx-auto mb-10 leading-relaxed"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.2 },
+                    },
+                  }}
+                />
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
                     href="/contacto"

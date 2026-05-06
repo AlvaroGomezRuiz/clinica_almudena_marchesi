@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import PublicFaqSection from '@/components/seo/PublicFaqSection';
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import TextAnimation from '@/components/ui/scroll-text';
 
 import PremiumCard from '@/components/ui/PremiumCard';
 import {
@@ -91,18 +92,37 @@ export default function ContactoPage() {
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
         <div className="max-w-3xl mx-auto text-center">
           <ScrollReveal>
-            <h1 className="font-display text-display-1 text-ink italic mb-6 text-balance">
-              Hablemos.
-            </h1>
+            <TextAnimation
+              as="h1"
+              text="Hablemos."
+              classname="font-display text-display-1 text-ink italic mb-6 text-balance"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { ease: 'linear' },
+                },
+              }}
+            />
           </ScrollReveal>
           <ScrollReveal delay={0.08}>
             <div className="section-line max-w-[120px] mx-auto mb-8" />
           </ScrollReveal>
           <ScrollReveal delay={0.12}>
-            <p className="text-body-lg text-ink-soft leading-relaxed text-pretty">
-              Un espacio de escucha y profesionalidad en el corazón de Madrid.
-              Encuentra el acompañamiento clínico que necesitas para tu bienestar.
-            </p>
+            <TextAnimation
+              as="p"
+              text="Un espacio de escucha y profesionalidad en el corazón de Madrid. Encuentra el acompañamiento clínico que necesitas para tu bienestar."
+              classname="text-body-lg text-ink-soft leading-relaxed text-pretty"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.2 },
+                },
+              }}
+            />
           </ScrollReveal>
         </div>
       </section>
@@ -113,9 +133,19 @@ export default function ContactoPage() {
           {/* Contact Info */}
           <div className="space-y-6">
             <ScrollReveal>
-              <h2 className="font-display text-display-3 text-ink mb-2">
-                Información de Contacto
-              </h2>
+              <TextAnimation
+                as="h2"
+                text="Información de Contacto"
+                classname="font-display text-display-3 text-ink mb-2"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
               <div className="w-12 h-[2px] bg-sage/20 mb-8" />
             </ScrollReveal>
 
@@ -182,9 +212,19 @@ export default function ContactoPage() {
           {/* Schedule & Map */}
           <div className="space-y-6">
             <ScrollReveal delay={0.08}>
-              <h2 className="font-display text-display-3 text-ink mb-2">
-                Horario
-              </h2>
+              <TextAnimation
+                as="h2"
+                text="Horario"
+                classname="font-display text-display-3 text-ink mb-2"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: { ease: 'linear' },
+                  },
+                }}
+              />
               <div className="w-12 h-[2px] bg-sage/20 mb-8" />
             </ScrollReveal>
 
