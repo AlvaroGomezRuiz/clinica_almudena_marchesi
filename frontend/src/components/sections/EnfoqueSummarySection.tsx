@@ -3,6 +3,7 @@
 import React from 'react';
 import TextAnimation from '@/components/ui/scroll-text';
 import ExpandableCard from '@/components/ui/ExpandableCard';
+import ScrollReveal from '@/components/landing/ScrollReveal';
 
 const ENFOQUE_CARDS = [
   {
@@ -31,25 +32,31 @@ export default function EnfoqueSummarySection() {
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
         <div className="mb-12 md:mb-16 text-center max-w-4xl mx-auto">
-          <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid dark:text-white/70 mb-4 block">
-            Filosofía del acompañamiento
-          </span>
-          <TextAnimation
-            as="h2"
-            text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
-            classname="font-display text-3xl md:text-5xl text-ink dark:text-white leading-tight text-balance italic"
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-            }}
-          />
+          <ScrollReveal delay={0}>
+            <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid dark:text-white/70 mb-4 block">
+              Filosofía del acompañamiento
+            </span>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <TextAnimation
+              as="h2"
+              text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
+              classname="font-display text-3xl md:text-5xl text-ink dark:text-white leading-tight text-balance italic"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+              }}
+            />
+          </ScrollReveal>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {ENFOQUE_CARDS.map((card) => (
-            <div key={card.id} className="h-64">
-              <ExpandableCard {...card} />
-            </div>
+          {ENFOQUE_CARDS.map((card, idx) => (
+            <ScrollReveal key={card.id} delay={0.2 + (idx * 0.1)} className="h-64">
+              <div className="h-full w-full">
+                <ExpandableCard {...card} />
+              </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

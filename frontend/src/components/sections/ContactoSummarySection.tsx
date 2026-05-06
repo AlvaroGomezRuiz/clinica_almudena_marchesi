@@ -3,22 +3,27 @@
 import React from 'react';
 import TextAnimation from '@/components/ui/scroll-text';
 import Link from 'next/link';
+import ScrollReveal from '@/components/landing/ScrollReveal';
 
 export default function ContactoSummarySection() {
   return (
     <section className="w-full bg-transparent text-white overflow-hidden flex flex-col justify-center px-6 md:px-12 py-16 md:py-24 z-40">
       
       <div className="max-w-4xl mx-auto w-full relative z-10 text-center">
-        <TextAnimation
-          as="h2"
-          text="Tu bienestar empieza aquí."
-          classname="font-display text-5xl md:text-7xl leading-tight mb-8 text-white"
-        />
-        <p className="text-white/80 text-lg mb-12 max-w-2xl mx-auto">
-          Reserva una primera sesión para explorar cómo este enfoque puede ayudarte en tu momento actual.
-        </p>
+        <ScrollReveal delay={0}>
+          <TextAnimation
+            as="h2"
+            text="Tu bienestar empieza aquí."
+            classname="font-display text-5xl md:text-7xl leading-tight mb-8 text-white"
+          />
+        </ScrollReveal>
+        <ScrollReveal delay={0.1}>
+          <p className="text-white/80 text-lg mb-12 max-w-2xl mx-auto">
+            Reserva una primera sesión para explorar cómo este enfoque puede ayudarte en tu momento actual.
+          </p>
+        </ScrollReveal>
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+        <ScrollReveal delay={0.2} className="flex flex-col sm:flex-row gap-6 justify-center">
           <Link 
             href="/contacto" 
             className="bg-white text-sage font-body font-medium px-8 py-4 rounded-pill hover:scale-105 transition-transform shadow-xl"
@@ -33,7 +38,7 @@ export default function ContactoSummarySection() {
           >
             Ver ubicación en mapa
           </a>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   );

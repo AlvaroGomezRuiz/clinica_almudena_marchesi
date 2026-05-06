@@ -119,15 +119,13 @@ export default function ScrollReveal({
     style = {
       opacity: 0,
       transform: initialTransform,
-      filter: 'blur(4px)',
     };
   } else {
     // 'mounted' — transitioning to visible
     style = {
       opacity: 1,
       transform: 'translate3d(0,0,0) scale(1)',
-      filter: 'blur(0px)',
-      transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+      transition: `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
       willChange: 'opacity, transform',
     };
   }

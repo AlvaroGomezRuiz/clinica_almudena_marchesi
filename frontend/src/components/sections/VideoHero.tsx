@@ -1,18 +1,34 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BlurVignette, BlurVignetteArticle } from '@/components/ui/blur-vignette';
 import StatsRow from '@/components/landing/StatsRow';
 
+const VIDEOS = Array.from({ length: 20 }, (_, i) => `/videos/bg-${String(i + 1).padStart(2, '0')}.mp4`);
+
 /**
- * VideoHero — Hero principal con vídeo de fondo.
+ * VideoHero — Hero principal con vídeo de fondo rotatorio.
  * NO usa ScrollReveal en los textos iniciales porque es el first-fold
- * y los elementos son visibles inmediatamente. Usar ScrollReveal aquí
- * causa problemas con IntersectionObserver en secciones sticky (opacity:0 stuck).
- * Se usan animaciones CSS nativas con portal-rise para la entrada.
+ * y los elementos son visibles inmediatamente.
  */
 export default function VideoHero() {
+  const [videoSrc, setVideoSrc] = useState<string>('');
+
+  useEffect(() => {
+    // Escoger vídeo aleatorio sin repetir el de la última carga
+    const lastVideo = sessionStorage.getItem('lastBgVideo');
+    let available = VIDEOS;
+    if (lastVideo && VIDEOS.includes(lastVideo)) {
+      available = VIDEOS.filter(v => v !== lastVideo);
+    }
+    const randomIndex = Math.floor(Math.random() * available.length);
+    const selected = available[randomIndex];
+    
+    sessionStorage.setItem('lastBgVideo', selected);
+    setVideoSrc(selected);
+  }, []);
+
   return (
     <section className="relative h-[100dvh] w-full bg-transparent">
       {/* 
@@ -20,7 +36,7 @@ export default function VideoHero() {
         Al no tener clip-path y estar en un contenedor transparente,
         actuará como fondo para toda la web.
       */}
-      <div className="fixed inset-0 w-full h-[100dvh] -z-10">
+      <div className="fixed inset-0 w-full h-[100dvh] -z-10 bg-[#131514]">
         <BlurVignette
           radius="0px"
           inset="20px"
@@ -28,16 +44,18 @@ export default function VideoHero() {
           blur="25px"
           classname="h-full w-full"
         >
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover"
-            >
-              <source src="/videos/hero-nature.mp4" type="video/mp4" />
-            </video>
+            {videoSrc && (
+              <video
+                key={videoSrc}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="w-full h-full object-cover opacity-80"
+                src={videoSrc}
+              />
+            )}
             {/* Overlay oscuro para legibilidad */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
           </BlurVignette>
@@ -45,7 +63,7 @@ export default function VideoHero() {
       
       {/* Contenido (Letras) que sí hace scroll de forma natural */}
       <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full pt-32 md:pt-0">
+        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full mt-28 md:mt-0">
             {/* Elementos del hero con CSS animation (portal-rise) — NO ScrollReveal */}
             <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/90 px-4 py-1.5 rounded-pill border border-white/20 bg-white/10 backdrop-blur-md mb-8 shadow-sm">
               Psicología Clínica · Moncloa
