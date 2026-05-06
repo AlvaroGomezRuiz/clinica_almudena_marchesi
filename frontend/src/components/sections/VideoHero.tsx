@@ -7,7 +7,7 @@ import StatsRow from '@/components/landing/StatsRow';
 
 const BASE_URL = 'https://koxsikkobjlycqqfstye.supabase.co/storage/v1/object/public/videos/bg-';
 const VIDEOS = Array.from({ length: 20 }, (_, i) => i + 1)
-  .filter(num => num !== 9 && num !== 14 && num !== 17)
+  .filter(num => num !== 9)
   .map(num => `${BASE_URL}${String(num).padStart(2, '0')}.mp4`);
 
 /**
