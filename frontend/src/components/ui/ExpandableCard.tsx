@@ -62,7 +62,7 @@ export default function ExpandableCard({
         aria-label={`Ver detalles de ${title}`}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(true); }}}
       >
-        <PremiumCard tilt={false} className="h-full pointer-events-none">
+        <PremiumCard tilt={false} className="h-full" active={isOpen}>
           <div className="flex flex-col h-full p-8 md:p-10 group items-center text-center justify-center">
             {subtitle && (
               <motion.span

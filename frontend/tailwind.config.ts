@@ -183,8 +183,8 @@ const config: Config = {
 
       keyframes: {
         'float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-8px)' },
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.08)' },
         },
         'pulse-soft': {
           '0%, 100%': { opacity: '0.6' },

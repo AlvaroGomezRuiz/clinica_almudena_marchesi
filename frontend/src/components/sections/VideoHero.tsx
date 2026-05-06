@@ -38,7 +38,7 @@ export default function VideoHero() {
         </video>
 
         {/* Overlay oscuro para garantizar contraste WCAG sobre el vídeo */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/55 z-[5]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/30 md:from-black/50 md:via-black/35 md:to-black/55 z-[5]" />
         
         <BlurVignetteArticle>
           <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center relative z-10">
@@ -57,7 +57,7 @@ export default function VideoHero() {
             </p>
 
             <div className="portal-rise portal-rise-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/contacto" className="bg-white text-ink font-body font-medium px-7 py-3.5 rounded-pill hover:bg-white/90 transition-colors shadow-lg">
+              <Link href="/contacto" className="bg-white text-[#15130F] font-body font-medium px-7 py-3.5 rounded-pill hover:bg-white/90 transition-colors shadow-lg">
                 Contactar
               </Link>
               <Link href="/enfoque" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 hover:bg-black/40 transition-colors">
