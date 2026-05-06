@@ -57,8 +57,8 @@ export default function VideoHero() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
       </div>
       
-      <div className="relative min-h-full w-full z-10 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full pt-44 md:pt-0">
+      <div className="relative min-h-full w-full z-10 flex flex-col items-center justify-start pt-52 md:pt-64">
+        <div className="flex flex-col items-center justify-start px-6 md:px-12 text-center w-full">
             {/* Elementos del hero con CSS animation (portal-rise) para la píldora, pero TextAnimation para los textos */}
             <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/90 px-4 py-1.5 rounded-pill border border-white/20 bg-white/10 backdrop-blur-md mb-8 shadow-sm">
               Psicología Clínica · Moncloa
@@ -93,10 +93,18 @@ export default function VideoHero() {
             />
 
             <div className="portal-rise portal-rise-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/contacto" className="bg-white/10 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-white/20 transition-all shadow-lg hover:shadow-xl">
+              <Link 
+                href="/contacto" 
+                className="bg-white/10 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-white/20 transition-all shadow-lg hover:shadow-xl"
+                aria-label="Ir a la página de contacto"
+              >
                 Contactar
               </Link>
-              <Link href="/enfoque" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-black/50 transition-all shadow-lg hover:shadow-xl">
+              <Link 
+                href="/enfoque" 
+                className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-8 py-3.5 rounded-pill border border-white/20 hover:bg-black/50 transition-all shadow-lg hover:shadow-xl"
+                aria-label="Saber más sobre mi enfoque terapéutico"
+              >
                 Conoce mi enfoque
               </Link>
             </div>

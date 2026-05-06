@@ -30,7 +30,10 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
     : 'hidden h-12 w-px bg-line sm:block';
 
   return (
-    <div className="inline-flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-10 py-8 rounded-[40px] md:rounded-pill border border-white/20 bg-white/5 backdrop-blur-md shadow-lg">
+    <div 
+      className="inline-flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-10 py-8 rounded-[40px] md:rounded-pill border border-white/20 bg-white/5 backdrop-blur-md shadow-lg"
+      aria-label="Estadísticas de la clínica"
+    >
       {/* Años de Experiencia */}
       <div className="flex flex-col items-center animate-float">
         <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />

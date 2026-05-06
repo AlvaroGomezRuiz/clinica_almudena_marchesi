@@ -113,6 +113,7 @@ export default function PublicHeader() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={isActive(item.href) ? 'page' : undefined}
                     className={`relative min-h-11 items-center font-body text-[0.85rem] font-medium inline-flex px-3.5 py-2.5 rounded-pill transition-all duration-400 ease-apple ${
                       isActive(item.href)
                         ? 'text-sage bg-sage/8'

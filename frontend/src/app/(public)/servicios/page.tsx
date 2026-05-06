@@ -111,7 +111,7 @@ export default function ServiciosPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviciosFaqLd) }}
       />
-    <div className="bg-canvas overflow-x-hidden">
+    <main className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
         <div className="max-w-screen-xl mx-auto">
@@ -222,6 +222,7 @@ export default function ServiciosPage() {
                     <Link
                       href={service.href}
                       className="font-body text-sm font-medium text-sage flex items-center gap-1.5 group/link hover:gap-2.5 transition-all duration-300"
+                      aria-label={`Solicitar información sobre ${service.title}`}
                     >
                       {service.cta}
                       <span className="material-symbols-outlined text-lg transition-transform group-hover/link:translate-x-0.5">
@@ -287,7 +288,7 @@ export default function ServiciosPage() {
       </section>
 
       <CTASection />
-    </div>
+    </main>
     </>
   );
 }

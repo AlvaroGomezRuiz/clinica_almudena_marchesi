@@ -87,7 +87,7 @@ export default function ContactoPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(contactoFaqLd) }}
       />
-    <div className="bg-canvas overflow-x-hidden">
+    <main className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
         <div className="max-w-3xl mx-auto text-center">
@@ -309,7 +309,7 @@ export default function ContactoPage() {
       />
 
 
-    </div>
+    </main>
     </>
   );
 }

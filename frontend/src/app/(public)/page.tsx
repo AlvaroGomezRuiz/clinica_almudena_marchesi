@@ -101,7 +101,7 @@ export default function HomePage() {
         para que se vaya apilando visualmente sobre la anterior mediante scroll. 
       */}
       {/* Añadido "dark text-white" para forzar el modo oscuro en toda la home sobre el vídeo */}
-      <div className="w-full overflow-hidden relative dark text-white">
+      <main className="w-full overflow-hidden relative dark text-white">
         <VideoHero />
         <EnfoqueSummarySection />
         <ServiciosSummarySection />
@@ -117,7 +117,7 @@ export default function HomePage() {
             items={homePageFaq}
           />
         </div>
-      </div>
+      </main>
     </>
   );
 }

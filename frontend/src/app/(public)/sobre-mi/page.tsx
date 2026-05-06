@@ -89,7 +89,7 @@ export default function SobreMiPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sobreMiFaqLd) }}
       />
-    <div className="bg-canvas overflow-x-hidden">
+    <main className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-20 md:pt-40 md:pb-32 px-6 md:px-12">
         <div className="max-w-screen-xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
@@ -300,7 +300,7 @@ export default function SobreMiPage() {
       />
 
       <CTASection />
-    </div>
+    </main>
     </>
   );
 }
