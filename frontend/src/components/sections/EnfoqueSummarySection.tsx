@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import TextAnimation from '@/components/ui/scroll-text';
 import ExpandableCard from '@/components/ui/ExpandableCard';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 
@@ -38,15 +37,9 @@ export default function EnfoqueSummarySection() {
             </span>
           </ScrollReveal>
           <ScrollReveal delay={0.1}>
-            <TextAnimation
-              as="h2"
-              text="Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo."
-              classname="font-display text-3xl md:text-5xl text-ink dark:text-white leading-tight text-balance italic"
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-              }}
-            />
+            <h2 className="font-display text-3xl md:text-5xl text-ink dark:text-white leading-tight text-balance italic">
+              Entiendo la terapia como un proceso compartido. Mi papel no es darte respuestas desde fuera, sino acompañarte, ayudándote a entender lo que te ocurre y ofreciéndote herramientas para afrontarlo.
+            </h2>
           </ScrollReveal>
         </div>
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import TextAnimation from '@/components/ui/scroll-text';
 import PremiumCard from '@/components/ui/PremiumCard';
 import StatsRow from '@/components/landing/StatsRow';
 import Link from 'next/link';
@@ -37,11 +36,9 @@ export default function ServiciosSummarySection() {
           </span>
         </ScrollReveal>
         <ScrollReveal delay={0.1}>
-          <TextAnimation
-            as="h2"
-            text="Un espacio a medida de tu proceso."
-            classname="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-16 italic"
-          />
+          <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-16 italic">
+            Un espacio a medida de tu proceso.
+          </h2>
         </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-center">

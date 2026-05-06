@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import TextAnimation from '@/components/ui/scroll-text';
 import Link from 'next/link';
 import ScrollReveal from '@/components/landing/ScrollReveal';
 
@@ -11,11 +10,9 @@ export default function ContactoSummarySection() {
       
       <div className="max-w-4xl mx-auto w-full relative z-10 text-center">
         <ScrollReveal delay={0}>
-          <TextAnimation
-            as="h2"
-            text="Tu bienestar empieza aquí."
-            classname="font-display text-5xl md:text-7xl leading-tight mb-8 text-white"
-          />
+          <h2 className="font-display text-5xl md:text-7xl leading-tight mb-8 text-white">
+            Tu bienestar empieza aquí.
+          </h2>
         </ScrollReveal>
         <ScrollReveal delay={0.1}>
           <p className="text-white/80 text-lg mb-12 max-w-2xl mx-auto">

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import TextAnimation from '@/components/ui/scroll-text';
 import Image from 'next/image';
 import PremiumCard from '@/components/ui/PremiumCard';
 import Link from 'next/link';
@@ -37,15 +36,9 @@ export default function SobreMiSummarySection() {
               </span>
             </ScrollReveal>
             <ScrollReveal delay={0.2}>
-              <TextAnimation
-                as="h2"
-                text="Metodología integradora adaptada a tu historia."
-                classname="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-8"
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-                }}
-              />
+              <h2 className="font-display text-4xl md:text-5xl text-ink dark:text-white leading-tight mb-8">
+                Metodología integradora adaptada a tu historia.
+              </h2>
             </ScrollReveal>
             <ScrollReveal delay={0.3}>
               <p className="text-body-lg text-ink-soft dark:text-white/80 mb-8 leading-relaxed">

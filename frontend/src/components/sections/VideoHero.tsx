@@ -7,7 +7,7 @@ import StatsRow from '@/components/landing/StatsRow';
 
 const BASE_URL = 'https://koxsikkobjlycqqfstye.supabase.co/storage/v1/object/public/videos/bg-';
 const VIDEOS = Array.from({ length: 20 }, (_, i) => i + 1)
-  .filter(num => num !== 14 && num !== 17)
+  .filter(num => num !== 9 && num !== 14 && num !== 17)
   .map(num => `${BASE_URL}${String(num).padStart(2, '0')}.mp4`);
 
 /**
@@ -40,29 +40,21 @@ export default function VideoHero() {
         actuará como fondo para toda la web.
       */}
       <div className="fixed inset-0 w-full h-[100dvh] -z-10 bg-[#131514]">
-        <BlurVignette
-          radius="0px"
-          inset="20px"
-          transitionLength="150px"
-          blur="25px"
-          classname="h-full w-full"
-        >
-            {videoSrc && (
-              <video
-                key={videoSrc}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="w-full h-full object-cover opacity-80"
-                src={videoSrc}
-              />
-            )}
-            {/* Overlay oscuro para legibilidad */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
-          </BlurVignette>
-        </div>
+        {videoSrc && (
+          <video
+            key={videoSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover opacity-80"
+            src={videoSrc}
+          />
+        )}
+        {/* Overlay oscuro para legibilidad (GPU friendly) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
+      </div>
       
       {/* Contenido (Letras) que sí hace scroll de forma natural */}
       <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
