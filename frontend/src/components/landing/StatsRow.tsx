@@ -18,11 +18,11 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
   const isLight = variant === 'light';
 
   const numberClass = isLight
-    ? 'font-display text-3xl md:text-4xl text-white/95 font-light drop-shadow-md'
-    : 'font-display text-3xl md:text-4xl text-sage font-light';
+    ? 'font-display text-3xl md:text-4xl text-white font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]'
+    : 'font-display text-3xl md:text-4xl text-sage font-medium';
 
   const labelClass = isLight
-    ? 'font-mono text-[0.65rem] md:text-label-sm uppercase text-white/70 mt-1 text-center drop-shadow-sm'
+    ? 'font-mono text-[0.65rem] md:text-label-sm uppercase text-white mt-1 text-center drop-shadow-md'
     : 'font-mono text-[0.65rem] md:text-label-sm uppercase text-ink-muted mt-1 text-center';
 
   const dividerClass = isLight
@@ -31,7 +31,7 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
 
   return (
     <div 
-      className="inline-flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-10 py-8 rounded-[40px] md:rounded-pill border border-white/20 bg-white/5 backdrop-blur-md shadow-lg"
+      className="inline-flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-10 py-8 rounded-[40px] md:rounded-pill border border-white/20 bg-black/30 backdrop-blur-md shadow-2xl"
       aria-label="Estadísticas de la clínica"
     >
       {/* Años de Experiencia */}

@@ -53,7 +53,7 @@ export default function PublicFaqSection({
           </h2>
         </ScrollReveal>
         <dl
-          className="h-fit rounded-lg border border-line dark:border-white/10 p-2 bg-[#F2F2F2] dark:bg-black/20 dark:backdrop-blur-md overflow-hidden"
+          className="h-fit rounded-lg border border-line dark:border-white/10 p-2 bg-white dark:bg-ink-soft/10 dark:backdrop-blur-md overflow-hidden shadow-sm"
         >
           {items.map((item, index) => {
             const isOpen: boolean = activeIndex === index;
@@ -73,9 +73,9 @@ export default function PublicFaqSection({
                     type="button"
                     id={questionId}
                     className={cn(
-                      'p-3 px-2 w-full cursor-pointer sm:text-base text-xs items-center transition-all font-semibold',
+                      'p-4 px-3 w-full cursor-pointer sm:text-base text-xs items-center transition-all font-semibold',
                       'dark:text-white text-ink',
-                      'flex gap-2 text-left font-display',
+                      'flex gap-3 text-left font-display hover:bg-ink/[0.02] dark:hover:bg-white/[0.02]',
                     )}
                     onClick={() => {
                       handleToggle(index);
@@ -116,7 +116,7 @@ export default function PublicFaqSection({
                     >
                       <p
                         className={cn(
-                          'dark:text-white text-ink p-3 xl:text-base sm:text-sm text-xs pt-0 w-11/12',
+                          'dark:text-white/90 text-ink/90 p-4 xl:text-base sm:text-sm text-xs pt-0 w-11/12',
                           'font-body leading-relaxed text-pretty m-0',
                         )}
                       >
