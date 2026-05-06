@@ -16,18 +16,26 @@ export function BlurVignette({
   children,
   classname,
   radius = '24px',
+  inset = '10px',
+  transitionLength = '100px',
+  blur = '15px',
 }: BlurVignetteProps) {
   return (
     <div
       className={cn('relative', classname)}
       style={{
         borderRadius: radius,
-        // Difuminado ovalado (no cuadrado), que se desvanece hasta un 20% de opacidad (no totalmente transparente) 
-        // para que no quede un borde blanco puro, sino más translúcido dejando ver algo de vídeo.
-        maskImage: `radial-gradient(ellipse 100% 100% at 50% 50%, black 45%, rgba(0,0,0, 0.15) 100%)`,
+        maskImage: `linear-gradient(to bottom, transparent, black ${transitionLength}, black calc(100% - ${transitionLength}), transparent), linear-gradient(to right, transparent, black ${transitionLength}, black calc(100% - ${transitionLength}), transparent)`,
+        maskComposite: 'intersect',
       }}
     >
-      {/* Eliminamos el div del shadow blanco duro para que sólo actúe el fade natural de la máscara */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none shadow-[inset_0_0_15px_0px_var(--color-canvas)] md:shadow-[inset_0_0_var(--bv-blur)_var(--bv-inset)_var(--color-canvas)]"
+        style={{
+          '--bv-blur': blur,
+          '--bv-inset': inset,
+        } as React.CSSProperties}
+      />
       {children}
     </div>
   );

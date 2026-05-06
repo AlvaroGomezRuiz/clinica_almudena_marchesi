@@ -16,6 +16,10 @@ export default function VideoHero() {
   return (
     <section className="h-[100dvh] w-full bg-canvas sticky top-0 overflow-hidden">
       <BlurVignette
+        radius="0px"
+        inset="20px"
+        transitionLength="150px"
+        blur="25px"
         classname="h-full w-full"
       >
         <video
@@ -53,7 +57,7 @@ export default function VideoHero() {
             </p>
 
             <div className="portal-rise portal-rise-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/contacto" className="bg-white text-[#15130F] font-body font-medium px-7 py-3.5 rounded-pill hover:bg-white/90 transition-colors shadow-lg">
+              <Link href="/contacto" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 hover:bg-black/40 transition-colors">
                 Contactar
               </Link>
               <Link href="/enfoque" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 hover:bg-black/40 transition-colors">
