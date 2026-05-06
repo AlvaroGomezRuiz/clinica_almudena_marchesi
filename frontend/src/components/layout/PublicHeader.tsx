@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
 import LiquidGlass from '@/components/landing/LiquidGlass';
 import ThemeToggle from '@/components/layout/ThemeToggle';
 
@@ -108,19 +109,30 @@ export default function PublicHeader() {
               </Link>
 
               {/* Desktop Links */}
-              <div className="hidden md:flex items-center gap-1 ml-3">
+              <div className="hidden md:flex items-center gap-1 ml-3 relative">
                 {NAV_ITEMS.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     aria-current={isActive(item.href) ? 'page' : undefined}
-                    className={`relative min-h-11 items-center font-body text-[0.85rem] font-medium inline-flex px-3.5 py-2.5 rounded-pill transition-all duration-400 ease-apple ${
+                    className={`relative min-h-11 items-center font-body text-[0.85rem] font-medium inline-flex px-4 py-2.5 rounded-pill transition-colors duration-200 z-10 ${
                       isActive(item.href)
-                        ? 'text-sage bg-sage/8'
-                        : 'text-ink-soft hover:text-ink hover:bg-ink/[0.03]'
+                        ? 'text-sage'
+                        : 'text-ink-soft hover:text-ink transition-opacity'
                     }`}
                   >
-                    {item.label}
+                    <span className="relative z-10">{item.label}</span>
+                    {isActive(item.href) && (
+                      <motion.div
+                        layoutId="nav-active-pill"
+                        className="absolute inset-0 bg-sage/10 rounded-pill -z-0"
+                        transition={{
+                          type: 'spring',
+                          stiffness: 400,
+                          damping: 30,
+                        }}
+                      />
+                    )}
                   </Link>
                 ))}
               </div>
