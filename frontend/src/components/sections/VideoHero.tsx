@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { BlurVignette, BlurVignetteArticle } from '@/components/ui/blur-vignette';
 import StatsRow from '@/components/landing/StatsRow';
 
-const VIDEOS = Array.from({ length: 20 }, (_, i) => `/videos/bg-${String(i + 1).padStart(2, '0')}.mp4`);
+const BASE_URL = 'https://koxsikkobjlycqqfstye.supabase.co/storage/v1/object/public/videos/bg-';
+const VIDEOS = Array.from({ length: 20 }, (_, i) => i + 1)
+  .filter(num => num !== 14 && num !== 17)
+  .map(num => `${BASE_URL}${String(num).padStart(2, '0')}.mp4`);
 
 /**
  * VideoHero — Hero principal con vídeo de fondo rotatorio.
