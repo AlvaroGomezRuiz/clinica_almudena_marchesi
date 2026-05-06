@@ -14,34 +14,35 @@ import StatsRow from '@/components/landing/StatsRow';
  */
 export default function VideoHero() {
   return (
-    <section className="h-[100dvh] w-full bg-canvas sticky top-0 overflow-hidden">
-      <BlurVignette
-        radius="0px"
-        inset="20px"
-        transitionLength="150px"
-        blur="25px"
-        classname="h-full w-full"
-      >
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="w-full h-full object-cover"
+    <section className="relative h-[100dvh] w-full bg-transparent">
+      {/* Vídeo fijo en el fondo */}
+      <div className="fixed top-0 left-0 w-full h-[100dvh] -z-10">
+        <BlurVignette
+          radius="0px"
+          inset="20px"
+          transitionLength="150px"
+          blur="25px"
+          classname="h-full w-full"
         >
-          {/* Vídeo de naturaleza serena — Pexels License (libre de derechos), self-hosted */}
-          <source
-            src="/videos/hero-nature.mp4"
-            type="video/mp4"
-          />
-        </video>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover"
+          >
+            <source src="/videos/hero-nature.mp4" type="video/mp4" />
+          </video>
 
-        {/* Overlay oscuro muy sutil para mejorar la visibilidad del vídeo, manteniendo el centro translúcido */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
-        
-        <BlurVignetteArticle>
-          <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center relative z-10">
+          {/* Overlay oscuro */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/30 md:from-black/50 md:via-black/35 md:to-black/55 z-[5]" />
+        </BlurVignette>
+      </div>
+      
+      {/* Contenido (Letras) que sí hace scroll */}
+      <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full">
             {/* Elementos del hero con CSS animation (portal-rise) — NO ScrollReveal */}
             <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/80 dark:text-[#1C1C19]/80 px-4 py-1.5 rounded-pill border border-white/20 dark:border-[#1C1C19]/20 bg-black/20 dark:bg-white/20 backdrop-blur-sm mb-8">
               Psicología Clínica · Moncloa
@@ -57,10 +58,10 @@ export default function VideoHero() {
             </p>
 
             <div className="portal-rise portal-rise-delay-3 flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/contacto" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 hover:bg-black/40 transition-colors">
+              <Link href="/contacto" className="bg-black/30 dark:bg-white/20 backdrop-blur-md text-white dark:text-[#1C1C19] font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 dark:border-[#1C1C19]/20 hover:bg-black/40 dark:hover:bg-white/30 transition-colors">
                 Contactar
               </Link>
-              <Link href="/enfoque" className="bg-black/30 backdrop-blur-md text-white font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 hover:bg-black/40 transition-colors">
+              <Link href="/enfoque" className="bg-black/30 dark:bg-white/20 backdrop-blur-md text-white dark:text-[#1C1C19] font-body font-medium px-7 py-3.5 rounded-pill border border-white/30 dark:border-[#1C1C19]/20 hover:bg-black/40 dark:hover:bg-white/30 transition-colors">
                 Conoce mi enfoque
               </Link>
             </div>
@@ -69,8 +70,7 @@ export default function VideoHero() {
               <StatsRow variant="light" autoStart={true} />
             </div>
           </div>
-        </BlurVignetteArticle>
-      </BlurVignette>
+        </div>
     </section>
   );
 }
