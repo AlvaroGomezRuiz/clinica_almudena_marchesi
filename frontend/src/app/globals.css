@@ -97,6 +97,8 @@
 
   body {
     @apply font-body text-ink antialiased bg-canvas overflow-x-hidden;
+    user-select: none;
+    -webkit-user-select: none;
     font-weight: 300;
     line-height: 1.65;
     font-feature-settings: "kern" 1, "liga" 1;

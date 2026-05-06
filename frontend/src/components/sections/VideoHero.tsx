@@ -16,10 +16,6 @@ export default function VideoHero() {
   return (
     <section className="h-[100dvh] w-full bg-canvas sticky top-0 overflow-hidden">
       <BlurVignette
-        radius="0px"
-        inset="20px"
-        transitionLength="150px"
-        blur="25px"
         classname="h-full w-full"
       >
         <video
@@ -52,7 +48,7 @@ export default function VideoHero() {
               <span className="italic">en tu proceso</span>.
             </h1>
 
-            <p className="portal-rise portal-rise-delay-2 text-body-lg text-white/90 dark:text-[#1C1C19]/90 max-w-2xl mx-auto mb-10 leading-relaxed text-pretty drop-shadow-md dark:drop-shadow-none">
+            <p className="portal-rise portal-rise-delay-2 text-body-lg text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed text-pretty drop-shadow-md">
               Acompaño a personas en sus procesos de cambio y crecimiento personal. Soy psicóloga y en mi consulta de Moncloa encontrarás un espacio seguro, tranquilo y confidencial, donde poder parar, escucharte y trabajar en tu bienestar.
             </p>
 

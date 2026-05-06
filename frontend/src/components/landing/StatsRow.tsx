@@ -18,27 +18,27 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
   const isLight = variant === 'light';
 
   const numberClass = isLight
-    ? 'font-display text-4xl text-white/95 dark:text-[#1C1C19]/95 font-light drop-shadow-md dark:drop-shadow-none'
+    ? 'font-display text-4xl text-white/95 font-light drop-shadow-md'
     : 'font-display text-4xl text-sage font-light';
 
   const labelClass = isLight
-    ? 'font-mono text-label-sm uppercase text-white/70 dark:text-[#1C1C19]/70 mt-1 text-center drop-shadow-sm dark:drop-shadow-none'
+    ? 'font-mono text-label-sm uppercase text-white/70 mt-1 text-center drop-shadow-sm'
     : 'font-mono text-label-sm uppercase text-ink-muted mt-1 text-center';
 
   const dividerClass = isLight
-    ? 'hidden h-12 w-px bg-white/20 dark:bg-[#1C1C19]/20 sm:block'
+    ? 'hidden h-12 w-px bg-white/20 sm:block'
     : 'hidden h-12 w-px bg-line sm:block';
 
   return (
     <div className="flex max-w-5xl flex-col items-stretch justify-center gap-8 px-2 sm:flex-row sm:items-center sm:gap-10 sm:px-0 md:gap-20">
-      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '0s' }}>
+      <div className="flex flex-col items-center animate-float">
         <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />
         <span className={labelClass}>
           Años de<br />Experiencia
         </span>
       </div>
       <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '1.5s' }}>
+      <div className="flex flex-col items-center animate-float">
         <AnimatedCounter
           target={50}
           prefix="+"
