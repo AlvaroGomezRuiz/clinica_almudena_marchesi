@@ -14,33 +14,38 @@ import StatsRow from '@/components/landing/StatsRow';
  */
 export default function VideoHero() {
   return (
-    <section className="relative h-[100dvh] w-full bg-transparent">
-      {/* Vídeo fijo en el fondo */}
-      <div className="fixed top-0 left-0 w-full h-[100dvh] -z-10">
-        <BlurVignette
-          radius="0px"
-          inset="20px"
-          transitionLength="150px"
-          blur="25px"
-          classname="h-full w-full"
-        >
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-cover"
+    <section className="relative h-[100dvh] w-full bg-canvas">
+      {/* 
+        Contenedor con clip-path: crea una "ventana" del tamaño exacto de esta sección.
+        El div interior es fixed, por lo que el vídeo no se mueve al hacer scroll.
+        Al hacer scroll, esta "ventana" sube y recorta el vídeo, logrando el efecto parallax.
+      */}
+      <div className="absolute inset-0 z-0" style={{ clipPath: 'inset(0)' }}>
+        <div className="fixed inset-0 w-full h-[100dvh]">
+          <BlurVignette
+            radius="0px"
+            inset="20px"
+            transitionLength="150px"
+            blur="25px"
+            classname="h-full w-full"
           >
-            <source src="/videos/hero-nature.mp4" type="video/mp4" />
-          </video>
-
-          {/* Overlay oscuro */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/30 md:from-black/50 md:via-black/35 md:to-black/55 z-[5]" />
-        </BlurVignette>
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-cover"
+            >
+              <source src="/videos/hero-nature.mp4" type="video/mp4" />
+            </video>
+            {/* Overlay oscuro para legibilidad */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
+          </BlurVignette>
+        </div>
       </div>
       
-      {/* Contenido (Letras) que sí hace scroll */}
+      {/* Contenido (Letras) que sí hace scroll de forma natural */}
       <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center w-full">
             {/* Elementos del hero con CSS animation (portal-rise) — NO ScrollReveal */}
