@@ -30,7 +30,7 @@ export function BlurVignette({
       }}
     >
       <div
-        className="absolute inset-0 z-10 pointer-events-none opacity-40 shadow-[inset_0_0_15px_0px_var(--color-canvas)] md:shadow-[inset_0_0_var(--bv-blur)_var(--bv-inset)_var(--color-canvas)]"
+        className="absolute inset-0 z-10 pointer-events-none opacity-15 shadow-[inset_0_0_15px_0px_var(--color-canvas)] md:shadow-[inset_0_0_var(--bv-blur)_var(--bv-inset)_var(--color-canvas)]"
         style={{
           '--bv-blur': blur,
           '--bv-inset': inset,

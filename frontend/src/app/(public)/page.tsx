@@ -100,7 +100,7 @@ export default function HomePage() {
         Cada sección ocupa el 100% de la pantalla (h-screen/h-[100dvh]) y tiene border-radius top 
         para que se vaya apilando visualmente sobre la anterior mediante scroll. 
       */}
-      <div className="bg-canvas w-full overflow-hidden relative">
+      <div className="w-full overflow-hidden relative">
         <VideoHero />
         <EnfoqueSummarySection />
         <ServiciosSummarySection />

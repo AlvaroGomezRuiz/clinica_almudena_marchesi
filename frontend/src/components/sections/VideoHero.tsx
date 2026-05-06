@@ -14,21 +14,20 @@ import StatsRow from '@/components/landing/StatsRow';
  */
 export default function VideoHero() {
   return (
-    <section className="relative h-[100dvh] w-full bg-canvas">
+    <section className="relative h-[100dvh] w-full bg-transparent">
       {/* 
-        Contenedor con clip-path: crea una "ventana" del tamaño exacto de esta sección.
-        El div interior es fixed, por lo que el vídeo no se mueve al hacer scroll.
-        Al hacer scroll, esta "ventana" sube y recorta el vídeo, logrando el efecto parallax.
+        Vídeo fijo en el fondo de la pantalla.
+        Al no tener clip-path y estar en un contenedor transparente,
+        actuará como fondo para toda la web.
       */}
-      <div className="absolute inset-0 z-0" style={{ clipPath: 'inset(0)' }}>
-        <div className="fixed inset-0 w-full h-[100dvh]">
-          <BlurVignette
-            radius="0px"
-            inset="20px"
-            transitionLength="150px"
-            blur="25px"
-            classname="h-full w-full"
-          >
+      <div className="fixed inset-0 w-full h-[100dvh] -z-10">
+        <BlurVignette
+          radius="0px"
+          inset="20px"
+          transitionLength="150px"
+          blur="25px"
+          classname="h-full w-full"
+        >
             <video
               autoPlay
               muted
@@ -43,7 +42,6 @@ export default function VideoHero() {
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
           </BlurVignette>
         </div>
-      </div>
       
       {/* Contenido (Letras) que sí hace scroll de forma natural */}
       <div className="relative h-full w-full z-10 flex flex-col items-center justify-center">
