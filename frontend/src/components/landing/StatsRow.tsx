@@ -30,17 +30,20 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
     : 'hidden h-12 w-px bg-line sm:block';
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 px-4">
+    <div className="inline-flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 px-10 py-8 rounded-[40px] md:rounded-pill border border-white/20 bg-white/5 backdrop-blur-md shadow-lg">
       {/* Años de Experiencia */}
-      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/20 bg-transparent backdrop-blur-sm animate-float">
+      <div className="flex flex-col items-center animate-float">
         <AnimatedCounter target={3} prefix="+" className={numberClass} duration={1500} autoStart={autoStart} />
         <span className={labelClass}>
           Años de<br />Experiencia
         </span>
       </div>
 
+      {/* Divider mobile hidden */}
+      <div className="hidden md:block w-px h-12 bg-white/10" />
+
       {/* Pacientes Atendidos */}
-      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm animate-float [animation-delay:0.2s]">
+      <div className="flex flex-col items-center animate-float [animation-delay:0.2s]">
         <AnimatedCounter
           target={50}
           prefix="+"
@@ -52,8 +55,11 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
         </span>
       </div>
 
+      {/* Divider mobile hidden */}
+      <div className="hidden md:block w-px h-12 bg-white/10" />
+
       {/* Compromiso Ético */}
-      <div className="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm animate-float [animation-delay:0.4s]">
+      <div className="flex flex-col items-center animate-float [animation-delay:0.4s]">
         <span className={numberClass}>&#8734;</span>
         <span className={labelClass}>
           Compromiso<br />Ético
