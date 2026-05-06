@@ -50,7 +50,7 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
         </span>
       </div>
       <div className={dividerClass} aria-hidden="true" />
-      <div className="flex flex-col items-center animate-float" style={{ animationDelay: '3s' }}>
+      <div className="flex flex-col items-center animate-float">
         <span className={numberClass}>&#8734;</span>
         <span className={labelClass}>
           Compromiso<br />Ético
