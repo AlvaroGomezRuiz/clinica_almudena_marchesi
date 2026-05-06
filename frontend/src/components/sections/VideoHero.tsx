@@ -43,16 +43,16 @@ export default function VideoHero() {
         <BlurVignetteArticle>
           <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center relative z-10">
             {/* Elementos del hero con CSS animation (portal-rise) — NO ScrollReveal */}
-            <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/80 px-4 py-1.5 rounded-pill border border-white/20 bg-black/20 backdrop-blur-sm mb-8">
+            <span className="portal-rise inline-block font-mono text-label-sm uppercase tracking-[0.14em] text-white/80 dark:text-[#1C1C19]/80 px-4 py-1.5 rounded-pill border border-white/20 dark:border-[#1C1C19]/20 bg-black/20 dark:bg-white/20 backdrop-blur-sm mb-8">
               Psicología Clínica · Moncloa
             </span>
 
-            <h1 className="portal-rise portal-rise-delay-1 font-display text-display-1 text-white text-balance mb-6 drop-shadow-lg">
+            <h1 className="portal-rise portal-rise-delay-1 font-display text-display-1 text-white dark:text-[#1C1C19] text-balance mb-6 drop-shadow-lg dark:drop-shadow-none">
               Un espacio para acompañarte{' '}
               <span className="italic">en tu proceso</span>.
             </h1>
 
-            <p className="portal-rise portal-rise-delay-2 text-body-lg text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed text-pretty drop-shadow-md">
+            <p className="portal-rise portal-rise-delay-2 text-body-lg text-white/90 dark:text-[#1C1C19]/90 max-w-2xl mx-auto mb-10 leading-relaxed text-pretty drop-shadow-md dark:drop-shadow-none">
               Acompaño a personas en sus procesos de cambio y crecimiento personal. Soy psicóloga y en mi consulta de Moncloa encontrarás un espacio seguro, tranquilo y confidencial, donde poder parar, escucharte y trabajar en tu bienestar.
             </p>
 

@@ -18,15 +18,15 @@ export default function StatsRow({ variant = 'default', autoStart = false }: Sta
   const isLight = variant === 'light';
 
   const numberClass = isLight
-    ? 'font-display text-4xl text-white/95 font-light drop-shadow-md'
+    ? 'font-display text-4xl text-white/95 dark:text-[#1C1C19]/95 font-light drop-shadow-md dark:drop-shadow-none'
     : 'font-display text-4xl text-sage font-light';
 
   const labelClass = isLight
-    ? 'font-mono text-label-sm uppercase text-white/70 mt-1 text-center drop-shadow-sm'
+    ? 'font-mono text-label-sm uppercase text-white/70 dark:text-[#1C1C19]/70 mt-1 text-center drop-shadow-sm dark:drop-shadow-none'
     : 'font-mono text-label-sm uppercase text-ink-muted mt-1 text-center';
 
   const dividerClass = isLight
-    ? 'hidden h-12 w-px bg-white/20 sm:block'
+    ? 'hidden h-12 w-px bg-white/20 dark:bg-[#1C1C19]/20 sm:block'
     : 'hidden h-12 w-px bg-line sm:block';
 
   return (
