@@ -15,8 +15,8 @@
 
   /* Texto: negros atenuados con toque cálido (mejor que #000 puro) */
   --color-ink:         #1C1C19;
-  --color-ink-soft:    #5E5C53;   /* Bajo un poco para WCAG AA sobre canvas */
-  --color-ink-muted:   #8A887E;   /* Más oscuro para contraste AA ≥ 4.5 */
+  --color-ink-soft:    #524F47;   /* WCAG AA ≥ 5.4:1 sobre canvas #F8F6F1 */
+  --color-ink-muted:   #706E65;   /* WCAG AA ≥ 4.6:1 sobre canvas #F8F6F1 */
 
   /* Bordes */
   --color-line:        rgba(28, 28, 25, 0.10);

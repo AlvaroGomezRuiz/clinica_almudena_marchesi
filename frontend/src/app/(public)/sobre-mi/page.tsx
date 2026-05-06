@@ -99,8 +99,8 @@ export default function SobreMiPage() {
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
               <h1 className="font-display text-display-1 text-ink text-balance">
-                Tu acompañante en el{' '}
-                <span className="italic text-sage">camino</span> del cambio.
+                Un espacio para acompañarte{' '}
+                <span className="italic text-sage">en tu proceso</span>.
               </h1>
             </ScrollReveal>
             <ScrollReveal delay={0.1}>
@@ -212,7 +212,7 @@ export default function SobreMiPage() {
             {CREDENTIALS.map((cred, i) => (
               <ScrollReveal key={cred.title} delay={i * 0.08}>
                 <PremiumCard tilt={false} className="h-full">
-                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10">
+                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10 items-center justify-center">
                     <h3 className="font-display text-display-3 text-balance text-ink">
                       {cred.title}
                     </h3>

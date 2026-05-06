@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { BlurVignette, BlurVignetteArticle } from '@/components/ui/blur-vignette';
 import ScrollReveal from '@/components/landing/ScrollReveal';
+import StatsRow from '@/components/landing/StatsRow';
 
 export default function VideoHero() {
   return (
@@ -20,14 +21,18 @@ export default function VideoHero() {
           muted
           loop
           playsInline
-          className="w-full h-full object-cover opacity-80"
+          preload="metadata"
+          className="w-full h-full object-cover"
         >
-          {/* Vídeo proporcionado por el usuario (Pixabay) */}
+          {/* Vídeo de naturaleza serena — Pixabay License (libre de derechos) */}
           <source
-            src="https://cdn.pixabay.com/video/2023/10/19/185726-876210695_large.mp4"
+            src="https://cdn.pixabay.com/video/2024/09/04/229585_large.mp4"
             type="video/mp4"
           />
         </video>
+
+        {/* Overlay oscuro para garantizar contraste WCAG sobre el vídeo */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/55 z-[5]" />
         
         <BlurVignetteArticle>
           <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center relative z-10">
@@ -51,7 +56,7 @@ export default function VideoHero() {
             </ScrollReveal>
 
             <ScrollReveal delay={0.3}>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                 <Link href="/contacto" className="bg-white text-ink font-body font-medium px-7 py-3.5 rounded-pill hover:bg-white/90 transition-colors shadow-lg">
                   Contactar
                 </Link>
@@ -59,6 +64,10 @@ export default function VideoHero() {
                   Conoce mi enfoque
                 </Link>
               </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={0.4}>
+              <StatsRow variant="light" />
             </ScrollReveal>
           </div>
         </BlurVignetteArticle>

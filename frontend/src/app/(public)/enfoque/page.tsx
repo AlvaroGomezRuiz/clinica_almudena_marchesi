@@ -79,15 +79,16 @@ export default function EnfoquePage() {
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
               <h1 className="font-display text-display-1 text-ink text-balance mb-8">
-                La calidez de lo <span className="italic">humano</span> y el rigor
-                de la <span className="italic">clínica</span>.
+                Enfoque integrador y sistémico: una terapia{' '}
+                <span className="italic">adaptada a ti</span>.
               </h1>
             </ScrollReveal>
             <ScrollReveal delay={0.16}>
               <p className="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty">
-                Un espacio donde la excelencia profesional se encuentra con la
-                sensibilidad empática, creando un entorno seguro para la
-                transformación personal.
+                Una terapia que tiene en cuenta tanto tu mundo interno como tus
+                relaciones y tu contexto. Entiendo la terapia como un proceso
+                compartido donde el rigor académico se pone al servicio de tu
+                bienestar emocional.
               </p>
             </ScrollReveal>
           </div>
@@ -109,7 +110,7 @@ export default function EnfoquePage() {
         </div>
       </section>
 
-      {/* Methodology Bento */}
+      {/* Methodology Bento — Sin iconos, solo texto centrado */}
       <section className="py-20 md:py-32 px-6 md:px-12 bg-canvas-alt">
         <div className="max-w-screen-xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -122,11 +123,11 @@ export default function EnfoquePage() {
                 }
               >
                 <PremiumCard tilt={false} className="h-full">
-                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10">
+                  <div className="flex h-full flex-col gap-5 p-8 text-center transition-all duration-600 ease-apple group hover:-translate-y-1 md:p-10 items-center justify-center">
                     <h2 className="font-display text-display-3 text-balance text-ink">
                       {card.title}
                     </h2>
-                    <p className="text-left font-body text-[0.95rem] leading-relaxed text-ink-soft">
+                    <p className="font-body text-[0.95rem] leading-relaxed text-ink-soft max-w-lg">
                       {card.body}
                     </p>
                   </div>
@@ -148,10 +149,10 @@ export default function EnfoquePage() {
           <ScrollReveal delay={0.1}>
             <div className="space-y-6 text-body-lg text-ink-soft leading-relaxed text-left md:text-justify">
               <p>
-                Mi metodología no se limita a la aplicación de técnicas; es un
-                proceso artesanal de acompañamiento. Entiendo la clínica no como
-                un frío diagnóstico, sino como la herramienta que nos permite dar
-                estructura y solución al sufrimiento humano.
+                Entiendo la terapia como un proceso compartido. Mi papel no es
+                darte respuestas desde fuera, sino acompañarte, ayudándote a
+                entender lo que te ocurre y ofreciéndote herramientas para
+                afrontarlo.
               </p>
               <p>
                 Ubicada en el corazón de Moncloa, mi consulta está diseñada para
@@ -181,4 +182,3 @@ export default function EnfoquePage() {
     </>
   );
 }
-

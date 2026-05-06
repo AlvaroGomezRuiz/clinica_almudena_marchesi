@@ -154,7 +154,7 @@ export default function ServiciosPage() {
             >
               <PremiumCard tilt={false} className="h-full">
                 <div
-                  className={`flex flex-col justify-between h-full group p-8 md:p-10 ${
+                  className={`flex flex-col justify-between h-full group p-8 md:p-10 text-center ${
                     service.featured
                       ? 'ring-1 ring-sage/15 dark:ring-sage/30 rounded-3xl'
                       : ''
@@ -171,7 +171,7 @@ export default function ServiciosPage() {
                       {service.body}
                     </p>
                   </div>
-                  <div className="flex items-end justify-between gap-4 pt-4 border-t border-line">
+                  <div className="flex flex-col items-center gap-3 pt-4 border-t border-line">
                     <div>
                       <span className="font-display text-3xl text-ink font-light">
                         {service.price}

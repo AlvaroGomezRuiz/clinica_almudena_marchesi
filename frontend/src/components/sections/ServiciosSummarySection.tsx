@@ -3,27 +3,24 @@
 import React from 'react';
 import TextAnimation from '@/components/ui/scroll-text';
 import PremiumCard from '@/components/ui/PremiumCard';
+import StatsRow from '@/components/landing/StatsRow';
 import Link from 'next/link';
 
 const SERVICES = [
   {
     title: 'Terapia Individual',
-    icon: 'person',
     desc: 'Un espacio seguro para gestionar ansiedad, duelo o dificultades.'
   },
   {
     title: 'Terapia de Pareja',
-    icon: 'group',
     desc: 'Restaurar la comunicación y el vínculo desde la empatía.'
   },
   {
     title: 'Infanto-Juvenil',
-    icon: 'child_care',
     desc: 'Acompañamiento en el desarrollo de niños y adolescentes.'
   },
   {
     title: 'Terapia Online',
-    icon: 'videocam',
     desc: 'Sesiones por videollamada con la misma calidad clínica.'
   }
 ];
@@ -43,15 +40,12 @@ export default function ServiciosSummarySection() {
           classname="font-display text-4xl md:text-5xl text-ink leading-tight mb-16 italic"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 text-center">
           {SERVICES.map((service, i) => (
             <PremiumCard key={i} tilt={false}>
-              <div className="p-8 flex flex-col h-full items-start group">
-                <span className="material-symbols-outlined text-4xl text-sage mb-6" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {service.icon}
-                </span>
+              <div className="p-8 flex flex-col h-full items-center justify-center group">
                 <h3 className="font-display text-2xl text-ink mb-3">{service.title}</h3>
-                <p className="text-ink-soft font-body text-sm leading-relaxed mb-6 flex-grow">{service.desc}</p>
+                <p className="text-ink-soft font-body text-sm leading-relaxed mb-6">{service.desc}</p>
                 
                 <Link href="/servicios" className="mt-auto font-body text-sm font-medium text-sage flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
                   Saber más <span className="material-symbols-outlined text-lg">arrow_forward</span>
@@ -59,6 +53,11 @@ export default function ServiciosSummarySection() {
               </div>
             </PremiumCard>
           ))}
+        </div>
+
+        {/* Stats Row */}
+        <div className="mb-12 flex justify-center">
+          <StatsRow />
         </div>
 
         <Link href="/servicios" className="btn-primary inline-flex">

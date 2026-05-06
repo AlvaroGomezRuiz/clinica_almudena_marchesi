@@ -7,21 +7,18 @@ import ExpandableCard from '@/components/ui/ExpandableCard';
 const ENFOQUE_CARDS = [
   {
     id: 'escucha-activa',
-    icon: 'hearing',
     title: 'Escucha Activa',
     description: 'No es solo oír, es comprender el silencio entre las palabras. Mi enfoque se centra en una presencia plena donde cada síntoma y cada vivencia son validados como parte fundamental de tu historia única.',
     tags: ['Presencia', 'Validación', 'Silencio', 'Empatía']
   },
   {
     id: 'sin-juicio',
-    icon: 'balance',
     title: 'Ausencia de Juicio',
     description: 'La terapia es el único lugar donde no necesitas ser «adecuado». Aquí, la neutralidad clínica se traduce en una aceptación incondicional que permite explorar lo más profundo sin miedo a la crítica.',
     tags: ['Aceptación', 'Seguridad', 'Neutralidad']
   },
   {
     id: 'rigor-clinico',
-    icon: 'science',
     title: 'Rigor Clínico',
     description: 'Especialización en Psicología Clínica para garantizar intervenciones basadas en la evidencia. El rigor es el respeto al paciente.',
     tags: ['Evidencia', 'Especialización', 'Respeto']

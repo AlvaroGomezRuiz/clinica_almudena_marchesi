@@ -10,8 +10,6 @@ interface ExpandableCardProps {
   subtitle?: string;
   description: React.ReactNode;
   tags?: string[];
-  icon?: string;
-  imageSrc?: string;
   className?: string;
 }
 
@@ -21,8 +19,6 @@ export default function ExpandableCard({
   subtitle,
   description,
   tags,
-  icon,
-  imageSrc,
   className = '',
 }: ExpandableCardProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,27 +49,13 @@ export default function ExpandableCard({
         layoutId={`card-${id}`}
         onClick={() => setIsOpen(true)}
         className={`cursor-pointer h-full ${className}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`Ver detalles de ${title}`}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsOpen(true); }}}
       >
         <PremiumCard tilt={false} className="h-full pointer-events-none">
-          <div className="flex flex-col h-full p-8 md:p-10 group">
-            {imageSrc && (
-              <motion.img
-                layoutId={`image-${id}`}
-                src={imageSrc}
-                alt={title}
-                className="w-full h-48 object-cover rounded-2xl mb-6"
-              />
-            )}
-            {!imageSrc && icon && (
-              <motion.span
-                layoutId={`icon-${id}`}
-                className="material-symbols-outlined text-4xl text-sage mb-6 block"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                {icon}
-              </motion.span>
-            )}
-            
+          <div className="flex flex-col h-full p-8 md:p-10 group items-center text-center justify-center">
             {subtitle && (
               <motion.span
                 layoutId={`subtitle-${id}`}
@@ -93,14 +75,14 @@ export default function ExpandableCard({
             {/* Preview texto cortado */}
             <motion.div
               layoutId={`content-preview-${id}`}
-              className="text-left font-body text-[0.95rem] leading-relaxed text-ink-soft line-clamp-3 mb-6"
+              className="font-body text-[0.95rem] leading-relaxed text-ink-soft line-clamp-3 mb-6"
             >
               {description}
             </motion.div>
 
-            <div className="mt-auto flex justify-between items-center pt-4 border-t border-line">
+            <div className="mt-auto flex justify-center items-center pt-4 border-t border-line w-full">
               {tags && tags.length > 0 && (
-                <div className="flex gap-2 flex-wrap max-w-[70%]">
+                <div className="flex gap-2 flex-wrap justify-center">
                   {tags.slice(0, 2).map((tag) => (
                     <span key={tag} className="text-xs bg-sage-wash text-sage px-2 py-1 rounded-md">
                       {tag}
@@ -113,8 +95,8 @@ export default function ExpandableCard({
                   )}
                 </div>
               )}
-              <span className="material-symbols-outlined text-sage transition-transform group-hover:translate-x-1 ml-auto">
-                add_circle
+              <span className="text-sage text-xs font-body font-medium ml-auto opacity-60 group-hover:opacity-100 transition-opacity">
+                Leer más
               </span>
             </div>
           </div>
@@ -145,25 +127,7 @@ export default function ExpandableCard({
                 <span className="material-symbols-outlined">close</span>
               </button>
 
-              <div className="p-8 md:p-12 flex flex-col">
-                {imageSrc && (
-                  <motion.img
-                    layoutId={`image-${id}`}
-                    src={imageSrc}
-                    alt={title}
-                    className="w-full h-64 md:h-80 object-cover rounded-2xl mb-8"
-                  />
-                )}
-                {!imageSrc && icon && (
-                  <motion.span
-                    layoutId={`icon-${id}`}
-                    className="material-symbols-outlined text-5xl text-sage mb-8 block"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    {icon}
-                  </motion.span>
-                )}
-                
+              <div className="p-8 md:p-12 flex flex-col items-center text-center">
                 {subtitle && (
                   <motion.span
                     layoutId={`subtitle-${id}`}
@@ -182,7 +146,7 @@ export default function ExpandableCard({
 
                 <motion.div
                   layoutId={`content-preview-${id}`}
-                  className="text-left font-body text-lg leading-relaxed text-ink-soft space-y-4"
+                  className="font-body text-lg leading-relaxed text-ink-soft space-y-4 text-left max-w-2xl"
                 >
                   {description}
                 </motion.div>
@@ -192,7 +156,7 @@ export default function ExpandableCard({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="mt-10 flex gap-2 flex-wrap pt-6 border-t border-line"
+                    className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line"
                   >
                     {tags.map((tag) => (
                       <span key={tag} className="text-sm bg-sage-wash text-sage px-3 py-1.5 rounded-md">

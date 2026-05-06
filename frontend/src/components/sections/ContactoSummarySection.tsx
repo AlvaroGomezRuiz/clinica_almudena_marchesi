@@ -13,17 +13,25 @@ export default function ContactoSummarySection() {
         <TextAnimation
           as="h2"
           text="Tu bienestar empieza aquí."
-          classname="font-display text-5xl md:text-7xl leading-tight mb-8"
+          classname="font-display text-5xl md:text-7xl leading-tight mb-8 text-white"
         />
         <p className="text-white/80 text-lg mb-12 max-w-2xl mx-auto">
           Reserva una primera sesión para explorar cómo este enfoque puede ayudarte en tu momento actual.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
-          <Link href="/contacto" className="bg-white text-sage font-body font-medium px-8 py-4 rounded-pill hover:scale-105 transition-transform shadow-xl">
+          <Link 
+            href="/contacto" 
+            className="bg-white text-sage font-body font-medium px-8 py-4 rounded-pill hover:scale-105 transition-transform shadow-xl"
+          >
             Contactar ahora
           </Link>
-          <a href="https://maps.google.com/?q=Meléndez+Valdés" target="_blank" rel="noreferrer" className="bg-sage-mid/30 backdrop-blur-sm border border-white/20 text-white font-body font-medium px-8 py-4 rounded-pill hover:bg-sage-mid/50 transition-colors">
+          <a 
+            href="https://maps.google.com/?q=Meléndez+Valdés" 
+            target="_blank" 
+            rel="noreferrer" 
+            className="bg-sage-mid/30 backdrop-blur-sm border border-white/20 text-white font-body font-medium px-8 py-4 rounded-pill hover:bg-sage-mid/50 transition-colors"
+          >
             Ver ubicación en mapa
           </a>
         </div>
