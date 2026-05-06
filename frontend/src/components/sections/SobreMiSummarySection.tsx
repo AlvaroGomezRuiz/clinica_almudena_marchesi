@@ -8,10 +8,9 @@ import Link from 'next/link';
 
 export default function SobreMiSummarySection() {
   return (
-    <section className="min-h-[100dvh] w-full bg-transparent sticky top-0 rounded-t-3xl overflow-hidden flex flex-col justify-center px-6 md:px-12 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] z-20">
-      <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#4f4f4f0a_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f0a_1px,transparent_1px)] bg-[size:54px_54px] pointer-events-none" />
+    <section className="w-full bg-transparent overflow-hidden flex flex-col justify-center px-6 md:px-12 py-16 md:py-24 z-20">
 
-      <div className="max-w-7xl mx-auto w-full relative z-10 py-20">
+      <div className="max-w-7xl mx-auto w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Foto — primera en móvil para dar contexto visual */}

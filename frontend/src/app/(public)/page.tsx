@@ -100,7 +100,8 @@ export default function HomePage() {
         Cada sección ocupa el 100% de la pantalla (h-screen/h-[100dvh]) y tiene border-radius top 
         para que se vaya apilando visualmente sobre la anterior mediante scroll. 
       */}
-      <div className="w-full overflow-hidden relative">
+      {/* Añadido "dark text-white" para forzar el modo oscuro en toda la home sobre el vídeo */}
+      <div className="w-full overflow-hidden relative dark text-white">
         <VideoHero />
         <EnfoqueSummarySection />
         <ServiciosSummarySection />

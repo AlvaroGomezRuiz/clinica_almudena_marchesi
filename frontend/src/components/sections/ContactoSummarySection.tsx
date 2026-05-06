@@ -6,8 +6,7 @@ import Link from 'next/link';
 
 export default function ContactoSummarySection() {
   return (
-    <section className="min-h-[100dvh] w-full bg-transparent text-white sticky top-0 rounded-t-3xl overflow-hidden flex flex-col justify-center px-6 md:px-12 z-40">
-      <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#ffffff1a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff1a_1px,transparent_1px)] bg-[size:54px_54px] pointer-events-none" />
+    <section className="w-full bg-transparent text-white overflow-hidden flex flex-col justify-center px-6 md:px-12 py-16 md:py-24 z-40">
       
       <div className="max-w-4xl mx-auto w-full relative z-10 text-center">
         <TextAnimation
