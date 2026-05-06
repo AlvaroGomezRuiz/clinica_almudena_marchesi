@@ -37,8 +37,8 @@ export default function VideoHero() {
           />
         </video>
 
-        {/* Overlay oscuro para garantizar contraste WCAG sobre el vídeo */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/30 md:from-black/50 md:via-black/35 md:to-black/55 z-[5]" />
+        {/* Overlay oscuro muy sutil para mejorar la visibilidad del vídeo, manteniendo el centro translúcido */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/5 to-black/20 md:from-black/30 md:via-transparent md:to-black/40 z-[5]" />
         
         <BlurVignetteArticle>
           <div className="flex flex-col items-center justify-center h-full px-6 md:px-12 text-center relative z-10">
