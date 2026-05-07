@@ -15,16 +15,16 @@ export default function SobreMiSummarySection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
           {/* Foto — primera en móvil para dar contexto visual */}
-          <ScrollReveal delay={0} className="flex justify-center lg:justify-end order-2 lg:order-1 lg:mt-24">
-             <div className="rounded-apple overflow-hidden shadow-apple-lg w-full max-w-[500px]">
+          <ScrollReveal delay={0} className="flex justify-center lg:justify-end order-2 lg:order-1 lg:mt-16">
+             <div className="rounded-apple overflow-hidden shadow-apple-lg w-full max-w-[380px]">
                 <Image
                   src="/images/almudena-profile.avif"
                   alt="Almudena Marchesi, psicóloga clínica en su consulta de Moncloa, Madrid"
-                  width={600}
-                  height={600}
-                  className="w-full object-cover aspect-square object-top"
+                  width={500}
+                  height={666}
+                  className="w-full h-auto object-cover aspect-[3/4] object-top"
                   unoptimized={true}
-                  sizes="(min-width: 1024px) 40vw, 90vw"
+                  sizes="(min-width: 1024px) 30vw, 80vw"
                 />
              </div>
           </ScrollReveal>

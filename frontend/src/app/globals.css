@@ -502,3 +502,24 @@ body.privacy-blur [data-sensitive="true"] {
     color: #71717a;
   }
 }
+
+/* ══════════════════════════════════════════════════
+   BLUR VIGNETTE
+   ══════════════════════════════════════════════════ */
+@layer utilities {
+  .blur-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: var(--radius);
+    -webkit-backdrop-filter: blur(var(--blur));
+    backdrop-filter: blur(var(--blur));
+    
+    /* Mask: transparent in center (no blur), black at edges (full blur) */
+    -webkit-mask-image: radial-gradient(ellipse at center, transparent 50%, black 110%);
+    mask-image: radial-gradient(ellipse at center, transparent 50%, black 110%);
+    
+    /* Sutil oscurecimiento/mezcla con el fondo en los bordes */
+    box-shadow: inset 0 0 50px 10px var(--color-canvas);
+  }
+}
