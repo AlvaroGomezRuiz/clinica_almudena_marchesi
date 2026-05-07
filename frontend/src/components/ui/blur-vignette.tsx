@@ -1,44 +1,78 @@
 'use client';
-
 import { cn } from '@/lib/utils';
-import React from 'react';
+import type React from 'react';
+import { createContext, useContext } from 'react';
 
-interface BlurVignetteProps {
-  children: React.ReactNode;
-  classname?: string;
+interface BlurVignetteContextProps {
   radius?: string;
   inset?: string;
   transitionLength?: string;
   blur?: string;
 }
 
-export function BlurVignette({
+const BlurVignetteContext = createContext<BlurVignetteContextProps>({
+  radius: '24px',
+  inset: '20px',
+  transitionLength: '44px',
+  blur: '6px',
+});
+
+export const useBlurVignetteContext = () => useContext(BlurVignetteContext);
+
+interface BlurVignetteProps {
+  classname?: string;
+  children: React.ReactNode;
+  radius?: string;
+  inset?: string;
+  transitionLength?: string;
+  blur?: string;
+  blurclassname?: string;
+}
+
+export const BlurVignette: React.FC<BlurVignetteProps> = ({
+  classname,
+  children,
+  radius = '24px',
+  inset = '20px',
+  transitionLength = '44px',
+  blur = '6px',
+}) => {
+  return (
+    <BlurVignetteContext.Provider value={{ radius, inset, transitionLength, blur }}>
+      <div
+        className={cn('relative overflow-hidden', classname)}
+        style={{ borderRadius: radius }}
+      >
+        {children}
+      </div>
+    </BlurVignetteContext.Provider>
+  );
+};
+
+interface BlurVignetteArticleProps {
+  children?: React.ReactNode;
+  classname?: string;
+}
+
+export const BlurVignetteArticle: React.FC<BlurVignetteArticleProps> = ({
   children,
   classname,
-  radius = '24px',
-  inset = '10px',
-  transitionLength = '100px',
-  blur = '15px',
-}: BlurVignetteProps) {
+}) => {
+  const { radius, inset, transitionLength, blur } = useBlurVignetteContext();
+
   return (
     <div
-      className={cn('relative', classname)}
-      style={{
-        borderRadius: radius,
-      }}
+      className={cn('blur-vignette bottom-0 left-0 w-full h-full z-10', classname)}
+      style={
+        {
+          '--radius': radius,
+          '--inset': inset,
+          '--transition-length': transitionLength,
+          '--blur': blur,
+        } as React.CSSProperties
+      }
     >
-      <div
-        className="absolute inset-0 z-10 pointer-events-none opacity-15 shadow-[inset_0_0_15px_0px_var(--color-canvas)] md:shadow-[inset_0_0_var(--bv-blur)_var(--bv-inset)_var(--color-canvas)]"
-        style={{
-          '--bv-blur': blur,
-          '--bv-inset': inset,
-        } as React.CSSProperties}
-      />
       {children}
     </div>
   );
-}
-
-export function BlurVignetteArticle({ children }: { children?: React.ReactNode }) {
-  return <div className="absolute inset-0 z-20 flex flex-col">{children}</div>;
-}
+};
