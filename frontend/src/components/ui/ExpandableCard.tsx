@@ -141,55 +141,48 @@ export default function ExpandableCard({
               
               <motion.div
                 layoutId={`card-${id}`}
-                className="relative w-full max-w-3xl max-h-[90vh] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-y-auto z-10 flex flex-col"
+                className="relative w-full max-w-3xl max-h-[90vh] shadow-2xl z-10 flex flex-col outline-none rounded-3xl"
               >
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
-                  aria-label="Cerrar modal"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-
-                <div className="p-8 md:p-12 flex flex-col items-center text-center">
-                  {subtitle && (
-                    <motion.span
-                      layoutId={`subtitle-${id}`}
-                      className="font-mono text-label-sm uppercase tracking-[0.14em] text-white/70 mb-4 block"
-                    >
-                      {subtitle}
-                    </motion.span>
-                  )}
-                  
-                  <motion.h3
-                    layoutId={`title-${id}`}
-                    className="font-display text-4xl md:text-5xl text-white text-balance mb-8"
+                <PremiumCard tilt={false} active={true} className="h-full w-full overflow-y-auto">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center bg-canvas hover:bg-canvas-alt rounded-full text-ink transition-colors border border-line"
+                    aria-label="Cerrar modal"
                   >
-                    {title}
-                  </motion.h3>
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
 
-                  <motion.div
-                    layoutId={`content-preview-${id}`}
-                    className="font-body text-lg leading-relaxed text-white/90 space-y-4 text-left max-w-2xl"
-                  >
-                    {description}
-                  </motion.div>
-                  
-                  {tags && tags.length > 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line"
-                    >
-                      {tags.map((tag) => (
-                        <span key={tag} className="text-sm bg-white/10 border border-white/10 text-white px-3 py-1.5 rounded-md">
-                          {tag}
-                        </span>
-                      ))}
-                    </motion.div>
-                  )}
-                </div>
+                  <div className="p-8 md:p-12 flex flex-col items-center text-center">
+                    {subtitle && (
+                      <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-4 block">
+                        {subtitle}
+                      </span>
+                    )}
+                    
+                    <h3 className="font-display text-4xl md:text-5xl text-ink text-balance mb-8">
+                      {title}
+                    </h3>
+
+                    <div className="font-body text-lg leading-relaxed text-ink-soft space-y-4 text-left max-w-2xl">
+                      {description}
+                    </div>
+                    
+                    {tags && tags.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="mt-10 flex gap-2 flex-wrap justify-center pt-6 border-t border-line w-full"
+                      >
+                        {tags.map((tag) => (
+                          <span key={tag} className="text-sm bg-sage-wash text-sage px-3 py-1.5 rounded-md font-medium">
+                            {tag}
+                          </span>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+                </PremiumCard>
               </motion.div>
             </div>
           )}

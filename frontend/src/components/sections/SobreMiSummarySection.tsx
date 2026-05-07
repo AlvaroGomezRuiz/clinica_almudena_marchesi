@@ -23,7 +23,7 @@ export default function SobreMiSummarySection() {
                   width={500}
                   height={650}
                   className="w-full object-cover aspect-[3/4] object-top"
-                  loading="lazy"
+                  unoptimized={true}
                   sizes="(min-width: 1024px) 30vw, 80vw"
                 />
              </div>

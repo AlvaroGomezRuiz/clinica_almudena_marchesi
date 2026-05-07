@@ -7,6 +7,7 @@ import TextAnimation from '@/components/ui/scroll-text';
 import CTASection from '@/components/sections/CTASection';
 import StatsRow from '@/components/landing/StatsRow';
 import PremiumCard from '@/components/ui/PremiumCard';
+import { BlurVignette, BlurVignetteArticle } from '@/components/ui/blur-vignette';
 import { CLINIC_PUBLIC_SITE_HOST_LABEL, CLINIC_PUBLIC_SITE_URL } from '@/lib/clinic';
 import { enfoquePageFaq } from '@/lib/seo/clinic-faq-content';
 import { buildFaqPageJsonLd } from '@/lib/seo/faq-jsonld';
@@ -112,15 +113,18 @@ export default function EnfoquePage() {
           <div className="lg:col-span-5">
             <ScrollReveal delay={0.12} scale={0.96}>
               <div className="rounded-apple overflow-hidden shadow-apple-lg">
-                <Image
-                  alt="Detalle de manos en actitud de escucha y calidez humana"
-                  className="w-full h-[400px] lg:h-[480px] object-cover"
-                  height={480}
-                  priority
-                  sizes="(min-width: 1024px) 40vw, 100vw"
-                  src="/images/manos.avif"
-                  width={600}
-                />
+                <BlurVignette radius='32px' inset='10px' transitionLength='80px' blur='15px'>
+                  <Image
+                    alt="Detalle de manos en actitud de escucha y calidez humana"
+                    className="w-full h-[400px] lg:h-[480px] object-cover"
+                    height={480}
+                    priority
+                    sizes="(min-width: 1024px) 40vw, 100vw"
+                    src="/images/manos.avif"
+                    width={600}
+                  />
+                  <BlurVignetteArticle />
+                </BlurVignette>
               </div>
             </ScrollReveal>
           </div>

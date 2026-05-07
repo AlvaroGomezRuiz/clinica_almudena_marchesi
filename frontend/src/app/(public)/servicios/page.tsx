@@ -114,7 +114,7 @@ export default function ServiciosPage() {
     <main className="bg-canvas overflow-x-hidden">
       {/* Hero */}
       <section className="pt-32 pb-16 md:pt-40 md:pb-24 px-6 md:px-12">
-        <div className="max-w-screen-xl mx-auto">
+        <div className="max-w-screen-xl mx-auto flex flex-col items-center text-center">
           <ScrollReveal>
             <span className="font-mono text-label-sm uppercase tracking-[0.14em] text-sage-mid mb-5 block">
               Servicios
@@ -124,7 +124,7 @@ export default function ServiciosPage() {
             <TextAnimation
               as="h1"
               text="Un espacio a medida de tu proceso."
-              classname="font-display text-display-1 text-ink max-w-4xl text-balance mb-6"
+              classname="font-display text-display-1 text-ink max-w-4xl text-balance mb-6 mx-auto"
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: {
@@ -139,7 +139,7 @@ export default function ServiciosPage() {
             <TextAnimation
               as="p"
               text="Cada proceso es único. Ofrezco diferentes modalidades de terapia adaptadas a tus necesidades actuales, con el rigor clínico y la calidez que tu bienestar requiere."
-              classname="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty"
+              classname="text-body-lg text-ink-soft max-w-2xl leading-relaxed text-pretty mx-auto"
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 visible: {
@@ -151,7 +151,7 @@ export default function ServiciosPage() {
             />
           </ScrollReveal>
           <ScrollReveal delay={0.24}>
-            <p className="mt-8 max-w-2xl rounded-2xl border border-line bg-canvas-sage/40 px-5 py-4 font-body text-[0.95rem] leading-relaxed text-ink-soft text-pretty dark:bg-canvas-alt/60">
+            <p className="mt-8 max-w-2xl mx-auto rounded-2xl border border-line bg-canvas-sage/40 px-5 py-4 font-body text-[0.95rem] leading-relaxed text-ink-soft text-pretty dark:bg-canvas-alt/60">
               <span className="font-medium text-ink dark:text-white">Reservas:</span> ponte en contacto para gestionar tu primera cita. Tarifas orientativas de sesión:{' '}
               <span className="whitespace-nowrap font-medium text-ink dark:text-white">{CLINIC_TARIFAS_SESION_RESUMEN}</span>
               .
